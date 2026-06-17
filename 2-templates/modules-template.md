@@ -376,4 +376,4 @@ Handle authentication, session/token lifecycle, and current-user access for the 
 
 When AI creates `modules.md`, it should copy this module entry format for every module so the whole file stays consistent and easy to scan before any endpoints, pages, or code folders are generated.
 
-The filled project-specific module map should live in the project docs, not in this template file.
+The filled project-specific module map should live in `3-plan/modules.md`, not in this template file.

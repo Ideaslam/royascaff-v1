@@ -363,4 +363,4 @@ Mongoose shape example for the entry above:
 
 When AI creates `data-model.md`, it should copy this collection entry format for every collection so the whole file stays consistent and easy to scan before any Mongoose schemas or repositories are generated.
 
-The filled project-specific data model should live in the project docs, not in this template file.
+The filled project-specific data model should live in `3-plan/data-model.md`, not in this template file.

@@ -371,4 +371,4 @@ When AI creates `custom-feature-rules.md`, it should:
 3. keep every rule tied to a module and feature
 4. use explicit provider and async language when applicable
 
-The filled project-specific rules should live in `.ai-control/rules/custom-feature-rules.md`, not in this template file.
+The filled project-specific rules should live in `5-rules/custom-feature-rules.md`, not in this template file.

@@ -425,4 +425,4 @@ When AI creates `features.md`, it should:
 3. document **all features** for each module before moving to the next module
 4. use the same feature entry format everywhere
 
-The filled project-specific feature map should live in `.ai-control/plan/features.md`, not in this template file.
+The filled project-specific feature map should live in `3-plan/features.md`, not in this template file.
