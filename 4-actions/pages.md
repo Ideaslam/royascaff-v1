@@ -35,7 +35,7 @@ Displays the login form. Supports email/password and OAuth (Google, Microsoft). 
 #### Main Component
 
 - Component Name: `LoginPage`
-- Folder: `client/src/app/pages/auth/login`
+- Folder: `src/app/pages/auth/login`
 - Files:
   - `login.page.ts`
   - `login.page.html`
@@ -103,7 +103,7 @@ Accepts name, email, and password. Calls register endpoint, stores tokens on suc
 #### Main Component
 
 - Component Name: `RegisterPage`
-- Folder: `client/src/app/pages/auth/register`
+- Folder: `src/app/pages/auth/register`
 - Files:
   - `register.page.ts`
   - `register.page.html`
@@ -162,7 +162,7 @@ Accepts name, email, and password. Calls register endpoint, stores tokens on suc
 #### Main Component
 
 - Component Name: `ForgotPasswordPage`
-- Folder: `client/src/app/pages/auth/forgot-password`
+- Folder: `src/app/pages/auth/forgot-password`
 - Files:
   - `forgot-password.page.ts`
   - `forgot-password.page.html`
@@ -204,7 +204,7 @@ Accepts name, email, and password. Calls register endpoint, stores tokens on suc
 #### Main Component
 
 - Component Name: `ResetPasswordPage`
-- Folder: `client/src/app/pages/auth/reset-password`
+- Folder: `src/app/pages/auth/reset-password`
 - Files:
   - `reset-password.page.ts`
   - `reset-password.page.html`
@@ -261,7 +261,7 @@ The main landing page after login. Displays projects as cards. Each card shows p
 #### Main Component
 
 - Component Name: `ProjectsListPage`
-- Folder: `client/src/app/pages/projects/projects-list`
+- Folder: `src/app/pages/projects/projects-list`
 - Files:
   - `projects-list.page.ts`
   - `projects-list.page.html`
@@ -332,7 +332,7 @@ Displays the project header (name, description, edit button) and a list of all d
 #### Main Component
 
 - Component Name: `ProjectDetailPage`
-- Folder: `client/src/app/pages/projects/project-detail`
+- Folder: `src/app/pages/projects/project-detail`
 - Files:
   - `project-detail.page.ts`
   - `project-detail.page.html`
@@ -412,7 +412,7 @@ The core page of the product. Loads the dashboard definition once, then fires pa
 #### Main Component
 
 - Component Name: `DashboardViewerPage`
-- Folder: `client/src/app/pages/dashboards/dashboard-viewer`
+- Folder: `src/app/pages/dashboards/dashboard-viewer`
 - Files:
   - `dashboard-viewer.page.ts`
   - `dashboard-viewer.page.html`
@@ -513,7 +513,7 @@ A transitional page displayed after dashboard creation while the AI generation b
 #### Main Component
 
 - Component Name: `DashboardGeneratingPage`
-- Folder: `client/src/app/pages/dashboards/dashboard-generating`
+- Folder: `src/app/pages/dashboards/dashboard-generating`
 - Files:
   - `dashboard-generating.page.ts`
   - `dashboard-generating.page.html`
@@ -567,7 +567,7 @@ Allows editor/admin to change the chart type, title, and display configuration o
 #### Main Component
 
 - Component Name: `WidgetEditPage`
-- Folder: `client/src/app/pages/dashboards/widget-edit`
+- Folder: `src/app/pages/dashboards/widget-edit`
 - Files:
   - `widget-edit.page.ts`
   - `widget-edit.page.html`
@@ -640,7 +640,7 @@ Shows all CSV files uploaded by the current user in a PrimeNG table with status 
 #### Main Component
 
 - Component Name: `DataLibraryPage`
-- Folder: `client/src/app/pages/data/data-library`
+- Folder: `src/app/pages/data/data-library`
 - Files:
   - `data-library.page.ts`
   - `data-library.page.html`
@@ -718,7 +718,7 @@ Displays the CSV file metadata and a table of all columns with their AI-inferred
 #### Main Component
 
 - Component Name: `ColumnEditorPage`
-- Folder: `client/src/app/pages/data/column-editor`
+- Folder: `src/app/pages/data/column-editor`
 - Files:
   - `column-editor.page.ts`
   - `column-editor.page.html`
@@ -801,7 +801,7 @@ A public page, no authentication required. Resolves the share token from the URL
 #### Main Component
 
 - Component Name: `SharedDashboardPage`
-- Folder: `client/src/app/pages/shared/shared-dashboard`
+- Folder: `src/app/pages/shared/shared-dashboard`
 - Files:
   - `shared-dashboard.page.ts`
   - `shared-dashboard.page.html`
@@ -944,7 +944,7 @@ Full user management table for admin. Supports search by name/email, filter by r
 #### Main Component
 
 - Component Name: `AdminUsersListPage`
-- Folder: `client/src/app/pages/admin/users-list`
+- Folder: `src/app/pages/admin/users-list`
 - Files:
   - `users-list.page.ts`
   - `users-list.page.html`
@@ -1011,7 +1011,7 @@ Full user management table for admin. Supports search by name/email, filter by r
 #### Main Component
 
 - Component Name: `AdminUserEditPage`
-- Folder: `client/src/app/pages/admin/user-edit`
+- Folder: `src/app/pages/admin/user-edit`
 - Files:
   - `user-edit.page.ts`
   - `user-edit.page.html`
@@ -1061,7 +1061,7 @@ Full user management table for admin. Supports search by name/email, filter by r
 #### Main Component
 
 - Component Name: `AdminSubscriptionsPage`
-- Folder: `client/src/app/pages/admin/subscriptions`
+- Folder: `src/app/pages/admin/subscriptions`
 - Files:
   - `subscriptions.page.ts`
   - `subscriptions.page.html`
@@ -1115,7 +1115,7 @@ Full user management table for admin. Supports search by name/email, filter by r
 #### Main Component
 
 - Component Name: `AdminAuditLogsPage`
-- Folder: `client/src/app/pages/admin/audit-logs`
+- Folder: `src/app/pages/admin/audit-logs`
 - Files:
   - `audit-logs.page.ts`
   - `audit-logs.page.html`
@@ -1167,7 +1167,7 @@ Full user management table for admin. Supports search by name/email, filter by r
 #### Main Component
 
 - Component Name: `AdminSettingsPage`
-- Folder: `client/src/app/pages/admin/settings`
+- Folder: `src/app/pages/admin/settings`
 - Files:
   - `settings.page.ts`
   - `settings.page.html`
@@ -1218,7 +1218,7 @@ Full user management table for admin. Supports search by name/email, filter by r
 #### Main Component
 
 - Component Name: `ProfileSettingsPage`
-- Folder: `client/src/app/pages/settings/profile`
+- Folder: `src/app/pages/settings/profile`
 - Files:
   - `profile.page.ts`
   - `profile.page.html`
@@ -1276,7 +1276,7 @@ Full user management table for admin. Supports search by name/email, filter by r
 #### Main Component
 
 - Component Name: `ChangePasswordPage`
-- Folder: `client/src/app/pages/settings/password`
+- Folder: `src/app/pages/settings/password`
 - Files:
   - `change-password.page.ts`
   - `change-password.page.html`
@@ -1324,7 +1324,7 @@ Full user management table for admin. Supports search by name/email, filter by r
 #### Main Component
 
 - Component Name: `MySubscriptionPage`
-- Folder: `client/src/app/pages/settings/subscription`
+- Folder: `src/app/pages/settings/subscription`
 - Files:
   - `subscription.page.ts`
   - `subscription.page.html`
