@@ -157,7 +157,7 @@ Manage user account profiles, roles, and account settings. Admin-facing user man
 #### Notes
 
 - Admin user management pages are under `/app/admin/users`
-- Profile self-service is under `/app/settings/account`
+- Profile self-service is under `/app/settings/profile`
 - GDPR deletion must cascade to all user-owned entities
 
 ---

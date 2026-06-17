@@ -456,6 +456,8 @@ The core page of the product. Loads the dashboard definition once, then fires pa
 - `POST /dashboards/:id/share - create share link`
 - `GET /dashboards/:id/share - list share links`
 - `DELETE /dashboards/:id/share/:shareLinkId - revoke share link`
+- `POST /dashboards/:id/widgets - add new widget manually (editor/admin only)`
+- `DELETE /dashboards/:id/widgets/:widgetId - remove a widget (editor/admin only)`
 - `POST /dashboards/:id/export/pdf - request PDF export`
 - `GET /dashboards/:id/export/excel - download Excel`
 

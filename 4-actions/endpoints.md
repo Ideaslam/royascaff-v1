@@ -425,7 +425,7 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 - Name: `Update User`
 - Method: `PUT`
 - Route: `/users/:id`
-- Summary: `Admin updates user profile, role, or active status.`
+- Summary: `Admin updates user profile, role, active status, or resets password.`
 
 #### Auth
 
@@ -442,6 +442,7 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
   - `email: string (optional)`
   - `role: string (optional)`
   - `isActive: boolean (optional)`
+  - `newPassword: string - admin-initiated password reset, min 8 chars (optional)`
 
 #### Return
 
@@ -809,6 +810,7 @@ Called by frontend after all chunks are uploaded to R2. Backend parses CSV rows 
 
 - Row parsing is async (background job); this endpoint returns immediately
 - Chunked batch insert: 1,000 rows per batch
+- Write `csvfile.upload_complete` audit log entry
 
 ---
 
@@ -1376,6 +1378,90 @@ Checks Redis cache, then `chartdatacache` MongoDB collection. On cache miss, exe
 
 ### Endpoint 38
 
+- Name: `Add Widget`
+- Method: `POST`
+- Route: `/dashboards/:id/widgets`
+- Summary: `Manually add a new chart widget to an existing dashboard.`
+
+#### Description
+
+Creates a new `chartwidgets` record with a user-supplied chart type, data source, title, query definition, and display config. Called from the dashboard customization UI when the editor adds a widget manually (not AI-generated).
+
+#### Auth
+
+- Access: `authenticated`
+- Roles: `editor, admin`
+
+#### Input
+
+- Params:
+  - `id: string - dashboard ObjectId`
+- Query: `none`
+- Body:
+  - `widgetType: string - enum: bar, line, pie, donut, kpi_card, table, scatter (required)`
+  - `title: string (required)`
+  - `position: { x: number, y: number, w: number, h: number } (required)`
+  - `queryDefinition: QueryDefinitionDto (required)`
+  - `displayConfig: DisplayConfigDto (optional)`
+
+#### Return
+
+- Status: `201`
+- DTO / Shape: `ChartWidgetDto`
+- Data:
+  - `id, widgetType, title, position, queryDefinition, displayConfig, createdAt`
+
+#### Business Rules
+
+- Dashboard must have status `ready`; return `400` if status is `generating` or `error`
+- Validate `queryDefinition` against schema before persisting
+- Only the dashboard owner or admin can add widgets
+
+#### Constraints / Notes
+
+- Write `dashboard.update` audit log entry
+
+---
+
+### Endpoint 39
+
+- Name: `Delete Widget`
+- Method: `DELETE`
+- Route: `/dashboards/:id/widgets/:widgetId`
+- Summary: `Remove a widget from a dashboard and invalidate its cache.`
+
+#### Auth
+
+- Access: `authenticated`
+- Roles: `editor, admin`
+
+#### Input
+
+- Params:
+  - `id: string - dashboard ObjectId`
+  - `widgetId: string - chartwidget ObjectId`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `204`
+
+#### Business Rules
+
+- Delete `chartwidgets` record
+- Delete all `chartdatacache` entries for this widget
+- Invalidate Redis cache key `chart:{widgetId}:*`
+- Only the dashboard owner or admin can delete widgets
+
+#### Constraints / Notes
+
+- Write `dashboard.update` audit log entry
+
+---
+
+### Endpoint 40
+
 - Name: `Retry Dashboard Generation`
 - Method: `POST`
 - Route: `/dashboards/:id/generate/retry`
@@ -1409,7 +1495,7 @@ Checks Redis cache, then `chartdatacache` MongoDB collection. On cache miss, exe
 
 ---
 
-### Endpoint 39
+### Endpoint 41
 
 - Name: `Create Share Link`
 - Method: `POST`
@@ -1453,7 +1539,7 @@ Checks Redis cache, then `chartdatacache` MongoDB collection. On cache miss, exe
 
 ---
 
-### Endpoint 40
+### Endpoint 42
 
 - Name: `List Share Links`
 - Method: `GET`
@@ -1481,7 +1567,7 @@ Checks Redis cache, then `chartdatacache` MongoDB collection. On cache miss, exe
 
 ---
 
-### Endpoint 41
+### Endpoint 43
 
 - Name: `Revoke Share Link`
 - Method: `DELETE`
@@ -1516,7 +1602,7 @@ Checks Redis cache, then `chartdatacache` MongoDB collection. On cache miss, exe
 
 ---
 
-### Endpoint 42
+### Endpoint 44
 
 - Name: `Get Shared Dashboard`
 - Method: `GET`
@@ -1563,7 +1649,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 ---
 
-### Endpoint 43
+### Endpoint 45
 
 - Name: `Export Dashboard as PDF`
 - Method: `POST`
@@ -1600,7 +1686,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 ---
 
-### Endpoint 44
+### Endpoint 46
 
 - Name: `Export Data as Excel`
 - Method: `GET`
@@ -1633,7 +1719,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 ---
 
-### Endpoint 45
+### Endpoint 47
 
 - Name: `Export Data as CSV`
 - Method: `GET`
@@ -1669,7 +1755,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 ---
 
-### Endpoint 46
+### Endpoint 48
 
 - Name: `List Notifications`
 - Method: `GET`
@@ -1701,7 +1787,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 ---
 
-### Endpoint 47
+### Endpoint 49
 
 - Name: `Mark Notifications as Read`
 - Method: `PATCH`
@@ -1732,7 +1818,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 ---
 
-### Endpoint 48
+### Endpoint 50
 
 - Name: `Get Current Subscription`
 - Method: `GET`
@@ -1759,7 +1845,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 ---
 
-### Endpoint 49
+### Endpoint 51
 
 - Name: `List Subscriptions (Admin)`
 - Method: `GET`
@@ -1787,7 +1873,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 ---
 
-### Endpoint 50
+### Endpoint 52
 
 - Name: `Assign Subscription`
 - Method: `POST`
@@ -1819,7 +1905,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 ---
 
-### Endpoint 51
+### Endpoint 53
 
 - Name: `Payment Webhook`
 - Method: `POST`
@@ -1859,7 +1945,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 ---
 
-### Endpoint 52
+### Endpoint 54
 
 - Name: `List Audit Logs`
 - Method: `GET`
@@ -1904,7 +1990,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 ---
 
-### Endpoint 53
+### Endpoint 55
 
 - Name: `List Settings`
 - Method: `GET`
@@ -1935,7 +2021,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 ---
 
-### Endpoint 54
+### Endpoint 56
 
 - Name: `Update Setting`
 - Method: `PATCH`
@@ -1970,7 +2056,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 ---
 
-### Endpoint 55
+### Endpoint 57
 
 - Name: `Get Job Status`
 - Method: `GET`
@@ -2011,7 +2097,7 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 | Users | 7 |
 | Projects | 5 |
 | Data (CSV Management) | 7 |
-| Dashboards | 11 |
+| Dashboards | 13 |
 | Sharing | 4 |
 | Export | 3 |
 | Notifications | 2 |
@@ -2019,4 +2105,4 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 | Admin — Audit Logs | 1 |
 | Admin — System Settings | 2 |
 | Background Jobs | 1 |
-| **Total** | **55** |
+| **Total** | **57** |
