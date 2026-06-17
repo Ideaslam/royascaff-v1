@@ -738,4 +738,13 @@ These rules apply across multiple modules and must be respected everywhere:
 
 11. **Rate Limiting** — Auth endpoints (login, register, password reset) must be rate-limited at 10 requests per minute per IP. Data refresh endpoints must be rate-limited per subscription tier. All other API endpoints must be rate-limited at 100 requests per minute per authenticated user.
 
-12. **Frontend Never Calls AI or Storage Directly** — The Angular frontend must only call the NestJS backend API. It must not make direct calls to Claude AI, Cloudflare R2, MailJet, or any other third-party provider. All such calls go through backend endpoints.
+12. **Frontend Never Calls Third-Party Services Directly** — The Angular frontend must only make HTTP calls to the NestJS backend (`environment.apiUrl`). It must never call Cloudflare R2, Claude AI, MailJet, payment gateways, or any other external URL directly — including presigned S3/R2 PUT/GET URLs. All file uploads, AI calls, and integrations must be proxied through backend endpoints. Verification must scan every Angular service for HTTP calls to URLs that are not `environment.apiUrl` and flag them as violations.
+
+    **Forbidden patterns in Angular services:**
+    - `this.http.put(presignedUrl, ...)` — direct R2 upload
+    - `this.http.post('https://api.anthropic.com/...', ...)` — direct Claude call
+    - Any hardcoded `https://` URL that is not `environment.apiUrl`
+
+    **Correct pattern:**
+    - All HTTP calls use `${this.api}/...` where `this.api = environment.apiUrl`
+    - Backend provides a `POST /data/upload/file` multipart endpoint for file uploads

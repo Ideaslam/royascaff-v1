@@ -225,6 +225,13 @@ Run these checks and fix any gaps:
     - No business logic in controllers or components
     - Integration providers are isolated
 
+11. **Frontend Third-Party Isolation**
+    - Scan every file under `src/app/core/services/` and `src/app/pages/` for HTTP calls
+    - Every `this.http.get/post/put/patch/delete(...)` call must start with `${this.api}` or `${environment.apiUrl}`
+    - Flag any hardcoded `https://` URL that is not `environment.apiUrl` as a **CRITICAL** violation
+    - Specifically check: no presigned R2/S3 PUT calls, no direct AI API calls, no direct mail/payment calls
+    - Cross-reference Global Rule 12 in `custom-feature-rules.md` — zero tolerance
+
 ### Verification Report
 
 When checks are complete, produce a verification report:
@@ -260,6 +267,9 @@ When checks are complete, produce a verification report:
 
 ## Code Layering: [✓ | ✗]
 - [Details if issues found]
+
+## Frontend Third-Party Isolation: [✓ | ✗]
+- [Details if issues found — list every file with a direct external URL call]
 
 ## Summary
 [Overall assessment and recommended fixes]
