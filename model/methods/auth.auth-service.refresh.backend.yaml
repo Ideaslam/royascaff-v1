@@ -1,0 +1,14 @@
+id: method:auth.auth-service.refresh@backend
+kind: Method
+name: AuthService.refresh
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:auth.login
+  targetId: target:backend
+  parentId: service:auth.auth-service@backend
+  signature: "refresh(token: string): Promise<{ accessToken: string }>"
+  input: string
+  output: "{ accessToken }"
+  usesServices: []
+  callsExternal: []

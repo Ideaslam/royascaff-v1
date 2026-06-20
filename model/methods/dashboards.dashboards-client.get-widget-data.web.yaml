@@ -1,0 +1,14 @@
+id: method:dashboards.dashboards-client.get-widget-data@web
+kind: Method
+name: DashboardsClient.getWidgetData
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:dashboards.viewer
+  targetId: target:web
+  parentId: service:dashboards.dashboards-client@web
+  signature: "getWidgetData(widgetId: string): Observable<ChartResult>"
+  input: widgetId
+  output: "Observable<ChartResult>"
+  usesServices: []
+  callsExternal: []

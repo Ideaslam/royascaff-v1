@@ -1,0 +1,14 @@
+id: method:dashboards.dashboards-client.get-dashboard@web
+kind: Method
+name: DashboardsClient.getDashboard
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:dashboards.viewer
+  targetId: target:web
+  parentId: service:dashboards.dashboards-client@web
+  signature: "getDashboard(id: string): Observable<Dashboard>"
+  input: id
+  output: "Observable<Dashboard>"
+  usesServices: []
+  callsExternal: []

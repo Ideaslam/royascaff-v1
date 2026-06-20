@@ -1,0 +1,17 @@
+id: method:ai-processing.ai-service.generate-dashboard@backend
+kind: Method
+name: AiService.generateDashboard
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:ai-processing.column-analysis
+  targetId: target:backend
+  parentId: service:ai-processing.ai-service@backend
+  signature: "generateDashboard(dashboardId: string): Promise<ChartWidget[]>"
+  input: dashboardId
+  output: "ChartWidget[]"
+  usesServices: []
+  callsExternal:
+    - ext:claude
+  emits:
+    - event:dashboard.generated

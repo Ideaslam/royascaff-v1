@@ -1,0 +1,18 @@
+id: method:data.data-service.upload-file@backend
+kind: Method
+name: DataService.uploadFile
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:data.upload-csv
+  targetId: target:backend
+  parentId: service:data.data-service@backend
+  signature: "uploadFile(file: Express.Multer.File, userId: string): Promise<{ fileId: string; jobId: string; status: string }>"
+  input: "Multer.File, userId"
+  output: "{ fileId, jobId, status }"
+  usesServices:
+    - service:ai-processing.ai-service@backend
+  callsExternal:
+    - ext:r2
+  emits:
+    - event:data.csv-uploaded

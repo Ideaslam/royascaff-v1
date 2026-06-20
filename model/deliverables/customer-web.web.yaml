@@ -1,0 +1,11 @@
+id: deliverable:customer-web@web
+kind: Deliverable
+name: Customer Portal Web
+description: The customer-facing Angular web app. Git root for customer web code generation.
+status: applied
+spec:
+  appId: app:customer-portal
+  targetId: target:web
+  rootPath: roya-ai-dynamo-frontend
+  gitRoot: true
+  shared: false

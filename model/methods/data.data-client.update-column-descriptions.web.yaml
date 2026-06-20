@@ -1,0 +1,14 @@
+id: method:data.data-client.update-column-descriptions@web
+kind: Method
+name: DataClient.updateColumnDescriptions
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:data.upload-csv
+  targetId: target:web
+  parentId: service:data.data-client@web
+  signature: "updateColumnDescriptions(fileId: string, columns: ColumnPatch[]): Observable<CsvFile>"
+  input: "fileId, columns"
+  output: Observable
+  usesServices: []
+  callsExternal: []

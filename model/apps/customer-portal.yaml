@@ -15,6 +15,7 @@ spec:
     - module:projects
     - module:data
     - module:dashboards
+    - module:ai-processing
     - module:sharing
     - module:export
     - module:notifications

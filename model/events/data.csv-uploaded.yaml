@@ -1,0 +1,11 @@
+id: event:data.csv-uploaded
+kind: Event
+name: CSV Uploaded
+description: Emitted when a CSV is stored and queued for AI column analysis.
+status: applied
+spec:
+  channel: csv-analysis
+  payload:
+    - { name: fileId, type: string, required: true }
+    - { name: userId, type: string, required: true }
+    - { name: jobId, type: string, required: true }

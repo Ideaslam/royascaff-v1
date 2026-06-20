@@ -1,0 +1,15 @@
+id: method:dashboards.dashboards-service.refresh@backend
+kind: Method
+name: DashboardsService.refresh
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:dashboards.management
+  targetId: target:backend
+  parentId: service:dashboards.dashboards-service@backend
+  signature: "refresh(dashboardId: string): Promise<{ refreshed: boolean }>"
+  input: dashboardId
+  output: "{ refreshed }"
+  usesServices:
+    - service:ai-processing.ai-service@backend
+  callsExternal: []

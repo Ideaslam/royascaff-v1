@@ -11,18 +11,27 @@ The original `.ai-control` joined plan and code only by naming convention, so no
 A single-line comment beginning with `@ac`, language-agnostic (works in `//`, `#`, or `/* */` comments):
 
 ```
-@ac id=<node-id> [feature=<id>] [uses=<id>[,<id>...]] [calls=<id>[,<id>...]] [target=<id>]
+@ac id=<node-id> [feature=<id>] [parent=<id>] [uses=<id>[,<id>...]] [calls=<id>[,<id>...]] [emits=<id>[,<id>...]] [target=<id>]
 ```
 
-- `id` (required) — the plan node this symbol implements (e.g. `endpoint:data.upload-file@backend`).
+- `id` (required) — the plan node this symbol implements (e.g. `endpoint:data.upload-file@backend`, or a `method:` id for method-level tracking).
 - `feature` (optional) — the owning feature, for quick cross-reference.
+- `parent` (optional) — for a `method:` node, the owning endpoint/service/job id.
 - `uses` (optional) — internal services this symbol depends on.
 - `calls` (optional) — external services this symbol calls (backend only).
+- `emits` (optional) — domain events this symbol emits.
 - `target` (optional) — overrides the target inferred from the node id.
 
 ## Placement
 
 Put the annotation on the line directly above the symbol it describes (controller method, service method, Angular page class, job handler).
+
+### Two granularities
+
+`@ac` works at two levels, and both can coexist:
+
+- **Node-level** — tag the class/handler with the `endpoint:`, `service:`, `page:`, or `job:` id. This is the minimum and is what proves a projection node is implemented.
+- **Method-level** — tag each individual function with its `method:` id. This lets the reconciler detect drift at method granularity (which exact function changed), drive per-method build tasks, and render the method list in the portal. A `method:` annotation should also carry `parent=` so scan can attach it under the right node even if the file is reorganized.
 
 ### Backend examples
 
@@ -34,7 +43,10 @@ uploadFile(@UploadedFile() file: Express.Multer.File) { /* ... */ }
 
 ```ts
 // @ac id=service:data.data-service@backend calls=ext:r2
-async uploadFile(file: Express.Multer.File, userId: string) { /* ... */ }
+export class DataService { /* ... */ }
+
+  // @ac id=method:data.data-service.upload-file@backend parent=service:data.data-service@backend calls=ext:r2 emits=event:data.csv-uploaded
+  async uploadFile(file: Express.Multer.File, userId: string) { /* ... */ }
 ```
 
 ### Web example

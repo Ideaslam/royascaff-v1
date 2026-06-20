@@ -1,0 +1,15 @@
+id: method:dashboards.dashboards-service.create@backend
+kind: Method
+name: DashboardsService.create
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:dashboards.management
+  targetId: target:backend
+  parentId: service:dashboards.dashboards-service@backend
+  signature: "create(dto: CreateDashboardDto): Promise<Dashboard>"
+  input: CreateDashboardDto
+  output: Dashboard
+  usesServices:
+    - service:ai-processing.ai-service@backend
+  callsExternal: []

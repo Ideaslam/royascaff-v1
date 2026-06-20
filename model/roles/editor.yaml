@@ -1,0 +1,13 @@
+id: role:editor
+kind: Role
+name: Editor
+description: Customer who can create projects, upload data and build dashboards.
+status: applied
+spec:
+  scope: app:customer-portal
+  permissions:
+    - create-project
+    - upload-data
+    - review-columns
+    - create-dashboard
+    - share-dashboard

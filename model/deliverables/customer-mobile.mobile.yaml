@@ -1,0 +1,11 @@
+id: deliverable:customer-mobile@mobile
+kind: Deliverable
+name: Customer Portal Mobile
+description: The customer-facing mobile app. Planned git root; not yet scaffolded.
+status: planned
+spec:
+  appId: app:customer-portal
+  targetId: target:mobile
+  rootPath: roya-ai-dynamo-mobile
+  gitRoot: true
+  shared: false

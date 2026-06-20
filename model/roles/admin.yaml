@@ -1,0 +1,12 @@
+id: role:admin
+kind: Role
+name: Admin
+description: Internal operator with full administrative access.
+status: applied
+spec:
+  scope: project:roya
+  permissions:
+    - manage-users
+    - view-audit
+    - manage-settings
+    - manage-subscriptions

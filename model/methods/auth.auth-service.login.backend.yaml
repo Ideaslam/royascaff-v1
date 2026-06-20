@@ -1,0 +1,14 @@
+id: method:auth.auth-service.login@backend
+kind: Method
+name: AuthService.login
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:auth.login
+  targetId: target:backend
+  parentId: service:auth.auth-service@backend
+  signature: "login(dto: LoginDto): Promise<{ accessToken: string; refreshToken: string }>"
+  input: LoginDto
+  output: "{ accessToken, refreshToken }"
+  usesServices: []
+  callsExternal: []

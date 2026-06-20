@@ -1,0 +1,14 @@
+id: method:data.data-service.update-columns@backend
+kind: Method
+name: DataService.updateColumns
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:data.column-review
+  targetId: target:backend
+  parentId: service:data.data-service@backend
+  signature: "updateColumns(fileId: string, dto: UpdateColumnsDto): Promise<CsvFile>"
+  input: "fileId, UpdateColumnsDto"
+  output: CsvFile
+  usesServices: []
+  callsExternal: []

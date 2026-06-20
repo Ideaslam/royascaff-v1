@@ -11,5 +11,7 @@ spec:
     - { name: role, type: "enum(admin,editor,viewer)", required: true }
     - { name: language, type: "enum(en,ar)", required: false }
     - { name: isActive, type: boolean, required: true }
+    - { name: passwordResetToken, type: string, required: false }
+    - { name: passwordResetExpiry, type: Date, required: false }
   indexes:
     - email (unique)

@@ -1,0 +1,11 @@
+id: event:dashboard.generated
+kind: Event
+name: Dashboard Generated
+description: Emitted when AI finishes generating dashboard widgets; notifies the owner.
+status: applied
+spec:
+  channel: notifications
+  payload:
+    - { name: dashboardId, type: string, required: true }
+    - { name: userId, type: string, required: true }
+    - { name: widgetCount, type: number, required: false }

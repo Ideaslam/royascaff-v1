@@ -1,0 +1,15 @@
+id: method:auth.auth-service.register@backend
+kind: Method
+name: AuthService.register
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:auth.register
+  targetId: target:backend
+  parentId: service:auth.auth-service@backend
+  signature: "register(dto: RegisterDto): Promise<User>"
+  input: RegisterDto
+  output: User
+  usesServices: []
+  callsExternal:
+    - ext:mailjet

@@ -1,0 +1,14 @@
+id: method:data.data-client.get-files@web
+kind: Method
+name: DataClient.getFiles
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:data.upload-csv
+  targetId: target:web
+  parentId: service:data.data-client@web
+  signature: "getFiles(page: number, limit: number): Observable<Paginated<CsvFile>>"
+  input: "page, limit"
+  output: "Observable<Paginated<CsvFile>>"
+  usesServices: []
+  callsExternal: []

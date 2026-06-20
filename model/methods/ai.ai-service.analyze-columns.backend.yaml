@@ -1,0 +1,15 @@
+id: method:ai-processing.ai-service.analyze-columns@backend
+kind: Method
+name: AiService.analyzeColumns
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:ai-processing.column-analysis
+  targetId: target:backend
+  parentId: service:ai-processing.ai-service@backend
+  signature: "analyzeColumns(fileId: string): Promise<ColumnMetadata[]>"
+  input: fileId
+  output: "ColumnMetadata[]"
+  usesServices: []
+  callsExternal:
+    - ext:claude

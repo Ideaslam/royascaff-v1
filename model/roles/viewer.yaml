@@ -1,0 +1,10 @@
+id: role:viewer
+kind: Role
+name: Viewer
+description: Customer with read-only access to shared dashboards.
+status: applied
+spec:
+  scope: app:customer-portal
+  permissions:
+    - view-dashboard
+    - view-shared

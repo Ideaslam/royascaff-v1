@@ -1,0 +1,14 @@
+id: method:data.data-service.list-files@backend
+kind: Method
+name: DataService.listFiles
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:data.upload-csv
+  targetId: target:backend
+  parentId: service:data.data-service@backend
+  signature: "listFiles(userId: string, filters: ListFilesDto): Promise<Paginated<CsvFile>>"
+  input: "userId, filters"
+  output: "Paginated<CsvFile>"
+  usesServices: []
+  callsExternal: []

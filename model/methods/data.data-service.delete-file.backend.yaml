@@ -1,0 +1,15 @@
+id: method:data.data-service.delete-file@backend
+kind: Method
+name: DataService.deleteFile
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:data.files-management
+  targetId: target:backend
+  parentId: service:data.data-service@backend
+  signature: "deleteFile(fileId: string, userId: string): Promise<{ deleted: boolean }>"
+  input: "fileId, userId"
+  output: "{ deleted }"
+  usesServices: []
+  callsExternal:
+    - ext:r2

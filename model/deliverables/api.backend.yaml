@@ -1,0 +1,11 @@
+id: deliverable:api@backend
+kind: Deliverable
+name: Shared Backend API
+description: The NestJS API shared by every app. Single git root for backend code generation.
+status: applied
+spec:
+  appId: app:customer-portal
+  targetId: target:backend
+  rootPath: roya-ai-dynamo-api
+  gitRoot: true
+  shared: true

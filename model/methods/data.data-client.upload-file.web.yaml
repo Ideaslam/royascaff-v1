@@ -1,0 +1,14 @@
+id: method:data.data-client.upload-file@web
+kind: Method
+name: DataClient.uploadFile
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:data.upload-csv
+  targetId: target:web
+  parentId: service:data.data-client@web
+  signature: "uploadFile(file: File): Observable<UploadResponse>"
+  input: File
+  output: "Observable<UploadResponse>"
+  usesServices: []
+  callsExternal: []

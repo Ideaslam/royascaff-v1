@@ -1,0 +1,14 @@
+id: method:dashboards.dashboards-service.chart-data@backend
+kind: Method
+name: DashboardsService.chartData
+status: applied
+authoredBy: ai
+spec:
+  featureId: feature:dashboards.management
+  targetId: target:backend
+  parentId: service:dashboards.dashboards-service@backend
+  signature: "chartData(widgetId: string, filters: ChartFilterDto): Promise<ChartResult>"
+  input: "widgetId, filters"
+  output: ChartResult
+  usesServices: []
+  callsExternal: []

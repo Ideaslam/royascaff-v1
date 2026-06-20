@@ -9,6 +9,9 @@ spec:
     - { method: login, input: LoginDto, output: "{ accessToken, refreshToken }" }
     - { method: register, input: RegisterDto, output: User }
     - { method: refresh, input: string, output: "{ accessToken }" }
+    - { method: forgotPassword, input: string, output: void }
+    - { method: resetPassword, input: "token, newPassword", output: void }
   usesServices: []
   callsExternal:
     - ext:oauth
+    - ext:mailjet

@@ -1,0 +1,11 @@
+id: deliverable:admin-web@web
+kind: Deliverable
+name: Admin Portal Web
+description: The internal admin Angular web app. Git root for admin web code generation.
+status: applied
+spec:
+  appId: app:admin-portal
+  targetId: target:web
+  rootPath: roya-ai-dynamo-frontend-admin
+  gitRoot: true
+  shared: false
