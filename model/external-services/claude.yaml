@@ -1,0 +1,11 @@
+id: ext:claude
+kind: ExternalService
+name: Anthropic Claude
+status: applied
+spec:
+  provider: Anthropic Claude
+  interface: IAIProvider
+  secretsEnv:
+    - ANTHROPIC_API_KEY
+    - AI_MODEL
+  contract: analyzeColumns(metadata), generateDashboard(spec) — receives only column metadata, never raw rows.

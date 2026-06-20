@@ -1,0 +1,20 @@
+id: page:dashboards.viewer@web
+kind: Page
+name: Dashboard Viewer
+status: applied
+spec:
+  featureId: feature:dashboards.viewer
+  targetId: target:web
+  route: /app/dashboards/:id
+  layout: app-shell
+  type: dashboard
+  components: [WidgetGrid, ChartWidget, RefreshButton]
+  callsEndpoints:
+    - endpoint:dashboards.chart-data@backend
+  usesServices:
+    - service:dashboards.dashboards-client@web
+  states:
+    loading: per-widget skeletons
+    empty: no widgets message
+    error: per-widget error + retry
+    success: charts rendered from backend data

@@ -1,0 +1,10 @@
+id: feature:projects.management
+kind: Feature
+name: Project Management
+status: applied
+spec:
+  moduleId: module:projects
+  visibility: both
+  subfeatures:
+    - create / list / delete projects
+    - cascade delete dashboards

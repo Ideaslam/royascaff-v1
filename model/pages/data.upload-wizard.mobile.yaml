@@ -1,0 +1,16 @@
+id: page:data.upload-wizard@mobile
+kind: Page
+name: Upload Screen (Mobile)
+description: Planned mobile projection of CSV upload; not yet specced or built.
+status: planned
+spec:
+  featureId: feature:data.upload-csv
+  targetId: target:mobile
+  route: /data/upload
+  layout: mobile-shell
+  type: wizard
+  callsEndpoints:
+    - endpoint:data.upload-file@backend
+  states:
+    loading: progress indicator
+    error: error toast

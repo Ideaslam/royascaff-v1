@@ -1,0 +1,10 @@
+id: target:backend
+kind: Target
+name: Backend API
+status: applied
+spec:
+  stack: nestjs
+  rootPath: roya-ai-dynamo-api/src
+  ruleRefs:
+    - 5-rules/backend-rule.md
+    - 5-rules/custom-feature-rules.md

@@ -1,0 +1,13 @@
+id: ext:r2
+kind: ExternalService
+name: Cloudflare R2 Storage
+status: applied
+spec:
+  provider: Cloudflare R2 (S3-compatible)
+  interface: IStorageProvider
+  secretsEnv:
+    - R2_ACCESS_KEY
+    - R2_SECRET_KEY
+    - R2_BUCKET
+    - R2_ENDPOINT
+  contract: upload(buffer), getSignedUrl(key), delete(key) — backend only, never called from frontend.

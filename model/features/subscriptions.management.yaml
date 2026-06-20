@@ -1,0 +1,11 @@
+id: feature:subscriptions.management
+kind: Feature
+name: Subscription Management
+status: planned
+spec:
+  moduleId: module:subscriptions
+  visibility: both
+  subfeatures:
+    - view plans and current subscription
+    - subscribe / cancel
+    - enforce usage limits

@@ -1,0 +1,15 @@
+id: entity:csv-file
+kind: DataEntity
+name: CSV File
+status: applied
+spec:
+  collection: csvfiles
+  fields:
+    - { name: ownerId, type: ObjectId, required: true }
+    - { name: originalFilename, type: string, required: true }
+    - { name: storageKey, type: string, required: true }
+    - { name: fileSizeBytes, type: number, required: true }
+    - { name: status, type: "enum(uploading,analyzing,confirmed,error)", required: true }
+    - { name: uploadedAt, type: Date, required: false }
+  indexes:
+    - ownerId

@@ -1,0 +1,11 @@
+id: module:projects
+kind: Module
+name: Projects
+description: Organizational container grouping related dashboards.
+status: applied
+spec:
+  audience: authenticated editors and admins
+  kindOf: business
+  dependsOn:
+    - module:auth
+    - module:users

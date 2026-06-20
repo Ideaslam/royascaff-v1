@@ -1,0 +1,10 @@
+id: feature:export.export
+kind: Feature
+name: Data Export
+status: planned
+spec:
+  moduleId: module:export
+  visibility: both
+  subfeatures:
+    - PDF report (async)
+    - Excel / CSV export

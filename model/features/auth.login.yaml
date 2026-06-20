@@ -1,0 +1,12 @@
+id: feature:auth.login
+kind: Feature
+name: User Login
+status: applied
+spec:
+  moduleId: module:auth
+  visibility: both
+  subfeatures:
+    - submit email + password
+    - validate credentials
+    - issue JWT access + refresh tokens
+    - OAuth login path

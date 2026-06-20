@@ -1,0 +1,15 @@
+id: entity:column-metadata
+kind: DataEntity
+name: Column Metadata
+status: applied
+spec:
+  collection: columnmetadata
+  fields:
+    - { name: fileId, type: ObjectId, required: true }
+    - { name: columnName, type: string, required: true }
+    - { name: inferredType, type: string, required: false }
+    - { name: aiDescription, type: string, required: false }
+    - { name: userDescription, type: string, required: false }
+    - { name: confirmed, type: boolean, required: true }
+  indexes:
+    - fileId

@@ -1,0 +1,20 @@
+id: page:data.files-list@web
+kind: Page
+name: Data Files List
+status: applied
+spec:
+  featureId: feature:data.files-management
+  targetId: target:web
+  route: /app/data
+  layout: app-shell
+  type: list
+  components: [FilesTable]
+  callsEndpoints:
+    - endpoint:data.list-files@backend
+  usesServices:
+    - service:data.data-client@web
+  states:
+    loading: table skeleton
+    empty: empty-state with upload CTA
+    error: error message + retry
+    success: paginated table

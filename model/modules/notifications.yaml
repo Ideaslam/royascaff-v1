@@ -1,0 +1,10 @@
+id: module:notifications
+kind: Module
+name: Notifications
+description: In-app and email notifications for generation, errors, and share events.
+status: planned
+spec:
+  audience: all authenticated users
+  kindOf: business
+  dependsOn:
+    - module:auth

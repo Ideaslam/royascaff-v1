@@ -277,6 +277,38 @@ When checks are complete, produce a verification report:
 
 ---
 
+## Phase 5 — Change / Build (unified, model-driven)
+
+### Goal
+
+Use the AI-Control engine (`ai-control/`) to build new code or change existing code through one declarative flow over the plan graph (`.ai-control/model/`). "Build from scratch" and "change/refactor" are the same operation against different actual-states (empty vs scanned).
+
+### Step 5.1 — Edit the model
+
+Either author a change request (`2-templates/change-request-template.md`) and apply its graph operations to `.ai-control/model/`, or edit the YAML nodes + `edges.yaml` directly. The model is the source of truth; markdown views are generated.
+
+### Step 5.2 — Validate
+
+Run `ai-control validate`. Must pass with zero errors: schema, referential integrity, external-service isolation, acyclic module deps, and completeness gates. Incomplete nodes are not buildable.
+
+### Step 5.3 — Commit the plan
+
+Run `ai-control plan commit -m "..."` to snapshot the model (git-for-plans). Use `ai-control plan log` / `ai-control plan diff` to review.
+
+### Step 5.4 — Reconcile
+
+Run `ai-control reconcile --src <code-root> [--app <id>] [--target <id>]`. This diffs the desired plan against the scanned code annotations and prints `create / update / no-op / drift / blocked` actions. Use `--app` / `--target` to roll out one deliverable at a time. An empty `--src` is a clean-room build (all create).
+
+### Step 5.5 — Apply + verify
+
+The AI-agent compiler applies each create/update action (see `upgrade/codegen.md`, `upgrade/agent.md`), emitting the mandatory `@ac` annotation. The engine then re-runs `scan`, `validate`, and the node's acceptance check (`ai-control acceptance`) before marking the node `applied`. Unverified code never counts as built.
+
+### Step 5.6 — Lock
+
+Run `ai-control lock` to write a deterministic `build.lock`. Two folders with the same lock describe the same intended app.
+
+---
+
 ## Done
 
 When all phases complete and verification passes, the framework has produced:

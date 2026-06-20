@@ -1,0 +1,19 @@
+id: page:auth.login@web
+kind: Page
+name: Login Page
+status: applied
+spec:
+  featureId: feature:auth.login
+  targetId: target:web
+  route: /auth/login
+  layout: auth-layout
+  type: auth
+  components: [LoginForm]
+  callsEndpoints:
+    - endpoint:auth.login@backend
+  usesServices: []
+  states:
+    loading: spinner on submit
+    empty: n/a
+    error: inline form errors + toast
+    success: redirect to app shell

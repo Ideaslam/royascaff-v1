@@ -1,0 +1,10 @@
+id: module:audit
+kind: Module
+name: Audit Logs
+description: Immutable system-wide audit trail; admin read access.
+status: planned
+spec:
+  audience: admin
+  kindOf: admin
+  dependsOn:
+    - module:auth

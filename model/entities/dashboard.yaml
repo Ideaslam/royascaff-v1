@@ -1,0 +1,13 @@
+id: entity:dashboard
+kind: DataEntity
+name: Dashboard
+status: applied
+spec:
+  collection: dashboards
+  fields:
+    - { name: projectId, type: ObjectId, required: true }
+    - { name: name, type: string, required: true }
+    - { name: purpose, type: string, required: false }
+    - { name: status, type: "enum(generating,ready,error)", required: true }
+  indexes:
+    - projectId

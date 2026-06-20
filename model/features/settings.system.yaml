@@ -1,0 +1,11 @@
+id: feature:settings.system
+kind: Feature
+name: System Settings
+status: planned
+spec:
+  moduleId: module:settings
+  visibility: both
+  subfeatures:
+    - system settings CRUD
+    - feature flags
+    - AI model configuration (no raw key exposure)

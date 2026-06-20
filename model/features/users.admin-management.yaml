@@ -1,0 +1,11 @@
+id: feature:users.admin-management
+kind: Feature
+name: Admin User Management
+status: planned
+spec:
+  moduleId: module:users
+  visibility: both
+  subfeatures:
+    - list and filter users
+    - edit role
+    - deactivate / delete user

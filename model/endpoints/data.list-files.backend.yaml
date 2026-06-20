@@ -1,0 +1,25 @@
+id: endpoint:data.list-files@backend
+kind: Endpoint
+name: List Data Files
+status: applied
+spec:
+  featureId: feature:data.files-management
+  targetId: target:backend
+  method: GET
+  route: /data/files
+  auth: authenticated
+  input:
+    query:
+      - { name: page, type: number, required: false }
+      - { name: limit, type: number, required: false }
+      - { name: search, type: string, required: false }
+  output:
+    status: 200
+    shape: PaginatedCsvFiles
+    fields:
+      - { name: items, type: "CsvFile[]", required: true }
+      - { name: total, type: number, required: true }
+  usesServices:
+    - service:data.data-service@backend
+  touchesEntities:
+    - entity:csv-file

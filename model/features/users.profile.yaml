@@ -1,0 +1,10 @@
+id: feature:users.profile
+kind: Feature
+name: Profile Self-Service
+status: applied
+spec:
+  moduleId: module:users
+  visibility: both
+  subfeatures:
+    - edit name, language preference
+    - change password

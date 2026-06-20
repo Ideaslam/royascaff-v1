@@ -1,0 +1,10 @@
+id: module:settings
+kind: Module
+name: System Settings
+description: Global system configuration, feature flags, AI model settings.
+status: planned
+spec:
+  audience: admin
+  kindOf: admin
+  dependsOn:
+    - module:auth

@@ -1,0 +1,198 @@
+[
+  {
+    "nodeId": "endpoint:auth.login@backend",
+    "kind": "Endpoint",
+    "description": "Contract test for POST /auth/login",
+    "assertions": [
+      "route POST /auth/login exists",
+      "auth is \"public\"",
+      "returns status 200",
+      "rejects missing required body field \"email\"",
+      "rejects missing required body field \"password\"",
+      "external calls are server-side only (isolation)"
+    ]
+  },
+  {
+    "nodeId": "endpoint:dashboards.chart-data@backend",
+    "kind": "Endpoint",
+    "description": "Contract test for GET /dashboards/:id/widgets/:widgetId/data",
+    "assertions": [
+      "route GET /dashboards/:id/widgets/:widgetId/data exists",
+      "auth is \"authenticated\"",
+      "returns status 200"
+    ]
+  },
+  {
+    "nodeId": "endpoint:dashboards.create@backend",
+    "kind": "Endpoint",
+    "description": "Contract test for POST /dashboards",
+    "assertions": [
+      "route POST /dashboards exists",
+      "auth is \"authenticated\"",
+      "returns status 202",
+      "rejects missing required body field \"projectId\"",
+      "rejects missing required body field \"name\"",
+      "rejects missing required body field \"dataSourceIds\""
+    ]
+  },
+  {
+    "nodeId": "endpoint:data.list-files@backend",
+    "kind": "Endpoint",
+    "description": "Contract test for GET /data/files",
+    "assertions": [
+      "route GET /data/files exists",
+      "auth is \"authenticated\"",
+      "returns status 200",
+      "external calls are server-side only (isolation)"
+    ]
+  },
+  {
+    "nodeId": "endpoint:data.update-columns@backend",
+    "kind": "Endpoint",
+    "description": "Contract test for PATCH /data/files/:fileId/columns",
+    "assertions": [
+      "route PATCH /data/files/:fileId/columns exists",
+      "auth is \"authenticated\"",
+      "returns status 200",
+      "rejects missing required body field \"columns\"",
+      "external calls are server-side only (isolation)"
+    ]
+  },
+  {
+    "nodeId": "endpoint:data.upload-file@backend",
+    "kind": "Endpoint",
+    "description": "Contract test for POST /data/upload/file",
+    "assertions": [
+      "route POST /data/upload/file exists",
+      "auth is \"authenticated\"",
+      "returns status 202",
+      "rejects missing required body field \"file\"",
+      "external calls are server-side only (isolation)"
+    ]
+  },
+  {
+    "nodeId": "service:ai-processing.ai-service@backend",
+    "kind": "InternalService",
+    "description": "Interface test for AI Processing Service",
+    "assertions": [
+      "implements analyzeColumns(fileId)",
+      "implements generateDashboard(dashboardId)"
+    ]
+  },
+  {
+    "nodeId": "service:auth.auth-service@backend",
+    "kind": "InternalService",
+    "description": "Interface test for Auth Service",
+    "assertions": [
+      "implements login(LoginDto)",
+      "implements register(RegisterDto)",
+      "implements refresh(string)"
+    ]
+  },
+  {
+    "nodeId": "service:dashboards.dashboards-client@web",
+    "kind": "InternalService",
+    "description": "Interface test for Dashboards HTTP Client",
+    "assertions": [
+      "implements getDashboard(id)",
+      "implements getWidgetData(widgetId)"
+    ]
+  },
+  {
+    "nodeId": "service:dashboards.dashboards-service@backend",
+    "kind": "InternalService",
+    "description": "Interface test for Dashboards Service",
+    "assertions": [
+      "implements create(CreateDashboardDto)",
+      "implements chartData(widgetId, filters)",
+      "implements refresh(dashboardId)"
+    ]
+  },
+  {
+    "nodeId": "service:data.data-client@web",
+    "kind": "InternalService",
+    "description": "Interface test for Data HTTP Client",
+    "assertions": [
+      "implements uploadFile(File)",
+      "implements getFiles(page, limit)",
+      "implements updateColumnDescriptions(fileId, columns)"
+    ]
+  },
+  {
+    "nodeId": "service:data.data-service@backend",
+    "kind": "InternalService",
+    "description": "Interface test for Data Service",
+    "assertions": [
+      "implements uploadFile(Multer.File, userId)",
+      "implements listFiles(userId, filters)",
+      "implements updateColumns(fileId, UpdateColumnsDto)",
+      "implements deleteFile(fileId, userId)"
+    ]
+  },
+  {
+    "nodeId": "page:auth.login@web",
+    "kind": "Page",
+    "description": "Presence + state test for /auth/login",
+    "assertions": [
+      "route /auth/login renders",
+      "shows loading state",
+      "shows error state",
+      "does not call external services directly"
+    ]
+  },
+  {
+    "nodeId": "page:dashboards.viewer@web",
+    "kind": "Page",
+    "description": "Presence + state test for /app/dashboards/:id",
+    "assertions": [
+      "route /app/dashboards/:id renders",
+      "shows loading state",
+      "shows error state",
+      "does not call external services directly"
+    ]
+  },
+  {
+    "nodeId": "page:data.files-list@web",
+    "kind": "Page",
+    "description": "Presence + state test for /app/data",
+    "assertions": [
+      "route /app/data renders",
+      "shows loading state",
+      "shows error state",
+      "does not call external services directly"
+    ]
+  },
+  {
+    "nodeId": "page:data.upload-wizard@mobile",
+    "kind": "Page",
+    "description": "Presence + state test for /data/upload",
+    "assertions": [
+      "route /data/upload renders",
+      "shows loading state",
+      "shows error state",
+      "does not call external services directly"
+    ]
+  },
+  {
+    "nodeId": "page:data.upload-wizard@web",
+    "kind": "Page",
+    "description": "Presence + state test for /app/data/upload",
+    "assertions": [
+      "route /app/data/upload renders",
+      "shows loading state",
+      "shows error state",
+      "does not call external services directly"
+    ]
+  },
+  {
+    "nodeId": "page:users.admin-list@web",
+    "kind": "Page",
+    "description": "Presence + state test for /admin/users",
+    "assertions": [
+      "route /admin/users renders",
+      "shows loading state",
+      "shows error state",
+      "does not call external services directly"
+    ]
+  }
+]

@@ -1,0 +1,10 @@
+id: module:subscriptions
+kind: Module
+name: Subscriptions
+description: Plans, user subscriptions, usage-limit enforcement, payment webhooks.
+status: planned
+spec:
+  audience: admin (management), editors (own plan)
+  kindOf: business
+  dependsOn:
+    - module:users

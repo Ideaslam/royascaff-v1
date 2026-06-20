@@ -1,0 +1,18 @@
+id: page:users.admin-list@web
+kind: Page
+name: Admin Users List
+status: planned
+spec:
+  featureId: feature:users.admin-management
+  targetId: target:web
+  route: /admin/users
+  layout: admin-shell
+  type: list
+  components: [UsersTable, RoleSelect]
+  callsEndpoints: []
+  usesServices: []
+  states:
+    loading: table skeleton
+    empty: no users
+    error: error + retry
+    success: paginated table with role editing

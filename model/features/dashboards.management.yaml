@@ -1,0 +1,11 @@
+id: feature:dashboards.management
+kind: Feature
+name: Dashboard Management
+status: applied
+spec:
+  moduleId: module:dashboards
+  visibility: both
+  subfeatures:
+    - create dashboard with purpose + data sources
+    - trigger AI generation job
+    - duplicate / delete dashboard

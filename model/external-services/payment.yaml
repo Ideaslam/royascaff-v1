@@ -1,0 +1,11 @@
+id: ext:payment
+kind: ExternalService
+name: Payment Gateway
+status: planned
+spec:
+  provider: Stripe (or equivalent, via interface)
+  interface: IPaymentProvider
+  secretsEnv:
+    - PAYMENT_SECRET_KEY
+    - PAYMENT_WEBHOOK_SECRET
+  contract: createSubscription, manageSubscription, verifyWebhook — webhook signatures validated.

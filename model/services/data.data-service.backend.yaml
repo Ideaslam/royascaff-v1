@@ -1,0 +1,16 @@
+id: service:data.data-service@backend
+kind: InternalService
+name: Data Service
+status: applied
+spec:
+  featureId: feature:data.upload-csv
+  targetId: target:backend
+  interface:
+    - { method: uploadFile, input: "Multer.File, userId", output: "{ fileId, jobId, status }" }
+    - { method: listFiles, input: "userId, filters", output: "Paginated<CsvFile>" }
+    - { method: updateColumns, input: "fileId, UpdateColumnsDto", output: CsvFile }
+    - { method: deleteFile, input: "fileId, userId", output: "{ deleted }" }
+  usesServices:
+    - service:ai-processing.ai-service@backend
+  callsExternal:
+    - ext:r2

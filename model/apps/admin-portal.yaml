@@ -1,0 +1,16 @@
+id: app:admin-portal
+kind: App
+name: Admin Portal
+description: Platform administration — manage users, subscriptions, audit logs, and system settings.
+status: planned
+spec:
+  audience: admin
+  targets:
+    - target:web
+  shell: admin-shell
+  includes:
+    - module:auth
+    - module:users
+    - module:subscriptions
+    - module:audit
+    - module:settings

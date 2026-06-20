@@ -1,0 +1,11 @@
+id: feature:data.column-review
+kind: Feature
+name: Column Description Review
+status: applied
+spec:
+  moduleId: module:data
+  visibility: both
+  subfeatures:
+    - show AI-suggested column descriptions
+    - let user edit before confirming
+    - confirm columns to unlock dashboard generation

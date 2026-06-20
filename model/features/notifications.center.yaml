@@ -1,0 +1,10 @@
+id: feature:notifications.center
+kind: Feature
+name: Notifications
+status: planned
+spec:
+  moduleId: module:notifications
+  visibility: both
+  subfeatures:
+    - in-app notification list + unread count
+    - email dispatch on key events

@@ -1,0 +1,13 @@
+id: service:ai-processing.ai-service@backend
+kind: InternalService
+name: AI Processing Service
+status: applied
+spec:
+  featureId: feature:ai-processing.column-analysis
+  targetId: target:backend
+  interface:
+    - { method: analyzeColumns, input: "fileId", output: "ColumnMetadata[]" }
+    - { method: generateDashboard, input: "dashboardId", output: "ChartWidget[]" }
+  usesServices: []
+  callsExternal:
+    - ext:claude

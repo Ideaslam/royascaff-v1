@@ -1,0 +1,9 @@
+id: module:ai-processing
+kind: Module
+name: AI Processing
+description: Orchestrates AI background jobs — CSV column analysis and dashboard generation.
+status: applied
+spec:
+  audience: system
+  kindOf: business
+  dependsOn: []

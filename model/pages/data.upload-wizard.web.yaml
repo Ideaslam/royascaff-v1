@@ -1,0 +1,21 @@
+id: page:data.upload-wizard@web
+kind: Page
+name: Upload Wizard
+status: applied
+spec:
+  featureId: feature:data.upload-csv
+  targetId: target:web
+  route: /app/data/upload
+  layout: app-shell
+  type: wizard
+  components: [FileDropzone, ColumnReviewTable, StepProgress]
+  callsEndpoints:
+    - endpoint:data.upload-file@backend
+    - endpoint:data.update-columns@backend
+  usesServices:
+    - service:data.data-client@web
+  states:
+    loading: progress bar during upload + analysis polling
+    empty: prompt to drop a CSV
+    error: toast on upload/analysis failure
+    success: advance to column review then done

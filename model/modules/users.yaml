@@ -1,0 +1,10 @@
+id: module:users
+kind: Module
+name: Users
+description: User profiles, roles, admin user management, GDPR deletion.
+status: applied
+spec:
+  audience: authenticated users (self-service), admin (management)
+  kindOf: business
+  dependsOn:
+    - module:auth

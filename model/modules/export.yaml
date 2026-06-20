@@ -1,0 +1,10 @@
+id: module:export
+kind: Module
+name: Export
+description: PDF and Excel/CSV exports of dashboard data.
+status: planned
+spec:
+  audience: editors and viewers with export permission
+  kindOf: business
+  dependsOn:
+    - module:dashboards

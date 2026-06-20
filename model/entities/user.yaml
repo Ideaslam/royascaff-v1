@@ -1,0 +1,15 @@
+id: entity:user
+kind: DataEntity
+name: User
+status: applied
+spec:
+  collection: users
+  fields:
+    - { name: email, type: string, required: true }
+    - { name: passwordHash, type: string, required: true }
+    - { name: name, type: string, required: true }
+    - { name: role, type: "enum(admin,editor,viewer)", required: true }
+    - { name: language, type: "enum(en,ar)", required: false }
+    - { name: isActive, type: boolean, required: true }
+  indexes:
+    - email (unique)

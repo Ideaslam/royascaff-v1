@@ -1,0 +1,24 @@
+id: endpoint:data.update-columns@backend
+kind: Endpoint
+name: Update Column Descriptions
+status: applied
+spec:
+  featureId: feature:data.column-review
+  targetId: target:backend
+  method: PATCH
+  route: /data/files/:fileId/columns
+  auth: authenticated
+  input:
+    params:
+      - { name: fileId, type: string, required: true }
+    body:
+      - { name: columns, type: "ColumnUpdate[]", required: true }
+  output:
+    status: 200
+    shape: CsvFileWithColumns
+    fields:
+      - { name: columns, type: "ColumnMetadata[]", required: true }
+  usesServices:
+    - service:data.data-service@backend
+  touchesEntities:
+    - entity:column-metadata

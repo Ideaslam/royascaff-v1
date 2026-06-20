@@ -1,0 +1,10 @@
+id: target:web
+kind: Target
+name: Web App
+status: applied
+spec:
+  stack: angular
+  rootPath: roya-ai-dynamo-frontend/src
+  ruleRefs:
+    - 5-rules/frontend-rule.md
+    - 5-rules/custom-feature-rules.md

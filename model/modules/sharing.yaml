@@ -1,0 +1,10 @@
+id: module:sharing
+kind: Module
+name: Sharing
+description: Secure shareable dashboard links with view/edit permissions.
+status: planned
+spec:
+  audience: editors, viewers, mixed
+  kindOf: business
+  dependsOn:
+    - module:dashboards

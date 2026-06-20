@@ -1,0 +1,12 @@
+id: feature:data.upload-csv
+kind: Feature
+name: Upload CSV File
+status: applied
+spec:
+  moduleId: module:data
+  visibility: both
+  subfeatures:
+    - drag-and-drop upload to backend
+    - backend streams file to R2 (no direct frontend upload)
+    - persist file metadata and rows
+    - trigger AI column analysis job

@@ -1,0 +1,27 @@
+id: endpoint:dashboards.create@backend
+kind: Endpoint
+name: Create Dashboard
+status: applied
+spec:
+  featureId: feature:dashboards.management
+  targetId: target:backend
+  method: POST
+  route: /dashboards
+  auth: authenticated
+  async: true
+  input:
+    body:
+      - { name: projectId, type: string, required: true }
+      - { name: name, type: string, required: true }
+      - { name: purpose, type: string, required: false }
+      - { name: dataSourceIds, type: "string[]", required: true }
+  output:
+    status: 202
+    shape: DashboardDto
+    fields:
+      - { name: id, type: string, required: true }
+      - { name: status, type: string, required: true }
+  usesServices:
+    - service:dashboards.dashboards-service@backend
+  touchesEntities:
+    - entity:dashboard

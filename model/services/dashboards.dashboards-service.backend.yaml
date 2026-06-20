@@ -1,0 +1,14 @@
+id: service:dashboards.dashboards-service@backend
+kind: InternalService
+name: Dashboards Service
+status: applied
+spec:
+  featureId: feature:dashboards.management
+  targetId: target:backend
+  interface:
+    - { method: create, input: CreateDashboardDto, output: Dashboard }
+    - { method: chartData, input: "widgetId, filters", output: ChartResult }
+    - { method: refresh, input: dashboardId, output: "{ refreshed }" }
+  usesServices:
+    - service:ai-processing.ai-service@backend
+  callsExternal: []

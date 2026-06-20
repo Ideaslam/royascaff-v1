@@ -1,0 +1,12 @@
+id: feature:auth.register
+kind: Feature
+name: User Registration
+status: applied
+spec:
+  moduleId: module:auth
+  visibility: both
+  subfeatures:
+    - collect registration fields
+    - validate input
+    - create user record
+    - send welcome notification

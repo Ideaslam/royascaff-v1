@@ -1,0 +1,7 @@
+id: target:mobile
+kind: Target
+name: Mobile App
+description: Modeled abstractly; concrete stack chosen when mobile is built.
+status: planned
+spec:
+  stack: abstract

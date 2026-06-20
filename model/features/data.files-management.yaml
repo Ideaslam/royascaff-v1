@@ -1,0 +1,10 @@
+id: feature:data.files-management
+kind: Feature
+name: Data Files Management
+status: applied
+spec:
+  moduleId: module:data
+  visibility: both
+  subfeatures:
+    - list uploaded files
+    - delete file (with dashboard impact warning)

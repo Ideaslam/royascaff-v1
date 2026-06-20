@@ -1,0 +1,24 @@
+id: endpoint:dashboards.chart-data@backend
+kind: Endpoint
+name: Get Widget Chart Data
+status: applied
+spec:
+  featureId: feature:dashboards.viewer
+  targetId: target:backend
+  method: GET
+  route: /dashboards/:id/widgets/:widgetId/data
+  auth: authenticated
+  input:
+    params:
+      - { name: id, type: string, required: true }
+      - { name: widgetId, type: string, required: true }
+  output:
+    status: 200
+    shape: ChartResultDto
+    fields:
+      - { name: labels, type: "string[]", required: true }
+      - { name: datasets, type: "object[]", required: true }
+  usesServices:
+    - service:dashboards.dashboards-service@backend
+  touchesEntities:
+    - entity:chart-widget

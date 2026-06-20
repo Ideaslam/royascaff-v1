@@ -1,0 +1,11 @@
+id: ext:mailjet
+kind: ExternalService
+name: MailJet
+status: planned
+spec:
+  provider: MailJet
+  interface: IMailProvider
+  secretsEnv:
+    - MAILJET_API_KEY
+    - MAILJET_SECRET_KEY
+  contract: send(template, to, vars) — transactional email only.

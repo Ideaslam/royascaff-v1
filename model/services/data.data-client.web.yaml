@@ -1,0 +1,13 @@
+id: service:data.data-client@web
+kind: InternalService
+name: Data HTTP Client
+status: applied
+spec:
+  featureId: feature:data.upload-csv
+  targetId: target:web
+  interface:
+    - { method: uploadFile, input: File, output: "Observable<UploadResponse>" }
+    - { method: getFiles, input: "page, limit", output: "Observable<Paginated<CsvFile>>" }
+    - { method: updateColumnDescriptions, input: "fileId, columns", output: Observable }
+  usesServices: []
+  callsExternal: []

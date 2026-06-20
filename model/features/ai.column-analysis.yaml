@@ -1,0 +1,11 @@
+id: feature:ai-processing.column-analysis
+kind: Feature
+name: AI Column Analysis
+status: applied
+spec:
+  moduleId: module:ai-processing
+  visibility: backend-only
+  subfeatures:
+    - build prompt from column metadata (never raw rows)
+    - call AI provider
+    - write back AI descriptions and inferred types

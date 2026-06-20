@@ -1,0 +1,10 @@
+id: module:data
+kind: Module
+name: Data
+description: CSV file lifecycle — upload, row persistence, column metadata, reuse.
+status: applied
+spec:
+  audience: authenticated editors and admins
+  kindOf: business
+  dependsOn:
+    - module:auth

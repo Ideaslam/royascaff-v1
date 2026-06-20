@@ -1,0 +1,10 @@
+id: feature:audit.logs
+kind: Feature
+name: Audit Logs
+status: planned
+spec:
+  moduleId: module:audit
+  visibility: both
+  subfeatures:
+    - searchable, filterable audit list
+    - immutable records (no delete)

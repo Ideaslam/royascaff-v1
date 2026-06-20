@@ -1,0 +1,14 @@
+id: job:ai-processing.csv-analysis@backend
+kind: Job
+name: CSV Analysis Job
+status: applied
+spec:
+  featureId: feature:ai-processing.column-analysis
+  targetId: target:backend
+  queue: csv-analysis
+  trigger: enqueued by data.uploadFile after R2 upload
+  timeoutSeconds: 300
+  usesServices:
+    - service:ai-processing.ai-service@backend
+  callsExternal:
+    - ext:claude

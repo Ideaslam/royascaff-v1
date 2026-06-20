@@ -1,0 +1,11 @@
+id: feature:sharing.share
+kind: Feature
+name: Dashboard Sharing
+status: planned
+spec:
+  moduleId: module:sharing
+  visibility: both
+  subfeatures:
+    - generate share link with permissions
+    - public token-based viewer
+    - revoke link

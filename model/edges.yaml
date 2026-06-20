@@ -1,0 +1,103 @@
+edges:
+  # ─── App composition ──────────────────────────────────────────────
+  - { from: app:customer-portal, type: includesModule, to: module:auth }
+  - { from: app:customer-portal, type: includesModule, to: module:users }
+  - { from: app:customer-portal, type: includesModule, to: module:projects }
+  - { from: app:customer-portal, type: includesModule, to: module:data }
+  - { from: app:customer-portal, type: includesModule, to: module:dashboards }
+  - { from: app:customer-portal, type: includesModule, to: module:sharing }
+  - { from: app:customer-portal, type: includesModule, to: module:export }
+  - { from: app:customer-portal, type: includesModule, to: module:notifications }
+  - { from: app:customer-portal, type: includesModule, to: module:subscriptions }
+  - { from: app:customer-portal, type: shipsOn, to: target:web }
+  - { from: app:customer-portal, type: shipsOn, to: target:mobile }
+  - { from: app:admin-portal, type: includesModule, to: module:auth }
+  - { from: app:admin-portal, type: includesModule, to: module:users }
+  - { from: app:admin-portal, type: includesModule, to: module:subscriptions }
+  - { from: app:admin-portal, type: includesModule, to: module:audit }
+  - { from: app:admin-portal, type: includesModule, to: module:settings }
+  - { from: app:admin-portal, type: shipsOn, to: target:web }
+
+  # ─── Module dependencies ──────────────────────────────────────────
+  - { from: module:users, type: dependsOn, to: module:auth }
+  - { from: module:projects, type: dependsOn, to: module:auth }
+  - { from: module:projects, type: dependsOn, to: module:users }
+  - { from: module:data, type: dependsOn, to: module:auth }
+  - { from: module:dashboards, type: dependsOn, to: module:projects }
+  - { from: module:dashboards, type: dependsOn, to: module:data }
+  - { from: module:dashboards, type: dependsOn, to: module:ai-processing }
+  - { from: module:sharing, type: dependsOn, to: module:dashboards }
+  - { from: module:export, type: dependsOn, to: module:dashboards }
+  - { from: module:notifications, type: dependsOn, to: module:auth }
+  - { from: module:subscriptions, type: dependsOn, to: module:users }
+  - { from: module:audit, type: dependsOn, to: module:auth }
+  - { from: module:settings, type: dependsOn, to: module:auth }
+
+  # ─── Module -> Feature ────────────────────────────────────────────
+  - { from: module:auth, type: hasFeature, to: feature:auth.login }
+  - { from: module:auth, type: hasFeature, to: feature:auth.register }
+  - { from: module:users, type: hasFeature, to: feature:users.profile }
+  - { from: module:users, type: hasFeature, to: feature:users.admin-management }
+  - { from: module:projects, type: hasFeature, to: feature:projects.management }
+  - { from: module:data, type: hasFeature, to: feature:data.upload-csv }
+  - { from: module:data, type: hasFeature, to: feature:data.column-review }
+  - { from: module:data, type: hasFeature, to: feature:data.files-management }
+  - { from: module:ai-processing, type: hasFeature, to: feature:ai-processing.column-analysis }
+  - { from: module:dashboards, type: hasFeature, to: feature:dashboards.management }
+  - { from: module:dashboards, type: hasFeature, to: feature:dashboards.viewer }
+  - { from: module:sharing, type: hasFeature, to: feature:sharing.share }
+  - { from: module:export, type: hasFeature, to: feature:export.export }
+  - { from: module:notifications, type: hasFeature, to: feature:notifications.center }
+  - { from: module:subscriptions, type: hasFeature, to: feature:subscriptions.management }
+  - { from: module:audit, type: hasFeature, to: feature:audit.logs }
+  - { from: module:settings, type: hasFeature, to: feature:settings.system }
+
+  # ─── Feature -> Target (projections) ──────────────────────────────
+  - { from: feature:auth.login, type: projectsOnto, to: target:backend }
+  - { from: feature:auth.login, type: projectsOnto, to: target:web }
+  - { from: feature:data.upload-csv, type: projectsOnto, to: target:backend }
+  - { from: feature:data.upload-csv, type: projectsOnto, to: target:web }
+  - { from: feature:data.upload-csv, type: projectsOnto, to: target:mobile }
+  - { from: feature:data.column-review, type: projectsOnto, to: target:backend }
+  - { from: feature:data.files-management, type: projectsOnto, to: target:backend }
+  - { from: feature:data.files-management, type: projectsOnto, to: target:web }
+  - { from: feature:ai-processing.column-analysis, type: projectsOnto, to: target:backend }
+  - { from: feature:dashboards.management, type: projectsOnto, to: target:backend }
+  - { from: feature:dashboards.viewer, type: projectsOnto, to: target:backend }
+  - { from: feature:dashboards.viewer, type: projectsOnto, to: target:web }
+  - { from: feature:users.admin-management, type: projectsOnto, to: target:web }
+
+  # ─── Endpoint -> Service ──────────────────────────────────────────
+  - { from: endpoint:auth.login@backend, type: usesService, to: service:auth.auth-service@backend }
+  - { from: endpoint:data.upload-file@backend, type: usesService, to: service:data.data-service@backend }
+  - { from: endpoint:data.list-files@backend, type: usesService, to: service:data.data-service@backend }
+  - { from: endpoint:data.update-columns@backend, type: usesService, to: service:data.data-service@backend }
+  - { from: endpoint:dashboards.create@backend, type: usesService, to: service:dashboards.dashboards-service@backend }
+  - { from: endpoint:dashboards.chart-data@backend, type: usesService, to: service:dashboards.dashboards-service@backend }
+  - { from: service:data.data-service@backend, type: usesService, to: service:ai-processing.ai-service@backend }
+  - { from: service:dashboards.dashboards-service@backend, type: usesService, to: service:ai-processing.ai-service@backend }
+  - { from: page:data.upload-wizard@web, type: usesService, to: service:data.data-client@web }
+  - { from: page:data.files-list@web, type: usesService, to: service:data.data-client@web }
+  - { from: page:dashboards.viewer@web, type: usesService, to: service:dashboards.dashboards-client@web }
+
+  # ─── Service/Job -> External ──────────────────────────────────────
+  - { from: service:auth.auth-service@backend, type: callsExternal, to: ext:oauth }
+  - { from: service:data.data-service@backend, type: callsExternal, to: ext:r2 }
+  - { from: service:ai-processing.ai-service@backend, type: callsExternal, to: ext:claude }
+  - { from: job:ai-processing.csv-analysis@backend, type: callsExternal, to: ext:claude }
+
+  # ─── Page -> Endpoint ─────────────────────────────────────────────
+  - { from: page:auth.login@web, type: callsEndpoint, to: endpoint:auth.login@backend }
+  - { from: page:data.upload-wizard@web, type: callsEndpoint, to: endpoint:data.upload-file@backend }
+  - { from: page:data.upload-wizard@web, type: callsEndpoint, to: endpoint:data.update-columns@backend }
+  - { from: page:data.files-list@web, type: callsEndpoint, to: endpoint:data.list-files@backend }
+  - { from: page:dashboards.viewer@web, type: callsEndpoint, to: endpoint:dashboards.chart-data@backend }
+  - { from: page:data.upload-wizard@mobile, type: callsEndpoint, to: endpoint:data.upload-file@backend }
+
+  # ─── Endpoint -> Entity ───────────────────────────────────────────
+  - { from: endpoint:auth.login@backend, type: touchesEntity, to: entity:user }
+  - { from: endpoint:data.upload-file@backend, type: touchesEntity, to: entity:csv-file }
+  - { from: endpoint:data.list-files@backend, type: touchesEntity, to: entity:csv-file }
+  - { from: endpoint:data.update-columns@backend, type: touchesEntity, to: entity:column-metadata }
+  - { from: endpoint:dashboards.create@backend, type: touchesEntity, to: entity:dashboard }
+  - { from: endpoint:dashboards.chart-data@backend, type: touchesEntity, to: entity:chart-widget }

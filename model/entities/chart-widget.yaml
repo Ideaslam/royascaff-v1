@@ -1,0 +1,13 @@
+id: entity:chart-widget
+kind: DataEntity
+name: Chart Widget
+status: applied
+spec:
+  collection: chartwidgets
+  fields:
+    - { name: dashboardId, type: ObjectId, required: true }
+    - { name: chartType, type: string, required: true }
+    - { name: query, type: object, required: true }
+    - { name: layout, type: object, required: false }
+  indexes:
+    - dashboardId

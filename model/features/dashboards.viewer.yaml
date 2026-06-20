@@ -1,0 +1,11 @@
+id: feature:dashboards.viewer
+kind: Feature
+name: Dynamic Dashboard Viewer
+status: applied
+spec:
+  moduleId: module:dashboards
+  visibility: both
+  subfeatures:
+    - render widgets dynamically
+    - fetch chart data per widget (cache -> DB -> recalc)
+    - manual refresh invalidates cache

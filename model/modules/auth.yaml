@@ -1,0 +1,9 @@
+id: module:auth
+kind: Module
+name: Auth
+description: Registration, login, OAuth, JWT lifecycle, password reset, current-user.
+status: applied
+spec:
+  audience: public and authenticated users
+  kindOf: business
+  dependsOn: []

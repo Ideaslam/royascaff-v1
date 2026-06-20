@@ -1,0 +1,27 @@
+id: endpoint:data.upload-file@backend
+kind: Endpoint
+name: Upload CSV File
+status: applied
+spec:
+  featureId: feature:data.upload-csv
+  targetId: target:backend
+  method: POST
+  route: /data/upload/file
+  auth: authenticated
+  async: true
+  input:
+    body:
+      - { name: file, type: multipart/form-data, required: true }
+  output:
+    status: 202
+    shape: UploadAcceptedDto
+    fields:
+      - { name: fileId, type: string, required: true }
+      - { name: jobId, type: string, required: true }
+      - { name: status, type: string, required: true }
+  errors:
+    - { status: 400, when: not a CSV or over 50MB }
+  usesServices:
+    - service:data.data-service@backend
+  touchesEntities:
+    - entity:csv-file

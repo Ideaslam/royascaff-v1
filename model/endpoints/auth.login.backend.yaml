@@ -1,0 +1,26 @@
+id: endpoint:auth.login@backend
+kind: Endpoint
+name: Login
+status: applied
+spec:
+  featureId: feature:auth.login
+  targetId: target:backend
+  method: POST
+  route: /auth/login
+  auth: public
+  input:
+    body:
+      - { name: email, type: string, required: true }
+      - { name: password, type: string, required: true }
+  output:
+    status: 200
+    shape: TokenPairDto
+    fields:
+      - { name: accessToken, type: string, required: true }
+      - { name: refreshToken, type: string, required: true }
+  errors:
+    - { status: 401, when: invalid credentials }
+  usesServices:
+    - service:auth.auth-service@backend
+  touchesEntities:
+    - entity:user

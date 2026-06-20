@@ -1,0 +1,12 @@
+id: service:dashboards.dashboards-client@web
+kind: InternalService
+name: Dashboards HTTP Client
+status: applied
+spec:
+  featureId: feature:dashboards.viewer
+  targetId: target:web
+  interface:
+    - { method: getDashboard, input: id, output: Observable<Dashboard> }
+    - { method: getWidgetData, input: widgetId, output: Observable<ChartResult> }
+  usesServices: []
+  callsExternal: []

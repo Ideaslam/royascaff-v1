@@ -1,0 +1,21 @@
+id: app:customer-portal
+kind: App
+name: Customer Portal
+description: The end-user product — create projects, upload data, generate and view dashboards.
+status: applied
+spec:
+  audience: business analysts / editors / viewers
+  targets:
+    - target:web
+    - target:mobile
+  shell: app-shell
+  includes:
+    - module:auth
+    - module:users
+    - module:projects
+    - module:data
+    - module:dashboards
+    - module:sharing
+    - module:export
+    - module:notifications
+    - module:subscriptions

@@ -1,0 +1,12 @@
+id: module:dashboards
+kind: Module
+name: Dashboards
+description: Dashboard lifecycle, widgets, dynamic data-serving endpoints, caching.
+status: applied
+spec:
+  audience: editors, viewers, public via share link
+  kindOf: business
+  dependsOn:
+    - module:projects
+    - module:data
+    - module:ai-processing

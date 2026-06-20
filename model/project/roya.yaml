@@ -1,0 +1,14 @@
+id: project:roya
+kind: Project
+name: Roya AI Dynamo
+description: AI-powered SaaS platform that turns uploaded CSV data into auto-generated dashboards.
+status: applied
+spec:
+  brand:
+    main: "#ff6043"
+    primary: "#5922ea"
+    secondary: "#282828"
+  defaultTargets:
+    - target:backend
+    - target:web
+    - target:mobile

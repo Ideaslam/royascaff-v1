@@ -1,0 +1,11 @@
+id: ext:oauth
+kind: ExternalService
+name: OAuth Providers
+status: planned
+spec:
+  provider: Google / Microsoft OAuth 2.0
+  interface: IOAuthProvider
+  secretsEnv:
+    - OAUTH_GOOGLE_CLIENT_ID
+    - OAUTH_GOOGLE_CLIENT_SECRET
+  contract: getAuthUrl, exchangeCode — backend handles the callback.
