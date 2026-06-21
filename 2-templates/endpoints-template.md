@@ -20,7 +20,10 @@ Each endpoint entry should describe:
 - auth/access
 - input
 - return
+- **services called** (must exist in `3-plan/services.md`)
 - notes or constraints
+
+Endpoints call services — not repositories or external providers directly.
 
 ## File-Level Rules
 
@@ -87,6 +90,11 @@ Each endpoint entry should describe:
 - Data:
   - `{field}: {type} - {description}`
 
+#### Services Called
+
+- `{ServiceName}.{methodName}() - {why this endpoint uses it}`
+- `{ServiceName}.{methodName}() - {why this endpoint uses it}`
+
 #### Business Rules
 
 - {Rule 1}
@@ -118,6 +126,8 @@ Use this if you want a shorter style but still consistent.
 - Return:
   - Status: `{...}`
   - Shape: `{...}`
+- Services:
+  - `{ServiceName}.{methodName}() - {why}`
 - Notes:
   - `{...}`
 ```
@@ -171,6 +181,11 @@ This endpoint is for admin usage and should not return password or secret fields
   - `limit: number - page size`
   - `total: number - total matched records`
 
+#### Services Called
+
+- `UsersService.listUsers() - loads paginated filtered users`
+- `UsersService.deleteUser() - soft-deletes user when DELETE is used`
+
 #### Business Rules
 
 - Return active users by default unless explicitly filtered
@@ -199,6 +214,8 @@ This endpoint is for admin usage and should not return password or secret fields
   params, query, and body fields
 - `Return`
   status + response DTO/shape
+- `Services Called`
+  backend services (and methods) this endpoint invokes — must match `3-plan/services.md`
 - `Business Rules`
   important logic rules
 - `Constraints / Notes`
@@ -206,4 +223,5 @@ This endpoint is for admin usage and should not return password or secret fields
 
 ## Final Guidance
 
-When AI creates `endpoints.md`, it should copy this endpoint entry format for every endpoint so the whole file stays consistent and easy to scan.
+When AI creates `endpoints.md`, it should copy this endpoint entry format for every endpoint so the whole file stays consistent and easy to scan.  
+Create `3-plan/services.md` first; every service listed here must already be defined there.
