@@ -26,6 +26,7 @@ Registration, login, OAuth, JWT lifecycle, password reset, current-user.
 - Kind: business
 - Features:
   - `feature:auth.login` — User Login
+  - `feature:auth.password-reset` — Password Reset
   - `feature:auth.register` — User Registration
 
 ## Dashboards (`module:dashboards`)

@@ -19,7 +19,9 @@
   - `login(LoginDto) -> { accessToken, refreshToken }`
   - `register(RegisterDto) -> User`
   - `refresh(string) -> { accessToken }`
-- Calls external: ext:oauth
+  - `forgotPassword(string) -> void`
+  - `resetPassword(token, newPassword) -> void`
+- Calls external: ext:oauth, ext:mailjet
 
 ### Dashboards HTTP Client (`service:dashboards.dashboards-client@web`)
 

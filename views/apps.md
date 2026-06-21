@@ -23,6 +23,7 @@
   - `module:projects` — Projects
   - `module:data` — Data
   - `module:dashboards` — Dashboards
+  - `module:ai-processing` — AI Processing
   - `module:sharing` — Sharing
   - `module:export` — Export
   - `module:notifications` — Notifications

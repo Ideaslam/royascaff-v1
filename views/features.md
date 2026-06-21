@@ -35,10 +35,20 @@
   - issue JWT access + refresh tokens
   - OAuth login path
 
+### Password Reset (`feature:auth.password-reset`)
+
+Request a reset link by email and set a new password via a tokenized link.
+
+- Visibility: both
+- Projects onto: target:backend, target:web
+- Subfeatures:
+  - request reset link (emails a tokenized URL via MailJet)
+  - validate token and set new password
+
 ### User Registration (`feature:auth.register`)
 
 - Visibility: both
-- Projects onto: none
+- Projects onto: target:backend, target:web
 - Subfeatures:
   - collect registration fields
   - validate input

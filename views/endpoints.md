@@ -4,9 +4,21 @@
 
 ## Module: Auth
 
+### Forgot Password (`endpoint:auth.forgot-password@backend`)
+
+- `POST /auth/forgot-password` · auth: public · status: applied
+- Uses services: service:auth.auth-service@backend
+- Touches entities: entity:user
+
 ### Login (`endpoint:auth.login@backend`)
 
 - `POST /auth/login` · auth: public · status: applied
+- Uses services: service:auth.auth-service@backend
+- Touches entities: entity:user
+
+### Reset Password (`endpoint:auth.reset-password@backend`)
+
+- `POST /auth/reset-password` · auth: public · status: applied
 - Uses services: service:auth.auth-service@backend
 - Touches entities: entity:user
 
