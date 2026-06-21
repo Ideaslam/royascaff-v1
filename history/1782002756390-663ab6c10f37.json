@@ -1,0 +1,3027 @@
+{
+  "id": "663ab6c10f37",
+  "message": "before: [skeleton] add Feature: ai-model-list",
+  "parent": "663ab6c10f37",
+  "createdAt": "2026-06-21T00:45:56.389Z",
+  "graphHash": "663ab6c10f37834748cf4f467952cf1a39cdee20756a47c739cbf67a02e6a563",
+  "snapshot": {
+    "nodes": [
+      {
+        "id": "project:roya",
+        "name": "Roya AI Dynamo",
+        "description": "AI-powered SaaS platform that turns uploaded CSV data into auto-generated dashboards.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Project",
+        "spec": {
+          "brand": {
+            "main": "#ff6043",
+            "primary": "#5922ea",
+            "secondary": "#282828"
+          },
+          "defaultTargets": [
+            "target:backend",
+            "target:web",
+            "target:mobile"
+          ]
+        }
+      },
+      {
+        "id": "app:admin-portal",
+        "name": "Admin Portal",
+        "description": "Platform administration — manage users, subscriptions, audit logs, and system settings.",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "App",
+        "spec": {
+          "audience": "admin",
+          "includes": [
+            "module:auth",
+            "module:users",
+            "module:subscriptions",
+            "module:audit",
+            "module:settings"
+          ],
+          "targets": [
+            "target:web"
+          ],
+          "shell": "admin-shell"
+        }
+      },
+      {
+        "id": "app:customer-portal",
+        "name": "Customer Portal",
+        "description": "The end-user product — create projects, upload data, generate and view dashboards.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "App",
+        "spec": {
+          "audience": "business analysts / editors / viewers",
+          "includes": [
+            "module:auth",
+            "module:users",
+            "module:projects",
+            "module:data",
+            "module:dashboards",
+            "module:ai-processing",
+            "module:sharing",
+            "module:export",
+            "module:notifications",
+            "module:subscriptions"
+          ],
+          "targets": [
+            "target:web",
+            "target:mobile"
+          ],
+          "shell": "app-shell"
+        }
+      },
+      {
+        "id": "target:backend",
+        "name": "Backend API",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Target",
+        "spec": {
+          "stack": "nestjs",
+          "rootPath": "roya-ai-dynamo-api/src",
+          "ruleRefs": [
+            "5-rules/backend-rule.md",
+            "5-rules/custom-feature-rules.md"
+          ],
+          "templateRefs": []
+        }
+      },
+      {
+        "id": "target:mobile",
+        "name": "Mobile App",
+        "description": "Modeled abstractly; concrete stack chosen when mobile is built.",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Target",
+        "spec": {
+          "stack": "abstract",
+          "ruleRefs": [],
+          "templateRefs": []
+        }
+      },
+      {
+        "id": "target:web",
+        "name": "Web App",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Target",
+        "spec": {
+          "stack": "angular",
+          "rootPath": "roya-ai-dynamo-frontend/src",
+          "ruleRefs": [
+            "5-rules/frontend-rule.md",
+            "5-rules/custom-feature-rules.md"
+          ],
+          "templateRefs": []
+        }
+      },
+      {
+        "id": "module:ai-processing",
+        "name": "AI Processing",
+        "description": "Orchestrates AI background jobs — CSV column analysis and dashboard generation.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Module",
+        "spec": {
+          "audience": "system",
+          "dependsOn": [],
+          "kindOf": "business"
+        }
+      },
+      {
+        "id": "module:audit",
+        "name": "Audit Logs",
+        "description": "Immutable system-wide audit trail; admin read access.",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Module",
+        "spec": {
+          "audience": "admin",
+          "dependsOn": [
+            "module:auth"
+          ],
+          "kindOf": "admin"
+        }
+      },
+      {
+        "id": "module:auth",
+        "name": "Auth",
+        "description": "Registration, login, OAuth, JWT lifecycle, password reset, current-user.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Module",
+        "spec": {
+          "audience": "public and authenticated users",
+          "dependsOn": [],
+          "kindOf": "business"
+        }
+      },
+      {
+        "id": "module:dashboards",
+        "name": "Dashboards",
+        "description": "Dashboard lifecycle, widgets, dynamic data-serving endpoints, caching.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Module",
+        "spec": {
+          "audience": "editors, viewers, public via share link",
+          "dependsOn": [
+            "module:projects",
+            "module:data",
+            "module:ai-processing"
+          ],
+          "kindOf": "business"
+        }
+      },
+      {
+        "id": "module:data",
+        "name": "Data",
+        "description": "CSV file lifecycle — upload, row persistence, column metadata, reuse.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Module",
+        "spec": {
+          "audience": "authenticated editors and admins",
+          "dependsOn": [
+            "module:auth"
+          ],
+          "kindOf": "business"
+        }
+      },
+      {
+        "id": "module:export",
+        "name": "Export",
+        "description": "PDF and Excel/CSV exports of dashboard data.",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Module",
+        "spec": {
+          "audience": "editors and viewers with export permission",
+          "dependsOn": [
+            "module:dashboards"
+          ],
+          "kindOf": "business"
+        }
+      },
+      {
+        "id": "module:notifications",
+        "name": "Notifications",
+        "description": "In-app and email notifications for generation, errors, and share events.",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Module",
+        "spec": {
+          "audience": "all authenticated users",
+          "dependsOn": [
+            "module:auth"
+          ],
+          "kindOf": "business"
+        }
+      },
+      {
+        "id": "module:projects",
+        "name": "Projects",
+        "description": "Organizational container grouping related dashboards.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Module",
+        "spec": {
+          "audience": "authenticated editors and admins",
+          "dependsOn": [
+            "module:auth",
+            "module:users"
+          ],
+          "kindOf": "business"
+        }
+      },
+      {
+        "id": "module:settings",
+        "name": "System Settings",
+        "description": "Global system configuration, feature flags, AI model settings.",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Module",
+        "spec": {
+          "audience": "admin",
+          "dependsOn": [
+            "module:auth"
+          ],
+          "kindOf": "admin"
+        }
+      },
+      {
+        "id": "module:sharing",
+        "name": "Sharing",
+        "description": "Secure shareable dashboard links with view/edit permissions.",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Module",
+        "spec": {
+          "audience": "editors, viewers, mixed",
+          "dependsOn": [
+            "module:dashboards"
+          ],
+          "kindOf": "business"
+        }
+      },
+      {
+        "id": "module:subscriptions",
+        "name": "Subscriptions",
+        "description": "Plans, user subscriptions, usage-limit enforcement, payment webhooks.",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Module",
+        "spec": {
+          "audience": "admin (management), editors (own plan)",
+          "dependsOn": [
+            "module:users"
+          ],
+          "kindOf": "business"
+        }
+      },
+      {
+        "id": "module:users",
+        "name": "Users",
+        "description": "User profiles, roles, admin user management, GDPR deletion.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Module",
+        "spec": {
+          "audience": "authenticated users (self-service), admin (management)",
+          "dependsOn": [
+            "module:auth"
+          ],
+          "kindOf": "business"
+        }
+      },
+      {
+        "id": "feature:ai-processing.column-analysis",
+        "name": "AI Column Analysis",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:ai-processing",
+          "subfeatures": [
+            "build prompt from column metadata (never raw rows)",
+            "call AI provider",
+            "write back AI descriptions and inferred types"
+          ],
+          "visibility": "backend-only"
+        }
+      },
+      {
+        "id": "feature:audit.logs",
+        "name": "Audit Logs",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:audit",
+          "subfeatures": [
+            "searchable, filterable audit list",
+            "immutable records (no delete)"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:auth.login",
+        "name": "User Login",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:auth",
+          "subfeatures": [
+            "submit email + password",
+            "validate credentials",
+            "issue JWT access + refresh tokens",
+            "OAuth login path"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:auth.password-reset",
+        "name": "Password Reset",
+        "description": "Request a reset link by email and set a new password via a tokenized link.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:auth",
+          "subfeatures": [
+            "request reset link (emails a tokenized URL via MailJet)",
+            "validate token and set new password"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:auth.register",
+        "name": "User Registration",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:auth",
+          "subfeatures": [
+            "collect registration fields",
+            "validate input",
+            "create user record",
+            "send welcome notification"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:dashboards.management",
+        "name": "Dashboard Management",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:dashboards",
+          "subfeatures": [
+            "create dashboard with purpose + data sources",
+            "trigger AI generation job",
+            "duplicate / delete dashboard"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:dashboards.viewer",
+        "name": "Dynamic Dashboard Viewer",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:dashboards",
+          "subfeatures": [
+            "render widgets dynamically",
+            "fetch chart data per widget (cache -> DB -> recalc)",
+            "manual refresh invalidates cache"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:data.column-review",
+        "name": "Column Description Review",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:data",
+          "subfeatures": [
+            "show AI-suggested column descriptions",
+            "let user edit before confirming",
+            "confirm columns to unlock dashboard generation"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:data.files-management",
+        "name": "Data Files Management",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:data",
+          "subfeatures": [
+            "list uploaded files",
+            "delete file (with dashboard impact warning)"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:data.upload-csv",
+        "name": "Upload CSV File",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:data",
+          "subfeatures": [
+            "drag-and-drop upload to backend",
+            "backend streams file to R2 (no direct frontend upload)",
+            "persist file metadata and rows",
+            "trigger AI column analysis job"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:export.export",
+        "name": "Data Export",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:export",
+          "subfeatures": [
+            "PDF report (async)",
+            "Excel / CSV export"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:notifications.center",
+        "name": "Notifications",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:notifications",
+          "subfeatures": [
+            "in-app notification list + unread count",
+            "email dispatch on key events"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:projects.management",
+        "name": "Project Management",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:projects",
+          "subfeatures": [
+            "create / list / delete projects",
+            "cascade delete dashboards"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:settings.system",
+        "name": "System Settings",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:settings",
+          "subfeatures": [
+            "system settings CRUD",
+            "feature flags",
+            "AI model configuration (no raw key exposure)"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:sharing.share",
+        "name": "Dashboard Sharing",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:sharing",
+          "subfeatures": [
+            "generate share link with permissions",
+            "public token-based viewer",
+            "revoke link"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:subscriptions.management",
+        "name": "Subscription Management",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:subscriptions",
+          "subfeatures": [
+            "view plans and current subscription",
+            "subscribe / cancel",
+            "enforce usage limits"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:users.admin-management",
+        "name": "Admin User Management",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:users",
+          "subfeatures": [
+            "list and filter users",
+            "edit role",
+            "deactivate / delete user"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "feature:users.profile",
+        "name": "Profile Self-Service",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Feature",
+        "spec": {
+          "moduleId": "module:users",
+          "subfeatures": [
+            "edit name, language preference",
+            "change password"
+          ],
+          "visibility": "both"
+        }
+      },
+      {
+        "id": "entity:chart-widget",
+        "name": "Chart Widget",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "DataEntity",
+        "spec": {
+          "collection": "chartwidgets",
+          "fields": [
+            {
+              "name": "dashboardId",
+              "type": "ObjectId",
+              "required": true
+            },
+            {
+              "name": "chartType",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "query",
+              "type": "object",
+              "required": true
+            },
+            {
+              "name": "layout",
+              "type": "object",
+              "required": false
+            }
+          ],
+          "indexes": [
+            "dashboardId"
+          ],
+          "relations": []
+        }
+      },
+      {
+        "id": "entity:column-metadata",
+        "name": "Column Metadata",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "DataEntity",
+        "spec": {
+          "collection": "columnmetadata",
+          "fields": [
+            {
+              "name": "fileId",
+              "type": "ObjectId",
+              "required": true
+            },
+            {
+              "name": "columnName",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "inferredType",
+              "type": "string",
+              "required": false
+            },
+            {
+              "name": "aiDescription",
+              "type": "string",
+              "required": false
+            },
+            {
+              "name": "userDescription",
+              "type": "string",
+              "required": false
+            },
+            {
+              "name": "confirmed",
+              "type": "boolean",
+              "required": true
+            }
+          ],
+          "indexes": [
+            "fileId"
+          ],
+          "relations": []
+        }
+      },
+      {
+        "id": "entity:csv-file",
+        "name": "CSV File",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "DataEntity",
+        "spec": {
+          "collection": "csvfiles",
+          "fields": [
+            {
+              "name": "ownerId",
+              "type": "ObjectId",
+              "required": true
+            },
+            {
+              "name": "originalFilename",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "storageKey",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "fileSizeBytes",
+              "type": "number",
+              "required": true
+            },
+            {
+              "name": "status",
+              "type": "enum(uploading,analyzing,confirmed,error)",
+              "required": true
+            },
+            {
+              "name": "uploadedAt",
+              "type": "Date",
+              "required": false
+            }
+          ],
+          "indexes": [
+            "ownerId"
+          ],
+          "relations": []
+        }
+      },
+      {
+        "id": "entity:dashboard",
+        "name": "Dashboard",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "DataEntity",
+        "spec": {
+          "collection": "dashboards",
+          "fields": [
+            {
+              "name": "projectId",
+              "type": "ObjectId",
+              "required": true
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "purpose",
+              "type": "string",
+              "required": false
+            },
+            {
+              "name": "status",
+              "type": "enum(generating,ready,error)",
+              "required": true
+            }
+          ],
+          "indexes": [
+            "projectId"
+          ],
+          "relations": []
+        }
+      },
+      {
+        "id": "entity:user",
+        "name": "User",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "DataEntity",
+        "spec": {
+          "collection": "users",
+          "fields": [
+            {
+              "name": "email",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "passwordHash",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "role",
+              "type": "enum(admin,editor,viewer)",
+              "required": true
+            },
+            {
+              "name": "language",
+              "type": "enum(en,ar)",
+              "required": false
+            },
+            {
+              "name": "isActive",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "name": "passwordResetToken",
+              "type": "string",
+              "required": false
+            },
+            {
+              "name": "passwordResetExpiry",
+              "type": "Date",
+              "required": false
+            }
+          ],
+          "indexes": [
+            "email (unique)"
+          ],
+          "relations": []
+        }
+      },
+      {
+        "id": "ext:claude",
+        "name": "Anthropic Claude",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "ExternalService",
+        "spec": {
+          "provider": "Anthropic Claude",
+          "interface": "IAIProvider",
+          "secretsEnv": [
+            "ANTHROPIC_API_KEY",
+            "AI_MODEL"
+          ],
+          "contract": "analyzeColumns(metadata), generateDashboard(spec) — receives only column metadata, never raw rows."
+        }
+      },
+      {
+        "id": "ext:mailjet",
+        "name": "MailJet",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "ExternalService",
+        "spec": {
+          "provider": "MailJet",
+          "interface": "IMailProvider",
+          "secretsEnv": [
+            "MAILJET_API_KEY",
+            "MAILJET_SECRET_KEY"
+          ],
+          "contract": "send(template, to, vars) — transactional email only."
+        }
+      },
+      {
+        "id": "ext:oauth",
+        "name": "OAuth Providers",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "ExternalService",
+        "spec": {
+          "provider": "Google / Microsoft OAuth 2.0",
+          "interface": "IOAuthProvider",
+          "secretsEnv": [
+            "OAUTH_GOOGLE_CLIENT_ID",
+            "OAUTH_GOOGLE_CLIENT_SECRET"
+          ],
+          "contract": "getAuthUrl, exchangeCode — backend handles the callback."
+        }
+      },
+      {
+        "id": "ext:payment",
+        "name": "Payment Gateway",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "ExternalService",
+        "spec": {
+          "provider": "Stripe (or equivalent, via interface)",
+          "interface": "IPaymentProvider",
+          "secretsEnv": [
+            "PAYMENT_SECRET_KEY",
+            "PAYMENT_WEBHOOK_SECRET"
+          ],
+          "contract": "createSubscription, manageSubscription, verifyWebhook — webhook signatures validated."
+        }
+      },
+      {
+        "id": "ext:r2",
+        "name": "Cloudflare R2 Storage",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "ExternalService",
+        "spec": {
+          "provider": "Cloudflare R2 (S3-compatible)",
+          "interface": "IStorageProvider",
+          "secretsEnv": [
+            "R2_ACCESS_KEY",
+            "R2_SECRET_KEY",
+            "R2_BUCKET",
+            "R2_ENDPOINT"
+          ],
+          "contract": "upload(buffer), getSignedUrl(key), delete(key) — backend only, never called from frontend."
+        }
+      },
+      {
+        "id": "deliverable:admin-web@web",
+        "name": "Admin Portal Web",
+        "description": "The internal admin Angular web app. Git root for admin web code generation.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Deliverable",
+        "spec": {
+          "appId": "app:admin-portal",
+          "targetId": "target:web",
+          "rootPath": "roya-ai-dynamo-frontend-admin",
+          "gitRoot": true,
+          "shared": false
+        }
+      },
+      {
+        "id": "deliverable:api@backend",
+        "name": "Shared Backend API",
+        "description": "The NestJS API shared by every app. Single git root for backend code generation.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Deliverable",
+        "spec": {
+          "appId": "app:customer-portal",
+          "targetId": "target:backend",
+          "rootPath": "roya-ai-dynamo-api",
+          "gitRoot": true,
+          "shared": true
+        }
+      },
+      {
+        "id": "deliverable:customer-mobile@mobile",
+        "name": "Customer Portal Mobile",
+        "description": "The customer-facing mobile app. Planned git root; not yet scaffolded.",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Deliverable",
+        "spec": {
+          "appId": "app:customer-portal",
+          "targetId": "target:mobile",
+          "rootPath": "roya-ai-dynamo-mobile",
+          "gitRoot": true,
+          "shared": false
+        }
+      },
+      {
+        "id": "deliverable:customer-web@web",
+        "name": "Customer Portal Web",
+        "description": "The customer-facing Angular web app. Git root for customer web code generation.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Deliverable",
+        "spec": {
+          "appId": "app:customer-portal",
+          "targetId": "target:web",
+          "rootPath": "roya-ai-dynamo-frontend",
+          "gitRoot": true,
+          "shared": false
+        }
+      },
+      {
+        "id": "role:admin",
+        "name": "Admin",
+        "description": "Internal operator with full administrative access.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Role",
+        "spec": {
+          "scope": "project:roya",
+          "permissions": [
+            "manage-users",
+            "view-audit",
+            "manage-settings",
+            "manage-subscriptions"
+          ],
+          "inherits": []
+        }
+      },
+      {
+        "id": "role:editor",
+        "name": "Editor",
+        "description": "Customer who can create projects, upload data and build dashboards.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Role",
+        "spec": {
+          "scope": "app:customer-portal",
+          "permissions": [
+            "create-project",
+            "upload-data",
+            "review-columns",
+            "create-dashboard",
+            "share-dashboard"
+          ],
+          "inherits": []
+        }
+      },
+      {
+        "id": "role:viewer",
+        "name": "Viewer",
+        "description": "Customer with read-only access to shared dashboards.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Role",
+        "spec": {
+          "scope": "app:customer-portal",
+          "permissions": [
+            "view-dashboard",
+            "view-shared"
+          ],
+          "inherits": []
+        }
+      },
+      {
+        "id": "event:dashboard.generated",
+        "name": "Dashboard Generated",
+        "description": "Emitted when AI finishes generating dashboard widgets; notifies the owner.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Event",
+        "spec": {
+          "channel": "notifications",
+          "payload": [
+            {
+              "name": "dashboardId",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "userId",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "widgetCount",
+              "type": "number",
+              "required": false
+            }
+          ]
+        }
+      },
+      {
+        "id": "event:data.csv-uploaded",
+        "name": "CSV Uploaded",
+        "description": "Emitted when a CSV is stored and queued for AI column analysis.",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Event",
+        "spec": {
+          "channel": "csv-analysis",
+          "payload": [
+            {
+              "name": "fileId",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "userId",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "jobId",
+              "type": "string",
+              "required": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "endpoint:auth.forgot-password@backend",
+        "name": "Forgot Password",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Endpoint",
+        "spec": {
+          "featureId": "feature:auth.password-reset",
+          "targetId": "target:backend",
+          "method": "POST",
+          "route": "/auth/forgot-password",
+          "auth": "public",
+          "roles": [],
+          "input": {
+            "params": [],
+            "query": [],
+            "body": [
+              {
+                "name": "email",
+                "type": "string",
+                "required": true
+              }
+            ]
+          },
+          "output": {
+            "status": 200,
+            "shape": "{ ok: boolean }",
+            "fields": [
+              {
+                "name": "ok",
+                "type": "boolean",
+                "required": true
+              }
+            ]
+          },
+          "errors": [
+            {
+              "status": 200,
+              "when": "always (do not reveal whether the email exists)"
+            }
+          ],
+          "usesServices": [
+            "service:auth.auth-service@backend"
+          ],
+          "touchesEntities": [
+            "entity:user"
+          ],
+          "async": false
+        }
+      },
+      {
+        "id": "endpoint:auth.login@backend",
+        "name": "Login",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Endpoint",
+        "spec": {
+          "featureId": "feature:auth.login",
+          "targetId": "target:backend",
+          "method": "POST",
+          "route": "/auth/login",
+          "auth": "public",
+          "roles": [],
+          "input": {
+            "params": [],
+            "query": [],
+            "body": [
+              {
+                "name": "email",
+                "type": "string",
+                "required": true
+              },
+              {
+                "name": "password",
+                "type": "string",
+                "required": true
+              }
+            ]
+          },
+          "output": {
+            "status": 200,
+            "shape": "TokenPairDto",
+            "fields": [
+              {
+                "name": "accessToken",
+                "type": "string",
+                "required": true
+              },
+              {
+                "name": "refreshToken",
+                "type": "string",
+                "required": true
+              }
+            ]
+          },
+          "errors": [
+            {
+              "status": 401,
+              "when": "invalid credentials"
+            }
+          ],
+          "usesServices": [
+            "service:auth.auth-service@backend"
+          ],
+          "touchesEntities": [
+            "entity:user"
+          ],
+          "async": false
+        }
+      },
+      {
+        "id": "endpoint:auth.reset-password@backend",
+        "name": "Reset Password",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Endpoint",
+        "spec": {
+          "featureId": "feature:auth.password-reset",
+          "targetId": "target:backend",
+          "method": "POST",
+          "route": "/auth/reset-password",
+          "auth": "public",
+          "roles": [],
+          "input": {
+            "params": [],
+            "query": [],
+            "body": [
+              {
+                "name": "token",
+                "type": "string",
+                "required": true
+              },
+              {
+                "name": "newPassword",
+                "type": "string",
+                "required": true
+              }
+            ]
+          },
+          "output": {
+            "status": 200,
+            "shape": "{ ok: boolean }",
+            "fields": [
+              {
+                "name": "ok",
+                "type": "boolean",
+                "required": true
+              }
+            ]
+          },
+          "errors": [
+            {
+              "status": 400,
+              "when": "invalid or expired reset token"
+            }
+          ],
+          "usesServices": [
+            "service:auth.auth-service@backend"
+          ],
+          "touchesEntities": [
+            "entity:user"
+          ],
+          "async": false
+        }
+      },
+      {
+        "id": "endpoint:dashboards.chart-data@backend",
+        "name": "Get Widget Chart Data",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Endpoint",
+        "spec": {
+          "featureId": "feature:dashboards.viewer",
+          "targetId": "target:backend",
+          "method": "GET",
+          "route": "/dashboards/:id/widgets/:widgetId/data",
+          "auth": "authenticated",
+          "roles": [],
+          "input": {
+            "params": [
+              {
+                "name": "id",
+                "type": "string",
+                "required": true
+              },
+              {
+                "name": "widgetId",
+                "type": "string",
+                "required": true
+              }
+            ],
+            "query": [],
+            "body": []
+          },
+          "output": {
+            "status": 200,
+            "shape": "ChartResultDto",
+            "fields": [
+              {
+                "name": "labels",
+                "type": "string[]",
+                "required": true
+              },
+              {
+                "name": "datasets",
+                "type": "object[]",
+                "required": true
+              }
+            ]
+          },
+          "errors": [],
+          "usesServices": [
+            "service:dashboards.dashboards-service@backend"
+          ],
+          "touchesEntities": [
+            "entity:chart-widget"
+          ],
+          "async": false
+        }
+      },
+      {
+        "id": "endpoint:dashboards.create@backend",
+        "name": "Create Dashboard",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Endpoint",
+        "spec": {
+          "featureId": "feature:dashboards.management",
+          "targetId": "target:backend",
+          "method": "POST",
+          "route": "/dashboards",
+          "auth": "authenticated",
+          "roles": [],
+          "input": {
+            "params": [],
+            "query": [],
+            "body": [
+              {
+                "name": "projectId",
+                "type": "string",
+                "required": true
+              },
+              {
+                "name": "name",
+                "type": "string",
+                "required": true
+              },
+              {
+                "name": "purpose",
+                "type": "string",
+                "required": false
+              },
+              {
+                "name": "dataSourceIds",
+                "type": "string[]",
+                "required": true
+              }
+            ]
+          },
+          "output": {
+            "status": 202,
+            "shape": "DashboardDto",
+            "fields": [
+              {
+                "name": "id",
+                "type": "string",
+                "required": true
+              },
+              {
+                "name": "status",
+                "type": "string",
+                "required": true
+              }
+            ]
+          },
+          "errors": [],
+          "usesServices": [
+            "service:dashboards.dashboards-service@backend"
+          ],
+          "touchesEntities": [
+            "entity:dashboard"
+          ],
+          "async": true
+        }
+      },
+      {
+        "id": "endpoint:data.list-files@backend",
+        "name": "List Data Files",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Endpoint",
+        "spec": {
+          "featureId": "feature:data.files-management",
+          "targetId": "target:backend",
+          "method": "GET",
+          "route": "/data/files",
+          "auth": "authenticated",
+          "roles": [],
+          "input": {
+            "params": [],
+            "query": [
+              {
+                "name": "page",
+                "type": "number",
+                "required": false
+              },
+              {
+                "name": "limit",
+                "type": "number",
+                "required": false
+              },
+              {
+                "name": "search",
+                "type": "string",
+                "required": false
+              }
+            ],
+            "body": []
+          },
+          "output": {
+            "status": 200,
+            "shape": "PaginatedCsvFiles",
+            "fields": [
+              {
+                "name": "items",
+                "type": "CsvFile[]",
+                "required": true
+              },
+              {
+                "name": "total",
+                "type": "number",
+                "required": true
+              }
+            ]
+          },
+          "errors": [],
+          "usesServices": [
+            "service:data.data-service@backend"
+          ],
+          "touchesEntities": [
+            "entity:csv-file"
+          ],
+          "async": false
+        }
+      },
+      {
+        "id": "endpoint:data.update-columns@backend",
+        "name": "Update Column Descriptions",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Endpoint",
+        "spec": {
+          "featureId": "feature:data.column-review",
+          "targetId": "target:backend",
+          "method": "PATCH",
+          "route": "/data/files/:fileId/columns",
+          "auth": "authenticated",
+          "roles": [],
+          "input": {
+            "params": [
+              {
+                "name": "fileId",
+                "type": "string",
+                "required": true
+              }
+            ],
+            "query": [],
+            "body": [
+              {
+                "name": "columns",
+                "type": "ColumnUpdate[]",
+                "required": true
+              }
+            ]
+          },
+          "output": {
+            "status": 200,
+            "shape": "CsvFileWithColumns",
+            "fields": [
+              {
+                "name": "columns",
+                "type": "ColumnMetadata[]",
+                "required": true
+              }
+            ]
+          },
+          "errors": [],
+          "usesServices": [
+            "service:data.data-service@backend"
+          ],
+          "touchesEntities": [
+            "entity:column-metadata"
+          ],
+          "async": false
+        }
+      },
+      {
+        "id": "endpoint:data.upload-file@backend",
+        "name": "Upload CSV File",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Endpoint",
+        "spec": {
+          "featureId": "feature:data.upload-csv",
+          "targetId": "target:backend",
+          "method": "POST",
+          "route": "/data/upload/file",
+          "auth": "authenticated",
+          "roles": [],
+          "input": {
+            "params": [],
+            "query": [],
+            "body": [
+              {
+                "name": "file",
+                "type": "multipart/form-data",
+                "required": true
+              }
+            ]
+          },
+          "output": {
+            "status": 202,
+            "shape": "UploadAcceptedDto",
+            "fields": [
+              {
+                "name": "fileId",
+                "type": "string",
+                "required": true
+              },
+              {
+                "name": "jobId",
+                "type": "string",
+                "required": true
+              },
+              {
+                "name": "status",
+                "type": "string",
+                "required": true
+              }
+            ]
+          },
+          "errors": [
+            {
+              "status": 400,
+              "when": "not a CSV or over 50MB"
+            }
+          ],
+          "usesServices": [
+            "service:data.data-service@backend"
+          ],
+          "touchesEntities": [
+            "entity:csv-file"
+          ],
+          "async": true
+        }
+      },
+      {
+        "id": "service:ai-processing.ai-service@backend",
+        "name": "AI Processing Service",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "InternalService",
+        "spec": {
+          "featureId": "feature:ai-processing.column-analysis",
+          "targetId": "target:backend",
+          "interface": [
+            {
+              "method": "analyzeColumns",
+              "input": "fileId",
+              "output": "ColumnMetadata[]"
+            },
+            {
+              "method": "generateDashboard",
+              "input": "dashboardId",
+              "output": "ChartWidget[]"
+            }
+          ],
+          "usesServices": [],
+          "callsExternal": [
+            "ext:claude"
+          ]
+        }
+      },
+      {
+        "id": "service:auth.auth-service@backend",
+        "name": "Auth Service",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "InternalService",
+        "spec": {
+          "featureId": "feature:auth.login",
+          "targetId": "target:backend",
+          "interface": [
+            {
+              "method": "login",
+              "input": "LoginDto",
+              "output": "{ accessToken, refreshToken }"
+            },
+            {
+              "method": "register",
+              "input": "RegisterDto",
+              "output": "User"
+            },
+            {
+              "method": "refresh",
+              "input": "string",
+              "output": "{ accessToken }"
+            },
+            {
+              "method": "forgotPassword",
+              "input": "string",
+              "output": "void"
+            },
+            {
+              "method": "resetPassword",
+              "input": "token, newPassword",
+              "output": "void"
+            }
+          ],
+          "usesServices": [],
+          "callsExternal": [
+            "ext:oauth",
+            "ext:mailjet"
+          ]
+        }
+      },
+      {
+        "id": "service:dashboards.dashboards-client@web",
+        "name": "Dashboards HTTP Client",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "InternalService",
+        "spec": {
+          "featureId": "feature:dashboards.viewer",
+          "targetId": "target:web",
+          "interface": [
+            {
+              "method": "getDashboard",
+              "input": "id",
+              "output": "Observable<Dashboard>"
+            },
+            {
+              "method": "getWidgetData",
+              "input": "widgetId",
+              "output": "Observable<ChartResult>"
+            }
+          ],
+          "usesServices": [],
+          "callsExternal": []
+        }
+      },
+      {
+        "id": "service:dashboards.dashboards-service@backend",
+        "name": "Dashboards Service",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "InternalService",
+        "spec": {
+          "featureId": "feature:dashboards.management",
+          "targetId": "target:backend",
+          "interface": [
+            {
+              "method": "create",
+              "input": "CreateDashboardDto",
+              "output": "Dashboard"
+            },
+            {
+              "method": "chartData",
+              "input": "widgetId, filters",
+              "output": "ChartResult"
+            },
+            {
+              "method": "refresh",
+              "input": "dashboardId",
+              "output": "{ refreshed }"
+            }
+          ],
+          "usesServices": [
+            "service:ai-processing.ai-service@backend"
+          ],
+          "callsExternal": []
+        }
+      },
+      {
+        "id": "service:data.data-client@web",
+        "name": "Data HTTP Client",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "InternalService",
+        "spec": {
+          "featureId": "feature:data.upload-csv",
+          "targetId": "target:web",
+          "interface": [
+            {
+              "method": "uploadFile",
+              "input": "File",
+              "output": "Observable<UploadResponse>"
+            },
+            {
+              "method": "getFiles",
+              "input": "page, limit",
+              "output": "Observable<Paginated<CsvFile>>"
+            },
+            {
+              "method": "updateColumnDescriptions",
+              "input": "fileId, columns",
+              "output": "Observable"
+            }
+          ],
+          "usesServices": [],
+          "callsExternal": []
+        }
+      },
+      {
+        "id": "service:data.data-service@backend",
+        "name": "Data Service",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "InternalService",
+        "spec": {
+          "featureId": "feature:data.upload-csv",
+          "targetId": "target:backend",
+          "interface": [
+            {
+              "method": "uploadFile",
+              "input": "Multer.File, userId",
+              "output": "{ fileId, jobId, status }"
+            },
+            {
+              "method": "listFiles",
+              "input": "userId, filters",
+              "output": "Paginated<CsvFile>"
+            },
+            {
+              "method": "updateColumns",
+              "input": "fileId, UpdateColumnsDto",
+              "output": "CsvFile"
+            },
+            {
+              "method": "deleteFile",
+              "input": "fileId, userId",
+              "output": "{ deleted }"
+            }
+          ],
+          "usesServices": [
+            "service:ai-processing.ai-service@backend"
+          ],
+          "callsExternal": [
+            "ext:r2"
+          ]
+        }
+      },
+      {
+        "id": "page:auth.login@web",
+        "name": "Login Page",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Page",
+        "spec": {
+          "featureId": "feature:auth.login",
+          "targetId": "target:web",
+          "route": "/auth/login",
+          "layout": "auth-layout",
+          "type": "auth",
+          "components": [
+            "LoginForm"
+          ],
+          "callsEndpoints": [
+            "endpoint:auth.login@backend"
+          ],
+          "usesServices": [],
+          "states": {
+            "loading": "spinner on submit",
+            "empty": "n/a",
+            "error": "inline form errors + toast",
+            "success": "redirect to app shell"
+          }
+        }
+      },
+      {
+        "id": "page:dashboards.viewer@web",
+        "name": "Dashboard Viewer",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Page",
+        "spec": {
+          "featureId": "feature:dashboards.viewer",
+          "targetId": "target:web",
+          "route": "/app/dashboards/:id",
+          "layout": "app-shell",
+          "type": "dashboard",
+          "components": [
+            "WidgetGrid",
+            "ChartWidget",
+            "RefreshButton"
+          ],
+          "callsEndpoints": [
+            "endpoint:dashboards.chart-data@backend"
+          ],
+          "usesServices": [
+            "service:dashboards.dashboards-client@web"
+          ],
+          "states": {
+            "loading": "per-widget skeletons",
+            "empty": "no widgets message",
+            "error": "per-widget error + retry",
+            "success": "charts rendered from backend data"
+          }
+        }
+      },
+      {
+        "id": "page:data.files-list@web",
+        "name": "Data Files List",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Page",
+        "spec": {
+          "featureId": "feature:data.files-management",
+          "targetId": "target:web",
+          "route": "/app/data",
+          "layout": "app-shell",
+          "type": "list",
+          "components": [
+            "FilesTable"
+          ],
+          "callsEndpoints": [
+            "endpoint:data.list-files@backend"
+          ],
+          "usesServices": [
+            "service:data.data-client@web"
+          ],
+          "states": {
+            "loading": "table skeleton",
+            "empty": "empty-state with upload CTA",
+            "error": "error message + retry",
+            "success": "paginated table"
+          }
+        }
+      },
+      {
+        "id": "page:data.upload-wizard@mobile",
+        "name": "Upload Screen (Mobile)",
+        "description": "Planned mobile projection of CSV upload; not yet specced or built.",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Page",
+        "spec": {
+          "featureId": "feature:data.upload-csv",
+          "targetId": "target:mobile",
+          "route": "/data/upload",
+          "layout": "mobile-shell",
+          "type": "wizard",
+          "components": [],
+          "callsEndpoints": [
+            "endpoint:data.upload-file@backend"
+          ],
+          "usesServices": [],
+          "states": {
+            "loading": "progress indicator",
+            "error": "error toast"
+          }
+        }
+      },
+      {
+        "id": "page:data.upload-wizard@web",
+        "name": "Upload Wizard",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Page",
+        "spec": {
+          "featureId": "feature:data.upload-csv",
+          "targetId": "target:web",
+          "route": "/app/data/upload",
+          "layout": "app-shell",
+          "type": "wizard",
+          "components": [
+            "FileDropzone",
+            "ColumnReviewTable",
+            "StepProgress"
+          ],
+          "callsEndpoints": [
+            "endpoint:data.upload-file@backend",
+            "endpoint:data.update-columns@backend"
+          ],
+          "usesServices": [
+            "service:data.data-client@web"
+          ],
+          "states": {
+            "loading": "progress bar during upload + analysis polling",
+            "empty": "prompt to drop a CSV",
+            "error": "toast on upload/analysis failure",
+            "success": "advance to column review then done"
+          }
+        }
+      },
+      {
+        "id": "page:users.admin-list@web",
+        "name": "Admin Users List",
+        "status": "planned",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Page",
+        "spec": {
+          "featureId": "feature:users.admin-management",
+          "targetId": "target:web",
+          "route": "/admin/users",
+          "layout": "admin-shell",
+          "type": "list",
+          "components": [
+            "UsersTable",
+            "RoleSelect"
+          ],
+          "callsEndpoints": [],
+          "usesServices": [],
+          "states": {
+            "loading": "table skeleton",
+            "empty": "no users",
+            "error": "error + retry",
+            "success": "paginated table with role editing"
+          }
+        }
+      },
+      {
+        "id": "job:ai-processing.csv-analysis@backend",
+        "name": "CSV Analysis Job",
+        "status": "applied",
+        "authoredBy": "human",
+        "meta": {},
+        "kind": "Job",
+        "spec": {
+          "featureId": "feature:ai-processing.column-analysis",
+          "targetId": "target:backend",
+          "queue": "csv-analysis",
+          "trigger": "enqueued by data.uploadFile after R2 upload",
+          "timeoutSeconds": 300,
+          "usesServices": [
+            "service:ai-processing.ai-service@backend"
+          ],
+          "callsExternal": [
+            "ext:claude"
+          ]
+        }
+      },
+      {
+        "id": "method:ai-processing.ai-service.analyze-columns@backend",
+        "name": "AiService.analyzeColumns",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:ai-processing.column-analysis",
+          "targetId": "target:backend",
+          "parentId": "service:ai-processing.ai-service@backend",
+          "signature": "analyzeColumns(fileId: string): Promise<ColumnMetadata[]>",
+          "input": "fileId",
+          "output": "ColumnMetadata[]",
+          "usesServices": [],
+          "callsExternal": [
+            "ext:claude"
+          ],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:ai-processing.ai-service.generate-dashboard@backend",
+        "name": "AiService.generateDashboard",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:ai-processing.column-analysis",
+          "targetId": "target:backend",
+          "parentId": "service:ai-processing.ai-service@backend",
+          "signature": "generateDashboard(dashboardId: string): Promise<ChartWidget[]>",
+          "input": "dashboardId",
+          "output": "ChartWidget[]",
+          "usesServices": [],
+          "callsExternal": [
+            "ext:claude"
+          ],
+          "usesDtos": [],
+          "emits": [
+            "event:dashboard.generated"
+          ]
+        }
+      },
+      {
+        "id": "method:auth.auth-service.forgot-password@backend",
+        "name": "AuthService.forgotPassword",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:auth.password-reset",
+          "targetId": "target:backend",
+          "parentId": "service:auth.auth-service@backend",
+          "signature": "forgotPassword(email: string): Promise<void>",
+          "input": "string",
+          "output": "void",
+          "usesServices": [],
+          "callsExternal": [
+            "ext:mailjet"
+          ],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:auth.auth-service.login@backend",
+        "name": "AuthService.login",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:auth.login",
+          "targetId": "target:backend",
+          "parentId": "service:auth.auth-service@backend",
+          "signature": "login(dto: LoginDto): Promise<{ accessToken: string; refreshToken: string }>",
+          "input": "LoginDto",
+          "output": "{ accessToken, refreshToken }",
+          "usesServices": [],
+          "callsExternal": [],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:auth.auth-service.refresh@backend",
+        "name": "AuthService.refresh",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:auth.login",
+          "targetId": "target:backend",
+          "parentId": "service:auth.auth-service@backend",
+          "signature": "refresh(token: string): Promise<{ accessToken: string }>",
+          "input": "string",
+          "output": "{ accessToken }",
+          "usesServices": [],
+          "callsExternal": [],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:auth.auth-service.register@backend",
+        "name": "AuthService.register",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:auth.register",
+          "targetId": "target:backend",
+          "parentId": "service:auth.auth-service@backend",
+          "signature": "register(dto: RegisterDto): Promise<User>",
+          "input": "RegisterDto",
+          "output": "User",
+          "usesServices": [],
+          "callsExternal": [
+            "ext:mailjet"
+          ],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:auth.auth-service.reset-password@backend",
+        "name": "AuthService.resetPassword",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:auth.password-reset",
+          "targetId": "target:backend",
+          "parentId": "service:auth.auth-service@backend",
+          "signature": "resetPassword(token: string, newPassword: string): Promise<void>",
+          "input": "token, newPassword",
+          "output": "void",
+          "usesServices": [],
+          "callsExternal": [],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:dashboards.dashboards-client.get-dashboard@web",
+        "name": "DashboardsClient.getDashboard",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:dashboards.viewer",
+          "targetId": "target:web",
+          "parentId": "service:dashboards.dashboards-client@web",
+          "signature": "getDashboard(id: string): Observable<Dashboard>",
+          "input": "id",
+          "output": "Observable<Dashboard>",
+          "usesServices": [],
+          "callsExternal": [],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:dashboards.dashboards-client.get-widget-data@web",
+        "name": "DashboardsClient.getWidgetData",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:dashboards.viewer",
+          "targetId": "target:web",
+          "parentId": "service:dashboards.dashboards-client@web",
+          "signature": "getWidgetData(widgetId: string): Observable<ChartResult>",
+          "input": "widgetId",
+          "output": "Observable<ChartResult>",
+          "usesServices": [],
+          "callsExternal": [],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:dashboards.dashboards-service.chart-data@backend",
+        "name": "DashboardsService.chartData",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:dashboards.management",
+          "targetId": "target:backend",
+          "parentId": "service:dashboards.dashboards-service@backend",
+          "signature": "chartData(widgetId: string, filters: ChartFilterDto): Promise<ChartResult>",
+          "input": "widgetId, filters",
+          "output": "ChartResult",
+          "usesServices": [],
+          "callsExternal": [],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:dashboards.dashboards-service.create@backend",
+        "name": "DashboardsService.create",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:dashboards.management",
+          "targetId": "target:backend",
+          "parentId": "service:dashboards.dashboards-service@backend",
+          "signature": "create(dto: CreateDashboardDto): Promise<Dashboard>",
+          "input": "CreateDashboardDto",
+          "output": "Dashboard",
+          "usesServices": [
+            "service:ai-processing.ai-service@backend"
+          ],
+          "callsExternal": [],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:dashboards.dashboards-service.refresh@backend",
+        "name": "DashboardsService.refresh",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:dashboards.management",
+          "targetId": "target:backend",
+          "parentId": "service:dashboards.dashboards-service@backend",
+          "signature": "refresh(dashboardId: string): Promise<{ refreshed: boolean }>",
+          "input": "dashboardId",
+          "output": "{ refreshed }",
+          "usesServices": [
+            "service:ai-processing.ai-service@backend"
+          ],
+          "callsExternal": [],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:data.data-client.get-files@web",
+        "name": "DataClient.getFiles",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:data.upload-csv",
+          "targetId": "target:web",
+          "parentId": "service:data.data-client@web",
+          "signature": "getFiles(page: number, limit: number): Observable<Paginated<CsvFile>>",
+          "input": "page, limit",
+          "output": "Observable<Paginated<CsvFile>>",
+          "usesServices": [],
+          "callsExternal": [],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:data.data-client.update-column-descriptions@web",
+        "name": "DataClient.updateColumnDescriptions",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:data.upload-csv",
+          "targetId": "target:web",
+          "parentId": "service:data.data-client@web",
+          "signature": "updateColumnDescriptions(fileId: string, columns: ColumnPatch[]): Observable<CsvFile>",
+          "input": "fileId, columns",
+          "output": "Observable",
+          "usesServices": [],
+          "callsExternal": [],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:data.data-client.upload-file@web",
+        "name": "DataClient.uploadFile",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:data.upload-csv",
+          "targetId": "target:web",
+          "parentId": "service:data.data-client@web",
+          "signature": "uploadFile(file: File): Observable<UploadResponse>",
+          "input": "File",
+          "output": "Observable<UploadResponse>",
+          "usesServices": [],
+          "callsExternal": [],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:data.data-service.delete-file@backend",
+        "name": "DataService.deleteFile",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:data.files-management",
+          "targetId": "target:backend",
+          "parentId": "service:data.data-service@backend",
+          "signature": "deleteFile(fileId: string, userId: string): Promise<{ deleted: boolean }>",
+          "input": "fileId, userId",
+          "output": "{ deleted }",
+          "usesServices": [],
+          "callsExternal": [
+            "ext:r2"
+          ],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:data.data-service.list-files@backend",
+        "name": "DataService.listFiles",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:data.upload-csv",
+          "targetId": "target:backend",
+          "parentId": "service:data.data-service@backend",
+          "signature": "listFiles(userId: string, filters: ListFilesDto): Promise<Paginated<CsvFile>>",
+          "input": "userId, filters",
+          "output": "Paginated<CsvFile>",
+          "usesServices": [],
+          "callsExternal": [],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:data.data-service.update-columns@backend",
+        "name": "DataService.updateColumns",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:data.column-review",
+          "targetId": "target:backend",
+          "parentId": "service:data.data-service@backend",
+          "signature": "updateColumns(fileId: string, dto: UpdateColumnsDto): Promise<CsvFile>",
+          "input": "fileId, UpdateColumnsDto",
+          "output": "CsvFile",
+          "usesServices": [],
+          "callsExternal": [],
+          "usesDtos": [],
+          "emits": []
+        }
+      },
+      {
+        "id": "method:data.data-service.upload-file@backend",
+        "name": "DataService.uploadFile",
+        "status": "applied",
+        "authoredBy": "ai",
+        "meta": {},
+        "kind": "Method",
+        "spec": {
+          "featureId": "feature:data.upload-csv",
+          "targetId": "target:backend",
+          "parentId": "service:data.data-service@backend",
+          "signature": "uploadFile(file: Express.Multer.File, userId: string): Promise<{ fileId: string; jobId: string; status: string }>",
+          "input": "Multer.File, userId",
+          "output": "{ fileId, jobId, status }",
+          "usesServices": [
+            "service:ai-processing.ai-service@backend"
+          ],
+          "callsExternal": [
+            "ext:r2"
+          ],
+          "usesDtos": [],
+          "emits": [
+            "event:data.csv-uploaded"
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "app:customer-portal",
+        "type": "includesModule",
+        "to": "module:auth"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "includesModule",
+        "to": "module:users"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "includesModule",
+        "to": "module:projects"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "includesModule",
+        "to": "module:data"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "includesModule",
+        "to": "module:dashboards"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "includesModule",
+        "to": "module:ai-processing"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "includesModule",
+        "to": "module:sharing"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "includesModule",
+        "to": "module:export"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "includesModule",
+        "to": "module:notifications"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "includesModule",
+        "to": "module:subscriptions"
+      },
+      {
+        "from": "app:admin-portal",
+        "type": "includesModule",
+        "to": "module:auth"
+      },
+      {
+        "from": "app:admin-portal",
+        "type": "includesModule",
+        "to": "module:users"
+      },
+      {
+        "from": "app:admin-portal",
+        "type": "includesModule",
+        "to": "module:subscriptions"
+      },
+      {
+        "from": "app:admin-portal",
+        "type": "includesModule",
+        "to": "module:audit"
+      },
+      {
+        "from": "app:admin-portal",
+        "type": "includesModule",
+        "to": "module:settings"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "shipsOn",
+        "to": "target:web"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "shipsOn",
+        "to": "target:mobile"
+      },
+      {
+        "from": "app:admin-portal",
+        "type": "shipsOn",
+        "to": "target:web"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "shipsTo",
+        "to": "deliverable:api@backend"
+      },
+      {
+        "from": "app:admin-portal",
+        "type": "shipsTo",
+        "to": "deliverable:api@backend"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "shipsTo",
+        "to": "deliverable:customer-web@web"
+      },
+      {
+        "from": "app:admin-portal",
+        "type": "shipsTo",
+        "to": "deliverable:admin-web@web"
+      },
+      {
+        "from": "app:customer-portal",
+        "type": "shipsTo",
+        "to": "deliverable:customer-mobile@mobile"
+      },
+      {
+        "from": "module:auth",
+        "type": "hasFeature",
+        "to": "feature:auth.login"
+      },
+      {
+        "from": "module:auth",
+        "type": "hasFeature",
+        "to": "feature:auth.register"
+      },
+      {
+        "from": "module:auth",
+        "type": "hasFeature",
+        "to": "feature:auth.password-reset"
+      },
+      {
+        "from": "module:users",
+        "type": "hasFeature",
+        "to": "feature:users.profile"
+      },
+      {
+        "from": "module:users",
+        "type": "hasFeature",
+        "to": "feature:users.admin-management"
+      },
+      {
+        "from": "module:projects",
+        "type": "hasFeature",
+        "to": "feature:projects.management"
+      },
+      {
+        "from": "module:data",
+        "type": "hasFeature",
+        "to": "feature:data.upload-csv"
+      },
+      {
+        "from": "module:data",
+        "type": "hasFeature",
+        "to": "feature:data.column-review"
+      },
+      {
+        "from": "module:data",
+        "type": "hasFeature",
+        "to": "feature:data.files-management"
+      },
+      {
+        "from": "module:ai-processing",
+        "type": "hasFeature",
+        "to": "feature:ai-processing.column-analysis"
+      },
+      {
+        "from": "module:dashboards",
+        "type": "hasFeature",
+        "to": "feature:dashboards.management"
+      },
+      {
+        "from": "module:dashboards",
+        "type": "hasFeature",
+        "to": "feature:dashboards.viewer"
+      },
+      {
+        "from": "module:sharing",
+        "type": "hasFeature",
+        "to": "feature:sharing.share"
+      },
+      {
+        "from": "module:export",
+        "type": "hasFeature",
+        "to": "feature:export.export"
+      },
+      {
+        "from": "module:notifications",
+        "type": "hasFeature",
+        "to": "feature:notifications.center"
+      },
+      {
+        "from": "module:subscriptions",
+        "type": "hasFeature",
+        "to": "feature:subscriptions.management"
+      },
+      {
+        "from": "module:audit",
+        "type": "hasFeature",
+        "to": "feature:audit.logs"
+      },
+      {
+        "from": "module:settings",
+        "type": "hasFeature",
+        "to": "feature:settings.system"
+      },
+      {
+        "from": "feature:auth.login",
+        "type": "projectsOnto",
+        "to": "target:backend"
+      },
+      {
+        "from": "feature:auth.login",
+        "type": "projectsOnto",
+        "to": "target:web"
+      },
+      {
+        "from": "feature:auth.register",
+        "type": "projectsOnto",
+        "to": "target:backend"
+      },
+      {
+        "from": "feature:auth.register",
+        "type": "projectsOnto",
+        "to": "target:web"
+      },
+      {
+        "from": "feature:auth.password-reset",
+        "type": "projectsOnto",
+        "to": "target:backend"
+      },
+      {
+        "from": "feature:auth.password-reset",
+        "type": "projectsOnto",
+        "to": "target:web"
+      },
+      {
+        "from": "feature:data.upload-csv",
+        "type": "projectsOnto",
+        "to": "target:backend"
+      },
+      {
+        "from": "feature:data.upload-csv",
+        "type": "projectsOnto",
+        "to": "target:web"
+      },
+      {
+        "from": "feature:data.upload-csv",
+        "type": "projectsOnto",
+        "to": "target:mobile"
+      },
+      {
+        "from": "feature:data.column-review",
+        "type": "projectsOnto",
+        "to": "target:backend"
+      },
+      {
+        "from": "feature:data.files-management",
+        "type": "projectsOnto",
+        "to": "target:backend"
+      },
+      {
+        "from": "feature:data.files-management",
+        "type": "projectsOnto",
+        "to": "target:web"
+      },
+      {
+        "from": "feature:ai-processing.column-analysis",
+        "type": "projectsOnto",
+        "to": "target:backend"
+      },
+      {
+        "from": "feature:dashboards.management",
+        "type": "projectsOnto",
+        "to": "target:backend"
+      },
+      {
+        "from": "feature:dashboards.viewer",
+        "type": "projectsOnto",
+        "to": "target:backend"
+      },
+      {
+        "from": "feature:dashboards.viewer",
+        "type": "projectsOnto",
+        "to": "target:web"
+      },
+      {
+        "from": "feature:users.admin-management",
+        "type": "projectsOnto",
+        "to": "target:web"
+      },
+      {
+        "from": "service:auth.auth-service@backend",
+        "type": "hasMethod",
+        "to": "method:auth.auth-service.login@backend"
+      },
+      {
+        "from": "service:auth.auth-service@backend",
+        "type": "hasMethod",
+        "to": "method:auth.auth-service.register@backend"
+      },
+      {
+        "from": "service:auth.auth-service@backend",
+        "type": "hasMethod",
+        "to": "method:auth.auth-service.refresh@backend"
+      },
+      {
+        "from": "service:auth.auth-service@backend",
+        "type": "hasMethod",
+        "to": "method:auth.auth-service.forgot-password@backend"
+      },
+      {
+        "from": "service:auth.auth-service@backend",
+        "type": "hasMethod",
+        "to": "method:auth.auth-service.reset-password@backend"
+      },
+      {
+        "from": "service:data.data-service@backend",
+        "type": "hasMethod",
+        "to": "method:data.data-service.upload-file@backend"
+      },
+      {
+        "from": "service:data.data-service@backend",
+        "type": "hasMethod",
+        "to": "method:data.data-service.list-files@backend"
+      },
+      {
+        "from": "service:data.data-service@backend",
+        "type": "hasMethod",
+        "to": "method:data.data-service.update-columns@backend"
+      },
+      {
+        "from": "service:data.data-service@backend",
+        "type": "hasMethod",
+        "to": "method:data.data-service.delete-file@backend"
+      },
+      {
+        "from": "service:ai-processing.ai-service@backend",
+        "type": "hasMethod",
+        "to": "method:ai-processing.ai-service.analyze-columns@backend"
+      },
+      {
+        "from": "service:ai-processing.ai-service@backend",
+        "type": "hasMethod",
+        "to": "method:ai-processing.ai-service.generate-dashboard@backend"
+      },
+      {
+        "from": "service:dashboards.dashboards-service@backend",
+        "type": "hasMethod",
+        "to": "method:dashboards.dashboards-service.create@backend"
+      },
+      {
+        "from": "service:dashboards.dashboards-service@backend",
+        "type": "hasMethod",
+        "to": "method:dashboards.dashboards-service.chart-data@backend"
+      },
+      {
+        "from": "service:dashboards.dashboards-service@backend",
+        "type": "hasMethod",
+        "to": "method:dashboards.dashboards-service.refresh@backend"
+      },
+      {
+        "from": "service:data.data-client@web",
+        "type": "hasMethod",
+        "to": "method:data.data-client.upload-file@web"
+      },
+      {
+        "from": "service:data.data-client@web",
+        "type": "hasMethod",
+        "to": "method:data.data-client.get-files@web"
+      },
+      {
+        "from": "service:data.data-client@web",
+        "type": "hasMethod",
+        "to": "method:data.data-client.update-column-descriptions@web"
+      },
+      {
+        "from": "service:dashboards.dashboards-client@web",
+        "type": "hasMethod",
+        "to": "method:dashboards.dashboards-client.get-dashboard@web"
+      },
+      {
+        "from": "service:dashboards.dashboards-client@web",
+        "type": "hasMethod",
+        "to": "method:dashboards.dashboards-client.get-widget-data@web"
+      },
+      {
+        "from": "endpoint:auth.login@backend",
+        "type": "usesService",
+        "to": "service:auth.auth-service@backend"
+      },
+      {
+        "from": "endpoint:auth.forgot-password@backend",
+        "type": "usesService",
+        "to": "service:auth.auth-service@backend"
+      },
+      {
+        "from": "endpoint:auth.reset-password@backend",
+        "type": "usesService",
+        "to": "service:auth.auth-service@backend"
+      },
+      {
+        "from": "endpoint:data.upload-file@backend",
+        "type": "usesService",
+        "to": "service:data.data-service@backend"
+      },
+      {
+        "from": "endpoint:data.list-files@backend",
+        "type": "usesService",
+        "to": "service:data.data-service@backend"
+      },
+      {
+        "from": "endpoint:data.update-columns@backend",
+        "type": "usesService",
+        "to": "service:data.data-service@backend"
+      },
+      {
+        "from": "endpoint:dashboards.create@backend",
+        "type": "usesService",
+        "to": "service:dashboards.dashboards-service@backend"
+      },
+      {
+        "from": "endpoint:dashboards.chart-data@backend",
+        "type": "usesService",
+        "to": "service:dashboards.dashboards-service@backend"
+      },
+      {
+        "from": "service:data.data-service@backend",
+        "type": "usesService",
+        "to": "service:ai-processing.ai-service@backend"
+      },
+      {
+        "from": "service:dashboards.dashboards-service@backend",
+        "type": "usesService",
+        "to": "service:ai-processing.ai-service@backend"
+      },
+      {
+        "from": "page:data.upload-wizard@web",
+        "type": "usesService",
+        "to": "service:data.data-client@web"
+      },
+      {
+        "from": "page:data.files-list@web",
+        "type": "usesService",
+        "to": "service:data.data-client@web"
+      },
+      {
+        "from": "page:dashboards.viewer@web",
+        "type": "usesService",
+        "to": "service:dashboards.dashboards-client@web"
+      },
+      {
+        "from": "service:auth.auth-service@backend",
+        "type": "callsExternal",
+        "to": "ext:oauth"
+      },
+      {
+        "from": "service:auth.auth-service@backend",
+        "type": "callsExternal",
+        "to": "ext:mailjet"
+      },
+      {
+        "from": "service:data.data-service@backend",
+        "type": "callsExternal",
+        "to": "ext:r2"
+      },
+      {
+        "from": "service:ai-processing.ai-service@backend",
+        "type": "callsExternal",
+        "to": "ext:claude"
+      },
+      {
+        "from": "job:ai-processing.csv-analysis@backend",
+        "type": "callsExternal",
+        "to": "ext:claude"
+      },
+      {
+        "from": "page:auth.login@web",
+        "type": "callsEndpoint",
+        "to": "endpoint:auth.login@backend"
+      },
+      {
+        "from": "page:data.upload-wizard@web",
+        "type": "callsEndpoint",
+        "to": "endpoint:data.upload-file@backend"
+      },
+      {
+        "from": "page:data.upload-wizard@web",
+        "type": "callsEndpoint",
+        "to": "endpoint:data.update-columns@backend"
+      },
+      {
+        "from": "page:data.files-list@web",
+        "type": "callsEndpoint",
+        "to": "endpoint:data.list-files@backend"
+      },
+      {
+        "from": "page:dashboards.viewer@web",
+        "type": "callsEndpoint",
+        "to": "endpoint:dashboards.chart-data@backend"
+      },
+      {
+        "from": "page:data.upload-wizard@mobile",
+        "type": "callsEndpoint",
+        "to": "endpoint:data.upload-file@backend"
+      },
+      {
+        "from": "endpoint:auth.login@backend",
+        "type": "touchesEntity",
+        "to": "entity:user"
+      },
+      {
+        "from": "endpoint:data.upload-file@backend",
+        "type": "touchesEntity",
+        "to": "entity:csv-file"
+      },
+      {
+        "from": "endpoint:data.list-files@backend",
+        "type": "touchesEntity",
+        "to": "entity:csv-file"
+      },
+      {
+        "from": "endpoint:data.update-columns@backend",
+        "type": "touchesEntity",
+        "to": "entity:column-metadata"
+      },
+      {
+        "from": "endpoint:dashboards.create@backend",
+        "type": "touchesEntity",
+        "to": "entity:dashboard"
+      },
+      {
+        "from": "endpoint:dashboards.chart-data@backend",
+        "type": "touchesEntity",
+        "to": "entity:chart-widget"
+      },
+      {
+        "from": "endpoint:auth.forgot-password@backend",
+        "type": "touchesEntity",
+        "to": "entity:user"
+      },
+      {
+        "from": "endpoint:auth.reset-password@backend",
+        "type": "touchesEntity",
+        "to": "entity:user"
+      },
+      {
+        "from": "module:users",
+        "type": "dependsOn",
+        "to": "module:auth"
+      },
+      {
+        "from": "module:projects",
+        "type": "dependsOn",
+        "to": "module:auth"
+      },
+      {
+        "from": "module:projects",
+        "type": "dependsOn",
+        "to": "module:users"
+      },
+      {
+        "from": "module:data",
+        "type": "dependsOn",
+        "to": "module:auth"
+      },
+      {
+        "from": "module:dashboards",
+        "type": "dependsOn",
+        "to": "module:projects"
+      },
+      {
+        "from": "module:dashboards",
+        "type": "dependsOn",
+        "to": "module:data"
+      },
+      {
+        "from": "module:dashboards",
+        "type": "dependsOn",
+        "to": "module:ai-processing"
+      },
+      {
+        "from": "module:sharing",
+        "type": "dependsOn",
+        "to": "module:dashboards"
+      },
+      {
+        "from": "module:export",
+        "type": "dependsOn",
+        "to": "module:dashboards"
+      },
+      {
+        "from": "module:notifications",
+        "type": "dependsOn",
+        "to": "module:auth"
+      },
+      {
+        "from": "module:subscriptions",
+        "type": "dependsOn",
+        "to": "module:users"
+      },
+      {
+        "from": "module:audit",
+        "type": "dependsOn",
+        "to": "module:auth"
+      },
+      {
+        "from": "module:settings",
+        "type": "dependsOn",
+        "to": "module:auth"
+      },
+      {
+        "from": "project:roya",
+        "type": "definesRole",
+        "to": "role:admin"
+      },
+      {
+        "from": "project:roya",
+        "type": "definesRole",
+        "to": "role:editor"
+      },
+      {
+        "from": "project:roya",
+        "type": "definesRole",
+        "to": "role:viewer"
+      },
+      {
+        "from": "page:users.admin-list@web",
+        "type": "requiresRole",
+        "to": "role:admin"
+      },
+      {
+        "from": "method:data.data-service.upload-file@backend",
+        "type": "emitsEvent",
+        "to": "event:data.csv-uploaded"
+      },
+      {
+        "from": "method:ai-processing.ai-service.generate-dashboard@backend",
+        "type": "emitsEvent",
+        "to": "event:dashboard.generated"
+      },
+      {
+        "from": "job:ai-processing.csv-analysis@backend",
+        "type": "consumesEvent",
+        "to": "event:data.csv-uploaded"
+      }
+    ]
+  }
+}

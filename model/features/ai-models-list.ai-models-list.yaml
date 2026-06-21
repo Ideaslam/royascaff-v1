@@ -1,0 +1,9 @@
+id: feature:ai-models-list.ai-models-list
+kind: Feature
+name: ai-models-list
+status: planned
+authoredBy: ai
+spec:
+  moduleId: module:ai-models-list
+  subfeatures: []
+  visibility: both

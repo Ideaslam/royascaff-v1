@@ -47,6 +47,7 @@ edges:
   - { from: module:subscriptions, type: hasFeature, to: feature:subscriptions.management }
   - { from: module:audit, type: hasFeature, to: feature:audit.logs }
   - { from: module:settings, type: hasFeature, to: feature:settings.system }
+  - { from: module:ai-models-list, type: hasFeature, to: feature:ai-models-list.ai-models-list }
   # ── projectsOnto ──
   - { from: feature:auth.login, type: projectsOnto, to: target:backend }
   - { from: feature:auth.login, type: projectsOnto, to: target:web }
@@ -65,6 +66,7 @@ edges:
   - { from: feature:dashboards.viewer, type: projectsOnto, to: target:backend }
   - { from: feature:dashboards.viewer, type: projectsOnto, to: target:web }
   - { from: feature:users.admin-management, type: projectsOnto, to: target:web }
+  - { from: feature:ai-models-list.ai-models-list, type: projectsOnto, to: target:backend }
   # ── hasMethod ──
   - { from: service:auth.auth-service@backend, type: hasMethod, to: method:auth.auth-service.login@backend }
   - { from: service:auth.auth-service@backend, type: hasMethod, to: method:auth.auth-service.register@backend }

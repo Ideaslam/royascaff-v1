@@ -1,0 +1,8 @@
+id: module:ai-models-list
+kind: Module
+name: ai-models-list
+status: planned
+authoredBy: ai
+spec:
+  dependsOn: []
+  kindOf: business
