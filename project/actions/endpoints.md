@@ -2351,7 +2351,77 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 
 #### Constraints / Notes
 
-- The customer frontend calls `POST /api/v1/subscriptions/subscribe` and `POST /api/v1/subscriptions/cancel`, which **do not exist** on the backend. See Known Gaps.
+- Admin-only endpoint; use `POST /api/v1/subscriptions/cancel` (no `userId` param) for customer self-service cancellation.
+
+---
+
+### Endpoint 80
+
+- Name: `Self Subscribe to Plan`
+- Method: `POST`
+- Route: `/api/v1/subscriptions/subscribe`
+- Summary: `Customer self-service: subscribe to (or switch to) a plan.`
+
+#### Auth
+
+- Access: `JWT` (any authenticated user — no admin role required)
+- Roles: `N/A`
+
+#### Input
+
+- Params: `none`
+- Query: `none`
+- Body: `SelfSubscribeDto { planId: string }`
+
+#### Return
+
+- Status: `201`
+- DTO / Shape: `{ redirectUrl: string }` — URL to redirect the user after subscription (currently `/subscriptions`)
+
+#### Services Called
+
+- `SubscriptionsService.selfSubscribe(userId, planId) — assigns the plan to the current user and returns a redirect URL`
+
+#### Constraints / Notes
+
+- Does not process a payment — assigns the subscription directly. Real payment-gateway checkout (Stripe) is deferred.
+- Returns `404` if the plan does not exist.
+- Writes an audit log entry (`SUBSCRIPTION_ASSIGN` action).
+
+---
+
+### Endpoint 81
+
+- Name: `Self Cancel Subscription`
+- Method: `POST`
+- Route: `/api/v1/subscriptions/cancel`
+- Summary: `Customer self-service: cancel the current user's own active subscription.`
+
+#### Auth
+
+- Access: `JWT` (any authenticated user — no admin role required)
+- Roles: `N/A`
+
+#### Input
+
+- Params: `none`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `{ message: string }` — e.g. `"Subscription cancelled."`
+
+#### Services Called
+
+- `SubscriptionsService.selfCancel(userId) — cancels the current user's subscription`
+
+#### Constraints / Notes
+
+- Returns `404` if the user has no subscription.
+- Sets `status: cancelled` and `endDate: now` on the subscription record.
+- Writes an audit log entry (`SUBSCRIPTION_CHANGE` action with `status: cancelled`).
 
 ---
 
@@ -2789,7 +2859,7 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 ## Known gaps (frontend expects / backend stub)
 
 - **Auth OAuth callback is a stub** — `POST /api/v1/auth/oauth/callback` accepts the payload but only returns a static message; it is not wired to `AuthService.oauthLogin`.
-- **Subscriptions subscribe/cancel not implemented** — the customer frontend calls `POST /api/v1/subscriptions/subscribe` and `POST /api/v1/subscriptions/cancel`, but neither route exists on the backend. The implemented admin flows are `assign`, `change`, and `:userId/cancel`.
+- **Subscriptions subscribe/cancel** — implemented in change-001 (2026-06-22). `POST /api/v1/subscriptions/subscribe` (Endpoint 80) and `POST /api/v1/subscriptions/cancel` (Endpoint 81) are now live.
 - **PDF export has no worker** — `POST /api/v1/dashboards/:id/export/pdf` queues a job, but no worker processes PDF export jobs yet, so the export never completes.
 
 ---
@@ -2806,10 +2876,10 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 | Sharing | 4 |
 | Export | 3 |
 | Notifications | 4 |
-| Subscriptions | 13 |
+| Subscriptions | 15 |
 | Payments | 5 |
 | Audit | 1 |
 | Settings | 2 |
 | Admin | 1 |
 | AI Logs | 3 |
-| **Total** | **79** |
+| **Total** | **81** |

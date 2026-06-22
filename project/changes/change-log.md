@@ -6,3 +6,4 @@ Step 5.6. Full detail for each change — the filled `change-request.md` and bot
 
 | #   | Date       | Type | Target app | Scope | Outcome | Folder |
 |-----|------------|------|-----------|-------|---------|--------|
+| 001 | 2026-06-22 | new-feature | customer-portal | Subscriptions — self-service subscribe + cancel | PASS | [change-001-subscription-self-service](change-001-subscription-self-service/) |

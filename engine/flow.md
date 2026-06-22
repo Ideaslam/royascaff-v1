@@ -475,7 +475,9 @@ To start a change:
 2. Copy `engine/templates/change-request-template.md` into it as `change-request.md`.
 3. Fill in every field: type of change, scope, plain-language description, acceptance criteria.
 
-The template explains every field and includes a complete example. When the request is filled, tell the AI: **"Start Phase 5"**. (The AI can also scaffold the folder and request for you from a plain-language description.)
+The template explains every field and includes a complete example. When the request is filled, tell the AI: **"Start Phase 5"**.
+
+**Or let the AI interview you (recommended).** Describe the change in plain language. The AI runs the **Discovery Questions** for the matching `change-type` (defined in `engine/templates/change-request-template.md`) to understand the whole change, drafts `change-request.md` from your answers, and **asks you to confirm before applying anything** (Step 5.0a). If the frontend is touched, it also asks you to confirm the visual style, optionally with a reference screenshot.
 
 ---
 
@@ -487,8 +489,26 @@ The template explains every field and includes a complete example. When the requ
   2. Resolve `target-app` and `affected-repos` against the **Applications** and **Repositories** tables in `project/profile.md`. New-app values (`new-*`) refer to a new application/repo defined in the change request.
   3. If `change-type` is `new-app`: read the **New App Definition** section of the change request. Check whether the listed modules/features exist in `project/plan/modules.md` and `project/plan/features.md`. Note any that are new.
   4. If `change-type` is not `new-app`: read the relevant sections of `project/description.md`, `project/plan/modules.md`, `project/plan/features.md`, `project/actions/endpoints.md`, and `project/actions/pages.md` that match the declared scope. (The deep code inspection happens next, in Step 5.0b.)
-  5. Ask one clarifying question if (and only if) the description is genuinely ambiguous. Otherwise proceed.
+  5. If the request was authored directly (Path 1) and the description is complete, proceed. If it is thin, ambiguous, or the user started from a one-line idea (Path 2), run **Step 5.0a — Discovery & Confirmation** before going further.
 - **Done when**: The change is fully understood, `target-app` is resolved against `project/profile.md`, and there are no unresolved ambiguities.
+
+---
+
+### Step 5.0a — Discovery & Confirmation
+
+Run this whenever the change is not yet fully specified — always for Path 2 (AI interviews the user), and for any Path 1 request whose `description` is thin or ambiguous. The goal is to understand the **whole** change before any planning doc or code is touched, then get explicit sign-off.
+
+- **Input**: the user's plain-language idea (or the partial `change-request.md`) + the `change-type`
+- **Template**: `engine/templates/change-request-template.md` → **"Discovery Questions by Change Type"**
+- **Output**: a complete `project/changes/change-<NNN>-<slug>/change-request.md`, **confirmed by the user**
+- **Actions**:
+  1. **Identify the `change-type`** from the user's request. If unclear, ask which type fits before continuing.
+  2. **Ask the Discovery Questions** for that type — always the **Universal** block first, then the type-specific block. Skip a question only when its answer is already obvious from the description or the planning docs; never skip the whole block. Ask the questions in one or a few grouped messages, not one at a time.
+  3. **Frontend style** — if `affected-repos` includes `frontend` or `admin`, or any page/UI is in scope, also ask the **Frontend Style** block. Invite an optional reference screenshot/mockup/Figma link for the intended style; if none is given, follow the existing design system in `project/profile.md`.
+  4. **Draft `change-request.md`** from the answers, filling every field (metadata, scope, description, acceptance criteria, notes).
+  5. **Confirmation gate (mandatory)** — present the drafted request back to the user and ask them to confirm. Do **not** proceed to Step 5.0b until the user approves. Incorporate any corrections and re-confirm.
+  6. For a frontend change, the style confirmation in step 3 is part of this gate: confirm the visual approach (and any reference provided) before moving on.
+- **Done when**: `change-request.md` is complete **and** the user has explicitly confirmed it (including the visual style for frontend changes).
 
 ---
 
@@ -648,6 +668,15 @@ Run this **before writing any code**. Confirm the updated planning documents are
 ### Step 5.4 — Implement Code Changes
 
 Generate or modify code in the actual repos (defined in `project/profile.md`) following the updated planning docs and all rules.
+
+#### Confirmation gate (before applying any code change)
+
+Before writing or modifying any code, confirm with the user:
+1. **Summarize what will be applied** — the endpoints, services, pages, schemas, and files that will be created or modified (the create/complete/modify list from `recon.md` plus the ripple set).
+2. **Get explicit approval** — do **not** start editing code until the user confirms. This is in addition to the change-request confirmation in Step 5.0a; the plan may have evolved through recon and impact analysis, so re-confirm the concrete code-level scope here.
+3. **Frontend style confirmation** — if the change touches the frontend (`affected-repos` includes `frontend` or `admin`, or a page/UI is in scope), confirm the visual approach before implementing it: which app/pages change, whether it follows the existing design system / brand tokens (per `project/profile.md`), and any reference screenshot/mockup/Figma link the user wants to match. The reference is **optional** — if none is given, follow the existing design system. Do not implement frontend visuals until the style is confirmed.
+
+Once confirmed, proceed with the changes below.
 
 #### Backend changes
 - Apply to the backend repo defined in `project/profile.md`.

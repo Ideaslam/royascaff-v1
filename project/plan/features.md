@@ -2,19 +2,22 @@
 
 ## Short Summary
 
-This feature map documents all product features for **Roya AI Dynamo**, an AI-powered SaaS dashboard generation platform. Features are grouped by the modules defined in `project/plan/modules.md` and derived from the full product specification in `project/description.md`.
+This feature map documents all product features for **Roya AI Dynamo**, an AI-powered SaaS platform that turns uploaded CSV files into automatically generated, interactive dashboards. Features are grouped by the modules defined in `project/plan/modules.md` and reconciled against the implemented code: the NestJS backend (`roya-ai-dynamo-api/src`, global prefix `/api/v1`) and the two Angular frontends — the **Customer Portal** (`roya-ai-dynamo-frontend`) and the **Admin Panel** (`roya-ai-dynamo-frontend-admin`).
 
 Source inputs:
 
 - `project/plan/modules.md`
-- `project/description.md`
+- `project/actions/endpoints.md`
+- `roya-ai-dynamo-api/src` (backend)
+- `roya-ai-dynamo-frontend` (Customer Portal)
+- `roya-ai-dynamo-frontend-admin` (Admin Panel)
 
 Its purpose is to define the full feature list for each module that will later be used to build:
 
 - `project/actions/endpoints.md`
 - `project/actions/pages.md`
 
-This file is not an endpoint list and not a page list. It is the feature source-of-truth grouped by module.
+This file is not an endpoint list and not a page list. It is the feature source-of-truth grouped by module. Where a feature is only partially implemented or planned, it is marked explicitly (`partial` / `planned — backend not implemented`).
 
 ---
 
@@ -36,16 +39,17 @@ When AI builds `project/actions/pages.md`:
 
 ## Product Scope
 
-Roya AI Dynamo allows business analysts to upload CSV files and receive automatically generated, interactive dashboards. AI analyzes column structures and dashboard purpose to generate chart types, layout, and query definitions. The backend executes queries on stored data. The frontend renders dashboards dynamically. Users can customize, share, and export the results.
+Roya AI Dynamo lets business users upload CSV files and receive automatically generated, interactive dashboards. AI analyzes column structure (names, inferred types, sample statistics — never raw rows) to produce human-readable column descriptions, then generates a dashboard structure by selecting widgets from a catalog and defining aggregation queries. The backend executes those queries on the stored data and serves cached chart data. The product ships as two apps over one backend: a **Customer Portal** for end users and an **Admin Panel** for platform operators.
 
 The main business flow is:
 
-1. User signs up and creates a project
-2. User creates a dashboard with a purpose description and uploads CSV files
-3. AI analyzes columns and suggests descriptions; user confirms
-4. AI generates dashboard structure (charts, layout, queries)
-5. Frontend viewer renders the dashboard using live backend data
-6. User customizes, shares, and exports the dashboard
+1. A user signs up (Customer Portal) and creates a project
+2. The user uploads a CSV file; the backend stores it and runs async AI column analysis
+3. The user reviews and confirms the AI-generated column descriptions
+4. The user creates a dashboard with a purpose description; AI generates its widgets and queries asynchronously
+5. The Customer Portal viewer renders the dashboard from live, cached backend data
+6. The user customizes, shares, and exports the dashboard
+7. Admins manage clients, subscriptions, plans, payments, AI usage/cost, audit logs, and global settings via the Admin Panel
 
 ---
 
@@ -57,13 +61,13 @@ The main business flow is:
 
 ### Module Purpose
 
-Control access to the platform. Authenticate users via email/password and OAuth. Issue and validate JWT tokens. Protect all private routes and endpoints.
+Control access to the platform. Authenticate users via email/password (and, partially, OAuth). Issue, refresh, and revoke JWT tokens. Provide the current-user endpoint used by both frontends to bootstrap their app shells.
 
 ### Module Scope
 
 - Backend: `yes`
 - Frontend: `yes`
-- Audience: `public and authenticated users`
+- Audience: `public and authenticated users (Customer Portal + Admin Panel)`
 
 ### Features In This Module
 
@@ -71,16 +75,15 @@ Control access to the platform. Authenticate users via email/password and OAuth.
 
 ##### Purpose
 
-Allow new users to create an account using email and password.
+Allow new users to create an account using name, email, and password.
 
 ##### Main Subfeatures
 
 - Submit registration form with name, email, and password
 - Validate email uniqueness
 - Hash password securely (bcrypt)
-- Create user record with default `editor` role
-- Send welcome email via MailJet
-- Return JWT token on successful registration
+- Create user record with the default non-admin role
+- Issue JWT access and refresh tokens on success
 
 ##### Visibility
 
@@ -88,8 +91,9 @@ Allow new users to create an account using email and password.
 
 ##### Notes
 
-- Email must be unique across all users
-- Default role on signup is `editor`; admin assigns other roles
+- Registration UI exists only in the **Customer Portal**; the Admin Panel has no register page
+- Rate-limited (`@Throttle`, 10 req/min)
+- Subject to the `registrationEnabled` system setting
 
 ---
 
@@ -97,15 +101,14 @@ Allow new users to create an account using email and password.
 
 ##### Purpose
 
-Authenticate an existing user and issue a JWT access token.
+Authenticate an existing user and issue JWT access and refresh tokens.
 
 ##### Main Subfeatures
 
 - Submit login form with email and password
-- Validate credentials against stored password hash
-- Issue JWT access token and refresh token
-- Track last login timestamp
-- Return current user profile with role
+- Validate credentials against the stored password hash
+- Issue access token and refresh token
+- Return the user profile (id, name, email, role) for app bootstrap
 
 ##### Visibility
 
@@ -113,24 +116,22 @@ Authenticate an existing user and issue a JWT access token.
 
 ##### Notes
 
-- Failed login attempts should be rate-limited
-- JWT payload includes user ID and role
+- Login exists in **both** apps; the Admin Panel additionally requires the `admin` role (enforced by an admin route guard)
+- Rate-limited (`@Throttle`, 10 req/min); returns `401` on bad credentials
 
 ---
 
-#### Feature 3: OAuth Login
+#### Feature 3: OAuth Login (Google / Microsoft)
 
 ##### Purpose
 
-Allow users to sign up or log in using Google or Microsoft OAuth.
+Allow users to sign in via Google or Microsoft OAuth as an alternative to email/password.
 
 ##### Main Subfeatures
 
-- Redirect to OAuth provider (Google, Microsoft)
-- Handle OAuth callback and extract user identity
-- Create account if first login via OAuth
-- Issue JWT token after successful OAuth flow
-- Link OAuth identity to existing account if email matches
+- Provider configuration (Google, Microsoft) via environment
+- OAuth login service logic (`AuthService.oauthLogin`) to map provider identity to a user
+- Intended callback endpoint to exchange the authorization code and issue JWT tokens
 
 ##### Visibility
 
@@ -138,8 +139,7 @@ Allow users to sign up or log in using Google or Microsoft OAuth.
 
 ##### Notes
 
-- Provider list is configurable via environment
-- OAuth is an alternative to email/password, not a replacement
+- **Partial.** Provider config and `AuthService.oauthLogin` exist, but `POST /api/v1/auth/oauth/callback` is a **stub** that returns a static message and is not wired to the service. End-to-end OAuth is not yet functional.
 
 ---
 
@@ -147,14 +147,13 @@ Allow users to sign up or log in using Google or Microsoft OAuth.
 
 ##### Purpose
 
-Silently refresh an expired access token using a valid refresh token to maintain user session.
+Silently issue a new access token from a valid refresh token to keep the session alive.
 
 ##### Main Subfeatures
 
-- Accept refresh token
-- Validate refresh token signature and expiry
-- Issue new access token
-- Rotate refresh token for security
+- Accept a refresh token
+- Validate its signature and expiry
+- Issue a new access token and rotate the refresh token
 
 ##### Visibility
 
@@ -162,7 +161,8 @@ Silently refresh an expired access token using a valid refresh token to maintain
 
 ##### Notes
 
-- Frontend handles token refresh automatically via HTTP interceptor
+- Frontends call this automatically via an HTTP interceptor; there is no dedicated page
+- Returns `401` if the token is invalid or expired
 
 ---
 
@@ -170,19 +170,23 @@ Silently refresh an expired access token using a valid refresh token to maintain
 
 ##### Purpose
 
-Allow users to recover their account by resetting their password via email.
+Let users recover their account by requesting a reset link and setting a new password.
 
 ##### Main Subfeatures
 
-- Request password reset (submit email)
-- Send reset link via MailJet
-- Validate reset token (expiry and one-time use)
-- Accept new password and update hash
-- Invalidate token after use
+- Request password reset by email (`forgot-password`)
+- Send the reset link via the MailJet mail integration
+- Validate the reset token (expiry, one-time use)
+- Accept and apply a new password (`reset-password`)
 
 ##### Visibility
 
 - `both`
+
+##### Notes
+
+- Available in **both** apps (forgot-password and reset-password pages)
+- `forgot-password` always returns `200` to prevent email enumeration
 
 ---
 
@@ -190,13 +194,13 @@ Allow users to recover their account by resetting their password via email.
 
 ##### Purpose
 
-Invalidate the user's session and clear auth state.
+End the session by invalidating the stored refresh token.
 
 ##### Main Subfeatures
 
-- Accept logout request
-- Invalidate refresh token server-side
-- Clear auth state on frontend
+- Accept an authenticated logout request
+- Clear the server-side refresh token hash
+- Clear auth state on the frontend
 
 ##### Visibility
 
@@ -208,12 +212,12 @@ Invalidate the user's session and clear auth state.
 
 ##### Purpose
 
-Return the authenticated user's profile so the frontend can initialize the app shell with the correct user context and role.
+Return the authenticated user's payload so each frontend can initialize its shell with the correct identity and role.
 
 ##### Main Subfeatures
 
-- Return user ID, name, email, role, language preference, avatar
-- Used by the app shell on load and after token refresh
+- Return the current user payload (id, email, role) from `/auth/me`
+- Used by both app shells on load and after token refresh
 
 ##### Visibility
 
@@ -225,13 +229,13 @@ Return the authenticated user's profile so the frontend can initialize the app s
 
 ### Module Purpose
 
-Manage user account profiles (self-service) and provide admin-level user administration including role assignment and account deactivation.
+Own the user entity and self-service account management (profile and password). The same backend powers the admin-facing client operations, which are documented under **Admin — Client Management**.
 
 ### Module Scope
 
 - Backend: `yes`
 - Frontend: `yes`
-- Audience: `authenticated users (self-service), admin (management)`
+- Audience: `authenticated users (self-service)`
 
 ### Features In This Module
 
@@ -239,35 +243,14 @@ Manage user account profiles (self-service) and provide admin-level user adminis
 
 ##### Purpose
 
-Allow users to view and update their name, language preference, and avatar.
+Allow a user to view and update their own profile.
 
 ##### Main Subfeatures
 
-- View current profile details
+- View current profile (name, email, role, language preference, avatar)
 - Update display name
 - Update language preference (English / Arabic)
-- Upload or remove avatar image
-- Change password (requires current password confirmation)
-
-##### Visibility
-
-- `both`
-
----
-
-#### Feature 2: Admin — List Users
-
-##### Purpose
-
-Allow admins to view a paginated, searchable list of all system users.
-
-##### Main Subfeatures
-
-- Paginated user list
-- Filter by role (admin, editor, viewer)
-- Filter by active/inactive status
-- Search by name or email
-- View user details summary in list
+- Update avatar URL
 
 ##### Visibility
 
@@ -275,21 +258,22 @@ Allow admins to view a paginated, searchable list of all system users.
 
 ##### Notes
 
-- Admin-only feature
+- A profile page exists in **both** apps (Customer Portal and Admin Panel)
+- Users cannot change their own role here
 
 ---
 
-#### Feature 3: Admin — Create User
+#### Feature 2: Change Own Password
 
 ##### Purpose
 
-Allow admins to create a new user account directly without requiring the registration flow.
+Allow a user to change their password after confirming the current one.
 
 ##### Main Subfeatures
 
-- Create user with name, email, password, and role
-- Send welcome email
-- Set initial active status
+- Submit current password and new password
+- Verify the current password before updating
+- Persist the new password hash
 
 ##### Visibility
 
@@ -297,52 +281,7 @@ Allow admins to create a new user account directly without requiring the registr
 
 ##### Notes
 
-- Admin-only feature
-
----
-
-#### Feature 4: Admin — Edit User
-
-##### Purpose
-
-Allow admins to update user profile details, change role, or reset password.
-
-##### Main Subfeatures
-
-- Edit name, email, role
-- Activate or deactivate user account
-- Reset user password (admin-initiated)
-
-##### Visibility
-
-- `both`
-
-##### Notes
-
-- Admin-only feature
-
----
-
-#### Feature 5: Admin — Delete / Deactivate User
-
-##### Purpose
-
-Allow admins to deactivate or permanently delete a user and all their data (GDPR).
-
-##### Main Subfeatures
-
-- Deactivate user (blocks login, preserves data)
-- Delete user and all owned data (GDPR right to erasure)
-- Cascade deletion: projects, dashboards, CSV files, audit logs owned by user
-
-##### Visibility
-
-- `both`
-
-##### Notes
-
-- GDPR deletion must complete within 30 days
-- Admin-only feature
+- Admin-facing user create/edit/suspend/delete operations are documented under **Admin — Client Management** (they reuse this module's backend)
 
 ---
 
@@ -350,13 +289,13 @@ Allow admins to deactivate or permanently delete a user and all their data (GDPR
 
 ### Module Purpose
 
-Provide the organizational container for dashboards. Users create and manage projects to group their work.
+Provide the organizational container that groups dashboards. Users create and manage projects in the Customer Portal.
 
 ### Module Scope
 
 - Backend: `yes`
 - Frontend: `yes`
-- Audience: `authenticated editors and admins`
+- Audience: `authenticated editors and admins (Customer Portal)`
 
 ### Features In This Module
 
@@ -364,17 +303,20 @@ Provide the organizational container for dashboards. Users create and manage pro
 
 ##### Purpose
 
-Allow editors to create a new project to organize dashboards.
+Allow a user to create a new project to organize dashboards.
 
 ##### Main Subfeatures
 
-- Submit project name and optional description
-- Set project owner to current user
-- Validate no server-side name uniqueness constraint (names are free)
+- Submit project name (max 200 chars) and optional description
+- Set the project owner to the current user
 
 ##### Visibility
 
 - `both`
+
+##### Notes
+
+- Project names do not need to be unique
 
 ---
 
@@ -382,14 +324,14 @@ Allow editors to create a new project to organize dashboards.
 
 ##### Purpose
 
-Show the user's own projects in a searchable, paginated list.
+Show the user's projects in a searchable, paginated list.
 
 ##### Main Subfeatures
 
-- List projects owned by the current user
+- Paginated list of projects
 - Search by project name
-- Sort by created date or last updated
-- Show dashboard count per project
+- Filter by active status
+- Admin sees all projects; others see only owned projects (enforced in the service)
 
 ##### Visibility
 
@@ -401,18 +343,21 @@ Show the user's own projects in a searchable, paginated list.
 
 ##### Purpose
 
-Show the contents of a single project: its dashboards and metadata.
+Show a single project's details and its dashboards.
 
 ##### Main Subfeatures
 
 - Display project details (name, description, owner, dates)
-- List dashboards within the project
-- Dashboard status badges (generating, ready, error)
+- List dashboards within the project with status badges
 - Quick actions (create dashboard, delete project)
 
 ##### Visibility
 
 - `both`
+
+##### Notes
+
+- Owner-or-admin access enforced in the service
 
 ---
 
@@ -420,13 +365,13 @@ Show the contents of a single project: its dashboards and metadata.
 
 ##### Purpose
 
-Allow the project owner or admin to update project name and description.
+Allow the owner or an admin to update project name and description.
 
 ##### Main Subfeatures
 
 - Update project name
 - Update project description
-- Record updated timestamp and updatedBy user
+- Record the updated timestamp
 
 ##### Visibility
 
@@ -438,13 +383,13 @@ Allow the project owner or admin to update project name and description.
 
 ##### Purpose
 
-Allow the project owner or admin to delete a project and all its contents.
+Allow the owner or an admin to delete a project and its contents.
 
 ##### Main Subfeatures
 
-- Confirm deletion with user
-- Cascade delete all dashboards, widgets, share links, cache entries, and data sources linked to the project
-- Remove project record
+- Confirm deletion
+- Cascade delete all dashboards (and their widgets, share links, cache entries, data source links)
+- Remove the project record
 
 ##### Visibility
 
@@ -452,8 +397,7 @@ Allow the project owner or admin to delete a project and all its contents.
 
 ##### Notes
 
-- Business rule: cascade deletion removes all child entities
-- Cannot be undone
+- Cascade deletion is irreversible
 
 ---
 
@@ -461,13 +405,13 @@ Allow the project owner or admin to delete a project and all its contents.
 
 ### Module Purpose
 
-Handle all CSV data operations: file upload, row storage, column metadata management, and data reuse across dashboards.
+Handle the full CSV lifecycle: file upload (direct or presigned), row storage into per-file dynamic collections, column metadata management, AI column analysis triggering, and file reuse across dashboards.
 
 ### Module Scope
 
 - Backend: `yes`
 - Frontend: `yes`
-- Audience: `authenticated editors and admins`
+- Audience: `authenticated editors and admins (Customer Portal)`
 
 ### Features In This Module
 
@@ -475,23 +419,19 @@ Handle all CSV data operations: file upload, row storage, column metadata manage
 
 ##### Purpose
 
-Allow users to upload a CSV file via drag-and-drop, store the raw file in object storage, and persist the data rows in the database.
+Let users upload a CSV file, store it in object storage, parse its rows into the database, and trigger AI column analysis.
 
 ##### Main Subfeatures
 
-- Drag-and-drop file picker (PrimeNG FileUpload)
+- **Direct multipart upload**: send the file as form-data; backend streams it to Cloudflare R2, creates the `csvfiles` record, and queues analysis (returns `202`)
+- **Presigned upload (legacy)**: initiate an upload session for a direct client-to-R2 upload, then confirm completion to queue parsing + analysis
 - Validate file type (CSV only) and size (max 50 MB)
-- Show upload progress
-- Store raw file in Cloudflare R2 as backup
-- Parse CSV and insert rows into a dedicated per-file MongoDB collection
-- Create `csvfiles` metadata record
+- Parse rows into a dedicated per-file collection (`csvdata_{fileId}`)
 - Create `columnmetadata` records per column (name, inferred type, sample values)
-- Trigger AI column analysis background job on completion
 
 ##### Main CSV Upload Fields
 
-- File name
-- File size
+- File name and file size
 - Column names and inferred types
 - Row count
 
@@ -501,10 +441,9 @@ Allow users to upload a CSV file via drag-and-drop, store the raw file in object
 
 ##### Notes
 
-- Duplicate file names are allowed; each upload creates a distinct dataset
-- Upload is chunked for large files
-- Row insertion is done in batches to avoid memory pressure
-- AI is triggered automatically after upload completes
+- The Customer Portal upload wizard uses the direct multipart flow
+- AI column analysis is queued automatically once the file is stored
+- AI never receives raw data rows — only column names, types, and sample statistics
 
 ---
 
@@ -512,15 +451,14 @@ Allow users to upload a CSV file via drag-and-drop, store the raw file in object
 
 ##### Purpose
 
-Allow users to see all their previously uploaded CSV files for reuse in new dashboards.
+Let users see their uploaded CSV files for reuse in new dashboards.
 
 ##### Main Subfeatures
 
-- Paginated list of uploaded files
+- Paginated list of files
+- Search by filename
+- Filter by status (analyzing, ready, error)
 - Show file name, size, upload date, row count, status
-- Search by file name
-- Filter by status (ready, analyzing, error)
-- Select file for use in a new dashboard
 
 ##### Visibility
 
@@ -528,27 +466,42 @@ Allow users to see all their previously uploaded CSV files for reuse in new dash
 
 ---
 
-#### Feature 3: AI Column Analysis (Background)
+#### Feature 3: View CSV File Details
 
 ##### Purpose
 
-Automatically analyze uploaded CSV column names and inferred types in the background and generate meaningful human-readable descriptions per column.
+Show a file's metadata together with its column metadata for review.
 
 ##### Main Subfeatures
 
-- Queue analysis job when CSV upload completes
-- Send column names, types, and sample statistics to Claude AI (never raw data rows)
-- Receive AI-generated description per column
-- Update `columnmetadata` records with AI suggestions
-- Update job status to completed or failed
-- Notify user when analysis is done
+- Return file metadata
+- Return the file's columns (`columnmetadata`) with inferred type, samples, and descriptions
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 4: AI Column Analysis (Background)
+
+##### Purpose
+
+Automatically analyze uploaded CSV columns in the background and generate human-readable descriptions per column.
+
+##### Main Subfeatures
+
+- Queue an analysis job when an upload completes
+- Infer column types and compute sample statistics
+- Send column metadata to the AI provider and receive a description per column
+- Write AI descriptions back to `columnmetadata`
+- Update the `backgroundjobs` record status
 
 ##### Main Column Analysis Inputs
 
-- Column name (as in CSV header)
-- Inferred data type (string, number, date, boolean, category)
-- Sample values (first 5-10 distinct values)
-- Null count and unique value count
+- Column name (CSV header)
+- Inferred data type
+- Sample values and null/unique counts
 
 ##### Visibility
 
@@ -556,25 +509,22 @@ Automatically analyze uploaded CSV column names and inferred types in the backgr
 
 ##### Notes
 
-- AI never receives actual data rows — only column metadata and statistics
-- Job timeout: 5 minutes maximum
-- Failed jobs can be manually retried by the user
+- Owned operationally by the **AI Processing** module worker; surfaced to the user via the Data pages
+- Never passes raw data rows to AI
 
 ---
 
-#### Feature 4: Review and Edit Column Descriptions
+#### Feature 5: Review and Edit Column Descriptions
 
 ##### Purpose
 
-Show AI-generated column descriptions to the user and allow them to edit before confirming.
+Show AI-generated column descriptions and let users edit/confirm them before the file is used for dashboard generation.
 
 ##### Main Subfeatures
 
-- Display each column with AI-generated description and inferred type
-- Allow user to edit the description text
-- Allow user to confirm or reject AI suggestion per column
-- Save finalized descriptions to `columnmetadata`
-- Mark file as `ready` after confirmation
+- Display each column with its AI description and inferred type
+- Edit the description text per column (`userDescription`)
+- Save confirmed descriptions to `columnmetadata`
 
 ##### Visibility
 
@@ -582,25 +532,39 @@ Show AI-generated column descriptions to the user and allow them to edit before 
 
 ##### Notes
 
-- User must confirm column descriptions before the dashboard generation step can begin
-- This step creates the semantic context the dashboard AI uses
+- Confirmed column descriptions form the semantic context the dashboard generation step uses
 
 ---
 
-#### Feature 5: Delete CSV File
+#### Feature 6: Retry Column Analysis
 
 ##### Purpose
 
-Allow users to delete an uploaded CSV file and its stored data.
+Let users manually re-run a failed AI column analysis job.
 
 ##### Main Subfeatures
 
-- Check if file is used in any active dashboards
-- Warn user if dashboards depend on the file
+- Re-queue the analysis job for the file (returns `202`)
+- Reset job status for tracking
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 7: Delete CSV File
+
+##### Purpose
+
+Let users delete an uploaded CSV file and all of its stored data.
+
+##### Main Subfeatures
+
 - Delete `columnmetadata` records
-- Delete per-file data rows collection
-- Delete raw file from Cloudflare R2
-- Remove `csvfiles` metadata record
+- Drop the per-file data rows collection (`csvdata_{fileId}`)
+- Remove the `csvfiles` metadata record
+- Report affected dashboards in the delete result
 
 ##### Visibility
 
@@ -608,8 +572,7 @@ Allow users to delete an uploaded CSV file and its stored data.
 
 ##### Notes
 
-- Deletion is a destructive action and cannot be undone
-- Dashboards using the deleted file will lose their data source
+- Destructive and irreversible; dependent dashboards lose their data source
 
 ---
 
@@ -617,7 +580,7 @@ Allow users to delete an uploaded CSV file and its stored data.
 
 ### Module Purpose
 
-Orchestrate all AI-powered background jobs. This module is the domain layer between business logic and the AI provider. It handles prompt construction, response parsing, and result persistence. It has no frontend pages; its status is surfaced through the Dashboards and Data modules.
+Orchestrate AI-powered background jobs via BullMQ workers. This is the domain layer between business logic and the AI provider. It has no frontend pages; its status is surfaced through the Data and Dashboards modules.
 
 ### Module Scope
 
@@ -631,18 +594,15 @@ Orchestrate all AI-powered background jobs. This module is the domain layer betw
 
 ##### Purpose
 
-Execute the background AI job that analyzes CSV column metadata and generates descriptions.
+Run the async worker that loads CSV rows, infers column structure, and generates AI column descriptions.
 
 ##### Main Subfeatures
 
-- Receive job payload (CSVFile ID)
-- Load column names, types, and sample statistics from `columnmetadata`
-- Construct analysis prompt
-- Call Claude AI via the AI Provider integration
-- Parse AI response into per-column description objects
-- Write results back to `columnmetadata`
-- Update `backgroundjobs` record (status, result, timestamps)
-- Trigger `dashboard_ready` notification on completion
+- Consume the `csv-analysis` queue
+- Load CSV rows into the dynamic per-file collection (`csvdata_{fileId}`)
+- Infer columns and compute sample statistics
+- Call the AI provider to generate per-column descriptions
+- Write results to `columnmetadata` and update the `backgroundjobs` record
 
 ##### Visibility
 
@@ -650,36 +610,24 @@ Execute the background AI job that analyzes CSV column metadata and generates de
 
 ##### Notes
 
-- Job is queued by the Data module on CSV upload completion
+- Queued by the Data module on upload completion or retry
 - Never passes raw data rows to AI
-- Max timeout: 5 minutes
 
 ---
 
-#### Feature 2: Dashboard Generation Job
+#### Feature 2: AI Dashboard Generation Job
 
 ##### Purpose
 
-Execute the background AI job that generates the full dashboard structure from column metadata and dashboard purpose.
+Run the async worker that generates a dashboard's structure from confirmed column metadata and the dashboard purpose.
 
 ##### Main Subfeatures
 
-- Receive job payload (Dashboard ID and linked CSVFile IDs)
-- Load dashboard purpose description
-- Load confirmed `columnmetadata` for all linked CSV files
-- Construct generation prompt with purpose + data structure context
-- Call Claude AI via the AI Provider integration
-- Parse AI response into structured widget definitions:
-  - chart type per widget (bar, line, pie, KPI card, table, etc.)
-  - layout position and size per widget
-  - query definition (aggregation pipeline spec) per widget
-  - aggregation rules (sum, count, avg, min, max, group by)
-  - filter and sort rules
-  - chart display config (title, axis labels, colors)
-- Write widget definitions to `chartwidgets`
-- Update dashboard status to `ready`
-- Update `backgroundjobs` record
-- Trigger `dashboard_ready` notification
+- Consume the `dashboard-generation` queue
+- Load the dashboard purpose and confirmed `columnmetadata` for linked files
+- Select widgets from the `WidgetDefinition` catalog and define each widget's aggregation query
+- Write widget definitions to `chartwidgets` and set dashboard status to `ready`
+- Update the `backgroundjobs` record
 
 ##### Visibility
 
@@ -687,9 +635,9 @@ Execute the background AI job that generates the full dashboard structure from c
 
 ##### Notes
 
-- AI generates the query specification and chart config — it does NOT execute queries or read data
-- Backend executes the MongoDB aggregation queries defined by AI
-- Job is queued by the Dashboards module on dashboard creation
+- AI selects widgets and defines query specs; the backend executes the actual MongoDB aggregations
+- Queued by the Dashboards module on creation or generation retry
+- **Gap:** the `pdf-export` and `cache-recalculation` queues are declared and have jobs enqueued, but **no worker consumes them yet** (PDF export and dashboard refresh recalculation do not complete).
 
 ---
 
@@ -697,13 +645,13 @@ Execute the background AI job that generates the full dashboard structure from c
 
 ### Module Purpose
 
-Manage the full dashboard lifecycle. Own dashboard creation, widget configuration, data source linking, generation status tracking, the chart data serving API, manual refresh, and customization.
+Own the full dashboard lifecycle: creation, AI generation status, the dynamic viewer, widget CRUD/customization, the cache-first chart data API with filters, refresh, duplicate, delete, and generation retry.
 
 ### Module Scope
 
 - Backend: `yes`
 - Frontend: `yes`
-- Audience: `authenticated editors (create/edit), viewers (view via share link)`
+- Audience: `authenticated editors (create/edit), viewers (via share link)`
 
 ### Features In This Module
 
@@ -711,24 +659,19 @@ Manage the full dashboard lifecycle. Own dashboard creation, widget configuratio
 
 ##### Purpose
 
-Allow editors to create a new dashboard with a name, purpose description, and data source selection.
+Create a dashboard, link confirmed CSV data sources, and trigger AI generation.
 
 ##### Main Subfeatures
 
-- Enter dashboard name (unique within project)
-- Enter purpose description (used as AI generation prompt context)
-- Select one or more previously uploaded CSV files as data sources
-- OR upload a new CSV file directly from this flow
-- Save dashboard record with status `generating`
-- Trigger AI dashboard generation background job
-- Redirect to generation status page
+- Enter dashboard name and purpose description (min 10 chars, used as AI context)
+- Select one or more confirmed CSV files as data sources
+- Save the dashboard with status `generating` and queue the AI generation job (returns `202`)
 
 ##### Main Dashboard Fields
 
-- Dashboard name
-- Purpose description
-- Data sources (one or more CSVFile references)
+- Name, purpose description
 - Project reference
+- Data sources (one or more CSVFile references)
 
 ##### Visibility
 
@@ -740,14 +683,36 @@ Allow editors to create a new dashboard with a name, purpose description, and da
 
 ##### Purpose
 
-Show the user the current status of dashboard generation with progress feedback.
+Let the user track generation progress while AI builds the dashboard.
 
 ##### Main Subfeatures
 
-- Poll backend for job status (queued, processing, completed, failed)
-- Display progress indicator and status message
-- On completion: redirect to dashboard viewer
-- On failure: show error message and retry option
+- Poll the dashboard status endpoint (status, job status, progress, error message)
+- Show a progress indicator and status message
+- Redirect to the viewer on completion; show retry on failure
+
+##### Visibility
+
+- `both`
+
+##### Notes
+
+- Designed for frontend polling during generation
+
+---
+
+#### Feature 3: List Dashboards
+
+##### Purpose
+
+Show dashboards in a searchable, filterable, paginated list.
+
+##### Main Subfeatures
+
+- Paginated list, optionally filtered by project
+- Search by name
+- Filter by status (generating, ready, error)
+- Quick actions: open, duplicate, delete
 
 ##### Visibility
 
@@ -755,22 +720,19 @@ Show the user the current status of dashboard generation with progress feedback.
 
 ---
 
-#### Feature 3: View Dashboard (Dynamic Viewer)
+#### Feature 4: View Dashboard (Dynamic Viewer)
 
 ##### Purpose
 
-Render the generated dashboard by dynamically loading widget data via parallel backend API calls.
+Render a generated dashboard by loading each widget's data dynamically.
 
 ##### Main Subfeatures
 
-- Load dashboard layout and widget configurations
-- For each widget: call chart data endpoint in parallel
-- Render chart type as defined in widget config (PrimeNG charts)
-- Apply aggregations, filters, and sort rules as defined in widget config
-- Show per-widget loading state
-- Show per-widget error state if data call fails
-- Support responsive layout (mobile, tablet, desktop)
-- Language-aware labels (English / Arabic)
+- Load dashboard layout, widgets, and data sources
+- Call the chart data endpoint per widget (in parallel)
+- Render each widget's chart type and apply its display config
+- Per-widget loading and error states
+- Responsive, language-aware (English / Arabic) layout
 
 ##### Visibility
 
@@ -778,20 +740,19 @@ Render the generated dashboard by dynamically loading widget data via parallel b
 
 ---
 
-#### Feature 4: Chart Data API
+#### Feature 5: Chart Data API (Cache-First, Filterable)
 
 ##### Purpose
 
-Backend endpoint that executes the MongoDB aggregation query defined in a widget's configuration and returns the result. Used by the dynamic viewer.
+Serve aggregated chart data for a widget, resolving from cache first and applying optional filters.
 
 ##### Main Subfeatures
 
-- Accept widget ID in request
-- Look up chart query definition from `chartwidgets`
-- Check Redis cache first, then MongoDB cache
-- On cache miss: execute MongoDB aggregation pipeline
-- Store result in cache (Redis + DB)
-- Return structured data in the format the frontend chart type expects
+- Look up cached chart data (Redis) before executing the aggregation
+- Execute the widget's MongoDB aggregation pipeline on a cache miss
+- Apply optional JSON-encoded filters from the query
+- Support access via JWT or a share token
+- Skip throttling (called in parallel for all widgets on load)
 
 ##### Visibility
 
@@ -799,86 +760,20 @@ Backend endpoint that executes the MongoDB aggregation query defined in a widget
 
 ##### Notes
 
-- This is the performance-critical endpoint; target < 200ms for cached responses
-- Parallel calls from the frontend viewer must be handled efficiently
+- Performance-critical; returns an empty result structure (not `404`) when the aggregation yields no rows
 
 ---
 
-#### Feature 5: Manual Data Refresh
+#### Feature 6: Manual Data Refresh
 
 ##### Purpose
 
-Allow users to manually trigger recalculation of all chart data for a dashboard after adding new CSV data.
+Let users invalidate cached chart data and recalculate aggregations after data changes.
 
 ##### Main Subfeatures
 
-- User clicks "Refresh Data" button
-- Backend invalidates all cache entries for the dashboard
-- Backend re-executes aggregation queries for all widgets
-- Updated results are stored in cache
-- Frontend re-renders charts with fresh data
-- Refresh action is rate-limited per subscription tier
-
-##### Visibility
-
-- `both`
-
----
-
-#### Feature 6: Dashboard Customization
-
-##### Purpose
-
-Allow editors to modify the AI-generated dashboard: edit chart types, adjust layout, change titles, add or remove widgets.
-
-##### Main Subfeatures
-
-- Enter edit/customization mode
-- Drag and resize widgets in the grid layout
-- Change chart type for a widget (bar ↔ line ↔ pie, etc.)
-- Edit widget title and display configuration
-- Change aggregation rules for a widget
-- Add a new widget manually (select data source, chart type, fields)
-- Remove a widget
-- Save all customizations back to `chartwidgets`
-
-##### Visibility
-
-- `both`
-
----
-
-#### Feature 7: Duplicate Dashboard
-
-##### Purpose
-
-Allow editors to create a copy of a dashboard within the same project.
-
-##### Main Subfeatures
-
-- Copy dashboard record with name appended "-copy"
-- Copy all widget configurations
-- Copy all data source links
-- New dashboard starts as `ready` (no re-generation needed)
-
-##### Visibility
-
-- `both`
-
----
-
-#### Feature 8: Delete Dashboard
-
-##### Purpose
-
-Allow editors or admins to permanently delete a dashboard.
-
-##### Main Subfeatures
-
-- Confirm deletion
-- Remove all widgets, data source links, cache entries
-- Invalidate all share links
-- Remove dashboard record
+- Invalidate the dashboard's cache entries
+- Enqueue a recalculation job (returns `202`)
 
 ##### Visibility
 
@@ -886,24 +781,95 @@ Allow editors or admins to permanently delete a dashboard.
 
 ##### Notes
 
-- Cascade deletion is immediate and irreversible
-- All active share links are immediately invalidated
+- **Partial.** The refresh request enqueues a `cache-recalculation` job, but **no worker processes that queue yet**, so recalculation does not complete asynchronously.
 
 ---
 
-#### Feature 9: List Dashboards
+#### Feature 7: Dashboard Customization (Widget CRUD)
 
 ##### Purpose
 
-Show all dashboards within a project in a searchable, filterable list.
+Let editors modify the AI-generated dashboard by adding, editing, and removing widgets.
 
 ##### Main Subfeatures
 
-- List dashboards in the current project
-- Filter by status (generating, ready, error)
-- Search by name
-- Show creation date, status, last updated
-- Quick actions: open, duplicate, delete
+- Add a widget manually (type, title, position, query definition, display config)
+- Update a widget (type, title, position, query, display config) and invalidate its cache
+- Delete a widget and clear its cache
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 8: Edit Dashboard Details
+
+##### Purpose
+
+Let editors update the dashboard's name and purpose description.
+
+##### Main Subfeatures
+
+- Update name
+- Update purpose description
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 9: Duplicate Dashboard
+
+##### Purpose
+
+Let editors create a copy of a dashboard within the same project.
+
+##### Main Subfeatures
+
+- Clone the dashboard record and its widgets
+- Copy data source links
+- New dashboard is ready immediately (no regeneration)
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 10: Delete Dashboard
+
+##### Purpose
+
+Let editors or admins permanently delete a dashboard.
+
+##### Main Subfeatures
+
+- Confirm deletion
+- Cascade delete widgets, cache entries, and share links
+- Remove the dashboard record
+
+##### Visibility
+
+- `both`
+
+##### Notes
+
+- Active share links are immediately invalidated
+
+---
+
+#### Feature 11: Retry Dashboard Generation
+
+##### Purpose
+
+Let users re-run a failed AI dashboard generation job.
+
+##### Main Subfeatures
+
+- Re-queue the generation job (returns `202`)
+- Reset dashboard/job status for tracking
 
 ##### Visibility
 
@@ -915,13 +881,13 @@ Show all dashboards within a project in a searchable, filterable list.
 
 ### Module Purpose
 
-Generate and manage secure, token-based share links for dashboards. Control view-only or edit-level access per link. Handle public dashboard access via share token.
+Generate and manage secure, token-based share links for dashboards with view or edit permission, optional expiry, and revocation. Resolve public dashboards by share token.
 
 ### Module Scope
 
 - Backend: `yes`
 - Frontend: `yes`
-- Audience: `editors (create links), viewers (access links)`
+- Audience: `editors (create/manage links), public viewers (access via token)`
 
 ### Features In This Module
 
@@ -929,16 +895,14 @@ Generate and manage secure, token-based share links for dashboards. Control view
 
 ##### Purpose
 
-Allow dashboard owners to generate a shareable link with a chosen permission level.
+Let a dashboard owner generate a shareable link with a chosen permission level.
 
 ##### Main Subfeatures
 
-- Generate a unique, URL-safe token
-- Set permission level: view-only or edit
-- Set optional expiry date
-- Set viewer refresh permission flag (can viewer refresh data?)
-- Store `sharelinks` record
-- Return shareable URL for copying
+- Generate a unique, URL-safe token (raw token returned once)
+- Set permission: view or edit
+- Set an optional expiry date
+- Set whether the viewer can refresh data
 
 ##### Visibility
 
@@ -946,19 +910,36 @@ Allow dashboard owners to generate a shareable link with a chosen permission lev
 
 ---
 
-#### Feature 2: View Shared Dashboard
+#### Feature 2: Manage Share Links
 
 ##### Purpose
 
-Allow anyone with a valid share link to view (or edit, based on permission) the shared dashboard without needing an account.
+Let a dashboard owner review and revoke existing share links.
 
 ##### Main Subfeatures
 
-- Resolve dashboard from share token
-- Validate token is active and not expired
-- Enforce permission level (view-only blocks customization actions)
-- Render dashboard viewer with full chart data
-- Respect viewer refresh permission flag
+- List a dashboard's active and revoked share links
+- Show permission, created date, expiry, access count
+- Revoke a link (immediate invalidation)
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 3: View Shared Dashboard (Public)
+
+##### Purpose
+
+Let anyone with a valid token view (or edit, per permission) a shared dashboard without an account.
+
+##### Main Subfeatures
+
+- Resolve the dashboard from the raw share token
+- Validate the token is active and not expired
+- Enforce the permission level and viewer-refresh flag
+- Return the public dashboard with cached chart data
 
 ##### Visibility
 
@@ -966,27 +947,7 @@ Allow anyone with a valid share link to view (or edit, based on permission) the 
 
 ##### Notes
 
-- Share link access works without authentication
-- Expired or revoked links show a clear error page
-
----
-
-#### Feature 3: Manage Share Links
-
-##### Purpose
-
-Allow dashboard owners to see all active share links and revoke them.
-
-##### Main Subfeatures
-
-- List all share links for a dashboard
-- Show permission level, created date, expiry, access count
-- Revoke a share link (immediate invalidation)
-- Copy share link URL
-
-##### Visibility
-
-- `both`
+- Works without authentication; expired/revoked links return a clear error, not a `404`
 
 ---
 
@@ -994,7 +955,7 @@ Allow dashboard owners to see all active share links and revoke them.
 
 ### Module Purpose
 
-Generate and deliver dashboard data exports in PDF and Excel/CSV formats. PDF generation is async; Excel/CSV is synchronous.
+Generate and deliver dashboard exports. Excel and CSV are synchronous file streams; PDF is queued (async).
 
 ### Module Scope
 
@@ -1008,16 +969,11 @@ Generate and deliver dashboard data exports in PDF and Excel/CSV formats. PDF ge
 
 ##### Purpose
 
-Generate a PDF report of the dashboard with chart visualizations and data.
+Request a branded PDF report of the dashboard.
 
 ##### Main Subfeatures
 
-- Trigger PDF generation background job
-- Render dashboard to PDF (branded with Roya AI Dynamo colors)
-- Include all visible charts with current filter state
-- Upload generated PDF to Cloudflare R2
-- Notify user when PDF is ready
-- Provide signed download URL
+- Queue a PDF export job (returns `202` with a job id)
 
 ##### Visibility
 
@@ -1025,8 +981,7 @@ Generate a PDF report of the dashboard with chart visualizations and data.
 
 ##### Notes
 
-- PDF generation is async; target < 60 seconds
-- PDF uses brand colors: #ff6043, #5922ea, #282828
+- **Partial.** The job is enqueued on the `pdf-export` queue, but **no worker is implemented yet**, so the PDF is never produced.
 
 ---
 
@@ -1034,18 +989,20 @@ Generate a PDF report of the dashboard with chart visualizations and data.
 
 ##### Purpose
 
-Export the underlying aggregated chart data for a widget or the full dashboard to Excel format.
+Download widget/dashboard data as an Excel workbook.
 
 ##### Main Subfeatures
 
-- Select widget or full dashboard to export
-- Apply current filters
-- Generate `.xlsx` file with one sheet per widget
-- Return file as direct download
+- Build an `.xlsx` workbook of the dashboard's widget data
+- Return the file as a direct download stream
 
 ##### Visibility
 
 - `both`
+
+##### Notes
+
+- Response is a raw `.xlsx` stream and bypasses the success envelope
 
 ---
 
@@ -1053,18 +1010,21 @@ Export the underlying aggregated chart data for a widget or the full dashboard t
 
 ##### Purpose
 
-Export the underlying dataset (raw rows from a CSV data source) as a downloadable CSV.
+Download a widget's data as a CSV file.
 
 ##### Main Subfeatures
 
-- Select a data source (CSVFile) to export
-- Apply optional column filters
-- Stream rows from MongoDB to CSV response
-- Return file as direct download
+- Select a widget to export
+- Build the CSV payload
+- Return the file as a direct download stream
 
 ##### Visibility
 
 - `both`
+
+##### Notes
+
+- Response is a raw CSV stream and bypasses the success envelope
 
 ---
 
@@ -1072,13 +1032,13 @@ Export the underlying dataset (raw rows from a CSV data source) as a downloadabl
 
 ### Module Purpose
 
-Deliver in-app and email notifications for dashboard generation completion, errors, share events, and export readiness.
+Provide the in-app notification center: list notifications, show the unread count, and mark notifications read.
 
 ### Module Scope
 
 - Backend: `yes`
 - Frontend: `yes`
-- Audience: `all authenticated users`
+- Audience: `all authenticated users (Customer Portal)`
 
 ### Features In This Module
 
@@ -1086,126 +1046,49 @@ Deliver in-app and email notifications for dashboard generation completion, erro
 
 ##### Purpose
 
-Show users a list of their notifications with read/unread state in the app shell.
+Let users see their notifications with read/unread state and manage them.
 
 ##### Main Subfeatures
 
-- Notification bell in app shell header with unread count badge
-- Dropdown preview of latest notifications
-- Full notifications list page with pagination
-- Mark notification as read (single or all)
-- Link each notification to the related entity (dashboard, project, etc.)
-- Notification types: `dashboard_ready`, `generation_error`, `dashboard_shared`, `export_ready`, `csv_analysis_complete`
+- Paginated notifications list (filterable by read state)
+- Unread count for the app shell bell badge
+- Mark a single notification as read
+- Mark all notifications as read
 
 ##### Visibility
 
 - `both`
 
----
-
-#### Feature 2: Email Notifications
-
-##### Purpose
-
-Send transactional emails to users for key system events.
-
-##### Main Subfeatures
-
-- Welcome email on registration
-- Dashboard generation complete email (with link to dashboard)
-- Dashboard generation failed email (with retry link)
-- Dashboard shared notification email (when someone shares a dashboard with the user)
-- Export ready email (with download link)
-- Password reset email
-
-##### Visibility
-
-- `backend-only`
-
 ##### Notes
 
-- Email is sent via MailJet integration in `src/integrations/mail/`
-- Email preference settings (opt-out) may be added in future
+- **Partial wiring.** `NotificationsService.notify` exists to create notifications, but it is **not yet called by the AI or export workers**, so notifications are not auto-generated by background events yet.
+- Transactional emails (welcome, password reset) are sent directly by the Auth flow via the MailJet integration, not through this module.
 
 ---
 
-## Module: Admin — User Management
+## Module: Subscriptions
 
 ### Module Purpose
 
-Admin-only frontend area for listing, creating, editing, and deactivating user accounts and assigning roles. Backend operations are handled by the Users module.
-
-### Module Scope
-
-- Backend: `no`
-- Frontend: `yes`
-- Audience: `admin`
-
-### Features In This Module
-
-#### Feature 1: Admin Users List
-
-##### Purpose
-
-Give admins a full, searchable, filterable view of all users in the system.
-
-##### Main Subfeatures
-
-- Display all users with role, status, last login, and created date
-- Search by name or email
-- Filter by role and active status
-- Navigate to create or edit user pages
-
-##### Visibility
-
-- `frontend`
-
----
-
-#### Feature 2: Admin Create / Edit User
-
-##### Purpose
-
-Allow admins to create a new user or update an existing user's profile, role, and status.
-
-##### Main Subfeatures
-
-- Create user with name, email, password, role
-- Edit name, email, role of existing user
-- Activate or deactivate user
-- Admin-initiated password reset
-
-##### Visibility
-
-- `frontend`
-
----
-
-## Module: Admin — Subscriptions
-
-### Module Purpose
-
-Manage subscription tiers, user plan assignments, and enforce usage limits per plan.
+Customer-facing subscription area: view available plans and view the current user's own subscription and usage. (Admin-side plan and subscription management lives in **Admin — Subscriptions & Plans**.)
 
 ### Module Scope
 
 - Backend: `yes`
 - Frontend: `yes`
-- Audience: `admin (management), editors (view own plan)`
+- Audience: `authenticated users (Customer Portal)`
 
 ### Features In This Module
 
-#### Feature 1: Subscription Plan Management
+#### Feature 1: View Available Plans
 
 ##### Purpose
 
-Define and manage subscription tiers (free, pro, enterprise) with associated feature limits.
+Let a user browse the subscription plans available to subscribers.
 
 ##### Main Subfeatures
 
-- Define plan tiers with limits (max dashboards, max CSV uploads, max refreshes)
-- Admin can create, edit, and deactivate plans
-- View all active subscriptions
+- List active plans with price and limits (max dashboards, monthly upload/update limits)
 
 ##### Visibility
 
@@ -1213,18 +1096,16 @@ Define and manage subscription tiers (free, pro, enterprise) with associated fea
 
 ---
 
-#### Feature 2: User Subscription Assignment
+#### Feature 2: View My Subscription and Usage
 
 ##### Purpose
 
-Assign a subscription plan to a user and enforce its limits across all business operations.
+Let a user see their current subscription and usage against plan limits.
 
 ##### Main Subfeatures
 
-- Assign plan to user (admin-initiated or self-service upgrade)
-- Enforce limits at service layer before creating dashboards, uploading files, or refreshing data
-- Return clear error when limit is exceeded
-- Show current usage vs limit in the user's billing page
+- Load the current user's subscription (plan, status, dates)
+- Show current usage vs plan limits
 
 ##### Visibility
 
@@ -1232,19 +1113,89 @@ Assign a subscription plan to a user and enforce its limits across all business 
 
 ---
 
-#### Feature 3: Billing and Payment
+#### Feature 3: Subscribe to a Plan
 
 ##### Purpose
 
-Process subscription payments via payment gateway and manage billing history.
+Let a user self-subscribe to a chosen plan from the Customer Portal.
 
 ##### Main Subfeatures
 
-- Initiate subscription payment via payment provider
-- Handle payment webhook (success, failure, renewal)
-- Show billing history and invoices
-- Handle plan upgrade and downgrade
-- Cancel subscription
+- Choose a plan and submit a subscribe request
+
+##### Visibility
+
+- `frontend`
+
+##### Notes
+
+- Implemented in change-001 (2026-06-22). `POST /api/v1/subscriptions/subscribe` is now live.
+- Does not process a real payment — assigns the subscription directly and returns a redirect URL to `/subscriptions`. Payment-gateway checkout is deferred to a future change.
+
+---
+
+#### Feature 4: Cancel My Subscription
+
+##### Purpose
+
+Let a user cancel their own subscription from the Customer Portal.
+
+##### Main Subfeatures
+
+- Submit a self-service cancel request
+
+##### Visibility
+
+- `frontend`
+
+##### Notes
+
+- Implemented in change-001 (2026-06-22). `POST /api/v1/subscriptions/cancel` is now live.
+- Sets the subscription status to `cancelled` and sets `endDate` to the current date.
+
+---
+
+## Module: Admin — Overview
+
+### Module Purpose
+
+Give admins a platform health snapshot: key counts (clients, projects, dashboards, subscriptions) and a 30-day AI cost summary with a chart.
+
+### Module Scope
+
+- Backend: `yes`
+- Frontend: `yes`
+- Audience: `admin (Admin Panel)`
+
+### Features In This Module
+
+#### Feature 1: Platform Statistics
+
+##### Purpose
+
+Show high-level KPI counts across the platform.
+
+##### Main Subfeatures
+
+- Aggregate counts of clients, projects, dashboards, and subscriptions
+- Display them as overview KPI cards
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 2: AI Cost Summary (30-Day)
+
+##### Purpose
+
+Show recent AI spend so admins can monitor cost.
+
+##### Main Subfeatures
+
+- Summarize AI cost over a recent window (default 30 days)
+- Render the trend as a chart on the overview page
 
 ##### Visibility
 
@@ -1252,8 +1203,258 @@ Process subscription payments via payment gateway and manage billing history.
 
 ##### Notes
 
-- Payment gateway is abstracted via interface; current default provider configured in env
-- Webhook signatures must be validated before processing
+- Backed by the AI Logs cost-summary aggregation (see **Admin — AI Logs**)
+
+---
+
+## Module: Admin — Client Management
+
+### Module Purpose
+
+Admin-facing client (user) administration. Backend operations reuse the **Users** module backend; the UI lives in the Admin Panel.
+
+### Module Scope
+
+- Backend: `yes`
+- Frontend: `yes`
+- Audience: `admin (Admin Panel)`
+
+### Features In This Module
+
+#### Feature 1: List / Search Clients
+
+##### Purpose
+
+Give admins a paginated, searchable, filterable view of all users.
+
+##### Main Subfeatures
+
+- Paginated user list with role, status, last login, created date
+- Search by name or email
+- Filter by role and active status
+
+##### Visibility
+
+- `both`
+
+##### Notes
+
+- Never returns `passwordHash` or `refreshTokenHash`
+
+---
+
+#### Feature 2: View Client Details
+
+##### Purpose
+
+Show full details for a single client on the admin edit screen.
+
+##### Main Subfeatures
+
+- Load one user by id with full profile and status
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 3: Create Client
+
+##### Purpose
+
+Let an admin create a user account directly.
+
+##### Main Subfeatures
+
+- Create a user with name, email, password, and role
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 4: Edit Client (Role / Status)
+
+##### Purpose
+
+Let an admin update a user's profile, role, status, or password.
+
+##### Main Subfeatures
+
+- Edit name, email, role
+- Toggle active status
+- Admin-initiated password reset
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 5: Suspend Client
+
+##### Purpose
+
+Let an admin deactivate a user account (blocks login, preserves data).
+
+##### Main Subfeatures
+
+- Set the user inactive
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 6: Reactivate Client
+
+##### Purpose
+
+Let an admin reactivate a previously suspended user.
+
+##### Main Subfeatures
+
+- Set the user active again
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 7: Delete Client
+
+##### Purpose
+
+Let an admin delete a user and their owned data.
+
+##### Main Subfeatures
+
+- Delete the user and cascade owned data
+
+##### Visibility
+
+- `both`
+
+##### Notes
+
+- Destructive; aligns with GDPR right-to-erasure
+
+---
+
+## Module: Admin — Subscriptions & Plans
+
+### Module Purpose
+
+Admin management of subscription plans and user subscriptions: define plans (CRUD) and assign/create/update/change/cancel user subscriptions.
+
+### Module Scope
+
+- Backend: `yes`
+- Frontend: `yes`
+- Audience: `admin (Admin Panel)`
+
+### Features In This Module
+
+#### Feature 1: Manage Subscription Plans
+
+##### Purpose
+
+Define and maintain the subscription plans offered by the platform.
+
+##### Main Subfeatures
+
+- List all plans (including inactive)
+- Create a plan (name, description, monthly price, max dashboards, monthly upload/update limits, active flag)
+- Update a plan
+- Delete a plan
+
+##### Main Plan Fields
+
+- Name, description
+- Monthly price (USD)
+- Max dashboards
+- Max data uploads per month
+- Max data updates per month
+- Active flag
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 2: Manage User Subscriptions
+
+##### Purpose
+
+Create and administer subscriptions tied to users.
+
+##### Main Subfeatures
+
+- List subscriptions (paginated, filter by status)
+- View a single subscription
+- Create a subscription for a user
+- Update a subscription
+- Assign a plan to a user
+- Change a user's plan
+- Cancel a user's subscription (`:userId/cancel`)
+
+##### Visibility
+
+- `both`
+
+##### Notes
+
+- Self-service customer `subscribe` / `cancel` are **implemented** on the backend (`POST /api/v1/subscriptions/subscribe`, `POST /api/v1/subscriptions/cancel`, change-001)
+
+---
+
+## Module: Admin — Payments
+
+### Module Purpose
+
+A manual payment ledger for admins to record and maintain payment entries. This is a bookkeeping ledger, **not** a payment-gateway checkout flow.
+
+### Module Scope
+
+- Backend: `yes`
+- Frontend: `yes`
+- Audience: `admin (Admin Panel)`
+
+### Features In This Module
+
+#### Feature 1: Payment Ledger Management
+
+##### Purpose
+
+Let admins record, browse, edit, and delete payment entries manually.
+
+##### Main Subfeatures
+
+- List/filter payments (by user, status, date range; paginated)
+- View a single payment
+- Create a payment record
+- Edit a payment record
+- Delete a payment record
+
+##### Main Payment Fields
+
+- User reference (and optional subscription/plan reference)
+- Amount (USD) and currency
+- Status, method, reference
+- Paid-at date and notes
+
+##### Visibility
+
+- `both`
+
+##### Notes
+
+- Manual ledger only — no gateway checkout or webhook processing is implemented
 
 ---
 
@@ -1261,13 +1462,13 @@ Process subscription payments via payment gateway and manage billing history.
 
 ### Module Purpose
 
-Provide admins with read-only access to the immutable system-wide audit trail.
+Give admins read-only access to the immutable, system-wide audit trail of user and system actions.
 
 ### Module Scope
 
-- Backend: `no`
+- Backend: `yes`
 - Frontend: `yes`
-- Audience: `admin`
+- Audience: `admin (Admin Panel)`
 
 ### Features In This Module
 
@@ -1275,25 +1476,78 @@ Provide admins with read-only access to the immutable system-wide audit trail.
 
 ##### Purpose
 
-Allow admins to search and browse all user and system events recorded in the audit trail.
+Let admins search and browse recorded user/system events.
 
 ##### Main Subfeatures
 
 - Paginated audit log list
-- Filter by action type (create, update, delete, share, login, export, etc.)
-- Filter by entity type (user, project, dashboard, csv, etc.)
-- Filter by user
-- Filter by date range
-- View full log entry detail (old values, new values, IP, user agent)
+- Filter by user, action, entity type, entity id, and date range
+- View full log entry detail (old/new values, IP, user agent)
 
 ##### Visibility
 
-- `frontend`
+- `both`
 
 ##### Notes
 
-- Audit logs are immutable — no edit or delete actions exist
-- Logs are written by all backend modules via a shared audit service
+- Audit logs are immutable — read-only; no create/update/delete endpoints
+- Records are written by backend modules via a shared audit service
+
+---
+
+## Module: Admin — AI Logs
+
+### Module Purpose
+
+Give admins visibility into AI usage: per-request logs, per-request cost, cost summary over time, and individual log detail.
+
+### Module Scope
+
+- Backend: `yes`
+- Frontend: `yes`
+- Audience: `admin (Admin Panel)`
+
+### Features In This Module
+
+#### Feature 1: View AI Usage Logs
+
+##### Purpose
+
+Let admins browse AI request logs with per-request cost.
+
+##### Main Subfeatures
+
+- Paginated AI log list
+- Filter by provider, model, status, and date range
+- View a single AI log entry detail (404 if missing)
+
+##### Main AI Log Fields
+
+- Provider and model
+- Status
+- Token usage and per-request cost
+- Timestamp
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 2: AI Cost Summary Over Time
+
+##### Purpose
+
+Aggregate AI cost across a date range for monitoring and the overview chart.
+
+##### Main Subfeatures
+
+- Summarize cost over a `from`/`to` range
+- Feed the Admin — Overview 30-day cost chart
+
+##### Visibility
+
+- `both`
 
 ---
 
@@ -1301,7 +1555,7 @@ Allow admins to search and browse all user and system events recorded in the aud
 
 ### Module Purpose
 
-Allow admins to manage global system configuration, AI settings, and feature flags.
+Manage the global system settings singleton: registration toggle, max file size, default max dashboards, and supported languages.
 
 ### Module Scope
 
@@ -1311,17 +1565,16 @@ Allow admins to manage global system configuration, AI settings, and feature fla
 
 ### Features In This Module
 
-#### Feature 1: System Configuration
+#### Feature 1: Global System Settings
 
 ##### Purpose
 
-View and update global operational settings.
+View and update platform-wide configuration.
 
 ##### Main Subfeatures
 
-- View and update system-wide settings (rate limit thresholds, default plan, etc.)
-- View AI provider status (model name, availability — never raw API key)
-- Manage feature flags (enable/disable specific features)
+- Get the system settings singleton
+- Update settings: `registrationEnabled`, `maxFileSizeMb`, `defaultMaxDashboards`, `supportedLanguages`
 
 ##### Visibility
 
@@ -1329,8 +1582,7 @@ View and update global operational settings.
 
 ##### Notes
 
-- Raw API keys must never be exposed to the frontend or API responses
-- Feature flags allow safe rollout of new capabilities
+- Admin-only (role guard). The settings backend is shared; the management UI is exposed in the admin-guarded settings area.
 
 ---
 
@@ -1339,19 +1591,25 @@ View and update global operational settings.
 | Module | Feature Count | Backend Features | Frontend Features |
 |---|---:|---:|---:|
 | `Auth` | 7 | 7 | 6 |
-| `Users` | 5 | 5 | 5 |
+| `Users` | 2 | 2 | 2 |
 | `Projects` | 5 | 5 | 5 |
-| `Data (CSV Management)` | 5 | 5 | 4 |
+| `Data (CSV Management)` | 7 | 7 | 6 |
 | `AI Processing` | 2 | 2 | 0 |
-| `Dashboards` | 9 | 5 | 9 |
+| `Dashboards` | 11 | 11 | 10 |
 | `Sharing` | 3 | 3 | 3 |
 | `Export` | 3 | 3 | 3 |
-| `Notifications` | 2 | 2 | 1 |
-| `Admin — User Management` | 2 | 0 | 2 |
-| `Admin — Subscriptions` | 3 | 3 | 3 |
-| `Admin — Audit Logs` | 1 | 0 | 1 |
+| `Notifications` | 1 | 1 | 1 |
+| `Subscriptions` | 4 | 4 | 4 |
+| `Admin — Overview` | 2 | 2 | 2 |
+| `Admin — Client Management` | 7 | 7 | 7 |
+| `Admin — Subscriptions & Plans` | 2 | 2 | 2 |
+| `Admin — Payments` | 1 | 1 | 1 |
+| `Admin — Audit Logs` | 1 | 1 | 1 |
+| `Admin — AI Logs` | 2 | 2 | 2 |
 | `Admin — System Settings` | 1 | 1 | 1 |
-| **Total** | **48** | **41** | **43** |
+| **Total** | **61** | **61** | **56** |
+
+> Notes on counts: "Backend Features" counts features with a working backend implementation. "Frontend Features" counts features with a UI; `Token Refresh`, `AI Column Analysis`, the two AI Processing jobs, and `Chart Data API` have no dedicated page.
 
 ---
 
@@ -1369,6 +1627,7 @@ View and update global operational settings.
 
 #### Module: Users
 - View and Edit Own Profile
+- Change Own Password
 
 #### Module: Projects
 - Create Project
@@ -1380,74 +1639,99 @@ View and update global operational settings.
 #### Module: Data (CSV Management)
 - Upload CSV File
 - List My CSV Files
+- View CSV File Details
+- AI Column Analysis (Background)
 - Review and Edit Column Descriptions
+- Retry Column Analysis
 - Delete CSV File
 
 #### Module: AI Processing
 - CSV Column Analysis Job
-- Dashboard Generation Job
+- AI Dashboard Generation Job
 
 #### Module: Dashboards
 - Create Dashboard
 - Dashboard Generation Status
-- View Dashboard (Dynamic Viewer)
-- Chart Data API
-- Manual Data Refresh
 - List Dashboards
+- View Dashboard (Dynamic Viewer)
+- Chart Data API (Cache-First, Filterable)
+- Manual Data Refresh
+- Retry Dashboard Generation
 
-### Phase 2: Engagement and Collaboration
+### Phase 2: Engagement, Collaboration, and Delivery
 
 #### Module: Auth
-- OAuth Login
+- OAuth Login (Google / Microsoft) — partial
 
 #### Module: Dashboards
-- Dashboard Customization
+- Dashboard Customization (Widget CRUD)
+- Edit Dashboard Details
 - Duplicate Dashboard
 - Delete Dashboard
 
 #### Module: Sharing
 - Create Share Link
-- View Shared Dashboard
 - Manage Share Links
+- View Shared Dashboard (Public)
 
 #### Module: Export
-- Export Dashboard as PDF
+- Export Dashboard as PDF — partial (no worker)
 - Export Data as Excel
 - Export Data as CSV
 
 #### Module: Notifications
 - In-App Notification Center
-- Email Notifications
 
-### Phase 3: Platform and Administration
+#### Module: Subscriptions
+- View Available Plans
+- View My Subscription and Usage
+- Subscribe to a Plan
+- Cancel My Subscription
 
-#### Module: Users
-- Admin — List Users
-- Admin — Create User
-- Admin — Edit User
-- Admin — Delete / Deactivate User
+### Phase 3: Platform Administration (Admin Panel)
 
-#### Module: Admin — User Management
-- Admin Users List
-- Admin Create / Edit User
+#### Module: Admin — Overview
+- Platform Statistics
+- AI Cost Summary (30-Day)
 
-#### Module: Admin — Subscriptions
-- Subscription Plan Management
-- User Subscription Assignment
-- Billing and Payment
+#### Module: Admin — Client Management
+- List / Search Clients
+- View Client Details
+- Create Client
+- Edit Client (Role / Status)
+- Suspend Client
+- Reactivate Client
+- Delete Client
+
+#### Module: Admin — Subscriptions & Plans
+- Manage Subscription Plans
+- Manage User Subscriptions
+
+#### Module: Admin — Payments
+- Payment Ledger Management
 
 #### Module: Admin — Audit Logs
 - View Audit Logs
 
+#### Module: Admin — AI Logs
+- View AI Usage Logs
+- AI Cost Summary Over Time
+
 #### Module: Admin — System Settings
-- System Configuration
+- Global System Settings
 
 ---
 
 ## Important Planning Notes
 
-- `AI Processing` features are backend-only. Their status is surfaced via `Dashboards` module pages (generation status page) and `Data` module pages (column analysis status).
-- `Chart Data API` (Dashboards Feature 4) is a backend-only feature — the endpoint is called by the frontend viewer but has no dedicated page.
-- `Email Notifications` (Notifications Feature 2) is backend-only — triggered by job completion events, no dedicated page.
-- One dashboard involves features from multiple modules: `Data` (upload), `AI Processing` (analysis and generation), `Dashboards` (viewer and customization), `Caching` (performance), `Sharing` (share links), `Export` (reports).
-- Admin module frontends reuse backend services from the corresponding business modules.
+- The product ships as **two frontends over one backend**: the Customer Portal (`roya-ai-dynamo-frontend`) and the Admin Panel (`roya-ai-dynamo-frontend-admin`). All routes are served under `/api/v1`.
+- `AI Processing` features are backend-only BullMQ workers. Their status is surfaced via `Data` (column analysis) and `Dashboards` (generation status) pages.
+- `Chart Data API` (Dashboards) is backend-only — called in parallel by the viewer and shared viewer, with no dedicated page.
+- Admin-facing client operations reuse the `Users` backend; they are documented under `Admin — Client Management` to match the Admin Panel app.
+- Known partial / planned items, marked at the feature level:
+  - `Auth` → OAuth Login: provider config + service exist, but the `oauth/callback` endpoint is a stub (**partial**).
+  - `Export` → PDF: job is queued but **no `pdf-export` worker** is implemented.
+  - `Dashboards` → Manual Data Refresh: enqueues a `cache-recalculation` job but **no worker** consumes it.
+  - `Notifications`: `NotificationsService.notify` exists but is **not wired** to the AI/export workers, so notifications are not auto-generated yet.
+  - `Subscriptions` → Subscribe / Cancel: **implemented** in change-001 (2026-06-22). Both `POST /subscriptions/subscribe` and `POST /subscriptions/cancel` now exist on the backend.
+- `Admin — Payments` is a **manual ledger**, not a payment-gateway checkout; there is no gateway/webhook implementation.

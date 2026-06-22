@@ -879,17 +879,18 @@ Domain service for user notifications. `notify()` writes a notification record a
 - Name: `SubscriptionsService`
 - Type: `internal`
 - Module: `Subscriptions`
-- Summary: `Manages subscription plan catalog (admin) and per-user subscription assignment/changes/cancellation.`
+- Summary: `Manages subscription plan catalog (admin), per-user subscription assignment/changes/cancellation (admin), and customer self-service subscribe and cancel.`
 
 #### Description
 
-Domain service spanning two concerns: the plan catalog (public active plans + admin CRUD) and user subscriptions (the caller's own subscription plus admin assignment, change, cancel, and full CRUD). The underlying repository also exposes an `incrementUsage` helper, but it is not yet wired into any usage-enforcement flow.
+Domain service spanning two concerns: the plan catalog (public active plans + admin CRUD) and user subscriptions (the caller's own subscription, customer self-service subscribe/cancel, plus admin assignment, change, cancel, and full CRUD). The underlying repository also exposes an `incrementUsage` helper, but it is not yet wired into any usage-enforcement flow.
 
 #### Purpose
 
 - Expose active plans publicly and let admins manage the plan catalog
 - Assign, change, and cancel user subscriptions (admin)
 - Let a user read their own subscription
+- Let a user self-subscribe to a plan or self-cancel (customer self-service — change-001)
 
 #### Type Details
 
@@ -905,6 +906,8 @@ Domain service spanning two concerns: the plan catalog (public active plans + ad
 - `updatePlan(id, dto: UpdatePlanDto) — updates a plan, 404 if missing`
 - `deletePlan(id) — deletes a plan, 404 if missing`
 - `getMySubscription(userId) — the caller's current subscription`
+- `selfSubscribe(userId, planId, ip?) — customer self-service: subscribes/switches the current user to a plan, audits (change-001)`
+- `selfCancel(userId, ip?) — customer self-service: cancels the current user's own subscription, audits (change-001)`
 - `listAllSubscriptions(filters) — admin paginated/filterable list of user subscriptions`
 - `getSubscriptionById(id) — fetch one subscription, 404 if missing`
 - `createSubscription(dto: CreateSubscriptionDto, actorId?, ip?) — validates user + plan, creates/updates a subscription, audits SUBSCRIPTION_ASSIGN`
@@ -912,6 +915,8 @@ Domain service spanning two concerns: the plan catalog (public active plans + ad
 - `assignSubscription(userId, planId, actorId?, ip?) — upserts a user's subscription to a plan, audits SUBSCRIPTION_ASSIGN`
 - `changeSubscription(userId, planId, actorId?, ip?) — switches a user's plan, audits SUBSCRIPTION_CHANGE`
 - `cancelSubscription(userId, actorId?, ip?) — cancels a user's subscription, audits SUBSCRIPTION_CHANGE`
+- `selfSubscribe(userId, planId, ip?) — customer self-service: assigns plan to the calling user, audits SUBSCRIPTION_ASSIGN, returns { redirectUrl }` *(added change-001)*
+- `selfCancel(userId, ip?) — customer self-service: cancels the calling user's own subscription, audits SUBSCRIPTION_CHANGE, returns { message }` *(added change-001)*
 
 #### Dependencies
 
@@ -926,7 +931,8 @@ Domain service spanning two concerns: the plan catalog (public active plans + ad
 
 - `SubscriptionPlan — plan catalog entity`
 - `UserSubscription — per-user subscription (status, dates, notes)`
-- `CreatePlanDto / UpdatePlanDto / CreateSubscriptionDto / UpdateSubscriptionDto — inputs`
+- `CreatePlanDto / UpdatePlanDto / CreateSubscriptionDto / UpdateSubscriptionDto / AssignSubscriptionDto / ChangeSubscriptionDto — admin inputs`
+- `SelfSubscribeDto { planId: string } — customer self-subscribe input` *(added change-001)*
 - `SubscriptionStatus — enum`
 
 #### Business Rules
