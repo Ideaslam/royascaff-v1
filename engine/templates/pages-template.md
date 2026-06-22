@@ -221,7 +221,7 @@ This page shows users in a table with filters, pagination, and actions to create
 
 - Only admin users can access this page
 - Use paginated API data, not local mock state
-- If the UI library is PrimeNG, use table and filter controls consistently
+- Use the project's UI library (per `project/profile.md`) table and filter controls consistently
 ```
 
 ## Suggested Page Field Meanings

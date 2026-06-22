@@ -2,17 +2,19 @@
 
 This template defines the structure for a single change request submitted to Phase 5 (Change Mode).
 
-Copy the **Change Request** block below into `6-changes/change-request.md`, fill in every field, then start Phase 5.
+Create a change folder `project/changes/change-<NNN>-<slug>/` (next number from `change-log.md`), copy the **Change Request** block below into it as `change-request.md`, fill in every field, then start Phase 5.
 
 ---
 
 ## How to Use This Template
 
-1. Open `6-changes/change-request.md`.
+1. Create `project/changes/change-<NNN>-<slug>/change-request.md` from this template.
 2. Replace all `[placeholder]` values with your actual content.
 3. Keep every section header — the AI reads them by name.
 4. One change per file. If you have multiple unrelated changes, complete them sequentially.
 5. Tell the AI: **"Start Phase 5"** to trigger the workflow.
+
+As Phase 5 runs, the AI adds more files to the same folder: `recon.md` (existing-code review, Step 5.0b), then `verify-plan.md` and `verify-code.md`. You only author `change-request.md`.
 
 ---
 
@@ -44,8 +46,8 @@ Identifies **which application or portal** this change is for. This is the busin
 
 | Value | Means |
 |-------|-------|
-| `customer-portal` | The existing user-facing web app (`roya-ai-dynamo-frontend`) |
-| `admin-panel` | The existing admin web app (`roya-ai-dynamo-frontend-admin`) |
+| `customer-portal` | The existing user-facing web app (see Applications in `project/profile.md`) |
+| `admin-panel` | The existing admin web app (see Applications in `project/profile.md`) |
 | `new-customer-portal` | A new customer-facing web application |
 | `new-admin-panel` | A new admin interface (web) |
 | `new-mobile-app` | A new mobile app (iOS, Android, or cross-platform) |
@@ -63,9 +65,9 @@ The technical repositories impacted. Derived from `target-app` for existing apps
 
 | Value | Means |
 |-------|-------|
-| `backend` | Only `roya-ai-dynamo-api` |
-| `frontend` | Only `roya-ai-dynamo-frontend` (customer portal) |
-| `admin` | Only `roya-ai-dynamo-frontend-admin` (admin panel) |
+| `backend` | Only the backend API repo (see Repositories in `project/profile.md`) |
+| `frontend` | Only the customer-portal frontend repo (see Repositories in `project/profile.md`) |
+| `admin` | Only the admin frontend repo (see Repositories in `project/profile.md`) |
 | `frontend+admin` | Both existing Angular apps |
 | `backend+frontend` | API + customer portal |
 | `backend+admin` | API + admin panel |
@@ -76,7 +78,7 @@ The technical repositories impacted. Derived from `target-app` for existing apps
 
 ### `scope`
 
-List the specific modules, features, endpoints, pages, or services that are directly in scope. Be as specific as you can — module names from `3-plan/modules.md`, feature names from `3-plan/features.md`, endpoint routes from `4-actions/endpoints.md`, page names from `4-actions/pages.md`.
+List the specific modules, features, endpoints, pages, or services that are directly in scope. Be as specific as you can — module names from `project/plan/modules.md`, feature names from `project/plan/features.md`, endpoint routes from `project/actions/endpoints.md`, page names from `project/actions/pages.md`.
 
 ---
 
@@ -108,7 +110,7 @@ Any additional context: design decisions, constraints, related issues, links, or
 
 ## Change Request Block
 
-Copy everything between the triple-dashes below into `6-changes/change-request.md`.
+Copy everything between the triple-dashes below into `project/changes/change-<NNN>-<slug>/change-request.md`.
 
 ---
 
@@ -150,7 +152,7 @@ Copy everything between the triple-dashes below into `6-changes/change-request.m
 ## New App Definition (only when change-type is `new-app`)
 
 > Remove this section if change-type is not `new-app`.
-> See `2-templates/new-app-template.md` for the full field reference and examples.
+> See `engine/templates/new-app-template.md` for the full field reference and examples.
 
 - **app-name**: [short name, e.g. "Customer Mobile App"]
 - **app-purpose**: [one sentence describing what this app does and who uses it]
@@ -160,7 +162,7 @@ Copy everything between the triple-dashes below into `6-changes/change-request.m
 
 ### Modules to Include from Existing Codebase
 
-> List modules from `3-plan/modules.md` this new app will use.
+> List modules from `project/plan/modules.md` this new app will use.
 > For each module, specify which features to include, exclude, or partially include.
 
 | Module | Include? | Features included | Features excluded |

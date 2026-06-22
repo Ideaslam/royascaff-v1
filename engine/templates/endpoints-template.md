@@ -20,7 +20,7 @@ Each endpoint entry should describe:
 - auth/access
 - input
 - return
-- **services called** (must exist in `3-plan/services.md`)
+- **services called** (must exist in `project/actions/services.md`)
 - notes or constraints
 
 Endpoints call services — not repositories or external providers directly.
@@ -215,7 +215,7 @@ This endpoint is for admin usage and should not return password or secret fields
 - `Return`
   status + response DTO/shape
 - `Services Called`
-  backend services (and methods) this endpoint invokes — must match `3-plan/services.md`
+  backend services (and methods) this endpoint invokes — must match `project/actions/services.md`
 - `Business Rules`
   important logic rules
 - `Constraints / Notes`
@@ -224,4 +224,4 @@ This endpoint is for admin usage and should not return password or secret fields
 ## Final Guidance
 
 When AI creates `endpoints.md`, it should copy this endpoint entry format for every endpoint so the whole file stays consistent and easy to scan.  
-Create `3-plan/services.md` first; every service listed here must already be defined there.
+Create `project/actions/services.md` first; every service listed here must already be defined there.

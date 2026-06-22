@@ -5,7 +5,7 @@
 Use this template when creating `services.md`.  
 The `services.md` file should be a list of all backend services the AI will build, and every service entry should use the same structure.
 
-Create **`3-plan/services.md` before `4-actions/endpoints.md`**. Endpoints call services; pages call endpoints.
+Create **`project/actions/services.md` before `project/actions/endpoints.md`**. Endpoints call services; pages call endpoints.
 
 ## Purpose
 

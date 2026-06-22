@@ -2,8 +2,8 @@
 
 ## Short Summary
 
-Use this template when creating `custom-feature-rules.md`.  
-The `custom-feature-rules.md` file should capture **project-specific rules and notes for features** that go beyond the normal feature description.
+Use this template when creating the project custom feature rules file (`project/rules.md`).  
+The `project/rules.md` file should capture **project-specific rules and notes for features** that go beyond the normal feature description.
 
 ## Purpose
 
@@ -31,17 +31,17 @@ Each rule entry should describe:
 
 ## File-Level Rules
 
-- `custom-feature-rules.md` is created after `features.md`.
-- Use the **exact module and feature names** from `features.md`.
+- `project/rules.md` is created after `project/plan/features.md`.
+- Use the **exact module and feature names** from `project/plan/features.md`.
 - Put rules here only when they are **feature-specific** or **project-specific**.
-- Do not repeat generic rules already covered in `backend-rule.md` or `frontend-rule.md`.
+- Do not repeat generic rules already covered in `engine/rules/backend-rule.md` or `engine/rules/frontend-rule.md`.
 - One feature may have zero, one, or many custom rules.
 - If a rule applies to multiple features, document it once under the primary feature and reference the others.
 - Prefer clear mandatory language: `must`, `must not`, `should`, `should not`.
 - If a feature uses an external provider, name the provider type and expected integration layer.
 - If a feature is async, say so explicitly and describe status tracking expectations.
 
-## Recommended `custom-feature-rules.md` Structure
+## Recommended `project/rules.md` Structure
 
 ```md
 # Custom Feature Rules
@@ -364,11 +364,11 @@ Notify the user when proposal generation completes or fails.
 
 ## Final Guidance
 
-When AI creates `custom-feature-rules.md`, it should:
+When AI creates `project/rules.md`, it should:
 
-1. read `features.md` first
+1. read `project/plan/features.md` first
 2. add rules only where a feature needs special implementation guidance
 3. keep every rule tied to a module and feature
 4. use explicit provider and async language when applicable
 
-The filled project-specific rules should live in `5-rules/custom-feature-rules.md`, not in this template file.
+The filled project-specific rules should live in `project/rules.md`, not in this template file.
