@@ -4,6 +4,8 @@
 
 This file documents every backend HTTP endpoint for **Roya AI Dynamo** as actually implemented in `roya-ai-dynamo-api/src`. Endpoints are grouped by module (NestJS controller).
 
+> **App scope:** this is the `backend` app — the single NestJS API (`roya-ai-dynamo-api`) shared by every frontend app. Its companion spec is `services.md` in this same folder. Frontend page specs live per app under `project/actions/<app-key>/` (`customer-portal/pages.md`, `admin-panel/pages.md`).
+
 Global conventions:
 
 - **Route prefix:** every route is served under `/api/v1`. Full paths are written out (e.g. `POST /api/v1/auth/login`).

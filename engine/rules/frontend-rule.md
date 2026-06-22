@@ -620,6 +620,22 @@ When i18n/RTL is required, verify layouts in both directions for complex screens
 
 ---
 
+## Mobile App Adaptation
+
+This guide also covers **mobile client apps** (React Native, Expo, Flutter, SwiftUI, Jetpack Compose). The architectural principles are identical — only the platform primitives change. When building a mobile app:
+
+- **Screens, not pages** — route-bound screens are the equivalent of pages. Specify them in `project/actions/<app-key>/views.md` (see `engine/templates/views-template.md`), not `pages.md`.
+- **Native UI library** — use the platform's native component library / design system instead of a web UI library. Keep one consistent library per app.
+- **Navigation** — use the platform's navigator (stack / bottom-tab / drawer / modal) in place of a web router; keep screens deep-linkable.
+- **Same layering** — screen → data hook/service → HTTP client → API. No business logic in screens; no direct HTTP in components.
+- **Reuse the backend** — a mobile app consumes the **same** shared API as the web apps. It must not duplicate business logic or call external providers (storage, AI, payments) directly — all traffic routes through the backend API.
+- **Platform concerns** — document push notifications, offline/caching, gestures, biometrics, and permissions per screen.
+- **States & i18n/RTL** — still handle loading / empty / error / success on every data screen, and respect RTL/localization where the product requires it.
+
+Everything else in this document (services own HTTP, typed models, guards/auth, security, performance, accessibility) applies to mobile with the platform-native equivalent.
+
+---
+
 ## Final Guidance
 
-Treat this document as the default frontend convention for any project using this template. When the repository already has established patterns (framework choice, UI library, i18n approach, folder layout), follow the implemented code and project-specific docs. When starting fresh, use this guide to keep frontend work modular, secure, performant, accessible, and aligned with the backend API.
+Treat this document as the default frontend (and mobile) convention for any project using this template. When the repository already has established patterns (framework choice, UI library, i18n approach, folder layout), follow the implemented code and project-specific docs. When starting fresh, use this guide to keep frontend work modular, secure, performant, accessible, and aligned with the backend API.

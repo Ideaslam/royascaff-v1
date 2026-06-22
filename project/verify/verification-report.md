@@ -3,7 +3,7 @@
 **Project:** Roya AI Dynamo  
 **Run Date:** 2026-06-17  
 **Stage:** Pre-Build (planning documents only; no code exists yet)  
-**Checked Against:** `project/description.md`, `project/plan/modules.md`, `project/plan/features.md`, `project/plan/data-model.md`, `project/rules.md`, `project/actions/endpoints.md`, `project/actions/pages.md`
+**Checked Against:** `project/description.md`, `project/plan/modules.md`, `project/plan/features.md`, `project/plan/data-model.md`, `project/rules.md`, `project/actions/backend/endpoints.md`, `project/actions/customer-portal/pages.md`, `project/actions/admin-panel/pages.md`
 
 ---
 

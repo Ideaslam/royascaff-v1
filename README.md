@@ -22,10 +22,11 @@ What this system is and its current state. Copying `project/` alone must be enou
 understand and rebuild the current app — this is the **rebuild test** (Verification check 14).
 
 - `project/profile.md` — apps, repos, tech stack, brand tokens, environments, integrations. The engine
-  refers to this for every concrete fact.
+  refers to this for every concrete fact. Built from `engine/templates/profile-template.md` (Phase 0, Step 0.0b);
+  its Applications **Key** column defines both `target-app` values and the per-app `project/actions/<key>/` folders.
 - `project/description.md` — the product specification.
 - `project/plan/` — modules, features, data model.
-- `project/actions/` — services, endpoints, and pages specifications (the call chain `pages → endpoints → services`).
+- `project/actions/` — action specs organized **per app** (one folder per application, keyed by its `profile.md` app key): API apps hold `services.md` + `endpoints.md`, web apps hold `pages.md`, mobile apps hold `views.md`. The call chain `pages/views → endpoints → services` now crosses app folders.
 - `project/rules.md` — system-specific feature rules (beyond the generic engine rules).
 - `project/verify/` — full-system verification reports.
 - `project/changes/` — `change-log.md` (append-only index, one row per change) plus one folder per change

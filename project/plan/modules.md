@@ -14,8 +14,8 @@ Source inputs:
 
 Its purpose is to define the module list that will later be used to build:
 
-- `project/actions/endpoints.md`
-- `project/actions/pages.md`
+- `project/actions/backend/endpoints.md`
+- each app's `project/actions/<app-key>/pages.md`
 - backend feature folders (`roya-ai-dynamo-api/src/modules/`)
 - frontend feature folders (`roya-ai-dynamo-frontend/src/app/` and `roya-ai-dynamo-frontend-admin/src/app/`)
 
@@ -25,12 +25,12 @@ This file is not an endpoint list and not a page list. It is the module source-o
 
 ## How To Use This File
 
-When AI builds `project/actions/endpoints.md`:
+When AI builds `project/actions/backend/endpoints.md`:
 
 - group endpoints under the matching module from this file
 - use the exact module name in `## Module: {Module Name}`
 
-When AI builds `project/actions/pages.md`:
+When AI builds each app's `project/actions/<app-key>/pages.md`:
 
 - group pages under the matching frontend module from this file
 - use the exact module name in `## Module: {Module Name}`

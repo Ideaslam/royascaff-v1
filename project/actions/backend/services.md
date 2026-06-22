@@ -4,6 +4,8 @@
 
 This file documents every backend service and integration provider for **Roya AI Dynamo** as actually implemented in `roya-ai-dynamo-api/src`. Services are grouped by module (same module names as `endpoints.md`).
 
+> **App scope:** this is the `backend` app — the single NestJS API (`roya-ai-dynamo-api`) shared by every frontend app. Its companion spec is `endpoints.md` in this same folder. Frontend page specs live per app under `project/actions/<app-key>/` (`customer-portal/pages.md`, `admin-panel/pages.md`).
+
 Global conventions:
 
 - **Architecture:** NestJS with a strict layered flow — controller → service → repository. Controllers never touch repositories or external SDKs directly; they call **internal** services. Internal services own business logic and may call repositories, other internal services, and **external** providers. External providers are integration adapters hidden behind an interface token and stay isolated per `backend-rule.md` (config-driven credentials only).

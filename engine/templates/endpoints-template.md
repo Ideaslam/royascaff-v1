@@ -2,8 +2,10 @@
 
 ## Short Summary
 
-Use this template when creating `endpoints.md`.  
-The `endpoints.md` file should be a list of all backend endpoints the AI will build, and every endpoint entry should use the same structure.
+Use this template when creating an API app's `endpoints.md`.  
+The `endpoints.md` file should be a list of all backend endpoints the AI will build for **one** API app, and every endpoint entry should use the same structure.
+
+> **Per-app placement.** This file lives at `project/actions/<api-app>/endpoints.md` (e.g. `backend/endpoints.md`) alongside its `services.md`, where `<api-app>` is the API app's key from the Applications table in `project/profile.md`. If the solution has multiple APIs, each gets its own folder.
 
 ## Purpose
 
@@ -20,7 +22,7 @@ Each endpoint entry should describe:
 - auth/access
 - input
 - return
-- **services called** (must exist in `project/actions/services.md`)
+- **services called** (must exist in the same API app's `project/actions/<api-app>/services.md`)
 - notes or constraints
 
 Endpoints call services — not repositories or external providers directly.
@@ -215,7 +217,7 @@ This endpoint is for admin usage and should not return password or secret fields
 - `Return`
   status + response DTO/shape
 - `Services Called`
-  backend services (and methods) this endpoint invokes — must match `project/actions/services.md`
+  backend services (and methods) this endpoint invokes — must match the same API app's `project/actions/<api-app>/services.md`
 - `Business Rules`
   important logic rules
 - `Constraints / Notes`
@@ -224,4 +226,4 @@ This endpoint is for admin usage and should not return password or secret fields
 ## Final Guidance
 
 When AI creates `endpoints.md`, it should copy this endpoint entry format for every endpoint so the whole file stays consistent and easy to scan.  
-Create `project/actions/services.md` first; every service listed here must already be defined there.
+Create the same API app's `project/actions/<api-app>/services.md` first; every service listed here must already be defined there.

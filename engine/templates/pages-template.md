@@ -2,8 +2,13 @@
 
 ## Short Summary
 
-Use this template when creating `pages.md`.  
-The `pages.md` file should be a list of all Angular pages the AI will build, and every page entry should use the same structure.
+Use this template when creating a **web app's** `pages.md`.  
+The `pages.md` file should be a list of all pages (routed screens) the AI will build for **one** web application, and every page entry should use the same structure.
+
+> **One app per file.** Each web app has its own pages file under `project/actions/<app-key>/pages.md`
+> (e.g. `customer-portal/pages.md`, `admin-panel/pages.md`), where `<app-key>` is the app key from the
+> Applications table in `project/profile.md`. For **mobile** apps, use `engine/templates/views-template.md`
+> to create `project/actions/<app-key>/views.md` instead. API apps use `services.md` + `endpoints.md`.
 
 ## Purpose
 

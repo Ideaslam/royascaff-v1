@@ -27,7 +27,7 @@ Examples: `Customer Mobile App`, `Partner Portal`, `Ops Dashboard`
 Lowercase kebab-case identifier derived from `app-name`. Used for file and repo names.
 Examples: `mobile`, `partner-portal`, `ops-dashboard`
 
-The new pages file will be named `project/actions/pages-<app-slug>.md`.
+The new app gets its own action folder `project/actions/<app-slug>/`, where `<app-slug>` becomes the app key in `project/profile.md`. Its client spec is `project/actions/<app-slug>/pages.md` for a web app or `project/actions/<app-slug>/views.md` for a mobile app.
 
 ### `app-purpose`
 One sentence: what this app does and who uses it.
@@ -84,14 +84,16 @@ When filling in the **Modules to Include** table, use the following guidance:
 
 ---
 
-## Pages Spec for a New App
+## Client Spec for a New App
 
-After Step 5.1b, the AI creates `project/actions/pages-<app-slug>.md` using `engine/templates/pages-template.md` as the format.
+After Step 5.1b, the AI creates the new app's folder and client spec:
+- **Web app** → `project/actions/<app-slug>/pages.md` using `engine/templates/pages-template.md`.
+- **Mobile app** → `project/actions/<app-slug>/views.md` using `engine/templates/views-template.md`.
 
-For a new app, each page entry must also declare:
+For a new app, each page/screen entry must also declare:
 - **Platform notes** — any mobile-specific or platform-specific behavior (e.g. bottom navigation, native gestures, push notifications)
-- **Reused endpoints** — backend endpoints from `project/actions/endpoints.md` that this page calls (no new endpoints if the feature already exists)
-- **New endpoints needed** — if a feature requires data not available in existing endpoints, flag it here
+- **Reused endpoints** — backend endpoints from `project/actions/<api-app>/endpoints.md` that this page/screen calls (no new endpoints if the feature already exists)
+- **New endpoints needed** — if a feature requires data not available in existing endpoints, flag it here (it will be added to the API app's `endpoints.md`)
 
 ---
 
@@ -183,6 +185,6 @@ When processing a `new-app` change request, the AI confirms all of the following
 - [ ] All included features exist in `project/plan/features.md` (or are listed as new)
 - [ ] All new modules/features are explicitly listed so Step 5.2 can add them
 - [ ] The app-specific pages list is complete enough to generate a full pages spec
-- [ ] `auth-strategy` is resolved — for `same-backend-jwt`, confirm the auth login/refresh endpoints exist in `project/actions/endpoints.md`
+- [ ] `auth-strategy` is resolved — for `same-backend-jwt`, confirm the auth login/refresh endpoints exist in `project/actions/<api-app>/endpoints.md`
 - [ ] For mobile apps: the tech stack is confirmed and does not require any backend changes to support (REST API is sufficient)
-- [ ] The new pages spec `project/actions/pages-<app-slug>.md` has been created and is complete
+- [ ] The new app's folder `project/actions/<app-slug>/` exists and its client spec (`pages.md` for web, `views.md` for mobile) has been created and is complete

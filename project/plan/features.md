@@ -7,15 +7,15 @@ This feature map documents all product features for **Roya AI Dynamo**, an AI-po
 Source inputs:
 
 - `project/plan/modules.md`
-- `project/actions/endpoints.md`
+- `project/actions/backend/endpoints.md`
 - `roya-ai-dynamo-api/src` (backend)
 - `roya-ai-dynamo-frontend` (Customer Portal)
 - `roya-ai-dynamo-frontend-admin` (Admin Panel)
 
 Its purpose is to define the full feature list for each module that will later be used to build:
 
-- `project/actions/endpoints.md`
-- `project/actions/pages.md`
+- `project/actions/backend/endpoints.md`
+- each app's `project/actions/<app-key>/pages.md`
 
 This file is not an endpoint list and not a page list. It is the feature source-of-truth grouped by module. Where a feature is only partially implemented or planned, it is marked explicitly (`partial` / `planned — backend not implemented`).
 
@@ -23,13 +23,13 @@ This file is not an endpoint list and not a page list. It is the feature source-
 
 ## How To Use This File
 
-When AI builds `project/actions/endpoints.md`:
+When AI builds `project/actions/backend/endpoints.md`:
 
 - use the same module names from this file
 - convert each backend-relevant feature and subfeature into one or more API endpoints under the matching module
 - do not assume one feature equals one endpoint
 
-When AI builds `project/actions/pages.md`:
+When AI builds each app's `project/actions/<app-key>/pages.md`:
 
 - use the same module names from this file
 - convert each frontend-visible feature and subfeature into one or more pages under the matching module

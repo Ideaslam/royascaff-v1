@@ -22,11 +22,27 @@
 
 | Key | App | Type | Repo | Framework | UI library | Auth strategy |
 |-----|-----|------|------|-----------|-----------|---------------|
-| `customer-portal` | Customer Portal | Web SPA | `roya-ai-dynamo-frontend` | Angular 21 (standalone) | PrimeNG 21 + PrimeIcons | same-backend JWT |
-| `admin-panel` | Admin Panel | Web SPA (admin) | `roya-ai-dynamo-frontend-admin` | Angular 21 (standalone) | PrimeNG 21 + PrimeIcons | same-backend JWT + admin role |
-| `backend` | API | Backend service | `roya-ai-dynamo-api` | NestJS (Node + TypeScript) | — | JWT (issuer) |
+| `customer-portal` | Customer Portal | web | `roya-ai-dynamo-frontend` | Angular 21 (standalone) | PrimeNG 21 + PrimeIcons | same-backend JWT |
+| `admin-panel` | Admin Panel | web (admin) | `roya-ai-dynamo-frontend-admin` | Angular 21 (standalone) | PrimeNG 21 + PrimeIcons | same-backend JWT + admin role |
+| `backend` | API | api | `roya-ai-dynamo-api` | NestJS (Node + TypeScript) | — | JWT (issuer) |
 
 `target-app` values used in change requests resolve against this table. `all-apps` = all three repos.
+
+### App key ↔ action specs
+
+The **Key** is also the folder name under `project/actions/`. Each app's specs live in its own folder, by type:
+
+| Type value | Action folder | Spec files |
+|------------|---------------|-----------|
+| `api` | `project/actions/<key>/` | `services.md`, `endpoints.md` |
+| `web` | `project/actions/<key>/` | `pages.md` |
+| `mobile-ios` / `mobile-android` / `mobile-cross-platform` | `project/actions/<key>/` | `views.md` |
+
+So `backend` → `project/actions/backend/{services,endpoints}.md`, `customer-portal` → `project/actions/customer-portal/pages.md`, etc. Adding a new app means adding a row here **and** creating its folder under `project/actions/`.
+
+### Adding a mobile app (supported)
+
+A mobile app is a first-class application in this system. To add one, append a row to the table above with a `mobile-*` **Type**, its own **Key** (e.g. `customer-mobile`), repo, framework (e.g. React Native + Expo, Flutter), and UI library (the platform's native component library). Its screens are specified in `project/actions/<key>/views.md` (see `engine/templates/views-template.md`). Mobile apps reuse the shared `backend` API — no duplicated business logic — and follow the same API-only traffic rule (no direct external provider calls). *No mobile app exists in the repos yet; the structure is ready for one.*
 
 ---
 

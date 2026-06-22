@@ -61,12 +61,15 @@ planning.
 ### Step 0.0b — Establish System Profile
 
 - **Input**: existing repos/code (if any), the description
+- **Template**: `engine/templates/profile-template.md`
 - **Output**: `project/profile.md`
-- **Actions**: Confirm (or create) `project/profile.md` with the applications, repositories, tech stack,
-  brand tokens, environments, and integrations for this system. For an existing codebase, derive these
-  from the actual repos. For a greenfield build, fill them in with the intended choices.
-- **Done when**: `project/profile.md` exists and lists the apps, repos, stack, brand, environments, and
-  integrations the rest of the flow will reference.
+- **Actions**: Confirm (or create) `project/profile.md` from the template with the applications,
+  repositories, tech stack, brand tokens, environments, and integrations for this system. For an
+  existing codebase, derive these from the actual repos. For a greenfield build, fill them in with the
+  intended choices. Get the **Applications** table right first — its **Key** column defines both the
+  `target-app` values and the per-app `project/actions/<key>/` folder names.
+- **Done when**: `project/profile.md` exists, the template's **Completion Checklist** is satisfied, and it
+  lists the apps, repos, stack, brand, environments, and integrations the rest of the flow will reference.
 
 ---
 
@@ -176,15 +179,15 @@ Generate the planning documents that define modules, features, custom rules, and
 ## Phase 2 — Actions
 
 ### Goal
-Generate the service map, endpoint, and page specifications. Outputs land in `project/actions/`.
+Generate the service map, endpoint, and client (page/view) specifications. Outputs land in **per-app folders** under `project/actions/<app-key>/`, where `<app-key>` is the app key from the Applications table in `project/profile.md`. API apps hold `services.md` + `endpoints.md`; web apps hold `pages.md`; mobile apps hold `views.md`. See `project/actions/README.md` for the structure.
 
-**Call chain** (dependency direction):
+**Call chain** (dependency direction, crossing app folders):
 
 ```text
-pages → endpoints → services → repositories / external providers
+<app>/pages.md | <app>/views.md → <api-app>/endpoints.md → <api-app>/services.md → repositories / external providers
 ```
 
-Create **`project/actions/services.md`** before endpoints, and endpoints before pages. Endpoints must call services — not repositories or external APIs directly.
+Create the API app's **`project/actions/<api-app>/services.md`** before its `endpoints.md`, and create endpoints before any client (`pages.md` / `views.md`) that depends on them. Endpoints must call services — not repositories or external APIs directly.
 
 ### Step 2.1 — Create Services Map
 
@@ -196,7 +199,7 @@ Create **`project/actions/services.md`** before endpoints, and endpoints before 
   - `engine/rules/backend-rule.md`
   - `project/rules.md`
 - **Template**: `engine/templates/services-template.md`
-- **Output**: `project/actions/services.md`
+- **Output**: `project/actions/<api-app>/services.md`
 - **Done when**:
   - Every backend-relevant feature is covered by at least one **internal** service
   - Services are grouped by module
@@ -213,11 +216,11 @@ Create **`project/actions/services.md`** before endpoints, and endpoints before 
   - `project/plan/modules.md`
   - `project/plan/features.md`
   - `project/plan/data-model.md`
-  - `project/actions/services.md`
+  - `project/actions/<api-app>/services.md`
   - `engine/rules/backend-rule.md`
   - `project/rules.md`
 - **Template**: `engine/templates/endpoints-template.md`
-- **Output**: `project/actions/endpoints.md`
+- **Output**: `project/actions/<api-app>/endpoints.md`
 - **Done when**:
   - Every backend-relevant feature has at least one endpoint
   - Endpoints are grouped by module
@@ -228,27 +231,29 @@ Create **`project/actions/services.md`** before endpoints, and endpoints before 
   - Custom feature rules are reflected in endpoint notes
   - All referenced DTOs and entities exist in `data-model.md`
 
-### Step 2.3 — Create Pages Specification
+### Step 2.3 — Create Client Specifications (Pages / Views) — one file per app
+
+Create one client spec **per frontend app**. Web apps get `pages.md` (use `engine/templates/pages-template.md`); mobile apps get `views.md` (use `engine/templates/views-template.md`). Repeat this step for each frontend app in the Applications table.
 
 - **Input**: 
   - `project/description.md`
   - `project/plan/modules.md`
   - `project/plan/features.md`
   - `project/plan/data-model.md`
-  - `project/actions/endpoints.md`
+  - `project/actions/<api-app>/endpoints.md`
   - `engine/rules/frontend-rule.md`
   - `project/rules.md`
-- **Template**: `engine/templates/pages-template.md`
-- **Output**: `project/actions/pages.md`
+- **Template**: `engine/templates/pages-template.md` (web) or `engine/templates/views-template.md` (mobile)
+- **Output**: `project/actions/<app-key>/pages.md` (web) or `project/actions/<app-key>/views.md` (mobile) — one per app
 - **Done when**:
-  - Every frontend-visible feature has at least one page
-  - Pages are grouped by module
-  - Each page declares route, components, frontend services, models, and **endpoints** used
-  - Pages do not call backend services directly — only frontend HTTP services that call endpoints
+  - Every frontend-visible feature has at least one page/view in the relevant app
+  - Pages/views are grouped by module
+  - Each page/view declares route, components, frontend services, models, and **endpoints** used
+  - Pages/views do not call backend services directly — only frontend HTTP services that call endpoints
   - UI states (loading/empty/error/success) are documented
-  - Frontend patterns follow `engine/rules/frontend-rule.md` conventions
-  - All referenced endpoints exist in `endpoints.md`
-  - Custom feature rules are reflected in page notes
+  - Frontend/mobile patterns follow `engine/rules/frontend-rule.md` conventions
+  - All referenced endpoints exist in the API app's `endpoints.md`
+  - Custom feature rules are reflected in page/view notes
 
 ---
 
@@ -261,8 +266,8 @@ Generate backend and frontend code into the repositories (defined in `project/pr
 
 - **Input**: 
   - `project/plan/data-model.md`
-  - `project/actions/services.md`
-  - `project/actions/endpoints.md`
+  - `project/actions/<api-app>/services.md`
+  - `project/actions/<api-app>/endpoints.md`
   - `engine/rules/backend-rule.md`
   - `project/rules.md`
 - **Output**: Code in the backend repo defined in `project/profile.md` (e.g. `src/`)
@@ -277,16 +282,16 @@ Generate backend and frontend code into the repositories (defined in `project/pr
   - Integration providers are isolated per `engine/rules/backend-rule.md`
   - Custom feature rules are implemented correctly
 
-### Step 3.2 — Generate Frontend Code
+### Step 3.2 — Generate Frontend Code (per app)
 
 - **Input**: 
-  - `project/actions/pages.md`
-  - `project/actions/endpoints.md`
-  - `engine/rules/frontend-rule.md`
+  - `project/actions/<app-key>/pages.md` (web) or `project/actions/<app-key>/views.md` (mobile) — for the app being built
+  - `project/actions/<api-app>/endpoints.md`
+  - `engine/rules/frontend-rule.md` (web and mobile; see its "Mobile App Adaptation" section)
   - `project/rules.md`
-- **Output**: Code in the frontend app folder defined in `project/profile.md`
+- **Output**: Code in the frontend/mobile app repo defined in `project/profile.md`
 - **Done when**:
-  - All pages from `pages.md` are implemented
+  - All pages/views from the app's spec are implemented
   - All components, services, and models are created
   - Routing follows `engine/rules/frontend-rule.md` conventions
   - Auth guards protect routes correctly
@@ -310,25 +315,25 @@ Run these checks and fix any gaps:
    - No features exist outside defined modules
 
 2. **Feature-to-Service Coverage**
-   - Every backend-relevant feature is covered by at least one internal service in `project/actions/services.md`
+   - Every backend-relevant feature is covered by at least one internal service in `project/actions/<api-app>/services.md`
    - Every third-party integration has a corresponding external service
    - No orphaned services that don't map to features
 
 3. **Feature-to-Endpoint Coverage**
-   - Every backend-relevant feature has at least one endpoint in `project/actions/endpoints.md`
+   - Every backend-relevant feature has at least one endpoint in `project/actions/<api-app>/endpoints.md`
    - No orphaned endpoints that don't map to features
 
 4. **Endpoint-to-Service Linking**
    - Every endpoint declares which services it calls
-   - Every service referenced by an endpoint exists in `project/actions/services.md`
+   - Every service referenced by an endpoint exists in `project/actions/<api-app>/services.md`
    - Endpoints do not reference repositories or external providers directly
 
 5. **Feature-to-Page Coverage**
-   - Every frontend-visible feature has at least one page in `project/actions/pages.md`
+   - Every frontend-visible feature has at least one page in `project/actions/<app-key>/pages.md`
    - No orphaned pages that don't map to features
 
 6. **Entity Consistency**
-   - All entities referenced in `services.md`, `endpoints.md`, and `pages.md` are defined in `data-model.md`
+   - All entities referenced in the API app's `services.md` / `endpoints.md` and every app's `pages.md` / `views.md` are defined in `data-model.md`
    - All DTOs mentioned in services and endpoints exist in `data-model.md` or are derivable from entities
 
 7. **Endpoint-to-Page Linking**
@@ -434,7 +439,7 @@ When all phases complete and verification passes, the framework has produced:
 
 - A confirmed system profile in `project/profile.md`
 - Complete planning documents in `project/plan/`
-- Complete action specifications in `project/actions/` (including `services.md`)
+- Complete action specifications in `project/actions/` — one folder per app (`<api-app>/{services,endpoints}.md`, `<web-app>/pages.md`, `<mobile-app>/views.md`)
 - Project-specific rules in `project/rules.md`
 - Backend code following all specifications
 - Frontend code following all specifications
@@ -488,7 +493,7 @@ The template explains every field and includes a complete example. When the requ
   1. Read `change-request.md` fully. Note the `change-type`, `target-app`, and `affected-repos` — these three fields together determine the scope of every downstream step.
   2. Resolve `target-app` and `affected-repos` against the **Applications** and **Repositories** tables in `project/profile.md`. New-app values (`new-*`) refer to a new application/repo defined in the change request.
   3. If `change-type` is `new-app`: read the **New App Definition** section of the change request. Check whether the listed modules/features exist in `project/plan/modules.md` and `project/plan/features.md`. Note any that are new.
-  4. If `change-type` is not `new-app`: read the relevant sections of `project/description.md`, `project/plan/modules.md`, `project/plan/features.md`, `project/actions/endpoints.md`, and `project/actions/pages.md` that match the declared scope. (The deep code inspection happens next, in Step 5.0b.)
+  4. If `change-type` is not `new-app`: read the relevant sections of `project/description.md`, `project/plan/modules.md`, `project/plan/features.md`, `project/actions/<api-app>/endpoints.md`, and `project/actions/<app-key>/pages.md` that match the declared scope. (The deep code inspection happens next, in Step 5.0b.)
   5. If the request was authored directly (Path 1) and the description is complete, proceed. If it is thin, ambiguous, or the user started from a one-line idea (Path 2), run **Step 5.0a — Discovery & Confirmation** before going further.
 - **Done when**: The change is fully understood, `target-app` is resolved against `project/profile.md`, and there are no unresolved ambiguities.
 
@@ -546,7 +551,7 @@ For each affected area, classify the work using the recon verdict:
 
 Then use the table below to map `change-type` to required doc updates:
 
-| Change type | `modules.md` | `features.md` | `data-model.md` | `services.md` | `endpoints.md` | `pages.md` | `rules.md` | `description.md` |
+| Change type | `modules.md` | `features.md` | `data-model.md` | `services.md` | `endpoints.md` | `pages.md` / `views.md` | `rules.md` | `description.md` |
 |-------------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | `new-app` | maybe | maybe | — | — | — | ✓ new file | maybe | ✓ |
 | `new-module` | ✓ | ✓ | maybe | ✓ | ✓ | maybe | maybe | ✓ |
@@ -562,10 +567,13 @@ Then use the table below to map `change-type` to required doc updates:
 
 Legend: ✓ = always update, maybe = update if the change touches that area, — = skip, assess = decide case by case
 
-(All plan/action docs above live under `project/plan/` and `project/actions/`; `rules.md` and
-`description.md` live under `project/`.)
+(All plan docs above live under `project/plan/`; action docs live **per app** under
+`project/actions/<app-key>/` — `services.md`/`endpoints.md` for the API app, `pages.md` for web apps,
+`views.md` for mobile apps; `rules.md` and `description.md` live under `project/`. The `services.md` /
+`endpoints.md` columns refer to the affected API app's folder; the `pages.md` / `views.md` column refers
+to the affected frontend app's folder.)
 
-**Note on `new-app`**: `pages.md` means creating a **new pages file** for the new app (e.g. `project/actions/pages-<app-slug>.md`), not editing the existing `pages.md`. Modules and features are updated only if the new app introduces modules/features not already in the codebase.
+**Note on `new-app`**: `pages.md` means creating a **new app folder** `project/actions/<app-key>/` with its own client spec — `pages.md` for a web app or `views.md` for a mobile app — not editing another app's file. The API specs (`<api-app>/services.md`, `<api-app>/endpoints.md`) are only touched if the new app needs new or changed endpoints. Modules and features are updated only if the new app introduces modules/features not already in the codebase.
 
 - **Output**: A short impact list — which docs change, which code folders/files change, and which existing endpoints/services/pages must also change (the ripple set from `recon.md`).
 - **Done when**: Every affected doc and code location is identified before any edits begin, and every ripple item from `recon.md` is either scheduled for change or explicitly judged safe to leave.
@@ -584,13 +592,13 @@ This step translates the **New App Definition** section of `change-request.md` i
   1. **Resolve included modules** — map each module listed in the "Modules to Include" table against `project/plan/modules.md`. Confirm each exists. Flag any that are listed as included but marked backend-only (no frontend pages exist for them).
   2. **Resolve included features** — for each included module, list the features that are in scope for the new app. Features marked `excluded` are documented but not implemented.
   3. **Identify new modules/features** — any item in the "New Modules / Features" section that does not exist in `project/plan/modules.md` or `project/plan/features.md` must be flagged. These will need to be added to `modules.md` and `features.md` in Step 5.2.
-  4. **Determine endpoint reuse** — for each included feature, identify which existing endpoints in `project/actions/endpoints.md` the new app will call. Flag any features that need new or modified endpoints.
-  5. **Generate new app pages spec** — using `engine/templates/pages-template.md` as the format and `engine/templates/new-app-template.md` as guidance, produce a complete pages spec for the new app. Save it as `project/actions/pages-<app-slug>.md` (e.g. `pages-mobile.md`, `pages-partner-portal.md`).
+  4. **Determine endpoint reuse** — for each included feature, identify which existing endpoints in `project/actions/<api-app>/endpoints.md` the new app will call. Flag any features that need new or modified endpoints.
+  5. **Generate new app client spec** — create the app folder `project/actions/<app-key>/` and produce its complete client spec: `pages.md` for a web app (using `engine/templates/pages-template.md`) or `views.md` for a mobile app (using `engine/templates/views-template.md`), with `engine/templates/new-app-template.md` as guidance. Example: `project/actions/customer-mobile/views.md`, `project/actions/partner-portal/pages.md`.
   6. **Determine new repo structure** — confirm the tech stack, folder layout, and whether the new app will share the existing backend (defined in `project/profile.md`) or need a separate one. Record the new app and repo in `project/profile.md`.
 - **Output**:
   - A confirmed list of: included modules, included features, reused endpoints, new endpoints needed, new pages spec file
   - If new modules/features were identified: a note that Step 5.2 must add them to `modules.md` and `features.md`
-- **Done when**: All of the above are documented and there is a complete `project/actions/pages-<app-slug>.md` ready before Step 5.2 runs.
+- **Done when**: All of the above are documented and there is a complete client spec for the new app (`project/actions/<app-key>/pages.md` or `project/actions/<app-key>/views.md`) ready before Step 5.2 runs.
 
 ---
 
@@ -619,17 +627,22 @@ Honor the `recon.md` verdict:
 - Follow existing collection entry format: schema shape, field table, indexes, enums.
 - Document any new relationships (embedded vs referenced).
 
-**`project/actions/services.md`** (when services change)
+**`project/actions/<api-app>/services.md`** (when services change)
 - Add new service entries or update existing method signatures.
 - Follow existing service entry format: type (internal/external), public methods, dependencies.
 
-**`project/actions/endpoints.md`** (when endpoints change)
+**`project/actions/<api-app>/endpoints.md`** (when endpoints change)
 - Add new endpoint entries or update existing ones.
 - Follow existing endpoint format: method, route, auth, input DTO, return DTO, business rules, services called.
 
-**`project/actions/pages.md`** (when pages change)
+**`project/actions/<app-key>/pages.md`** (web app, when pages change)
+- Edit the file inside the affected app's folder (e.g. `customer-portal/pages.md`, `admin-panel/pages.md`).
 - Add new page entries or update existing ones.
 - Follow existing page format: route, components, frontend services, models, backend endpoints used, UI states.
+
+**`project/actions/<app-key>/views.md`** (mobile app, when screens change)
+- Edit the file inside the affected mobile app's folder (e.g. `customer-mobile/views.md`).
+- Add new screen entries or update existing ones following `engine/templates/views-template.md`.
 
 **`project/rules.md`** (when new integration, security, or async rules are introduced)
 - Add new rules under the relevant module section.
@@ -703,7 +716,7 @@ Once confirmed, proceed with the changes below.
 #### New app creation (when `change-type` is `new-app`)
 - Create the new repo/folder with the tech stack scaffold declared in the New App Definition / `project/profile.md`.
 - Base the folder structure on the same patterns used in existing apps (e.g. `core/`, `pages/`, `shared/`, `layouts/`).
-- Implement only the pages listed in `project/actions/pages-<app-slug>.md`.
+- Implement only the pages/views listed in the new app's client spec (`project/actions/<app-key>/pages.md` or `project/actions/<app-key>/views.md`).
 - Reuse existing backend endpoints — do not duplicate business logic in the new app.
 - If new endpoints were flagged in Step 5.1b, implement those in the backend repo first (following backend rules), then call them from the new app.
 - Apply the auth strategy declared in the New App Definition (`same-backend-jwt` reuses the existing JWT flow; `separate-auth` means a new auth module or provider).
@@ -717,14 +730,14 @@ After the frontend code is implemented, screenshots of the running UI can be sub
 **How to submit**: Run the app locally, navigate to each new/modified page, take a screenshot, and attach it in the chat.
 
 **What the AI checks when screenshots are provided**:
-1. **Layout matches `pages.md`** — key components described in the page spec are present and visible (tables, forms, buttons, headers, empty states).
+1. **Layout matches the app's spec** — key components described in the app's `pages.md` (web) or `views.md` (mobile) page/screen spec are present and visible (tables, forms, buttons, headers, empty states).
 2. **UI states are reachable** — loading, empty, error, and success states are observable.
-3. **Correct route** — the browser URL matches the route declared in `pages.md`.
+3. **Correct route** — the browser URL (web) or navigation target (mobile) matches the route declared in the app's `pages.md` / `views.md`.
 4. **No obvious regressions** — existing pages not in scope of this change have not broken.
 5. **Localization / RTL support** — if the app supports RTL (per `project/profile.md`), layout is correct (mirrored, right-aligned).
 6. **Brand consistency** — the brand tokens defined in `project/profile.md`, typography, and the project's UI library usage are consistent with the rest of the app.
 
-**Screenshot feedback output**: If issues are found from screenshots, the AI describes the exact problem, references the relevant section in `pages.md`, and suggests the code fix. Screenshots do not replace the code checks in Step 5.5 — they are an additional visual layer.
+**Screenshot feedback output**: If issues are found from screenshots, the AI describes the exact problem, references the relevant section in the app's `pages.md` / `views.md`, and suggests the code fix. Screenshots do not replace the code checks in Step 5.5 — they are an additional visual layer.
 
 **Screenshots are optional**: If no screenshots are provided, the UI check in Step 5.5 is marked as "skipped — no screenshots provided" and does not block the verification report from passing.
 
@@ -741,12 +754,12 @@ Run this **after all code is implemented**. Confirm the code matches the plannin
 - **Output**: `project/changes/change-<NNN>-<slug>/verify-code.md`
 - **Checks to run** (scoped to changed areas only):
   1. **Endpoints in code** — every new/modified endpoint from `endpoints.md` exists in backend code with the correct HTTP method and route decorator
-  2. **Pages in code** — every new/modified page from `pages.md` exists in frontend code at the correct route
+  2. **Pages/views in code** — every new/modified page/screen from the app's `pages.md` (web) or `views.md` (mobile) exists in the app's code at the correct route/navigation target
   3. **Code layering — backend** — new/modified controllers delegate to services only; no DB queries or external SDK calls in controllers
   4. **Frontend isolation** — no hardcoded external URLs in new/modified frontend pages or services; all API calls go through the configured `apiUrl` in `project/profile.md`
   5. **Auth implementation** — auth guards, role decorators, and frontend route guards are applied in code as declared in the planning docs
   6. **Acceptance criteria** — every item listed in `change-request.md` is verifiably met; unmet items must be explicitly deferred with justification
-  7. **UI screenshots** — if screenshots were submitted in Step 5.4, verify layout, UI states, route, brand consistency, and RTL correctness against `pages.md`; if no screenshots were provided, mark as skipped
+  7. **UI screenshots** — if screenshots were submitted in Step 5.4, verify layout, UI states, route, brand consistency, and RTL correctness against the app's `pages.md` / `views.md`; if no screenshots were provided, mark as skipped
 - **If issues are found**: fix the code and re-run the relevant checks. Do not proceed to Step 5.6 until the report shows PASS (or PASS with documented deferrals).
 - **Done when**: `verify-code.md` is written in the change folder and shows **Overall: PASS**.
 

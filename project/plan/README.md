@@ -12,7 +12,7 @@ Generated in Phase 1 of the framework:
 - **`features.md`** — Feature specifications organized by module
 - **`data-model.md`** — Database schema and entity definitions
 
-(The service map lives in `project/actions/services.md` — it heads the action call chain.)
+(The service map lives in the API app's `project/actions/<api-app>/services.md` — e.g. `backend/services.md` — it heads the action call chain.)
 
 ## Usage
 

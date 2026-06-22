@@ -16,11 +16,11 @@ Generic coding conventions remain in `engine/rules/backend-rule.md` and `engine/
 
 ## How To Use This File
 
-When AI builds `project/actions/endpoints.md`:
+When AI builds `project/actions/backend/endpoints.md`:
 - apply these rules to the matching module and feature
 - reflect async, caching, storage, and security constraints in endpoint notes
 
-When AI builds `project/actions/pages.md`:
+When AI builds each app's `project/actions/<app-key>/pages.md`:
 - apply frontend-related rules to the matching pages
 - do not expose secrets, raw job IDs without ownership checks, or internal error details
 

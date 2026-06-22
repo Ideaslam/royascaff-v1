@@ -2,10 +2,12 @@
 
 ## Short Summary
 
-Use this template when creating `services.md`.  
-The `services.md` file should be a list of all backend services the AI will build, and every service entry should use the same structure.
+Use this template when creating an API app's `services.md`.  
+The `services.md` file should be a list of all backend services the AI will build for **one** API app, and every service entry should use the same structure.
 
-Create **`project/actions/services.md` before `project/actions/endpoints.md`**. Endpoints call services; pages call endpoints.
+> **Per-app placement.** This file lives at `project/actions/<api-app>/services.md` (e.g. `backend/services.md`) alongside its `endpoints.md`, where `<api-app>` is the API app's key from the Applications table in `project/profile.md`.
+
+Create the API app's **`project/actions/<api-app>/services.md` before `project/actions/<api-app>/endpoints.md`** (e.g. `backend/services.md` then `backend/endpoints.md`). Endpoints call services; client pages/views call endpoints.
 
 ## Purpose
 

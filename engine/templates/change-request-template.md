@@ -86,7 +86,7 @@ The technical repositories impacted. Derived from `target-app` for existing apps
 
 ### `scope`
 
-List the specific modules, features, endpoints, pages, or services that are directly in scope. Be as specific as you can — module names from `project/plan/modules.md`, feature names from `project/plan/features.md`, endpoint routes from `project/actions/endpoints.md`, page names from `project/actions/pages.md`.
+List the specific modules, features, endpoints, pages/views, or services that are directly in scope. Be as specific as you can — module names from `project/plan/modules.md`, feature names from `project/plan/features.md`, endpoint routes from `project/actions/<api-app>/endpoints.md`, page/screen names from the relevant app's `project/actions/<app-key>/pages.md` (web) or `project/actions/<app-key>/views.md` (mobile).
 
 ---
 
@@ -309,14 +309,17 @@ Copy everything between the triple-dashes below into `project/changes/change-<NN
 
 ## Scope
 
-> List the exact modules, features, endpoints, pages, or services in scope.
-> Use names from the planning docs (modules.md, features.md, endpoints.md, pages.md).
+> List the exact modules, features, endpoints, pages/views, or services in scope.
+> Use names from the planning docs (modules.md, features.md) and the per-app action specs
+> (`<api-app>/endpoints.md`, `<api-app>/services.md`, `<app-key>/pages.md`, `<app-key>/views.md`).
+> Name the **app** for any page/view so the correct `project/actions/<app-key>/` file is updated.
 > For new-app: list the existing modules/features you want to reuse, plus any new ones.
 
+- App(s): [e.g. customer-portal, admin-panel, backend]
 - Module(s): [e.g. Data, Dashboards]
 - Feature(s): [e.g. CSV Upload, Column Metadata Editor]
 - Endpoint(s): [e.g. POST /api/v1/data/upload, GET /api/v1/data/:id/columns]
-- Page(s): [e.g. files-list, upload-wizard]
+- Page(s) / View(s): [e.g. customer-portal: files-list, upload-wizard]
 - Service(s): [e.g. DataService, ColumnMetadataService]
 
 ---
@@ -403,10 +406,11 @@ The following is a complete example for a real change.
 
 ## Scope
 
+- App(s): backend, customer-portal
 - Module(s): Data
 - Feature(s): CSV File Management
 - Endpoint(s): POST /api/v1/data/bulk-delete
-- Page(s): files-list
+- Page(s) / View(s): customer-portal: files-list
 - Service(s): DataService, R2StorageService
 
 ---
