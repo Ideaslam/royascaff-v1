@@ -19,8 +19,11 @@ The backend domains covered by this model:
 - notifications
 - audit logs
 - background jobs
-- subscriptions and plans
+- subscription plans and user subscriptions
+- payments (admin manual ledger)
 - system settings
+- AI widget catalog (widget definitions)
+- AI usage logs and model pricing
 
 ## Modeling Principles
 
@@ -51,11 +54,16 @@ The backend domains covered by this model:
 - `notifications`
 - `auditlogs`
 - `sharelinks`
-- `settings`
+- `systemsettings`
+- `widgetdefinitions`
+- `ailogs`
+- `aimodels`
 
 ### Required Collections (Phase 2 — Engagement)
 
-- `subscriptions`
+- `subscriptionplans`
+- `usersubscriptions`
+- `payments`
 
 ### Dynamic Collections (Created Per CSV Upload)
 
@@ -112,7 +120,8 @@ Stores user accounts with authentication credentials, role, profile, and languag
 - One `user` owns many `projects`
 - One `user` owns many `csvfiles`
 - One `user` owns many `dashboards`
-- One `user` has one active `subscription`
+- One `user` has one `usersubscription` (referencing a `subscriptionplan`)
+- One `user` has many `payments`
 - One `user` has many `notifications`
 
 ### Index Recommendations
@@ -428,7 +437,7 @@ One document per widget in a dashboard. Stores chart type, layout position, AI-g
 | `_id` | `ObjectId` | yes | Primary key |
 | `dashboardId` | `ObjectId` | yes | Ref `dashboards` |
 | `dataSourceFileId` | `ObjectId` | yes | Ref `csvfiles` — the data source for this widget |
-| `widgetType` | `String` | yes | Enum: `bar`, `line`, `pie`, `donut`, `kpi_card`, `table`, `scatter` |
+| `widgetType` | `String` | yes | Free string — not a fixed Mongoose enum; must reference a `widgetType` registered in the `widgetdefinitions` catalog (see collection 17). Common values: `bar`, `line`, `pie`, `donut`, `kpi_card`, `table`, `scatter` |
 | `title` | `String` | yes | Widget display title |
 | `position.x` | `Number` | yes | Column start position in grid |
 | `position.y` | `Number` | yes | Row start position in grid |
@@ -448,7 +457,9 @@ One document per widget in a dashboard. Stores chart type, layout position, AI-g
 | `createdAt` | `Date` | yes | Mongoose timestamps |
 | `updatedAt` | `Date` | yes | Mongoose timestamps |
 
-### `widgetType` enum
+### `widgetType` values
+
+`widgetType` is stored as an open string. The Mongoose schema does **not** enforce a fixed enum — instead every value must match a `widgetType` registered in the `widgetdefinitions` catalog (collection 17), which the AI dashboard generator selects from. A legacy `WidgetType` TypeScript enum still exists for backward-compatible references, but it is not applied to the schema. Catalog-seeded values include:
 
 - `bar` — bar chart
 - `line` — line chart
@@ -829,9 +840,57 @@ Immutable record of all user actions and system events for GDPR compliance and s
 
 ---
 
-## 13. subscriptions
+## 13. subscriptionplans
 
-Stores subscription plan definitions and user subscription assignments.
+Catalog of subscription plan definitions (model `SubscriptionPlan`). Admin-managed; each plan defines pricing and monthly usage limits. Referenced by `usersubscriptions.planId` and `payments.planId`.
+
+### Mongoose shape
+
+```ts
+{
+  _id: ObjectId,
+  name: String,
+  description: String,
+  priceMonthlyUsd: Number,
+  maxDashboards: Number,
+  maxDataUploadsPerMonth: Number,
+  maxDataUpdatesPerMonth: Number,
+  isActive: Boolean,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Fields
+
+| Field | Type | Required | Notes |
+|---|---|---:|---|
+| `_id` | `ObjectId` | yes | Primary key |
+| `name` | `String` | yes | Unique plan name (e.g., `Free`, `Pro`) |
+| `description` | `String` | no | Optional plan description; default `''` |
+| `priceMonthlyUsd` | `Number` | yes | Monthly price in USD; min 0 |
+| `maxDashboards` | `Number` | yes | Max dashboards allowed under this plan; min 0 |
+| `maxDataUploadsPerMonth` | `Number` | yes | Max CSV uploads per month; min 0 |
+| `maxDataUpdatesPerMonth` | `Number` | yes | Max data updates/refreshes per month; min 0 |
+| `isActive` | `Boolean` | yes | Default `true`; inactive plans hidden from assignment |
+| `createdAt` | `Date` | yes | Mongoose timestamps |
+| `updatedAt` | `Date` | yes | Mongoose timestamps |
+
+### Relations
+
+- One `subscriptionplan` is referenced by many `usersubscriptions` (`planId`)
+- One `subscriptionplan` may be referenced by many `payments` (`planId`)
+
+### Index Recommendations
+
+- Unique index on `name`
+- Index on `isActive`
+
+---
+
+## 14. usersubscriptions
+
+One subscription record per user (model `UserSubscription`). Links a user to a plan and tracks the current period and monthly usage counters used for limit enforcement.
 
 ### Mongoose shape
 
@@ -839,24 +898,15 @@ Stores subscription plan definitions and user subscription assignments.
 {
   _id: ObjectId,
   userId: ObjectId,
-  planId: String,
-  planName: String,
-  limits: {
-    maxDashboards: Number,
-    maxCsvUploads: Number,
-    maxRefreshesPerDay: Number
-  },
-  usage: {
-    dashboardsCreated: Number,
-    csvUploadsUsed: Number,
-    refreshesToday: Number,
-    refreshesResetAt: Date
-  },
+  planId: ObjectId,
   status: String,
-  startedAt: Date,
-  expiresAt: Date | null,
-  paymentProvider: String | null,
-  paymentSubscriptionId: String | null,
+  startDate: Date,
+  endDate: Date | null,
+  uploadsUsedThisMonth: Number,
+  updatesUsedThisMonth: Number,
+  currentPeriodStart: Date | null,
+  currentPeriodEnd: Date | null,
+  notes: String,
   createdAt: Date,
   updatedAt: Date
 }
@@ -867,39 +917,105 @@ Stores subscription plan definitions and user subscription assignments.
 | Field | Type | Required | Notes |
 |---|---|---:|---|
 | `_id` | `ObjectId` | yes | Primary key |
-| `userId` | `ObjectId` | yes | Ref `users` — one subscription per user |
-| `planId` | `String` | yes | Plan identifier: `free`, `pro`, `enterprise` |
-| `planName` | `String` | yes | Human-readable plan label |
-| `limits.maxDashboards` | `Number` | yes | Max dashboards allowed; -1 means unlimited |
-| `limits.maxCsvUploads` | `Number` | yes | Max CSV uploads allowed; -1 means unlimited |
-| `limits.maxRefreshesPerDay` | `Number` | yes | Max data refreshes per day; -1 means unlimited |
-| `usage.dashboardsCreated` | `Number` | yes | Running count; default 0 |
-| `usage.csvUploadsUsed` | `Number` | yes | Running count; default 0 |
-| `usage.refreshesToday` | `Number` | yes | Resets daily; default 0 |
-| `usage.refreshesResetAt` | `Date` | yes | Timestamp of last daily reset |
-| `status` | `String` | yes | Enum: `active`, `expired`, `cancelled` |
-| `startedAt` | `Date` | yes | Subscription start date |
-| `expiresAt` | `Date` | no | Null for active subscriptions without expiry |
-| `paymentProvider` | `String` | no | Payment provider name (e.g., `stripe`) |
-| `paymentSubscriptionId` | `String` | no | Provider's subscription ID for webhook matching |
+| `userId` | `ObjectId` | yes | Ref `users` — **unique**, one subscription per user |
+| `planId` | `ObjectId` | yes | Ref `subscriptionplans` |
+| `status` | `String` | yes | Enum: `active`, `expired`, `cancelled` — default `active` |
+| `startDate` | `Date` | yes | Subscription start date |
+| `endDate` | `Date` | no | Null for subscriptions without an end date |
+| `uploadsUsedThisMonth` | `Number` | yes | Running upload count for the current period; default 0 |
+| `updatesUsedThisMonth` | `Number` | yes | Running data-update count for the current period; default 0 |
+| `currentPeriodStart` | `Date` | no | Start of the current billing/usage period |
+| `currentPeriodEnd` | `Date` | no | End of the current billing/usage period; used to reset counters |
+| `notes` | `String` | no | Free-text admin notes; default `''` |
 | `createdAt` | `Date` | yes | Mongoose timestamps |
 | `updatedAt` | `Date` | yes | Mongoose timestamps |
 
+### `status` enum
+
+- `active` — subscription is currently valid
+- `expired` — past its end date / period
+- `cancelled` — manually cancelled
+
 ### Relations
 
-- One `subscription` belongs to one `user`
+- One `usersubscription` belongs to one `user` (unique)
+- One `usersubscription` references one `subscriptionplan`
+- One `usersubscription` may be referenced by many `payments` (`subscriptionId`)
 
 ### Index Recommendations
 
 - Unique index on `userId` (one subscription per user)
+- Index on `planId`
 - Index on `status`
-- Index on `paymentSubscriptionId` (webhook lookup)
+- Index on `currentPeriodEnd` (for period rollover / counter reset jobs)
 
 ---
 
-## 14. settings
+## 15. payments
 
-Global system configuration stored as key-value documents. One document per setting key.
+Admin manual payment ledger (model `Payment`, owned by the Payments module). Records each payment against a user, and optionally the subscription and plan it applies to. There is no external payment provider integration — entries are recorded manually by admins.
+
+### Mongoose shape
+
+```ts
+{
+  _id: ObjectId,
+  userId: ObjectId,
+  subscriptionId: ObjectId | null,
+  planId: ObjectId | null,
+  amountUsd: Number,
+  currency: String,
+  status: String,
+  method: String,
+  reference: String,
+  paidAt: Date | null,
+  notes: String,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Fields
+
+| Field | Type | Required | Notes |
+|---|---|---:|---|
+| `_id` | `ObjectId` | yes | Primary key |
+| `userId` | `ObjectId` | yes | Ref `users` |
+| `subscriptionId` | `ObjectId` | no | Ref `usersubscriptions`; default `null` |
+| `planId` | `ObjectId` | no | Ref `subscriptionplans`; default `null` |
+| `amountUsd` | `Number` | yes | Payment amount in USD; min 0 |
+| `currency` | `String` | yes | Currency code; default `USD` |
+| `status` | `String` | yes | Enum: `paid`, `pending`, `refunded`, `failed` — default `pending` |
+| `method` | `String` | no | Payment method label; default `''` |
+| `reference` | `String` | no | External reference / receipt number; default `''` |
+| `paidAt` | `Date` | no | Timestamp the payment was settled; default `null` |
+| `notes` | `String` | no | Free-text admin notes; default `''` |
+| `createdAt` | `Date` | yes | Mongoose timestamps |
+| `updatedAt` | `Date` | yes | Mongoose timestamps |
+
+### `status` enum
+
+- `paid` — payment received
+- `pending` — awaiting settlement
+- `refunded` — amount refunded
+- `failed` — payment failed
+
+### Relations
+
+- One `payment` belongs to one `user`
+- One `payment` optionally references one `usersubscription` (`subscriptionId`)
+- One `payment` optionally references one `subscriptionplan` (`planId`)
+
+### Index Recommendations
+
+- Compound index on `{ userId: 1, createdAt: -1 }` (user payment history, newest first)
+- Compound index on `{ status: 1, createdAt: -1 }` (admin ledger filtering)
+
+---
+
+## 16. systemsettings
+
+Global system configuration as a single effectively-singleton document (model `SystemSettings`, collection `systemsettings`). One document keyed by `key: 'global'` holds all platform-wide settings as typed fields.
 
 ### Mongoose shape
 
@@ -907,9 +1023,10 @@ Global system configuration stored as key-value documents. One document per sett
 {
   _id: ObjectId,
   key: String,
-  value: Mixed,
-  description: String | null,
-  updatedBy: ObjectId | null,
+  registrationEnabled: Boolean,
+  maxFileSizeMb: Number,
+  defaultMaxDashboards: Number,
+  supportedLanguages: [String],
   createdAt: Date,
   updatedAt: Date
 }
@@ -920,31 +1037,185 @@ Global system configuration stored as key-value documents. One document per sett
 | Field | Type | Required | Notes |
 |---|---|---:|---|
 | `_id` | `ObjectId` | yes | Primary key |
-| `key` | `String` | yes | Unique setting key |
-| `value` | `Mixed` | yes | String, number, boolean, or object |
-| `description` | `String` | no | Human-readable explanation |
-| `updatedBy` | `ObjectId` | no | Ref `users` — last admin to update |
+| `key` | `String` | yes | Unique key; default `global` — effectively a singleton document |
+| `registrationEnabled` | `Boolean` | yes | Whether public user registration is allowed; default `true` |
+| `maxFileSizeMb` | `Number` | yes | Max upload size in MB; default `50` |
+| `defaultMaxDashboards` | `Number` | yes | Default dashboard limit for new users; default `5` |
+| `supportedLanguages` | `[String]` | yes | Supported UI languages; default `['en', 'ar']` |
 | `createdAt` | `Date` | yes | Mongoose timestamps |
 | `updatedAt` | `Date` | yes | Mongoose timestamps |
 
-### Suggested Setting Documents
+### Index Recommendations
+
+- Unique index on `key` (enforces the singleton `global` document)
+
+---
+
+## 17. widgetdefinitions
+
+The AI widget **catalog** (model `WidgetDefinition`, owned by the Dashboards module). Seeded at startup; the AI dashboard generator picks `widgetType`s from this catalog and `chartwidgets.widgetType` must match an entry here. Each entry describes the required data shape and provides an example to anchor the AI prompt.
+
+### Mongoose shape
 
 ```ts
-{ key: "system.defaultLanguage", value: "en" }
-{ key: "system.maintenanceMode", value: false }
-{ key: "ai.defaultModel", value: "claude-3-5-sonnet-20241022" }
-{ key: "ai.jobTimeoutSeconds", value: 300 }
-{ key: "ai.maxRetries", value: 3 }
-{ key: "upload.maxFileSizeBytes", value: 52428800 }
-{ key: "cache.chartDataTtlSeconds", value: 3600 }
-{ key: "rateLimit.authPerMinute", value: 10 }
-{ key: "rateLimit.apiPerMinute", value: 100 }
-{ key: "subscription.defaultPlan", value: "free" }
+{
+  _id: ObjectId,
+  widgetType: String,
+  displayName: String,
+  description: String,
+  category: String,
+  requiredStructure: Object,
+  example: Object,
+  selectionHints: String,
+  defaultSize: {
+    w: Number,
+    h: Number
+  },
+  isActive: Boolean,
+  createdAt: Date,
+  updatedAt: Date
+}
 ```
+
+### Fields
+
+| Field | Type | Required | Notes |
+|---|---|---:|---|
+| `_id` | `ObjectId` | yes | Primary key |
+| `widgetType` | `String` | yes | Unique catalog identifier used in `chartwidgets.widgetType` (e.g., `bar`, `line`, `kpi_card`) |
+| `displayName` | `String` | yes | Human-readable widget name |
+| `description` | `String` | yes | When the AI should choose this widget |
+| `category` | `String` | yes | Grouping category; default `chart` |
+| `requiredStructure` | `Object` | no | Describes the `queryDefinition`/`displayConfig` shape the AI must provide; default `{}` |
+| `example` | `Object` | no | Complete example widget JSON (sample query + output rows); default `{}` |
+| `selectionHints` | `String` | no | Free-text hints for widget selection; default `''` |
+| `defaultSize` | `Object` | yes | Default grid size `{ w, h }`; default `{ w: 4, h: 2 }` |
+| `isActive` | `Boolean` | yes | Default `true`; inactive widgets are excluded from AI selection |
+| `createdAt` | `Date` | yes | Mongoose timestamps |
+| `updatedAt` | `Date` | yes | Mongoose timestamps |
+
+### Relations
+
+- Standalone catalog — referenced by `chartwidgets.widgetType` by value (not by `ObjectId`)
 
 ### Index Recommendations
 
-- Unique index on `key`
+- Unique index on `widgetType`
+- Index on `isActive`
+
+---
+
+## 18. ailogs
+
+AI usage log (model `AiLog`, collection `ailogs`, owned by the AI Logs / `integrations-ai` module). One record per AI provider call. Captures the request, prompt, raw and parsed responses, token usage, computed cost, and outcome — powering admin AI cost reporting.
+
+### Mongoose shape
+
+```ts
+{
+  _id: ObjectId,
+  jobId: ObjectId | null,
+  provider: String,
+  model: String,
+  method: String,
+  requestPayload: Object | null,
+  promptText: String | null,
+  rawResponseText: String | null,
+  parsedResponse: Object | null,
+  inputTokens: Number,
+  outputTokens: Number,
+  costUsd: Number,
+  durationMs: Number,
+  status: String,
+  errorMessage: String | null,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Fields
+
+| Field | Type | Required | Notes |
+|---|---|---:|---|
+| `_id` | `ObjectId` | yes | Primary key |
+| `jobId` | `ObjectId` | no | Ref `backgroundjobs`; default `null` |
+| `provider` | `String` | yes | AI provider name (e.g., `anthropic`, `openai`) |
+| `model` | `String` | yes | Model identifier used for the call |
+| `method` | `String` | yes | Logical method/operation that triggered the call |
+| `requestPayload` | `Object` | no | Raw request payload sent to the provider; default `null` |
+| `promptText` | `String` | no | Prompt text sent; default `null` |
+| `rawResponseText` | `String` | no | Raw provider response text; default `null` |
+| `parsedResponse` | `Object` | no | Parsed/structured response; default `null` |
+| `inputTokens` | `Number` | yes | Input token count; default 0 |
+| `outputTokens` | `Number` | yes | Output token count; default 0 |
+| `costUsd` | `Number` | yes | Computed USD cost from `aimodels` pricing; default 0 |
+| `durationMs` | `Number` | yes | Call duration in milliseconds; default 0 |
+| `status` | `String` | yes | Enum: `pending`, `success`, `failed` |
+| `errorMessage` | `String` | no | Error details on failure; default `null` |
+| `createdAt` | `Date` | yes | Mongoose timestamps |
+| `updatedAt` | `Date` | yes | Mongoose timestamps |
+
+### `status` enum
+
+- `pending` — call in progress
+- `success` — call completed successfully
+- `failed` — call failed (see `errorMessage`)
+
+### Relations
+
+- One `ailog` optionally references one `backgroundjob` (`jobId`)
+- Standalone otherwise; `costUsd` is computed using `aimodels` pricing at write time
+
+### Index Recommendations
+
+- Index on `jobId`
+- Compound index on `{ provider: 1, model: 1 }`
+- Index on `createdAt` (descending — recent calls / cost reporting)
+
+---
+
+## 19. aimodels
+
+AI model pricing table (model `AiModelPricing`, collection `aimodels`, owned by the AI Logs module). Seeded at startup; used to compute `ailogs.costUsd` from token counts.
+
+### Mongoose shape
+
+```ts
+{
+  _id: ObjectId,
+  provider: String,
+  modelId: String,
+  displayName: String,
+  inputPricePerMToken: Number,
+  outputPricePerMToken: Number,
+  isActive: Boolean,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Fields
+
+| Field | Type | Required | Notes |
+|---|---|---:|---|
+| `_id` | `ObjectId` | yes | Primary key |
+| `provider` | `String` | yes | AI provider name |
+| `modelId` | `String` | yes | Model identifier (matches `ailogs.model`) |
+| `displayName` | `String` | yes | Human-readable model name |
+| `inputPricePerMToken` | `Number` | yes | USD per 1 million input tokens; default 0 |
+| `outputPricePerMToken` | `Number` | yes | USD per 1 million output tokens; default 0 |
+| `isActive` | `Boolean` | yes | Default `true` |
+| `createdAt` | `Date` | yes | Mongoose timestamps |
+| `updatedAt` | `Date` | yes | Mongoose timestamps |
+
+### Relations
+
+- Standalone pricing table — looked up by `{ provider, modelId }` when computing `ailogs.costUsd`
+
+### Index Recommendations
+
+- Unique compound index on `{ provider: 1, modelId: 1 }`
+- Index on `isActive`
 
 ---
 
@@ -990,8 +1261,9 @@ One collection is created per uploaded CSV file, where `{fileId}` is the string 
 - `users` 1 → many `projects`
 - `users` 1 → many `csvfiles`
 - `users` 1 → many `dashboards`
-- `users` 1 → 1 `subscriptions`
+- `users` 1 → 1 `usersubscriptions`
 - `users` 1 → many `notifications`
+- `users` 1 → many `payments`
 - `projects` 1 → many `dashboards`
 - `csvfiles` 1 → many `columnmetadata`
 - `csvfiles` 1 → 1 `csvdata_{fileId}` (dynamic collection)
@@ -1002,7 +1274,13 @@ One collection is created per uploaded CSV file, where `{fileId}` is the string 
 - `dashboarddatasources` many → 1 `dashboards`
 - `chartwidgets` 1 → many `chartdatacache`
 - `chartwidgets` many → 1 `csvfiles` (data source)
+- `chartwidgets` many → 1 `widgetdefinitions` (by `widgetType` value, not ObjectId)
 - `backgroundjobs` many → 1 `users`
+- `usersubscriptions` many → 1 `subscriptionplans`
+- `payments` many → 1 `users`; `payments` many → 1 `usersubscriptions` (optional); `payments` many → 1 `subscriptionplans` (optional)
+- `ailogs` many → 1 `backgroundjobs` (optional `jobId`); cost computed from `aimodels`
+- `widgetdefinitions` — standalone AI widget catalog
+- `aimodels` — standalone AI model pricing table
 
 ---
 
@@ -1024,20 +1302,25 @@ One collection is created per uploaded CSV file, where `{fileId}` is the string 
 - `sharelinks.dashboardId → dashboards`
 - `notifications.userId → users`
 - `backgroundjobs.ownerId → users`
-- `subscriptions.userId → users`
+- `usersubscriptions.userId → users`
+- `usersubscriptions.planId → subscriptionplans`
+- `payments.userId → users`
+- `payments.subscriptionId → usersubscriptions` (optional)
+- `payments.planId → subscriptionplans` (optional)
+- `ailogs.jobId → backgroundjobs` (optional)
 
 ### Recommended Embedded Subdocuments
 
 - `chartwidgets.position` — layout coordinates belong exclusively to the widget
 - `chartwidgets.queryDefinition` — query spec is inseparable from the widget definition
 - `chartwidgets.displayConfig` — display settings belong exclusively to the widget
-- `subscriptions.limits` — plan limits are part of the subscription document
-- `subscriptions.usage` — usage counters are updated atomically with the subscription
+- `widgetdefinitions.requiredStructure` / `example` / `defaultSize` — catalog metadata read as one unit by the AI generator
+- `usersubscriptions` usage counters (`uploadsUsedThisMonth`, `updatesUsedThisMonth`) — updated atomically on the subscription document
 
 ### Reason
 
 - Widget definitions (position, query, display config) are always read and written together as a unit — embedding avoids multiple joins on every dashboard viewer load
-- Subscription limits and usage are always read together for limit enforcement — embedding enables atomic updates and avoids race conditions
+- Plan limits are normalized into `subscriptionplans` and referenced by `usersubscriptions`; usage counters live on the user subscription and are updated atomically for limit enforcement
 - All other entities are normalized references because they are queried, updated, and deleted independently
 
 ---
@@ -1058,8 +1341,13 @@ One collection is created per uploaded CSV file, where `{fileId}` is the string 
 | `backgroundjobs` | Compound: `{entityType, entityId}`; `ownerId`; `status`; `type`; Compound: `{ownerId, status, type}` |
 | `notifications` | Compound: `{userId, isRead}`; Compound: `{userId, createdAt: -1}`; `type` |
 | `auditlogs` | `userId`; `action`; `entityType`; Compound: `{entityType, entityId}`; `timestamp desc`; Compound: `{userId, timestamp: -1}` |
-| `subscriptions` | Unique: `userId`; `status`; `paymentSubscriptionId` |
-| `settings` | Unique: `key` |
+| `subscriptionplans` | Unique: `name`; `isActive` |
+| `usersubscriptions` | Unique: `userId`; `planId`; `status`; `currentPeriodEnd` |
+| `payments` | Compound: `{userId, createdAt: -1}`; Compound: `{status, createdAt: -1}` |
+| `systemsettings` | Unique: `key` |
+| `widgetdefinitions` | Unique: `widgetType`; `isActive` |
+| `ailogs` | `jobId`; Compound: `{provider, model}`; `createdAt desc` |
+| `aimodels` | Unique compound: `{provider, modelId}`; `isActive` |
 | `csvdata_{fileId}` | `_rowIndex`; dynamic indexes per aggregated column |
 
 ---
@@ -1074,7 +1362,7 @@ One collection is created per uploaded CSV file, where `{fileId}` is the string 
 6. `chartwidgets.queryDefinition` must be validated against the AI-returned schema before persisting
 7. `sharelinks.tokenHash` must be stored as a SHA-256 hash — never store or return the raw token after creation
 8. `auditlogs` records must never have an update or delete endpoint
-9. `subscriptions.usage` counters must be decremented or reset correctly when dashboards or CSV files are deleted
+9. `usersubscriptions` usage counters (`uploadsUsedThisMonth`, `updatesUsedThisMonth`) must be reset at each `currentPeriodEnd` rollover and checked against the referenced `subscriptionplans` limits before uploads/updates
 10. `backgroundjobs.status` must always be updated to `failed` with `errorMessage` on job failure — silent failures are not allowed
 11. `chartdatacache` entries must be invalidated (deleted or set to `stale`) before a refresh response is returned to the client
 12. `csvdata_{fileId}` collections must be dropped entirely when the parent `csvfile` record is deleted
@@ -1091,6 +1379,8 @@ CsvFileStatus = ["uploading", "analyzing", "confirmed", "error"]
 ColumnInferredType = ["string", "number", "date", "boolean", "category"]
 ColumnMetadataStatus = ["pending", "ai_suggested", "user_confirmed"]
 DashboardStatus = ["generating", "ready", "error"]
+// WidgetType: legacy TypeScript enum only — NOT enforced on the chartwidgets schema.
+// chartwidgets.widgetType is an open string validated against the widgetdefinitions catalog.
 WidgetType = ["bar", "line", "pie", "donut", "kpi_card", "table", "scatter"]
 AggregationType = ["sum", "count", "avg", "min", "max"]
 SortOrder = ["asc", "desc"]
@@ -1103,7 +1393,9 @@ BackgroundJobEntityType = ["csvfile", "dashboard"]
 NotificationType = ["dashboard_ready", "generation_error", "csv_analysis_complete", "export_ready", "dashboard_shared"]
 AuditAction = ["user.register", "user.login", "user.logout", "user.login_failed", "user.update", "user.delete", "user.deactivate", "user.activate", "project.create", "project.update", "project.delete", "dashboard.create", "dashboard.update", "dashboard.delete", "dashboard.duplicate", "dashboard.refresh", "csvfile.upload", "csvfile.delete", "sharelink.create", "sharelink.revoke", "export.pdf", "export.excel", "export.csv", "subscription.assign", "subscription.upgrade", "subscription.cancel", "settings.update"]
 SubscriptionStatus = ["active", "expired", "cancelled"]
-SubscriptionPlan = ["free", "pro", "enterprise"]
+PaymentStatus = ["paid", "pending", "refunded", "failed"]
+AiLogStatus = ["pending", "success", "failed"]
+// Subscription plans are NOT a fixed enum — they are documents in the subscriptionplans collection.
 ```
 
 ---
@@ -1113,7 +1405,8 @@ SubscriptionPlan = ["free", "pro", "enterprise"]
 - `csvdata_{fileId}` collections are accessed via raw `mongoose.connection.collection(name)` — do not attempt to register a Mongoose model for them
 - Always check `columnmetadata.status === 'user_confirmed'` for all columns before queuing a `dashboard_generation` job
 - The `chartdatacache` collection is the persistence layer; Redis is the hot cache — both must be invalidated together on refresh
-- Subscription `usage` counters must be updated atomically using MongoDB `$inc` to prevent race conditions under concurrent requests
+- `usersubscriptions` usage counters must be updated atomically using MongoDB `$inc` to prevent race conditions under concurrent requests
+- `ailogs.costUsd` must be computed at write time from the matching `aimodels` pricing row (`{ provider, modelId }`) using token counts; `widgetdefinitions` and `aimodels` are seeded at startup
 - Audit log writes must be fire-and-forget from the business layer — never let audit log failure block the primary operation
 - `sharelinks.tokenHash` — store only the hash; the raw token is returned to the client exactly once at creation time and is not recoverable
 - Background job `maxRetries` defaults: `csv_analysis` = 3, `dashboard_generation` = 3, `pdf_export` = 2
@@ -1135,10 +1428,12 @@ For the Phase 1 MVP, the minimum required collections are:
 - `backgroundjobs`
 - `notifications`
 - `auditlogs`
-- `settings`
+- `systemsettings`
+- `widgetdefinitions` (seeded AI widget catalog)
+- `ailogs` and `aimodels` (AI usage logging and pricing)
 - `csvdata_{fileId}` (dynamic — created per upload)
 
 Then add in Phase 2:
 
 - `sharelinks` — when sharing feature is implemented
-- `subscriptions` — when subscription and billing is implemented
+- `subscriptionplans`, `usersubscriptions`, `payments` — when subscription and billing is implemented

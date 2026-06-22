@@ -1,15 +1,22 @@
-```
 # Endpoints
 
 ## Short Summary
 
-This file defines every backend API endpoint for **Roya AI Dynamo**. Endpoints are grouped by module matching `project/plan/modules.md`. All inputs, outputs, auth rules, and constraints are derived from `project/plan/features.md`, `project/plan/data-model.md`, and `project/rules.md`.
+This file documents every backend HTTP endpoint for **Roya AI Dynamo** as actually implemented in `roya-ai-dynamo-api/src`. Endpoints are grouped by module (NestJS controller).
 
-All routes are prefixed with `/api/v1`.
+Global conventions:
+
+- **Route prefix:** every route is served under `/api/v1`. Full paths are written out (e.g. `POST /api/v1/auth/login`).
+- **Auth model:** a global `JwtAuthGuard` + `RolesGuard` are applied. Each entry marks access as `public`, `JWT`, or `JWT + role:admin`. `UserRole` enum = `admin | editor | viewer`. Public endpoints opt out via `@Public()`.
+- **Success envelope:** successful responses are wrapped by a global interceptor as `{ success: true, data: <payload> }`. Paginated payloads are `{ items, page, limit, total }`.
+- **Exceptions to the envelope:** Excel/CSV export endpoints return raw file streams (not wrapped); `204 No Content` endpoints return no body.
+- Each entry names the service method it calls and the request DTO/query/params plus response shape.
 
 ---
 
 ## Module: Auth
+
+`@Controller('auth')`
 
 ---
 
@@ -17,12 +24,12 @@ All routes are prefixed with `/api/v1`.
 
 - Name: `Register`
 - Method: `POST`
-- Route: `/auth/register`
+- Route: `/api/v1/auth/register`
 - Summary: `Create a new user account with email and password.`
 
 #### Description
 
-Validates uniqueness of email, hashes password with bcrypt (12 rounds), creates a user record with role `editor`, sends a welcome email, and returns JWT access and refresh tokens.
+Validates email uniqueness, hashes the password, creates the user record, and returns JWT access and refresh tokens.
 
 #### Auth
 
@@ -33,7 +40,7 @@ Validates uniqueness of email, hashes password with bcrypt (12 rounds), creates 
 
 - Params: `none`
 - Query: `none`
-- Body:
+- Body: `RegisterDto`
   - `name: string - display name (required)`
   - `email: string - unique email address (required)`
   - `password: string - min 8 chars (required)`
@@ -41,23 +48,20 @@ Validates uniqueness of email, hashes password with bcrypt (12 rounds), creates 
 #### Return
 
 - Status: `201`
-- DTO / Shape: `AuthResponse`
+- DTO / Shape: `AuthResponseDto`
 - Data:
   - `accessToken: string - JWT access token`
-  - `refreshToken: string - rotation-based refresh token`
+  - `refreshToken: string - refresh token`
   - `user: UserProfileDto - id, name, email, role, languagePreference`
 
-#### Business Rules
+#### Services Called
 
-- Email must be unique across all users
-- Password must be hashed before persisting
-- Welcome email sent via MailJet after user record is created
+- `AuthService.register() - creates the user and issues tokens`
 
 #### Constraints / Notes
 
-- Rate limit: 10 requests per minute per IP
-- Never return `passwordHash` in any response
-- Write `user.register` audit log entry
+- Rate limit: 10 requests per minute (`@Throttle`)
+- Never returns `passwordHash`
 
 ---
 
@@ -65,7 +69,7 @@ Validates uniqueness of email, hashes password with bcrypt (12 rounds), creates 
 
 - Name: `Login`
 - Method: `POST`
-- Route: `/auth/login`
+- Route: `/api/v1/auth/login`
 - Summary: `Authenticate a user with email and password and return JWT tokens.`
 
 #### Auth
@@ -77,42 +81,40 @@ Validates uniqueness of email, hashes password with bcrypt (12 rounds), creates 
 
 - Params: `none`
 - Query: `none`
-- Body:
+- Body: `LoginDto`
   - `email: string - registered email (required)`
   - `password: string - account password (required)`
 
 #### Return
 
 - Status: `200`
-- DTO / Shape: `AuthResponse`
+- DTO / Shape: `AuthResponseDto`
 - Data:
   - `accessToken: string`
   - `refreshToken: string`
   - `user: UserProfileDto`
 
-#### Business Rules
+#### Services Called
 
-- Return `401` if email not found or password does not match
-- Update `lastLoginAt` on successful login
-- Store hashed refresh token in `users.refreshTokenHash`
+- `AuthService.login() - verifies credentials and issues tokens`
 
 #### Constraints / Notes
 
-- Rate limit: 10 requests per minute per IP
-- Write `user.login` on success and `user.login_failed` on failure audit log entries
+- Rate limit: 10 requests per minute (`@Throttle`)
+- Returns `401` if email not found or password mismatch
 
 ---
 
 ### Endpoint 3
 
-- Name: `OAuth Login`
+- Name: `OAuth Callback`
 - Method: `POST`
-- Route: `/auth/oauth/callback`
-- Summary: `Complete OAuth flow and return JWT tokens after provider authentication.`
+- Route: `/api/v1/auth/oauth/callback`
+- Summary: `OAuth provider callback — currently a stub.`
 
 #### Description
 
-Receives OAuth authorization code from provider, exchanges for user identity, creates account if new, links to existing account if email matches, and returns JWT tokens.
+Accepts an OAuth authorization code payload but is **not wired** to `AuthService.oauthLogin`. The handler returns a static message only.
 
 #### Auth
 
@@ -123,7 +125,7 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 
 - Params: `none`
 - Query: `none`
-- Body:
+- Body: `OAuthCallbackDto`
   - `provider: string - enum: google, microsoft (required)`
   - `code: string - OAuth authorization code (required)`
   - `redirectUri: string - must match registered redirect (required)`
@@ -131,22 +133,17 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 #### Return
 
 - Status: `200`
-- DTO / Shape: `AuthResponse`
+- DTO / Shape: `{ message: string }`
 - Data:
-  - `accessToken: string`
-  - `refreshToken: string`
-  - `user: UserProfileDto`
+  - `message: string - "OAuth flow should be handled via passport redirect"`
 
-#### Business Rules
+#### Services Called
 
-- Create new user with role `editor` if no existing account matches the OAuth email
-- Link OAuth identity to existing account if email already registered
-- Never trust OAuth payload without verifying with provider
+- `none - stub handler; does not invoke AuthService.oauthLogin`
 
 #### Constraints / Notes
 
-- OAuth client secrets are server-side only; never returned or logged
-- Write `user.login` audit log entry
+- **Partial / stub:** not implemented end-to-end. See Known Gaps.
 
 ---
 
@@ -154,7 +151,7 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 
 - Name: `Refresh Token`
 - Method: `POST`
-- Route: `/auth/refresh`
+- Route: `/api/v1/auth/refresh`
 - Summary: `Issue a new access token using a valid refresh token.`
 
 #### Auth
@@ -166,26 +163,24 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 
 - Params: `none`
 - Query: `none`
-- Body:
+- Body: `RefreshTokenDto`
   - `refreshToken: string - current valid refresh token (required)`
 
 #### Return
 
-- Status: `200`
-- DTO / Shape: `TokenRefreshResponse`
+- Status: `201`
+- DTO / Shape: `{ accessToken: string, refreshToken: string }`
 - Data:
   - `accessToken: string - new access token`
-  - `refreshToken: string - new rotated refresh token`
+  - `refreshToken: string - rotated refresh token`
 
-#### Business Rules
+#### Services Called
 
-- Validate refresh token against stored hash
-- Rotate refresh token on every use (invalidate old, issue new)
-- Return `401` if token is invalid, expired, or already used
+- `AuthService.refresh() - validates and rotates the refresh token`
 
 #### Constraints / Notes
 
-- Refresh tokens are one-time use (rotation pattern)
+- Returns `401` if token is invalid or expired
 
 ---
 
@@ -193,7 +188,7 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 
 - Name: `Forgot Password`
 - Method: `POST`
-- Route: `/auth/forgot-password`
+- Route: `/api/v1/auth/forgot-password`
 - Summary: `Send a password reset link to the user's email.`
 
 #### Auth
@@ -205,7 +200,7 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 
 - Params: `none`
 - Query: `none`
-- Body:
+- Body: `ForgotPasswordDto`
   - `email: string - registered email (required)`
 
 #### Return
@@ -213,13 +208,16 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 - Status: `200`
 - DTO / Shape: `{ message: string }`
 - Data:
-  - `message: string - always returns success to prevent email enumeration`
+  - `message: string - generic success message (prevents email enumeration)`
+
+#### Services Called
+
+- `AuthService.forgotPassword() - generates and emails a reset token`
 
 #### Constraints / Notes
 
-- Rate limit: 10 requests per minute per IP
-- Always return 200 even if email not found (prevents enumeration)
-- Token expires in 1 hour; one-time use
+- Rate limit: 10 requests per minute (`@Throttle`)
+- Always returns 200 even if the email is unknown
 
 ---
 
@@ -227,7 +225,7 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 
 - Name: `Reset Password`
 - Method: `POST`
-- Route: `/auth/reset-password`
+- Route: `/api/v1/auth/reset-password`
 - Summary: `Apply a new password using a valid reset token.`
 
 #### Auth
@@ -239,20 +237,20 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 
 - Params: `none`
 - Query: `none`
-- Body:
+- Body: `ResetPasswordDto`
   - `token: string - reset token from email link (required)`
-  - `newPassword: string - min 8 chars (required)`
+  - `newPassword: string - new password (required)`
 
 #### Return
 
 - Status: `200`
 - DTO / Shape: `{ message: string }`
+- Data:
+  - `message: string - "Password reset successful."`
 
-#### Business Rules
+#### Services Called
 
-- Validate token expiry and one-time use
-- Hash new password before storing
-- Invalidate token after use
+- `AuthService.resetPassword() - validates the token and updates the password`
 
 ---
 
@@ -260,12 +258,12 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 
 - Name: `Logout`
 - Method: `POST`
-- Route: `/auth/logout`
+- Route: `/api/v1/auth/logout`
 - Summary: `Invalidate the user's refresh token and end the session.`
 
 #### Auth
 
-- Access: `authenticated`
+- Access: `JWT`
 - Roles: `N/A`
 
 #### Input
@@ -278,10 +276,9 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 
 - Status: `204`
 
-#### Business Rules
+#### Services Called
 
-- Clear `users.refreshTokenHash` for the current user
-- Write `user.logout` audit log entry
+- `AuthService.logout() - clears the stored refresh token hash`
 
 ---
 
@@ -289,12 +286,12 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 
 - Name: `Get Current User`
 - Method: `GET`
-- Route: `/auth/me`
-- Summary: `Return the authenticated user's profile.`
+- Route: `/api/v1/auth/me`
+- Summary: `Return the authenticated user's JWT payload.`
 
 #### Auth
 
-- Access: `authenticated`
+- Access: `JWT`
 - Roles: `N/A`
 
 #### Input
@@ -306,40 +303,109 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 #### Return
 
 - Status: `200`
-- DTO / Shape: `UserProfileDto`
+- DTO / Shape: `current user payload`
 - Data:
   - `id: string`
-  - `name: string`
   - `email: string`
   - `role: string`
-  - `avatarUrl: string | null`
-  - `languagePreference: string`
-  - `createdAt: string`
+
+#### Services Called
+
+- `none - returns the request user payload directly`
 
 ---
 
 ## Module: Users
 
+`@Controller('users')`
+
 ---
 
 ### Endpoint 9
 
-- Name: `Get Users List`
-- Method: `GET`
-- Route: `/users`
-- Summary: `Paginated, searchable list of all users. Admin only.`
+- Name: `Update Own Profile`
+- Method: `PATCH`
+- Route: `/api/v1/users/me`
+- Summary: `Authenticated user updates their own profile.`
 
 #### Auth
 
-- Access: `role-based`
+- Access: `JWT`
+- Roles: `N/A`
+
+#### Input
+
+- Params: `none`
+- Query: `none`
+- Body: `UpdateProfileDto`
+  - `name: string (optional)`
+  - `languagePreference: string - enum: en, ar (optional)`
+  - `avatarUrl: string (optional)`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `UserProfileDto`
+
+#### Services Called
+
+- `UsersService.updateProfile() - updates the current user's profile`
+
+#### Constraints / Notes
+
+- User cannot change their own role here
+
+---
+
+### Endpoint 10
+
+- Name: `Change Password`
+- Method: `PATCH`
+- Route: `/api/v1/users/me/password`
+- Summary: `Authenticated user changes their own password.`
+
+#### Auth
+
+- Access: `JWT`
+- Roles: `N/A`
+
+#### Input
+
+- Params: `none`
+- Query: `none`
+- Body: `ChangePasswordDto`
+  - `currentPassword: string (required)`
+  - `newPassword: string (required)`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `{ message: string }`
+
+#### Services Called
+
+- `UsersService.changePassword() - verifies the current password and updates it`
+
+---
+
+### Endpoint 11
+
+- Name: `List Users`
+- Method: `GET`
+- Route: `/api/v1/users`
+- Summary: `Paginated, searchable list of all users.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
 - Roles: `admin`
 
 #### Input
 
 - Params: `none`
 - Query:
-  - `page: number - page number (default 1)`
-  - `limit: number - page size (default 20, max 100)`
+  - `page: number - page number`
+  - `limit: number - page size`
   - `search: string - search by name or email`
   - `role: string - filter by role enum`
   - `isActive: boolean - filter by active status`
@@ -348,30 +414,32 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 #### Return
 
 - Status: `200`
-- DTO / Shape: `PaginatedResponse<UserListItemDto>`
+- DTO / Shape: `Paginated<UserListItemDto>`
 - Data:
-  - `items: UserListItemDto[] - id, name, email, role, isActive, lastLoginAt, createdAt`
-  - `page: number`
-  - `limit: number`
-  - `total: number`
+  - `items: UserListItemDto[]`
+  - `page, limit, total`
+
+#### Services Called
+
+- `UsersService.adminList() - loads paginated, filtered users`
 
 #### Constraints / Notes
 
 - Paginated endpoint
-- Never return `passwordHash` or `refreshTokenHash`
+- Never returns `passwordHash` or `refreshTokenHash`
 
 ---
 
-### Endpoint 10
+### Endpoint 12
 
 - Name: `Get User By ID`
 - Method: `GET`
-- Route: `/users/:id`
-- Summary: `Return full user details for admin edit page.`
+- Route: `/api/v1/users/:id`
+- Summary: `Return full user details for the admin edit page.`
 
 #### Auth
 
-- Access: `role-based`
+- Access: `JWT + role:admin`
 - Roles: `admin`
 
 #### Input
@@ -386,25 +454,29 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 - Status: `200`
 - DTO / Shape: `UserDetailsDto`
 
+#### Services Called
+
+- `UsersService.adminGet() - loads a single user by id`
+
 ---
 
-### Endpoint 11
+### Endpoint 13
 
 - Name: `Create User`
 - Method: `POST`
-- Route: `/users`
+- Route: `/api/v1/users`
 - Summary: `Admin creates a new user account.`
 
 #### Auth
 
-- Access: `role-based`
+- Access: `JWT + role:admin`
 - Roles: `admin`
 
 #### Input
 
 - Params: `none`
 - Query: `none`
-- Body:
+- Body: `CreateUserDto`
   - `name: string (required)`
   - `email: string (required)`
   - `password: string (required)`
@@ -415,22 +487,22 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 - Status: `201`
 - DTO / Shape: `UserDetailsDto`
 
-#### Constraints / Notes
+#### Services Called
 
-- Write `user.register` audit log entry
+- `UsersService.adminCreate() - creates a user with the given role`
 
 ---
 
-### Endpoint 12
+### Endpoint 14
 
 - Name: `Update User`
 - Method: `PUT`
-- Route: `/users/:id`
-- Summary: `Admin updates user profile, role, active status, or resets password.`
+- Route: `/api/v1/users/:id`
+- Summary: `Admin updates a user's profile, role, status, or password.`
 
 #### Auth
 
-- Access: `role-based`
+- Access: `JWT + role:admin`
 - Roles: `admin`
 
 #### Input
@@ -438,34 +510,34 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 - Params:
   - `id: string - user ObjectId`
 - Query: `none`
-- Body:
+- Body: `UpdateUserDto`
   - `name: string (optional)`
   - `email: string (optional)`
   - `role: string (optional)`
   - `isActive: boolean (optional)`
-  - `newPassword: string - admin-initiated password reset, min 8 chars (optional)`
+  - `newPassword: string - admin-initiated reset (optional)`
 
 #### Return
 
 - Status: `200`
 - DTO / Shape: `UserDetailsDto`
 
-#### Constraints / Notes
+#### Services Called
 
-- Write `user.update` audit log entry
+- `UsersService.adminUpdate() - applies admin edits to the user`
 
 ---
 
-### Endpoint 13
+### Endpoint 15
 
 - Name: `Delete User`
 - Method: `DELETE`
-- Route: `/users/:id`
-- Summary: `Admin permanently deletes a user and all owned data (GDPR).`
+- Route: `/api/v1/users/:id`
+- Summary: `Admin deletes a user and owned data.`
 
 #### Auth
 
-- Access: `role-based`
+- Access: `JWT + role:admin`
 - Roles: `admin`
 
 #### Input
@@ -479,103 +551,96 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 
 - Status: `204`
 
-#### Business Rules
+#### Services Called
 
-- Cascade delete all user-owned data: projects, dashboards, csvfiles, notifications, subscriptions
-- Redact `userId` in audit logs (set to null); do not delete audit records
-- Must complete within 30 days (GDPR)
-
-#### Constraints / Notes
-
-- Write `user.delete` audit log entry
-
----
-
-### Endpoint 14
-
-- Name: `Update Own Profile`
-- Method: `PATCH`
-- Route: `/users/me`
-- Summary: `Authenticated user updates their own profile.`
-
-#### Auth
-
-- Access: `authenticated`
-- Roles: `N/A`
-
-#### Input
-
-- Params: `none`
-- Query: `none`
-- Body:
-  - `name: string (optional)`
-  - `languagePreference: string - enum: en, ar (optional)`
-  - `avatarUrl: string (optional)`
-
-#### Return
-
-- Status: `200`
-- DTO / Shape: `UserProfileDto`
-
-#### Constraints / Notes
-
-- User cannot change their own role via this endpoint
-
----
-
-### Endpoint 15
-
-- Name: `Change Password`
-- Method: `PATCH`
-- Route: `/users/me/password`
-- Summary: `Authenticated user changes their password.`
-
-#### Auth
-
-- Access: `authenticated`
-- Roles: `N/A`
-
-#### Input
-
-- Params: `none`
-- Query: `none`
-- Body:
-  - `currentPassword: string (required)`
-  - `newPassword: string - min 8 chars (required)`
-
-#### Return
-
-- Status: `200`
-- DTO / Shape: `{ message: string }`
-
-#### Business Rules
-
-- Verify `currentPassword` against stored hash before updating
-
----
-
-## Module: Projects
+- `UsersService.adminDelete() - deletes the user and cascades owned data`
 
 ---
 
 ### Endpoint 16
 
+- Name: `Suspend User`
+- Method: `PATCH`
+- Route: `/api/v1/users/:id/suspend`
+- Summary: `Admin suspends (deactivates) a user account.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params:
+  - `id: string - user ObjectId`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `UserDetailsDto`
+
+#### Services Called
+
+- `UsersService.suspend() - sets the user inactive`
+
+---
+
+### Endpoint 17
+
+- Name: `Reactivate User`
+- Method: `PATCH`
+- Route: `/api/v1/users/:id/reactivate`
+- Summary: `Admin reactivates a suspended user account.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params:
+  - `id: string - user ObjectId`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `UserDetailsDto`
+
+#### Services Called
+
+- `UsersService.reactivate() - sets the user active again`
+
+---
+
+## Module: Projects
+
+`@Controller('projects')`
+
+---
+
+### Endpoint 18
+
 - Name: `Create Project`
 - Method: `POST`
-- Route: `/projects`
+- Route: `/api/v1/projects`
 - Summary: `Create a new project for the authenticated user.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params: `none`
 - Query: `none`
-- Body:
-  - `name: string (required)`
+- Body: `CreateProjectDto`
+  - `name: string - max 200 chars (required)`
   - `description: string (optional)`
 
 #### Return
@@ -585,60 +650,64 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 - Data:
   - `id, name, description, ownerId, isActive, createdAt, updatedAt`
 
-#### Constraints / Notes
+#### Services Called
 
-- Write `project.create` audit log entry
+- `ProjectsService.create() - creates a project owned by the current user`
 
 ---
 
-### Endpoint 17
+### Endpoint 19
 
 - Name: `List Projects`
 - Method: `GET`
-- Route: `/projects`
-- Summary: `Paginated list of projects owned by the current user.`
+- Route: `/api/v1/projects`
+- Summary: `Paginated list of projects visible to the current user.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params: `none`
 - Query:
-  - `page: number (default 1)`
-  - `limit: number (default 20)`
+  - `page: number`
+  - `limit: number`
   - `search: string - search by project name`
-  - `isActive: boolean (default true)`
+  - `isActive: boolean`
 - Body: `none`
 
 #### Return
 
 - Status: `200`
-- DTO / Shape: `PaginatedResponse<ProjectListItemDto>`
+- DTO / Shape: `Paginated<ProjectListItemDto>`
 - Data:
-  - `items: ProjectListItemDto[] - id, name, description, dashboardCount, createdAt`
+  - `items: ProjectListItemDto[]`
   - `page, limit, total`
+
+#### Services Called
+
+- `ProjectsService.list() - loads paginated, filtered projects`
 
 #### Constraints / Notes
 
 - Paginated endpoint
-- Admin sees all projects; editor sees only owned projects
+- Admin sees all projects; others see only owned projects (enforced in service)
 
 ---
 
-### Endpoint 18
+### Endpoint 20
 
 - Name: `Get Project`
 - Method: `GET`
-- Route: `/projects/:id`
-- Summary: `Return project details and its dashboards list.`
+- Route: `/api/v1/projects/:id`
+- Summary: `Return project details.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
@@ -651,35 +720,35 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 
 - Status: `200`
 - DTO / Shape: `ProjectDetailsDto`
-- Data:
-  - `id, name, description, ownerId, createdAt, updatedAt`
-  - `dashboards: DashboardListItemDto[] - id, name, status, createdAt`
 
-#### Business Rules
+#### Services Called
 
-- Editor can only access their own projects
-- Admin can access any project
+- `ProjectsService.getById() - loads a single project`
+
+#### Constraints / Notes
+
+- Owner-or-admin access enforced in the service
 
 ---
 
-### Endpoint 19
+### Endpoint 21
 
 - Name: `Update Project`
 - Method: `PUT`
-- Route: `/projects/:id`
+- Route: `/api/v1/projects/:id`
 - Summary: `Update project name and description.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params:
-  - `id: string`
+  - `id: string - project ObjectId`
 - Query: `none`
-- Body:
+- Body: `UpdateProjectDto`
   - `name: string (optional)`
   - `description: string (optional)`
 
@@ -688,28 +757,32 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 - Status: `200`
 - DTO / Shape: `ProjectDto`
 
+#### Services Called
+
+- `ProjectsService.update() - applies edits to the project`
+
 #### Constraints / Notes
 
-- Write `project.update` audit log entry
+- Owner-or-admin access enforced in the service
 
 ---
 
-### Endpoint 20
+### Endpoint 22
 
 - Name: `Delete Project`
 - Method: `DELETE`
-- Route: `/projects/:id`
-- Summary: `Delete project and all its dashboards (cascade).`
+- Route: `/api/v1/projects/:id`
+- Summary: `Delete a project and its dashboards (cascade).`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params:
-  - `id: string`
+  - `id: string - project ObjectId`
 - Query: `none`
 - Body: `none`
 
@@ -717,122 +790,158 @@ Receives OAuth authorization code from provider, exchanges for user identity, cr
 
 - Status: `204`
 
-#### Business Rules
+#### Services Called
 
-- Cascade delete: all dashboards, chartwidgets, dashboarddatasources, chartdatacache, sharelinks
-- Only owner or admin can delete
+- `ProjectsService.delete() - deletes the project and cascades dashboards`
 
 #### Constraints / Notes
 
-- Write `project.delete` audit log entry
+- Owner-or-admin access enforced in the service
 
 ---
 
 ## Module: Data (CSV Management)
 
+`@Controller('data')`
+
 ---
 
-### Endpoint 21
+### Endpoint 23
 
-- Name: `Initiate CSV Upload`
+- Name: `Upload File (Single-Step)`
 - Method: `POST`
-- Route: `/data/upload/initiate`
-- Summary: `Initiate a chunked CSV upload session and return an upload ID.`
+- Route: `/api/v1/data/upload/file`
+- Summary: `Upload a CSV file directly; backend streams it to storage and queues analysis.`
 
 #### Description
 
-Creates a `csvfiles` record with status `uploading`, returns an upload session ID and upload URL for direct chunked upload to Cloudflare R2.
+Single-step upload where the frontend sends the file as multipart form-data. Backend streams it to R2, creates the `csvfiles` record, and queues the AI column analysis job.
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params: `none`
 - Query: `none`
-- Body:
+- Body: `multipart/form-data`
+  - `file: binary - CSV file, max 50MB (.csv only)`
+
+#### Return
+
+- Status: `202`
+- DTO / Shape: `{ fileId, jobId, status }`
+- Data:
+  - `fileId: string`
+  - `jobId: string - background analysis job id`
+  - `status: string - "analyzing"`
+
+#### Services Called
+
+- `DataService.uploadFile() - persists the file and queues analysis`
+
+#### Constraints / Notes
+
+- Async endpoint (returns 202 immediately)
+- Rejects non-CSV files and files larger than 50MB (52,428,800 bytes)
+
+---
+
+### Endpoint 24
+
+- Name: `Initiate Upload`
+- Method: `POST`
+- Route: `/api/v1/data/upload/initiate`
+- Summary: `Begin a presigned-URL upload session (legacy flow).`
+
+#### Description
+
+Legacy presigned-URL flow. Creates a `csvfiles` record and returns a presigned upload URL plus an upload session id for direct client-to-R2 upload.
+
+#### Auth
+
+- Access: `JWT`
+- Roles: `N/A`
+
+#### Input
+
+- Params: `none`
+- Query: `none`
+- Body: `InitiateUploadDto`
   - `filename: string (required)`
   - `fileSizeBytes: number (required)`
-  - `mimeType: string - must be text/csv (required)`
+  - `mimeType: string (required)`
 
 #### Return
 
 - Status: `201`
-- DTO / Shape: `UploadInitiateResponse`
+- DTO / Shape: `{ fileId, uploadUrl, uploadId }`
 - Data:
-  - `fileId: string - csvfiles ObjectId`
-  - `uploadUrl: string - presigned R2 URL for chunked upload`
-  - `uploadId: string - multipart upload session ID`
+  - `fileId: string`
+  - `uploadUrl: string - presigned R2 URL`
+  - `uploadId: string - multipart upload session id`
 
-#### Business Rules
+#### Services Called
 
-- Reject files larger than 52,428,800 bytes (50 MB) with `400`
-- Check subscription upload limit before creating record; return `403` if exceeded
-- Write `csvfile.upload` audit log entry on initiation
+- `DataService.initiateUpload() - creates the record and presigned URL`
 
 ---
 
-### Endpoint 22
+### Endpoint 25
 
-- Name: `Complete CSV Upload`
+- Name: `Complete Upload`
 - Method: `POST`
-- Route: `/data/upload/:fileId/complete`
-- Summary: `Confirm upload completed, trigger row parsing and AI analysis.`
-
-#### Description
-
-Called by frontend after all chunks are uploaded to R2. Backend parses CSV rows into `csvdata_{fileId}` collection, creates `columnmetadata` records, queues the AI column analysis job, and returns the background job ID.
+- Route: `/api/v1/data/upload/:fileId/complete`
+- Summary: `Confirm a presigned upload completed and queue parsing + analysis.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params:
   - `fileId: string - csvfiles ObjectId`
 - Query: `none`
-- Body:
+- Body: `CompleteUploadDto`
   - `storageKey: string - confirmed R2 object key (required)`
 
 #### Return
 
 - Status: `202`
-- DTO / Shape: `UploadCompleteResponse`
-- Data:
-  - `fileId: string`
-  - `jobId: string - backgroundjobs ObjectId for AI analysis`
-  - `status: string - analyzing`
+- DTO / Shape: `{ fileId, jobId, status }`
+
+#### Services Called
+
+- `DataService.completeUpload() - parses rows and queues the analysis job`
 
 #### Constraints / Notes
 
-- Row parsing is async (background job); this endpoint returns immediately
-- Chunked batch insert: 1,000 rows per batch
-- Write `csvfile.upload_complete` audit log entry
+- Async endpoint (returns 202 immediately)
 
 ---
 
-### Endpoint 23
+### Endpoint 26
 
 - Name: `List CSV Files`
 - Method: `GET`
-- Route: `/data/files`
-- Summary: `Paginated list of CSV files uploaded by the current user.`
+- Route: `/api/v1/data/files`
+- Summary: `Paginated list of CSV files for the current user.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params: `none`
 - Query:
-  - `page: number (default 1)`
-  - `limit: number (default 20)`
+  - `page: number`
+  - `limit: number`
   - `search: string - search by filename`
   - `status: string - filter by CsvFileStatus enum`
 - Body: `none`
@@ -840,10 +949,14 @@ Called by frontend after all chunks are uploaded to R2. Backend parses CSV rows 
 #### Return
 
 - Status: `200`
-- DTO / Shape: `PaginatedResponse<CsvFileListItemDto>`
+- DTO / Shape: `Paginated<CsvFileListItemDto>`
 - Data:
-  - `items: CsvFileListItemDto[] - id, originalFilename, fileSizeBytes, rowCount, columnCount, status, uploadedAt`
+  - `items: CsvFileListItemDto[]`
   - `page, limit, total`
+
+#### Services Called
+
+- `DataService.listFiles() - loads paginated, filtered files`
 
 #### Constraints / Notes
 
@@ -851,22 +964,22 @@ Called by frontend after all chunks are uploaded to R2. Backend parses CSV rows 
 
 ---
 
-### Endpoint 24
+### Endpoint 27
 
 - Name: `Get CSV File`
 - Method: `GET`
-- Route: `/data/files/:fileId`
-- Summary: `Return CSV file metadata and all column metadata.`
+- Route: `/api/v1/data/files/:fileId`
+- Summary: `Return CSV file metadata and its column metadata.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params:
-  - `fileId: string`
+  - `fileId: string - csvfiles ObjectId`
 - Query: `none`
 - Body: `none`
 
@@ -875,190 +988,184 @@ Called by frontend after all chunks are uploaded to R2. Backend parses CSV rows 
 - Status: `200`
 - DTO / Shape: `CsvFileDetailsDto`
 - Data:
-  - `id, originalFilename, fileSizeBytes, rowCount, columnCount, status, uploadedAt`
-  - `columns: ColumnMetadataDto[] - id, columnName, columnIndex, inferredType, aiDescription, userDescription, status`
+  - `file metadata`
+  - `columns: ColumnMetadataDto[]`
 
----
+#### Services Called
 
-### Endpoint 25
-
-- Name: `Update Column Descriptions`
-- Method: `PATCH`
-- Route: `/data/files/:fileId/columns`
-- Summary: `Save user-confirmed column descriptions for a CSV file.`
-
-#### Description
-
-Accepts an array of column updates. Sets each column's `userDescription` and `status` to `user_confirmed`. When all columns are confirmed, sets `csvfiles.status` to `confirmed`.
-
-#### Auth
-
-- Access: `authenticated`
-- Roles: `editor, admin`
-
-#### Input
-
-- Params:
-  - `fileId: string`
-- Query: `none`
-- Body:
-  - `columns: ColumnUpdateDto[] - array of { columnId, userDescription }`
-
-#### Return
-
-- Status: `200`
-- DTO / Shape: `CsvFileDetailsDto`
-
-#### Business Rules
-
-- After all columns are `user_confirmed`, set `csvfiles.status` to `confirmed`
-- Confirmed status is the prerequisite gate for dashboard generation
-
----
-
-### Endpoint 26
-
-- Name: `Delete CSV File`
-- Method: `DELETE`
-- Route: `/data/files/:fileId`
-- Summary: `Delete a CSV file, its data rows, and its column metadata.`
-
-#### Auth
-
-- Access: `authenticated`
-- Roles: `editor, admin`
-
-#### Input
-
-- Params:
-  - `fileId: string`
-- Query: `none`
-- Body: `none`
-
-#### Return
-
-- Status: `200`
-- DTO / Shape: `DeleteCsvFileResponse`
-- Data:
-  - `deleted: boolean`
-  - `affectedDashboards: string[] - IDs of dashboards that used this file`
-
-#### Business Rules
-
-- Delete `columnmetadata` records
-- Drop `csvdata_{fileId}` MongoDB collection
-- Delete raw file from Cloudflare R2
-- Delete `csvfiles` record
-- Return list of affected dashboard IDs as a warning (do not cascade-delete dashboards)
-
-#### Constraints / Notes
-
-- Write `csvfile.delete` audit log entry
-
----
-
-### Endpoint 27
-
-- Name: `Retry Column Analysis`
-- Method: `POST`
-- Route: `/data/files/:fileId/analyze/retry`
-- Summary: `Manually retry a failed AI column analysis job.`
-
-#### Auth
-
-- Access: `authenticated`
-- Roles: `editor, admin`
-
-#### Input
-
-- Params:
-  - `fileId: string`
-- Query: `none`
-- Body: `none`
-
-#### Return
-
-- Status: `202`
-- DTO / Shape: `{ jobId: string, status: string }`
-
-#### Business Rules
-
-- Only allowed when `csvfiles.status` is `error`
-- Creates a new `backgroundjobs` record and re-queues the analysis job
-
----
-
-## Module: Dashboards
+- `DataService.getFile() - loads the file with its columns`
 
 ---
 
 ### Endpoint 28
 
-- Name: `Create Dashboard`
-- Method: `POST`
-- Route: `/dashboards`
-- Summary: `Create a dashboard, link data sources, and trigger AI generation.`
+- Name: `Update Column Descriptions`
+- Method: `PATCH`
+- Route: `/api/v1/data/files/:fileId/columns`
+- Summary: `Save user-confirmed column descriptions.`
 
 #### Description
 
-Creates the dashboard record, links it to one or more CSV files (all must be `confirmed`), queues the AI dashboard generation background job, and returns the dashboard with the job ID.
+Accepts an array of column updates, setting each column's `userDescription`. When all columns are confirmed, the file becomes eligible for dashboard generation.
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
-- Params: `none`
+- Params:
+  - `fileId: string - csvfiles ObjectId`
 - Query: `none`
-- Body:
-  - `projectId: string (required)`
-  - `name: string - unique within project (required)`
-  - `purposeDescription: string - used as AI prompt context (required)`
-  - `fileIds: string[] - one or more confirmed csvfiles IDs (required)`
+- Body: `UpdateColumnsDto`
+  - `columns: { columnId: string, userDescription: string }[] (required)`
 
 #### Return
 
-- Status: `202`
-- DTO / Shape: `DashboardCreatedResponse`
-- Data:
-  - `dashboardId: string`
-  - `jobId: string - backgroundjobs ObjectId`
-  - `status: string - generating`
+- Status: `200`
+- DTO / Shape: `CsvFileDetailsDto`
 
-#### Business Rules
+#### Services Called
 
-- `name` must be unique within the same `projectId`
-- All `fileIds` must have `csvfiles.status === 'confirmed'`; return `400` if any are not confirmed
-- Check subscription dashboard limit before creating; return `403` if exceeded
-
-#### Constraints / Notes
-
-- Async endpoint — generation runs in background
-- Write `dashboard.create` audit log entry
+- `DataService.updateColumns() - persists user column descriptions`
 
 ---
 
 ### Endpoint 29
 
+- Name: `Delete CSV File`
+- Method: `DELETE`
+- Route: `/api/v1/data/files/:fileId`
+- Summary: `Delete a CSV file, its data rows, and its column metadata.`
+
+#### Auth
+
+- Access: `JWT`
+- Roles: `N/A`
+
+#### Input
+
+- Params:
+  - `fileId: string - csvfiles ObjectId`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `delete result (e.g. affected dashboards)`
+
+#### Services Called
+
+- `DataService.deleteFile() - removes the file, rows, and columns`
+
+---
+
+### Endpoint 30
+
+- Name: `Retry Column Analysis`
+- Method: `POST`
+- Route: `/api/v1/data/files/:fileId/analyze/retry`
+- Summary: `Manually retry a failed AI column analysis job.`
+
+#### Auth
+
+- Access: `JWT`
+- Roles: `N/A`
+
+#### Input
+
+- Params:
+  - `fileId: string - csvfiles ObjectId`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `202`
+- DTO / Shape: `{ jobId, status }`
+
+#### Services Called
+
+- `DataService.retryAnalysis() - re-queues the analysis job`
+
+#### Constraints / Notes
+
+- Async endpoint (returns 202 immediately)
+
+---
+
+## Module: Dashboards
+
+`@Controller('dashboards')`
+
+---
+
+### Endpoint 31
+
+- Name: `Create Dashboard`
+- Method: `POST`
+- Route: `/api/v1/dashboards`
+- Summary: `Create a dashboard, link data sources, and trigger AI generation.`
+
+#### Description
+
+Creates the dashboard, links it to one or more confirmed CSV files, queues the AI generation job, and returns the job id.
+
+#### Auth
+
+- Access: `JWT`
+- Roles: `N/A`
+
+#### Input
+
+- Params: `none`
+- Query: `none`
+- Body: `CreateDashboardDto`
+  - `projectId: string (required)`
+  - `name: string (required)`
+  - `purposeDescription: string - min 10 chars, used as AI context (required)`
+  - `fileIds: string[] - confirmed csvfiles IDs (required)`
+
+#### Return
+
+- Status: `202`
+- DTO / Shape: `{ dashboardId, jobId, status }`
+- Data:
+  - `dashboardId: string`
+  - `jobId: string`
+  - `status: string - "generating"`
+
+#### Services Called
+
+- `DashboardsService.createDashboard() - creates the dashboard and queues generation`
+
+#### Constraints / Notes
+
+- Async endpoint (returns 202 immediately)
+
+---
+
+### Endpoint 32
+
 - Name: `List Dashboards`
 - Method: `GET`
-- Route: `/dashboards`
+- Route: `/api/v1/dashboards`
 - Summary: `Paginated list of dashboards for the current user.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params: `none`
 - Query:
-  - `projectId: string - filter by project (required)`
-  - `page: number (default 1)`
-  - `limit: number (default 20)`
+  - `projectId: string - filter by project`
+  - `page: number`
+  - `limit: number`
   - `search: string - search by name`
   - `status: string - filter by DashboardStatus enum`
 - Body: `none`
@@ -1066,10 +1173,14 @@ Creates the dashboard record, links it to one or more CSV files (all must be `co
 #### Return
 
 - Status: `200`
-- DTO / Shape: `PaginatedResponse<DashboardListItemDto>`
+- DTO / Shape: `Paginated<DashboardListItemDto>`
 - Data:
-  - `items: DashboardListItemDto[] - id, name, status, createdAt, updatedAt, lastRefreshedAt`
+  - `items: DashboardListItemDto[]`
   - `page, limit, total`
+
+#### Services Called
+
+- `DashboardsService.listDashboards() - loads paginated, filtered dashboards`
 
 #### Constraints / Notes
 
@@ -1077,17 +1188,17 @@ Creates the dashboard record, links it to one or more CSV files (all must be `co
 
 ---
 
-### Endpoint 30
+### Endpoint 33
 
 - Name: `Get Dashboard`
 - Method: `GET`
-- Route: `/dashboards/:id`
-- Summary: `Return full dashboard definition with all widget configurations.`
+- Route: `/api/v1/dashboards/:id`
+- Summary: `Return full dashboard with widgets and data sources.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
@@ -1101,23 +1212,27 @@ Creates the dashboard record, links it to one or more CSV files (all must be `co
 - Status: `200`
 - DTO / Shape: `DashboardDetailsDto`
 - Data:
-  - `id, name, purposeDescription, status, layoutColumns, generatedAt, lastRefreshedAt`
-  - `widgets: ChartWidgetDto[] - all widget configs`
-  - `dataSources: CsvFileListItemDto[] - linked CSV files`
+  - `dashboard fields`
+  - `widgets: ChartWidgetDto[]`
+  - `dataSources: CsvFileListItemDto[]`
+
+#### Services Called
+
+- `DashboardsService.getDashboard() - loads the dashboard with widgets and sources`
 
 ---
 
-### Endpoint 31
+### Endpoint 34
 
-- Name: `Get Dashboard Generation Status`
+- Name: `Get Dashboard Status`
 - Method: `GET`
-- Route: `/dashboards/:id/status`
+- Route: `/api/v1/dashboards/:id/status`
 - Summary: `Poll the AI generation job status for a dashboard.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
@@ -1137,30 +1252,34 @@ Creates the dashboard record, links it to one or more CSV files (all must be `co
   - `progress: number - 0 to 100`
   - `errorMessage: string | null`
 
+#### Services Called
+
+- `DashboardsService.getDashboardStatus() - returns generation progress`
+
 #### Constraints / Notes
 
-- Designed for frontend polling at 3–5 second intervals during generation
+- Designed for frontend polling during generation
 
 ---
 
-### Endpoint 32
+### Endpoint 35
 
 - Name: `Update Dashboard`
 - Method: `PATCH`
-- Route: `/dashboards/:id`
+- Route: `/api/v1/dashboards/:id`
 - Summary: `Update dashboard name or purpose description.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params:
-  - `id: string`
+  - `id: string - dashboard ObjectId`
 - Query: `none`
-- Body:
+- Body: `UpdateDashboardDto`
   - `name: string (optional)`
   - `purposeDescription: string (optional)`
 
@@ -1169,28 +1288,28 @@ Creates the dashboard record, links it to one or more CSV files (all must be `co
 - Status: `200`
 - DTO / Shape: `DashboardDetailsDto`
 
-#### Constraints / Notes
+#### Services Called
 
-- Write `dashboard.update` audit log entry
+- `DashboardsService.updateDashboard() - applies edits to the dashboard`
 
 ---
 
-### Endpoint 33
+### Endpoint 36
 
 - Name: `Delete Dashboard`
 - Method: `DELETE`
-- Route: `/dashboards/:id`
-- Summary: `Delete a dashboard and all its widgets, cache, and share links.`
+- Route: `/api/v1/dashboards/:id`
+- Summary: `Delete a dashboard and its widgets, cache, and share links.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params:
-  - `id: string`
+  - `id: string - dashboard ObjectId`
 - Query: `none`
 - Body: `none`
 
@@ -1198,28 +1317,23 @@ Creates the dashboard record, links it to one or more CSV files (all must be `co
 
 - Status: `204`
 
-#### Business Rules
+#### Services Called
 
-- Cascade delete: chartwidgets, dashboarddatasources, chartdatacache, sharelinks
-- Invalidate all Redis cache entries for this dashboard
-
-#### Constraints / Notes
-
-- Write `dashboard.delete` audit log entry
+- `DashboardsService.deleteDashboard() - cascades widgets, cache, and share links`
 
 ---
 
-### Endpoint 34
+### Endpoint 37
 
 - Name: `Duplicate Dashboard`
 - Method: `POST`
-- Route: `/dashboards/:id/duplicate`
+- Route: `/api/v1/dashboards/:id/duplicate`
 - Summary: `Create a copy of a dashboard within the same project.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
@@ -1233,175 +1347,109 @@ Creates the dashboard record, links it to one or more CSV files (all must be `co
 - Status: `201`
 - DTO / Shape: `DashboardDetailsDto`
 
-#### Business Rules
+#### Services Called
 
-- New dashboard name = `{originalName}-copy`
-- Copy all `chartwidgets` and `dashboarddatasources`
-- New dashboard status is `ready` (no re-generation)
-- No share links are copied
-
-#### Constraints / Notes
-
-- Write `dashboard.duplicate` audit log entry
-
----
-
-### Endpoint 35
-
-- Name: `Get Chart Data`
-- Method: `GET`
-- Route: `/dashboards/:id/widgets/:widgetId/data`
-- Summary: `Return aggregated chart data for a single widget. Cache-first.`
-
-#### Description
-
-Checks Redis cache, then `chartdatacache` MongoDB collection. On cache miss, executes the MongoDB aggregation pipeline defined in `chartwidgets.queryDefinition` against `csvdata_{fileId}`, stores the result, and returns formatted chart data.
-
-#### Auth
-
-- Access: `authenticated or share-token`
-- Roles: `editor, admin, viewer (via share link)`
-
-#### Input
-
-- Params:
-  - `id: string - dashboard ObjectId`
-  - `widgetId: string - chartwidget ObjectId`
-- Query:
-  - `shareToken: string - optional, for share link access without JWT`
-- Body: `none`
-
-#### Return
-
-- Status: `200`
-- DTO / Shape: `ChartDataResponse`
-- Data (varies by widget type):
-  - bar/line/scatter: `{ labels: string[], datasets: [{ label: string, data: number[] }] }`
-  - pie/donut: `{ labels: string[], values: number[] }`
-  - kpi_card: `{ value: number|string, label: string, change: number|null }`
-  - table: `{ columns: ColumnDefDto[], rows: Record<string, any>[] }`
-
-#### Business Rules
-
-- Cache lookup order: Redis → MongoDB cache → recalculate
-- Cache hit: return in < 200ms
-- Cache miss: execute aggregation, store in both Redis (TTL 1h) and MongoDB cache
-- Validate user owns dashboard OR has valid active share token
-
-#### Constraints / Notes
-
-- This endpoint is called in parallel for all widgets on dashboard load
-- Return `200` with empty data structure if aggregation returns zero results (not `404`)
-- Target: < 200ms cached, < 2s uncached
-
----
-
-### Endpoint 36
-
-- Name: `Refresh Dashboard Data`
-- Method: `POST`
-- Route: `/dashboards/:id/refresh`
-- Summary: `Invalidate all widget caches and recalculate aggregations.`
-
-#### Auth
-
-- Access: `authenticated or share-token (if viewerCanRefresh is true)`
-- Roles: `editor, admin, viewer (if permitted)`
-
-#### Input
-
-- Params:
-  - `id: string`
-- Query:
-  - `shareToken: string - optional, for share link refresh`
-- Body: `none`
-
-#### Return
-
-- Status: `202`
-- DTO / Shape: `{ jobId: string, message: string }`
-
-#### Business Rules
-
-- Check subscription refresh limit; return `429` with retry-after if exceeded
-- Validate `viewerCanRefresh` flag if accessed via share token
-- Invalidate all Redis keys `chart:{widgetId}:`* for the dashboard
-- Delete all `chartdatacache` entries for the dashboard
-- Queue `cache_recalculation` background job
-- Update `dashboard.lastRefreshedAt` on completion
-
-#### Constraints / Notes
-
-- Write `dashboard.refresh` audit log entry
-
----
-
-### Endpoint 37
-
-- Name: `Update Widget`
-- Method: `PUT`
-- Route: `/dashboards/:id/widgets/:widgetId`
-- Summary: `Save customizations to a chart widget configuration.`
-
-#### Auth
-
-- Access: `authenticated`
-- Roles: `editor, admin`
-
-#### Input
-
-- Params:
-  - `id: string - dashboard ObjectId`
-  - `widgetId: string - chartwidget ObjectId`
-- Query: `none`
-- Body:
-  - `widgetType: string (optional)`
-  - `title: string (optional)`
-  - `position: { x, y, w, h } (optional)`
-  - `queryDefinition: QueryDefinitionDto (optional)`
-  - `displayConfig: DisplayConfigDto (optional)`
-
-#### Return
-
-- Status: `200`
-- DTO / Shape: `ChartWidgetDto`
-
-#### Business Rules
-
-- If `queryDefinition` changes, invalidate this widget's Redis and MongoDB cache entries
-- Validate `queryDefinition` against schema before persisting
-
-#### Constraints / Notes
-
-- Write `dashboard.update` audit log entry
+- `DashboardsService.duplicateDashboard() - clones the dashboard and widgets`
 
 ---
 
 ### Endpoint 38
 
-- Name: `Add Widget`
-- Method: `POST`
-- Route: `/dashboards/:id/widgets`
-- Summary: `Manually add a new chart widget to an existing dashboard.`
+- Name: `Get Chart Data`
+- Method: `GET`
+- Route: `/api/v1/dashboards/:id/widgets/:widgetId/data`
+- Summary: `Return aggregated chart data for a single widget. Cache-first.`
 
 #### Description
 
-Creates a new `chartwidgets` record with a user-supplied chart type, data source, title, query definition, and display config. Called from the dashboard customization UI when the editor adds a widget manually (not AI-generated).
+Resolves cached chart data or executes the widget's aggregation pipeline. Supports access via JWT or a share token. Decorated with `@SkipThrottle` because it is called in parallel for all widgets on load.
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT` (or share token via `shareToken` query)
+- Roles: `N/A`
+
+#### Input
+
+- Params:
+  - `id: string - dashboard ObjectId`
+  - `widgetId: string - chartwidget ObjectId`
+- Query:
+  - `shareToken: string - optional, for share-link access`
+  - `filters: string - optional JSON-encoded filter object`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `aggregation result array` (shape varies by widget type)
+
+#### Services Called
+
+- `DashboardsService.getChartData() - resolves or computes widget data`
+
+#### Constraints / Notes
+
+- `@SkipThrottle` applied
+- Returns an empty result structure (not 404) when the aggregation yields zero rows
+
+---
+
+### Endpoint 39
+
+- Name: `Refresh Dashboard Data`
+- Method: `POST`
+- Route: `/api/v1/dashboards/:id/refresh`
+- Summary: `Invalidate widget caches and recalculate aggregations.`
+
+#### Auth
+
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params:
   - `id: string - dashboard ObjectId`
 - Query: `none`
-- Body:
-  - `widgetType: string - enum: bar, line, pie, donut, kpi_card, table, scatter (required)`
+- Body: `none`
+
+#### Return
+
+- Status: `202`
+- DTO / Shape: `{ jobId, message }`
+
+#### Services Called
+
+- `DashboardsService.refreshDashboard() - invalidates cache and queues recalculation`
+
+#### Constraints / Notes
+
+- Async endpoint (returns 202 immediately)
+
+---
+
+### Endpoint 40
+
+- Name: `Add Widget`
+- Method: `POST`
+- Route: `/api/v1/dashboards/:id/widgets`
+- Summary: `Manually add a new chart widget to a dashboard.`
+
+#### Auth
+
+- Access: `JWT`
+- Roles: `N/A`
+
+#### Input
+
+- Params:
+  - `id: string - dashboard ObjectId`
+- Query: `none`
+- Body: `CreateWidgetDto`
+  - `widgetType: string (required)`
   - `title: string (required)`
-  - `position: { x: number, y: number, w: number, h: number } (required)`
+  - `position: { x, y, w, h } (required)`
   - `queryDefinition: QueryDefinitionDto (required)`
   - `displayConfig: DisplayConfigDto (optional)`
 
@@ -1409,32 +1457,56 @@ Creates a new `chartwidgets` record with a user-supplied chart type, data source
 
 - Status: `201`
 - DTO / Shape: `ChartWidgetDto`
-- Data:
-  - `id, widgetType, title, position, queryDefinition, displayConfig, createdAt`
 
-#### Business Rules
+#### Services Called
 
-- Dashboard must have status `ready`; return `400` if status is `generating` or `error`
-- Validate `queryDefinition` against schema before persisting
-- Only the dashboard owner or admin can add widgets
-
-#### Constraints / Notes
-
-- Write `dashboard.update` audit log entry
+- `DashboardsService.addWidget() - creates a new widget on the dashboard`
 
 ---
 
-### Endpoint 39
+### Endpoint 41
+
+- Name: `Update Widget`
+- Method: `PUT`
+- Route: `/api/v1/dashboards/:id/widgets/:widgetId`
+- Summary: `Save customizations to a chart widget.`
+
+#### Auth
+
+- Access: `JWT`
+- Roles: `N/A`
+
+#### Input
+
+- Params:
+  - `id: string - dashboard ObjectId`
+  - `widgetId: string - chartwidget ObjectId`
+- Query: `none`
+- Body: `UpdateWidgetDto`
+  - `widgetType, title, position, queryDefinition, displayConfig (all optional)`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `ChartWidgetDto`
+
+#### Services Called
+
+- `DashboardsService.updateWidget() - applies edits and invalidates affected cache`
+
+---
+
+### Endpoint 42
 
 - Name: `Delete Widget`
 - Method: `DELETE`
-- Route: `/dashboards/:id/widgets/:widgetId`
+- Route: `/api/v1/dashboards/:id/widgets/:widgetId`
 - Summary: `Remove a widget from a dashboard and invalidate its cache.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
@@ -1448,74 +1520,72 @@ Creates a new `chartwidgets` record with a user-supplied chart type, data source
 
 - Status: `204`
 
-#### Business Rules
+#### Services Called
 
-- Delete `chartwidgets` record
-- Delete all `chartdatacache` entries for this widget
-- Invalidate Redis cache key `chart:{widgetId}:*`
-- Only the dashboard owner or admin can delete widgets
-
-#### Constraints / Notes
-
-- Write `dashboard.update` audit log entry
+- `DashboardsService.deleteWidget() - deletes the widget and clears its cache`
 
 ---
 
-### Endpoint 40
+### Endpoint 43
 
 - Name: `Retry Dashboard Generation`
 - Method: `POST`
-- Route: `/dashboards/:id/generate/retry`
+- Route: `/api/v1/dashboards/:id/generate/retry`
 - Summary: `Manually retry a failed AI dashboard generation job.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
-
-#### Input
-
-- Params:
-  - `id: string`
-- Query: `none`
-- Body: `none`
-
-#### Return
-
-- Status: `202`
-- DTO / Shape: `{ jobId: string, status: string }`
-
-#### Business Rules
-
-- Only allowed when `dashboards.status === 'error'`
-- Creates a new `backgroundjobs` record and re-queues the generation job
-
----
-
-## Module: Sharing
-
----
-
-### Endpoint 41
-
-- Name: `Create Share Link`
-- Method: `POST`
-- Route: `/dashboards/:id/share`
-- Summary: `Generate a shareable link for the dashboard.`
-
-#### Auth
-
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params:
   - `id: string - dashboard ObjectId`
 - Query: `none`
-- Body:
+- Body: `none`
+
+#### Return
+
+- Status: `202`
+- DTO / Shape: `{ jobId, status }`
+
+#### Services Called
+
+- `DashboardsService.retryGeneration() - re-queues the generation job`
+
+#### Constraints / Notes
+
+- Async endpoint (returns 202 immediately)
+
+---
+
+## Module: Sharing
+
+`@Controller()` (root) — routes declared with full paths
+
+---
+
+### Endpoint 44
+
+- Name: `Create Share Link`
+- Method: `POST`
+- Route: `/api/v1/dashboards/:id/share`
+- Summary: `Generate a shareable link for a dashboard.`
+
+#### Auth
+
+- Access: `JWT`
+- Roles: `N/A`
+
+#### Input
+
+- Params:
+  - `id: string - dashboard ObjectId`
+- Query: `none`
+- Body: `CreateShareLinkDto`
   - `permission: string - enum: view, edit (required)`
-  - `viewerCanRefresh: boolean (default false)`
+  - `viewerCanRefresh: boolean (optional)`
   - `expiresAt: string - ISO date (optional)`
 
 #### Return
@@ -1523,39 +1593,30 @@ Creates a new `chartwidgets` record with a user-supplied chart type, data source
 - Status: `201`
 - DTO / Shape: `ShareLinkCreatedResponse`
 - Data:
-  - `shareLinkId: string`
-  - `shareUrl: string - full URL with raw token (returned once only)`
-  - `permission: string`
-  - `expiresAt: string | null`
+  - `shareLinkId, shareUrl (raw token returned once), permission, expiresAt`
 
-#### Business Rules
+#### Services Called
 
-- Token is cryptographically random (32 bytes, base64url encoded)
-- Only the hash is stored; raw token returned to caller exactly once
-- Only the dashboard owner can create share links
-
-#### Constraints / Notes
-
-- Write `sharelink.create` audit log entry
+- `SharingService.createShareLink() - issues a tokenized share link`
 
 ---
 
-### Endpoint 42
+### Endpoint 45
 
 - Name: `List Share Links`
 - Method: `GET`
-- Route: `/dashboards/:id/share`
+- Route: `/api/v1/dashboards/:id/share`
 - Summary: `List all share links for a dashboard.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params:
-  - `id: string`
+  - `id: string - dashboard ObjectId`
 - Query: `none`
 - Body: `none`
 
@@ -1563,28 +1624,30 @@ Creates a new `chartwidgets` record with a user-supplied chart type, data source
 
 - Status: `200`
 - DTO / Shape: `ShareLinkDto[]`
-- Data:
-  - `id, permission, viewerCanRefresh, accessCount, lastAccessedAt, expiresAt, status, createdAt`
+
+#### Services Called
+
+- `SharingService.listShareLinks() - lists active and revoked share links`
 
 ---
 
-### Endpoint 43
+### Endpoint 46
 
 - Name: `Revoke Share Link`
 - Method: `DELETE`
-- Route: `/dashboards/:id/share/:shareLinkId`
+- Route: `/api/v1/dashboards/:id/share/:shareLinkId`
 - Summary: `Revoke a share link immediately.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params:
   - `id: string - dashboard ObjectId`
-  - `shareLinkId: string`
+  - `shareLinkId: string - share link ObjectId`
 - Query: `none`
 - Body: `none`
 
@@ -1592,31 +1655,26 @@ Creates a new `chartwidgets` record with a user-supplied chart type, data source
 
 - Status: `204`
 
-#### Business Rules
+#### Services Called
 
-- Set `sharelinks.status` to `revoked`
-- Subsequent access with this token returns `410 Gone`
-
-#### Constraints / Notes
-
-- Write `sharelink.revoke` audit log entry
+- `SharingService.revokeShareLink() - marks the share link revoked`
 
 ---
 
-### Endpoint 44
+### Endpoint 47
 
 - Name: `Get Shared Dashboard`
 - Method: `GET`
-- Route: `/shared/:token`
-- Summary: `Public endpoint — resolve share token and return dashboard for viewer.`
+- Route: `/api/v1/shared/:token`
+- Summary: `Public — resolve a share token and return the dashboard for a viewer.`
 
 #### Description
 
-Validates the share token, checks expiry and revocation, enforces permission level, and returns the full dashboard with widget configurations. No JWT required.
+Validates the share token, enforces permissions/expiry, and returns the public dashboard with cached chart data. No JWT required.
 
 #### Auth
 
-- Access: `public (token-based)`
+- Access: `public` (token-based)
 - Roles: `N/A`
 
 #### Input
@@ -1631,204 +1689,426 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 - Status: `200`
 - DTO / Shape: `SharedDashboardDto`
 - Data:
-  - `dashboardId, name, widgets, permission, viewerCanRefresh`
+  - `public dashboard + cached chart data`
 
-#### Business Rules
+#### Services Called
 
-- Hash the incoming token and look up by hash
-- Return `410 Gone` if revoked, `401` if expired
-- Increment `accessCount` and update `lastAccessedAt`
-- Never expose owner user ID or email in response
-
-#### Constraints / Notes
-
-- This endpoint serves the public shared dashboard view page
+- `SharingService.resolveSharedDashboard() - resolves the token to a viewer payload`
 
 ---
 
 ## Module: Export
 
+`@Controller('dashboards')`
+
 ---
 
-### Endpoint 45
+### Endpoint 48
 
 - Name: `Export Dashboard as PDF`
 - Method: `POST`
-- Route: `/dashboards/:id/export/pdf`
-- Summary: `Queue a PDF export job and return the job ID.`
+- Route: `/api/v1/dashboards/:id/export/pdf`
+- Summary: `Queue a PDF export job and return the job id.`
 
 #### Auth
 
-- Access: `authenticated or share-token`
-- Roles: `editor, admin, viewer`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params:
-  - `id: string`
-- Query:
-  - `shareToken: string (optional)`
+  - `id: string - dashboard ObjectId`
+- Query: `none`
 - Body: `none`
 
 #### Return
 
 - Status: `202`
-- DTO / Shape: `{ jobId: string, message: string }`
+- DTO / Shape: `{ jobId, message }`
 
-#### Business Rules
+#### Services Called
 
-- Queue `pdf_export` background job
-- On completion: upload PDF to R2, send `export_ready` notification with signed URL
+- `ExportService.requestPdfExport() - queues a PDF export job`
 
 #### Constraints / Notes
 
-- Write `export.pdf` audit log entry
-- Async endpoint
+- Async endpoint (returns 202 immediately)
+- **PDF worker not implemented yet** — the job is queued but not processed. See Known Gaps.
 
 ---
 
-### Endpoint 46
+### Endpoint 49
 
 - Name: `Export Data as Excel`
 - Method: `GET`
-- Route: `/dashboards/:id/export/excel`
-- Summary: `Generate and download an Excel file with aggregated widget data.`
+- Route: `/api/v1/dashboards/:id/export/excel`
+- Summary: `Generate and download an Excel file of widget data.`
 
 #### Auth
 
-- Access: `authenticated or share-token`
-- Roles: `editor, admin, viewer`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params:
-  - `id: string`
-- Query:
-  - `shareToken: string (optional)`
+  - `id: string - dashboard ObjectId`
+- Query: `none`
 - Body: `none`
 
 #### Return
 
 - Status: `200`
 - Headers: `Content-Disposition: attachment; filename="dashboard-{id}.xlsx"`
-- Body: Binary `.xlsx` file stream
+- Body: **Raw `.xlsx` binary stream — NOT wrapped in the success envelope**
+
+#### Services Called
+
+- `ExportService.getExcelExport() - builds the xlsx workbook buffer`
 
 #### Constraints / Notes
 
-- Synchronous for reasonable sizes; stream for datasets > 100,000 rows
-- Write `export.excel` audit log entry
+- Response bypasses the success interceptor (raw file stream)
 
 ---
 
-### Endpoint 47
+### Endpoint 50
 
 - Name: `Export Data as CSV`
 - Method: `GET`
-- Route: `/data/files/:fileId/export/csv`
-- Summary: `Stream raw CSV data rows as a downloadable CSV file.`
+- Route: `/api/v1/dashboards/:id/export/csv`
+- Summary: `Download widget data as a CSV file.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `editor, admin`
+- Access: `JWT`
+- Roles: `N/A`
 
 #### Input
 
 - Params:
-  - `fileId: string`
-- Query: `none`
+  - `id: string - dashboard ObjectId`
+- Query:
+  - `widgetId: string - widget to export`
 - Body: `none`
 
 #### Return
 
 - Status: `200`
-- Headers: `Content-Disposition: attachment; filename="{originalFilename}"`
-- Body: Streamed CSV content
+- Headers: `Content-Disposition: attachment; filename="widget-{widgetId}.csv"`
+- Body: **Raw CSV — NOT wrapped in the success envelope**
+
+#### Services Called
+
+- `ExportService.getCsvExport() - builds the CSV payload`
 
 #### Constraints / Notes
 
-- Must stream rows from MongoDB to avoid loading all rows into memory
-- Write `export.csv` audit log entry
+- Response bypasses the success interceptor (raw file stream)
 
 ---
 
 ## Module: Notifications
 
+`@Controller('notifications')`
+
 ---
 
-### Endpoint 48
+### Endpoint 51
 
 - Name: `List Notifications`
 - Method: `GET`
-- Route: `/notifications`
+- Route: `/api/v1/notifications`
 - Summary: `Paginated list of notifications for the current user.`
 
 #### Auth
 
-- Access: `authenticated`
+- Access: `JWT`
 - Roles: `N/A`
 
 #### Input
 
 - Params: `none`
 - Query:
-  - `page: number (default 1)`
-  - `limit: number (default 20)`
-  - `isRead: boolean (optional)`
+  - `page: number`
+  - `limit: number`
+  - `isRead: boolean`
 - Body: `none`
 
 #### Return
 
 - Status: `200`
-- DTO / Shape: `PaginatedResponse<NotificationDto>`
+- DTO / Shape: `Paginated<NotificationDto>`
 - Data:
-  - `items: NotificationDto[] - id, type, title, message, isRead, relatedEntityType, relatedEntityId, createdAt`
+  - `items: NotificationDto[]`
   - `page, limit, total`
-  - `unreadCount: number`
+
+#### Services Called
+
+- `NotificationsService.listNotifications() - loads paginated notifications`
+
+#### Constraints / Notes
+
+- Paginated endpoint
 
 ---
 
-### Endpoint 49
+### Endpoint 52
 
-- Name: `Mark Notifications as Read`
-- Method: `PATCH`
-- Route: `/notifications/read`
-- Summary: `Mark one or all notifications as read.`
+- Name: `Get Unread Count`
+- Method: `GET`
+- Route: `/api/v1/notifications/unread-count`
+- Summary: `Return the count of unread notifications.`
 
 #### Auth
 
-- Access: `authenticated`
+- Access: `JWT`
 - Roles: `N/A`
 
 #### Input
 
 - Params: `none`
 - Query: `none`
-- Body:
-  - `notificationIds: string[] - specific IDs to mark read (optional)`
-  - `markAll: boolean - if true, mark all as read (optional)`
+- Body: `none`
 
 #### Return
 
 - Status: `200`
-- DTO / Shape: `{ updatedCount: number }`
+- DTO / Shape: `{ unreadCount: number }`
+
+#### Services Called
+
+- `NotificationsService.countUnread() - counts unread notifications`
 
 ---
 
-## Module: Admin — Subscriptions
+### Endpoint 53
 
----
-
-### Endpoint 50
-
-- Name: `Get Current Subscription`
-- Method: `GET`
-- Route: `/subscriptions/me`
-- Summary: `Return the current user's subscription plan and usage.`
+- Name: `Mark Notification as Read`
+- Method: `PATCH`
+- Route: `/api/v1/notifications/:id/read`
+- Summary: `Mark a single notification as read.`
 
 #### Auth
 
-- Access: `authenticated`
+- Access: `JWT`
+- Roles: `N/A`
+
+#### Input
+
+- Params:
+  - `id: string - notification ObjectId`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+
+#### Services Called
+
+- `NotificationsService.markAsRead() - marks one notification read`
+
+---
+
+### Endpoint 54
+
+- Name: `Mark All Notifications as Read`
+- Method: `PATCH`
+- Route: `/api/v1/notifications/read-all`
+- Summary: `Mark all of the user's notifications as read.`
+
+#### Auth
+
+- Access: `JWT`
+- Roles: `N/A`
+
+#### Input
+
+- Params: `none`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+
+#### Services Called
+
+- `NotificationsService.markAllAsRead() - marks every notification read`
+
+---
+
+## Module: Subscriptions
+
+`@Controller('subscriptions')`
+
+---
+
+### Endpoint 55
+
+- Name: `List Active Plans`
+- Method: `GET`
+- Route: `/api/v1/subscriptions/plans`
+- Summary: `List subscription plans available to subscribers.`
+
+#### Auth
+
+- Access: `JWT` (any role)
+- Roles: `N/A`
+
+#### Input
+
+- Params: `none`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `PlanDto[]`
+
+#### Services Called
+
+- `SubscriptionsService.listPlans() - lists active plans`
+
+---
+
+### Endpoint 56
+
+- Name: `List All Plans`
+- Method: `GET`
+- Route: `/api/v1/subscriptions/plans/all`
+- Summary: `List all plans including inactive ones (admin).`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params: `none`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `PlanDto[]`
+
+#### Services Called
+
+- `SubscriptionsService.listAllPlans() - lists every plan`
+
+---
+
+### Endpoint 57
+
+- Name: `Create Plan`
+- Method: `POST`
+- Route: `/api/v1/subscriptions/plans`
+- Summary: `Create a subscription plan.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params: `none`
+- Query: `none`
+- Body: `CreatePlanDto`
+  - `name: string (required)`
+  - `description: string (optional)`
+  - `priceMonthlyUsd: number (required)`
+  - `maxDashboards: number (required)`
+  - `maxDataUploadsPerMonth: number (required)`
+  - `maxDataUpdatesPerMonth: number (required)`
+  - `isActive: boolean (optional)`
+
+#### Return
+
+- Status: `201`
+- DTO / Shape: `PlanDto`
+
+#### Services Called
+
+- `SubscriptionsService.createPlan() - creates a plan`
+
+---
+
+### Endpoint 58
+
+- Name: `Update Plan`
+- Method: `PUT`
+- Route: `/api/v1/subscriptions/plans/:id`
+- Summary: `Update a subscription plan.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params:
+  - `id: string - plan ObjectId`
+- Query: `none`
+- Body: `UpdatePlanDto`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `PlanDto`
+
+#### Services Called
+
+- `SubscriptionsService.updatePlan() - applies edits to a plan`
+
+---
+
+### Endpoint 59
+
+- Name: `Delete Plan`
+- Method: `DELETE`
+- Route: `/api/v1/subscriptions/plans/:id`
+- Summary: `Delete a subscription plan.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params:
+  - `id: string - plan ObjectId`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `204`
+
+#### Services Called
+
+- `SubscriptionsService.deletePlan() - deletes a plan`
+
+---
+
+### Endpoint 60
+
+- Name: `Get My Subscription`
+- Method: `GET`
+- Route: `/api/v1/subscriptions/me`
+- Summary: `Return the current user's subscription and usage.`
+
+#### Auth
+
+- Access: `JWT`
 - Roles: `N/A`
 
 #### Input
@@ -1841,166 +2121,477 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 
 - Status: `200`
 - DTO / Shape: `SubscriptionDto`
-- Data:
-  - `planId, planName, limits, usage, status, expiresAt`
+
+#### Services Called
+
+- `SubscriptionsService.getMySubscription() - loads the current user's subscription`
 
 ---
 
-### Endpoint 51
+### Endpoint 61
 
-- Name: `List Subscriptions (Admin)`
+- Name: `List Subscriptions`
 - Method: `GET`
-- Route: `/subscriptions`
-- Summary: `Paginated list of all user subscriptions. Admin only.`
+- Route: `/api/v1/subscriptions`
+- Summary: `Paginated list of all subscriptions (admin).`
 
 #### Auth
 
-- Access: `role-based`
+- Access: `JWT + role:admin`
 - Roles: `admin`
 
 #### Input
 
 - Params: `none`
 - Query:
-  - `page: number (default 1)`
-  - `limit: number (default 20)`
-  - `status: string - filter by SubscriptionStatus enum`
+  - `status: string - filter by SubscriptionStatus enum (optional)`
+  - `page: number (optional)`
+  - `limit: number (optional)`
 - Body: `none`
 
 #### Return
 
 - Status: `200`
-- DTO / Shape: `PaginatedResponse<SubscriptionListItemDto>`
+- DTO / Shape: `Paginated<SubscriptionListItemDto>`
+
+#### Services Called
+
+- `SubscriptionsService.listSubscriptions() - loads paginated subscriptions`
+
+#### Constraints / Notes
+
+- Paginated endpoint
 
 ---
 
-### Endpoint 52
+### Endpoint 62
 
-- Name: `Assign Subscription`
-- Method: `POST`
-- Route: `/subscriptions`
-- Summary: `Assign or update a subscription plan for a user.`
+- Name: `Get Subscription`
+- Method: `GET`
+- Route: `/api/v1/subscriptions/:id`
+- Summary: `Return a single subscription by id (admin).`
 
 #### Auth
 
-- Access: `role-based`
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params:
+  - `id: string - subscription ObjectId`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `SubscriptionDto`
+
+#### Services Called
+
+- `SubscriptionsService.getSubscription() - loads one subscription`
+
+---
+
+### Endpoint 63
+
+- Name: `Create Subscription`
+- Method: `POST`
+- Route: `/api/v1/subscriptions`
+- Summary: `Create a subscription record for a user (admin).`
+
+#### Auth
+
+- Access: `JWT + role:admin`
 - Roles: `admin`
 
 #### Input
 
 - Params: `none`
 - Query: `none`
-- Body:
+- Body: `CreateSubscriptionDto`
   - `userId: string (required)`
-  - `planId: string - enum: free, pro, enterprise (required)`
-  - `expiresAt: string - ISO date (optional)`
+  - `planId: string (required)`
+  - `startDate: string (required)`
+  - `endDate: string (optional)`
+  - `status: string (optional)`
+  - `notes: string (optional)`
 
 #### Return
 
 - Status: `201`
 - DTO / Shape: `SubscriptionDto`
 
-#### Constraints / Notes
+#### Services Called
 
-- Write `subscription.assign` audit log entry
+- `SubscriptionsService.createSubscription() - creates a subscription`
 
 ---
 
-### Endpoint 53
+### Endpoint 64
 
-- Name: `Payment Webhook`
-- Method: `POST`
-- Route: `/subscriptions/webhook`
-- Summary: `Receive payment provider webhook events.`
+- Name: `Update Subscription`
+- Method: `PUT`
+- Route: `/api/v1/subscriptions/:id`
+- Summary: `Update a subscription record (admin).`
 
 #### Auth
 
-- Access: `public (signature-validated)`
-- Roles: `N/A`
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params:
+  - `id: string - subscription ObjectId`
+- Query: `none`
+- Body: `UpdateSubscriptionDto`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `SubscriptionDto`
+
+#### Services Called
+
+- `SubscriptionsService.updateSubscription() - applies edits to a subscription`
+
+---
+
+### Endpoint 65
+
+- Name: `Assign Subscription`
+- Method: `POST`
+- Route: `/api/v1/subscriptions/assign`
+- Summary: `Assign a plan to a user (admin).`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
 
 #### Input
 
 - Params: `none`
 - Query: `none`
-- Headers:
-  - Provider signature header (e.g., `Stripe-Signature`)
-- Body: Raw webhook payload
+- Body: `AssignSubscriptionDto`
+  - `userId: string (required)`
+  - `planId: string (required)`
+
+#### Return
+
+- Status: `201`
+- DTO / Shape: `SubscriptionDto`
+
+#### Services Called
+
+- `SubscriptionsService.assignSubscription() - assigns the plan to the user`
+
+---
+
+### Endpoint 66
+
+- Name: `Change Subscription`
+- Method: `POST`
+- Route: `/api/v1/subscriptions/change`
+- Summary: `Change a user's plan (admin).`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params: `none`
+- Query: `none`
+- Body: `ChangeSubscriptionDto`
+  - `userId: string (required)`
+  - `planId: string (required)`
+
+#### Return
+
+- Status: `201`
+- DTO / Shape: `SubscriptionDto`
+
+#### Services Called
+
+- `SubscriptionsService.changeSubscription() - switches the user's plan`
+
+---
+
+### Endpoint 67
+
+- Name: `Cancel Subscription`
+- Method: `PATCH`
+- Route: `/api/v1/subscriptions/:userId/cancel`
+- Summary: `Cancel a user's subscription (admin).`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params:
+  - `userId: string - target user ObjectId`
+- Query: `none`
+- Body: `none`
 
 #### Return
 
 - Status: `200`
+- DTO / Shape: `SubscriptionDto`
 
-#### Business Rules
+#### Services Called
 
-- Validate webhook signature before processing
-- Handle events: `payment.succeeded`, `payment.failed`, `subscription.renewed`, `subscription.cancelled`
-- Idempotent: duplicate webhook events must not double-process
+- `SubscriptionsService.cancelSubscription() - cancels the user's subscription`
 
 #### Constraints / Notes
 
-- This endpoint must be public (no JWT auth) but must validate provider signature
+- The customer frontend calls `POST /api/v1/subscriptions/subscribe` and `POST /api/v1/subscriptions/cancel`, which **do not exist** on the backend. See Known Gaps.
 
 ---
 
-## Module: Admin — Audit Logs
+## Module: Payments
+
+`@Controller('payments')` — class-level `@Roles(ADMIN)`
 
 ---
 
-### Endpoint 54
+### Endpoint 68
 
-- Name: `List Audit Logs`
+- Name: `List Payments`
 - Method: `GET`
-- Route: `/audit-logs`
-- Summary: `Paginated, filterable audit log list. Admin only.`
+- Route: `/api/v1/payments`
+- Summary: `Paginated, filterable list of payments.`
 
 #### Auth
 
-- Access: `role-based`
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params: `none`
+- Query: `ListPaymentsQueryDto`
+  - `userId: string (optional)`
+  - `status: string (optional)`
+  - `from: string - ISO date (optional)`
+  - `to: string - ISO date (optional)`
+  - `page: number (optional)`
+  - `limit: number (optional)`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `Paginated<PaymentDto>`
+
+#### Services Called
+
+- `PaymentsService.list() - loads paginated, filtered payments`
+
+#### Constraints / Notes
+
+- Paginated endpoint
+
+---
+
+### Endpoint 69
+
+- Name: `Get Payment`
+- Method: `GET`
+- Route: `/api/v1/payments/:id`
+- Summary: `Return a single payment by id.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params:
+  - `id: string - payment ObjectId`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `PaymentDto`
+
+#### Services Called
+
+- `PaymentsService.getById() - loads one payment`
+
+---
+
+### Endpoint 70
+
+- Name: `Create Payment`
+- Method: `POST`
+- Route: `/api/v1/payments`
+- Summary: `Record a payment.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params: `none`
+- Query: `none`
+- Body: `CreatePaymentDto`
+  - `userId: string (required)`
+  - `subscriptionId: string (optional)`
+  - `planId: string (optional)`
+  - `amountUsd: number (required)`
+  - `currency: string (optional)`
+  - `status: string (optional)`
+  - `method: string (optional)`
+  - `reference: string (optional)`
+  - `paidAt: string (optional)`
+  - `notes: string (optional)`
+
+#### Return
+
+- Status: `201`
+- DTO / Shape: `PaymentDto`
+
+#### Services Called
+
+- `PaymentsService.create() - records a new payment`
+
+---
+
+### Endpoint 71
+
+- Name: `Update Payment`
+- Method: `PATCH`
+- Route: `/api/v1/payments/:id`
+- Summary: `Update a payment record.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params:
+  - `id: string - payment ObjectId`
+- Query: `none`
+- Body: `UpdatePaymentDto`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `PaymentDto`
+
+#### Services Called
+
+- `PaymentsService.update() - applies edits to a payment`
+
+---
+
+### Endpoint 72
+
+- Name: `Delete Payment`
+- Method: `DELETE`
+- Route: `/api/v1/payments/:id`
+- Summary: `Delete a payment record.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params:
+  - `id: string - payment ObjectId`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `204`
+
+#### Services Called
+
+- `PaymentsService.delete() - deletes a payment`
+
+---
+
+## Module: Audit
+
+`@Controller('audit')` — class-level `@Roles(ADMIN)`
+
+---
+
+### Endpoint 73
+
+- Name: `List Audit Logs`
+- Method: `GET`
+- Route: `/api/v1/audit`
+- Summary: `Paginated, filterable audit log list.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
 - Roles: `admin`
 
 #### Input
 
 - Params: `none`
 - Query:
-  - `page: number (default 1)`
-  - `limit: number (default 50)`
   - `userId: string (optional)`
   - `action: string - filter by AuditAction enum (optional)`
   - `entityType: string (optional)`
   - `entityId: string (optional)`
-  - `from: string - ISO date start (optional)`
-  - `to: string - ISO date end (optional)`
+  - `from: string - ISO date (optional)`
+  - `to: string - ISO date (optional)`
+  - `page: number (optional)`
+  - `limit: number (optional)`
 - Body: `none`
 
 #### Return
 
 - Status: `200`
-- DTO / Shape: `PaginatedResponse<AuditLogDto>`
-- Data:
-  - `items: AuditLogDto[] - id, userId, action, entityType, entityId, ipAddress, timestamp, details`
-  - `page, limit, total`
+- DTO / Shape: `Paginated<AuditLogDto>`
+
+#### Services Called
+
+- `AuditLogRepository.findPaginated() - loads paginated, filtered audit logs`
 
 #### Constraints / Notes
 
 - Paginated endpoint
-- No write, update, or delete endpoints exist for audit logs
+- Read-only; no write/update/delete endpoints for audit logs
 
 ---
 
-## Module: Admin — System Settings
+## Module: Settings
+
+`@Controller('settings')`
 
 ---
 
-### Endpoint 55
+### Endpoint 74
 
-- Name: `List Settings`
+- Name: `Get Settings`
 - Method: `GET`
-- Route: `/settings`
-- Summary: `Return all system settings. Admin only.`
+- Route: `/api/v1/settings`
+- Summary: `Return system settings.`
 
 #### Auth
 
-- Access: `role-based`
+- Access: `JWT + role:admin`
 - Roles: `admin`
 
 #### Input
@@ -2012,81 +2603,194 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 #### Return
 
 - Status: `200`
-- DTO / Shape: `SettingDto[]`
-- Data:
-  - `key, value, description, updatedBy, updatedAt`
+- DTO / Shape: `SystemSettingsDto`
 
-#### Business Rules
+#### Services Called
 
-- Never return settings whose keys contain `key`, `secret`, `token`, or `password` in their value field
+- `SettingsService.getSettings() - loads the system settings`
 
 ---
 
-### Endpoint 56
+### Endpoint 75
 
-- Name: `Update Setting`
+- Name: `Update Settings`
 - Method: `PATCH`
-- Route: `/settings/:key`
-- Summary: `Update the value of a specific system setting.`
+- Route: `/api/v1/settings`
+- Summary: `Update system settings.`
 
 #### Auth
 
-- Access: `role-based`
+- Access: `JWT + role:admin`
 - Roles: `admin`
 
 #### Input
 
-- Params:
-  - `key: string - setting key`
+- Params: `none`
 - Query: `none`
-- Body:
-  - `value: any - new setting value (required)`
+- Body: `UpdateSystemSettingsDto`
+  - `registrationEnabled: boolean (optional)`
+  - `maxFileSizeMb: number (optional)`
+  - `defaultMaxDashboards: number (optional)`
+  - `supportedLanguages: string[] (optional)`
 
 #### Return
 
 - Status: `200`
-- DTO / Shape: `SettingDto`
+- DTO / Shape: `SystemSettingsDto`
 
-#### Constraints / Notes
+#### Services Called
 
-- Write `settings.update` audit log entry
-
----
-
-## Module: Background Jobs
+- `SettingsService.updateSettings() - applies edits to the system settings`
 
 ---
 
-### Endpoint 57
+## Module: Admin
 
-- Name: `Get Job Status`
+`@Controller('admin')` — class-level `@Roles(ADMIN)`
+
+---
+
+### Endpoint 76
+
+- Name: `Get Overview Stats`
 - Method: `GET`
-- Route: `/jobs/:jobId`
-- Summary: `Return the current status and progress of a background job.`
+- Route: `/api/v1/admin/overview/stats`
+- Summary: `Return admin overview KPI counts.`
 
 #### Auth
 
-- Access: `authenticated`
-- Roles: `N/A`
+- Access: `JWT + role:admin`
+- Roles: `admin`
 
 #### Input
 
-- Params:
-  - `jobId: string - backgroundjobs ObjectId`
+- Params: `none`
 - Query: `none`
 - Body: `none`
 
 #### Return
 
 - Status: `200`
-- DTO / Shape: `BackgroundJobDto`
-- Data:
-  - `id, type, entityType, entityId, status, progress, queuedAt, startedAt, completedAt, errorMessage, retryCount`
+- DTO / Shape: `{ clients, projects, dashboards, subscriptions, aiCost }`
 
-#### Business Rules
+#### Services Called
 
-- User can only access their own jobs (by `ownerId`)
-- Admin can access any job
+- `AdminService.getOverviewStats() - aggregates dashboard KPI counts`
+
+---
+
+## Module: AI Logs
+
+`@Controller('ai-logs')` — class-level `@Roles(ADMIN)`
+
+---
+
+### Endpoint 77
+
+- Name: `List AI Logs`
+- Method: `GET`
+- Route: `/api/v1/ai-logs`
+- Summary: `Paginated, filterable list of AI request logs.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params: `none`
+- Query:
+  - `provider: string (optional)`
+  - `model: string (optional)`
+  - `status: string - filter by AiLogStatus enum (optional)`
+  - `from: string - ISO date (optional)`
+  - `to: string - ISO date (optional)`
+  - `page: number (optional)`
+  - `limit: number (optional)`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `Paginated<AiLogDto>`
+
+#### Services Called
+
+- `AiLogRepository.findPaginated() - loads paginated, filtered AI logs`
+
+#### Constraints / Notes
+
+- Paginated endpoint
+
+---
+
+### Endpoint 78
+
+- Name: `AI Cost Summary`
+- Method: `GET`
+- Route: `/api/v1/ai-logs/cost-summary`
+- Summary: `Return aggregated AI cost over a date range.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params: `none`
+- Query:
+  - `from: string - ISO date (optional)`
+  - `to: string - ISO date (optional)`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `AiCostSummaryDto`
+
+#### Services Called
+
+- `AiLogRepository.costSummary() - aggregates cost over the range`
+
+---
+
+### Endpoint 79
+
+- Name: `Get AI Log`
+- Method: `GET`
+- Route: `/api/v1/ai-logs/:id`
+- Summary: `Return a single AI log entry by id.`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params:
+  - `id: string - AI log ObjectId`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `AiLogDto`
+
+#### Services Called
+
+- `AiLogRepository.findById() - loads one AI log (404 if missing)`
+
+---
+
+## Known gaps (frontend expects / backend stub)
+
+- **Auth OAuth callback is a stub** — `POST /api/v1/auth/oauth/callback` accepts the payload but only returns a static message; it is not wired to `AuthService.oauthLogin`.
+- **Subscriptions subscribe/cancel not implemented** — the customer frontend calls `POST /api/v1/subscriptions/subscribe` and `POST /api/v1/subscriptions/cancel`, but neither route exists on the backend. The implemented admin flows are `assign`, `change`, and `:userId/cancel`.
+- **PDF export has no worker** — `POST /api/v1/dashboards/:id/export/pdf` queues a job, but no worker processes PDF export jobs yet, so the export never completes.
 
 ---
 
@@ -2095,17 +2799,17 @@ Validates the share token, checks expiry and revocation, enforces permission lev
 | Module | Endpoint Count |
 |---|---:|
 | Auth | 8 |
-| Users | 7 |
+| Users | 9 |
 | Projects | 5 |
-| Data (CSV Management) | 7 |
+| Data (CSV Management) | 8 |
 | Dashboards | 13 |
 | Sharing | 4 |
 | Export | 3 |
-| Notifications | 2 |
-| Admin — Subscriptions | 4 |
-| Admin — Audit Logs | 1 |
-| Admin — System Settings | 2 |
-| Background Jobs | 1 |
-| **Total** | **57** |
-```
-
+| Notifications | 4 |
+| Subscriptions | 13 |
+| Payments | 5 |
+| Audit | 1 |
+| Settings | 2 |
+| Admin | 1 |
+| AI Logs | 3 |
+| **Total** | **79** |
