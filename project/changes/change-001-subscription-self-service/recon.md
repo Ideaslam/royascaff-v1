@@ -88,5 +88,7 @@ No drift in the other direction (no code without a plan entry).
 | `SubscriptionsService.selfCancel` method | **create** |
 | `SelfSubscribeDto` | **create** |
 | `features.md` Feature 3 + 4 | **modify** (mark as implemented) |
-| `endpoints.md` | **complete** (add the two new endpoints to the existing Subscriptions section) |
-| All other files | **no change** |
+| `endpoints.md` | **complete** (add Endpoints 80 + 81 to Subscriptions section) |
+| `services.md` SubscriptionsService entry | **modify** (add two new public methods + SelfSubscribeDto) |
+| `pages.md` Page 21 | **modify** (add two new backend endpoints, correct route, expand UI description) |
+| `description.md` | no change — subscription self-service was already described in the product spec |

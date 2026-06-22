@@ -1316,46 +1316,55 @@ Full user management table for admin. Supports search by name/email, filter by r
 ### Page 21
 
 - Name: `My Subscription Page`
-- Route: `/app/settings/subscription`
-- Type: `details`
+- Route: `/app/subscriptions`
+- Type: `details + list`
 - Layout: `app shell`
-- Summary: `Shows the current user's active plan, usage, and limits.`
+- Summary: `Shows the current user's active plan, usage, and limits; lists available plans; lets the user subscribe to a new plan or cancel their current subscription.`
 
 #### Main Component
 
-- Component Name: `MySubscriptionPage`
-- Folder: `src/app/pages/settings/subscription`
+- Component Name: `SubscriptionsPage`
+- Folder: `src/app/pages/subscriptions`
 - Files:
-  - `subscription.page.ts`
-  - `subscription.page.html`
-  - `subscription.page.scss`
+  - `subscriptions.page.ts`
 
 #### Services
 
-- `SubscriptionsService - loads current subscription`
+- `SubscriptionsService - loads plans, loads current subscription, self-subscribe, self-cancel`
 
 #### Models / DTOs
 
-- `SubscriptionDto - planId, planName, limits, usage, status, expiresAt`
+- `SubscriptionPlan - _id, name, description, price, billingCycle, currency, limits`
+- `UserSubscription - planId, plan, status, usageStats (dashboardsCount, filesCount, dataUpdates)`
 
 #### Backend Endpoints Used
 
+- `GET /subscriptions/plans - load available active plans`
 - `GET /subscriptions/me - load current subscription and usage`
+- `POST /subscriptions/subscribe - subscribe to a selected plan (self-service)` *(added change-001)*
+- `POST /subscriptions/cancel - cancel current subscription (self-service)` *(added change-001)*
 
 #### UI Sections
 
-- Plan name and status badge
-- Usage meters: dashboards used / max, data uploads used / max, refreshes used / max
-- Expiry date
-- "Upgrade Plan" button (links to payment gateway)
+- **Current plan card**: plan name, status badge, usage meters (dashboards, data files, data updates vs limits), "Cancel Subscription" button (shown when status is active)
+- **Available plans grid**: one card per active plan showing price, billing cycle, feature limits, and "Upgrade" button (hidden for current plan)
+
+#### User Actions
+
+- Click "Upgrade" on a plan card → calls `POST /subscribe` → redirects to `redirectUrl`
+- Click "Cancel Subscription" → calls `POST /cancel` → refreshes current subscription display
 
 #### States
 
-- Loading: `skeleton`
+- Loading: skeleton while plans and current subscription load
+- Empty: no plans returned (unlikely; handled gracefully)
+- Error: toast shown on subscribe/cancel failure
 
 #### Rules / Notes
 
-- If `status === 'expired'`, show banner "Your plan has expired. Upgrade to continue."
+- `POST /subscribe` response includes `{ redirectUrl }` — currently returns `/subscriptions` (no real payment checkout); future change will wire Stripe checkout
+- Cancel button visible only when `currentSub.status === 'active'`
+- If user has no subscription, the current plan section is hidden; only the plans grid is shown
 
 ---
 
@@ -1383,4 +1392,4 @@ Full user management table for admin. Supports search by name/email, filter by r
 | 18 | Admin Settings Page | `/app/admin/settings` | admin |
 | 19 | Profile Settings Page | `/app/settings/profile` | authenticated |
 | 20 | Change Password Page | `/app/settings/password` | authenticated |
-| 21 | My Subscription Page | `/app/settings/subscription` | authenticated |
+| 21 | My Subscription Page | `/app/subscriptions` | authenticated |
