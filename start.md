@@ -405,3 +405,268 @@ When all phases complete and verification passes, the framework has produced:
 - A verification report confirming consistency
 
 The system is ready for testing and iteration.
+
+---
+
+## Phase 5 — Change Mode
+
+### Goal
+Incrementally add new features or modules, or modify existing ones, while keeping all `.ai-control` planning documents in sync with the actual codebase.
+
+Phase 5 is independent of Phases 0–4. Use it any time after the initial app exists (greenfield or partial build). You do not need to re-run Phases 0–4 to make a change.
+
+---
+
+### Entry Point
+
+Before running Phase 5, fill in **`6-changes/change-request.md`** with:
+- The type of change
+- The scope (which modules, features, endpoints, or pages)
+- A plain-language description
+- Acceptance criteria
+
+Use `2-templates/change-request-template.md` as the reference — it explains every field and includes a complete example.
+
+When the file is ready, tell the AI: **"Start Phase 5"**.
+
+---
+
+### Step 5.0 — Understand the Change
+
+- **Input**: `6-changes/change-request.md`
+- **Actions**:
+  1. Read `change-request.md` fully. Note the `change-type`, `target-app`, and `affected-repos` — these three fields together determine the scope of every downstream step.
+  2. Resolve `target-app` to the affected application(s):
+
+     | target-app | Application | Repo |
+     |------------|------------|------|
+     | `customer-portal` | Existing user-facing web app | `roya-ai-dynamo-frontend` |
+     | `admin-panel` | Existing admin web app | `roya-ai-dynamo-frontend-admin` |
+     | `new-customer-portal` | New customer web app | new repo (defined in change request) |
+     | `new-admin-panel` | New admin web interface | new repo (defined in change request) |
+     | `new-mobile-app` | New mobile app | new repo (defined in change request) |
+     | `new-[name]` | New application named `[name]` | new repo (defined in change request) |
+     | `backend-only` | No frontend impact | `roya-ai-dynamo-api` only |
+     | `all-apps` | All existing apps | all repos |
+
+  3. If `change-type` is `new-app`: read the **New App Definition** section of the change request. Check whether the listed modules/features exist in `3-plan/modules.md` and `3-plan/features.md`. Note any that are new.
+  4. If `change-type` is not `new-app`: read the relevant sections of `1-description.md`, `3-plan/modules.md`, `3-plan/features.md`, `4-actions/endpoints.md`, and `4-actions/pages.md` that match the declared scope. Scan the actual code in the affected modules/pages — do not rely solely on planning docs.
+  5. Ask one clarifying question if (and only if) the description is genuinely ambiguous. Otherwise proceed.
+- **Done when**: The change is fully understood, `target-app` is resolved, and there are no unresolved ambiguities.
+
+---
+
+### Step 5.1 — Impact Analysis
+
+Determine exactly which planning documents and code files need to change.
+
+Use the table below to map `change-type` to required doc updates:
+
+| Change type | `modules.md` | `features.md` | `data-model.md` | `services.md` | `endpoints.md` | `pages.md` | `custom-feature-rules.md` | `1-description.md` |
+|-------------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `new-app` | maybe | maybe | — | — | — | ✓ new file | maybe | ✓ |
+| `new-module` | ✓ | ✓ | maybe | ✓ | ✓ | maybe | maybe | ✓ |
+| `new-feature` | maybe | ✓ | maybe | maybe | maybe | maybe | maybe | ✓ |
+| `modify-feature` | — | ✓ | maybe | maybe | maybe | maybe | maybe | maybe |
+| `modify-endpoint` | — | — | maybe | maybe | ✓ | maybe | — | — |
+| `modify-page` | — | — | — | — | maybe | ✓ | — | — |
+| `modify-service` | — | — | maybe | ✓ | maybe | — | maybe | — |
+| `modify-data-model` | — | — | ✓ | maybe | maybe | maybe | — | maybe |
+| `refactor` | — | — | — | maybe | maybe | maybe | — | — |
+| `bug-fix` | — | — | — | — | — | — | — | — |
+| `general` | assess | assess | assess | assess | assess | assess | assess | assess |
+
+Legend: ✓ = always update, maybe = update if the change touches that area, — = skip, assess = decide case by case
+
+**Note on `new-app`**: `pages.md` means creating a **new pages file** for the new app (e.g. `4-actions/pages-mobile.md`), not editing the existing `pages.md`. Modules and features are updated only if the new app introduces modules/features not already in the codebase.
+
+- **Output**: A short impact list — which docs change and which code folders/files change.
+- **Done when**: Every affected doc and code location is identified before any edits begin.
+
+---
+
+### Step 5.1b — New App Definition (only when `change-type` is `new-app`)
+
+Skip this step if `change-type` is anything other than `new-app`.
+
+This step translates the **New App Definition** section of `change-request.md` into a concrete specification before any planning docs are updated.
+
+- **Input**: The New App Definition section from `change-request.md` + `3-plan/modules.md` + `3-plan/features.md`
+- **Template**: `2-templates/new-app-template.md`
+- **Actions**:
+  1. **Resolve included modules** — map each module listed in the "Modules to Include" table against `3-plan/modules.md`. Confirm each exists. Flag any that are listed as included but marked backend-only (no frontend pages exist for them).
+  2. **Resolve included features** — for each included module, list the features that are in scope for the new app. Features marked `excluded` are documented but not implemented.
+  3. **Identify new modules/features** — any item in the "New Modules / Features" section that does not exist in `3-plan/modules.md` or `3-plan/features.md` must be flagged. These will need to be added to `modules.md` and `features.md` in Step 5.2.
+  4. **Determine endpoint reuse** — for each included feature, identify which existing endpoints in `4-actions/endpoints.md` the new app will call. Flag any features that need new or modified endpoints.
+  5. **Generate new app pages spec** — using `2-templates/pages-template.md` as the format and `2-templates/new-app-template.md` as guidance, produce a complete pages spec for the new app. Save it as `4-actions/pages-<app-slug>.md` (e.g. `pages-mobile.md`, `pages-partner-portal.md`).
+  6. **Determine new repo structure** — confirm the tech stack, folder layout, and whether the new app will share the same backend (`roya-ai-dynamo-api`) or need a separate one.
+- **Output**:
+  - A confirmed list of: included modules, included features, reused endpoints, new endpoints needed, new pages spec file
+  - If new modules/features were identified: a note that Step 5.2 must add them to `modules.md` and `features.md`
+- **Done when**: All of the above are documented and there is a complete `4-actions/pages-<app-slug>.md` ready before Step 5.2 runs.
+
+---
+
+### Step 5.2 — Update Planning Documents
+
+Update only the sections of planning docs identified in Step 5.1. Do not rewrite entire files.
+
+#### Rules for each document
+
+**`3-plan/modules.md`** (new-module only)
+- Add the new module entry following the existing format in the file.
+- Declare backend/frontend scope, purpose, and dependencies.
+
+**`3-plan/features.md`** (new-module or new-feature)
+- Add new feature entries under the correct module section.
+- Follow the existing feature entry format: name, visibility, subfeatures, phase priority.
+- For `modify-feature`: update the relevant feature entry in place.
+
+**`3-plan/data-model.md`** (when data model changes)
+- Add new collections or update existing field tables.
+- Follow existing collection entry format: Mongoose shape, field table, indexes, enums.
+- Document any new relationships (embedded vs referenced).
+
+**`3-plan/services.md`** (when services change)
+- Add new service entries or update existing method signatures.
+- Follow existing service entry format: type (internal/external), public methods, dependencies.
+
+**`4-actions/endpoints.md`** (when endpoints change)
+- Add new endpoint entries or update existing ones.
+- Follow existing endpoint format: method, route, auth, input DTO, return DTO, business rules, services called.
+
+**`4-actions/pages.md`** (when pages change)
+- Add new page entries or update existing ones.
+- Follow existing page format: route, components, frontend services, models, backend endpoints used, UI states.
+
+**`5-rules/custom-feature-rules.md`** (when new integration, security, or async rules are introduced)
+- Add new rules under the relevant module section.
+- Follow existing rule format: rule ID, constraint, rationale.
+
+**`1-description.md`** (new features or modules only)
+- Append to or update the relevant section (Core Features, Key Entities, or Integrations).
+- Preserve existing content — extend, do not replace.
+
+- **Done when**: All identified planning docs are updated and internally consistent.
+
+---
+
+### Step 5.3 — Pre-Build Plan Verification
+
+Run this **before writing any code**. Confirm the updated planning documents are internally consistent and complete.
+
+- **Input**: Updated planning docs from Step 5.2
+- **Template**: `2-templates/change-verification-report-template.md` — Part 1
+- **Output**: `6-changes/verify-plan-change-<N>.md` (where N = next change number from `change-log.md`)
+- **Checks to run** (scoped to changed areas only):
+  1. **Feature coverage** — every new/modified feature has an endpoint (if backend-relevant) and a page (if frontend-relevant)
+  2. **Service coverage** — every service referenced by new/modified endpoints exists in `services.md`
+  3. **Data model consistency** — every entity/DTO referenced in new/modified endpoints and pages is defined in `data-model.md`
+  4. **Endpoint-page linking** — routes listed in new/modified pages match exactly the routes in `endpoints.md` (method + path)
+  5. **Auth declarations** — new/modified endpoints declare auth level; new/modified pages declare route guard
+  6. **Custom rules coverage** — new external integrations, async jobs, or security behaviors are covered by a rule in `custom-feature-rules.md`
+- **If issues are found**: fix the relevant planning docs and re-run the check. Do not proceed to Step 5.4 until the report shows PASS.
+- **Done when**: `verify-plan-change-<N>.md` is written and shows **Overall: PASS**.
+
+---
+
+### Step 5.4 — Implement Code Changes
+
+Generate or modify code in the actual repos following the updated planning docs and all rules.
+
+#### Backend changes (`roya-ai-dynamo-api`)
+- Follow `5-rules/backend-rule.md` and `5-rules/custom-feature-rules.md`.
+- Layered architecture: controller → service → repository. No business logic in controllers.
+- New schemas go in `src/modules/<module>/schemas/`.
+- New services go in `src/modules/<module>/services/`.
+- New controllers go in `src/modules/<module>/controllers/`.
+- Wire new modules into `app.module.ts`.
+- Integration providers stay isolated in `src/integrations/`.
+
+#### Frontend changes (`roya-ai-dynamo-frontend`)
+- Follow `5-rules/frontend-rule.md` and `5-rules/custom-feature-rules.md`.
+- New pages go in `src/app/pages/<module>/`.
+- New frontend services go in `src/app/core/services/`.
+- Pages call frontend services only — no direct HTTP in components.
+- Register new routes in `app.routes.ts`.
+- No hardcoded external URLs — all API calls go through `environment.apiUrl`.
+
+#### Admin frontend changes (`roya-ai-dynamo-frontend-admin`)
+- Same rules as user frontend above, applied to `roya-ai-dynamo-frontend-admin`.
+
+#### New app creation (when `change-type` is `new-app`)
+- Create the new repo/folder with the correct tech stack scaffold (Angular, React Native, Flutter, etc.).
+- Base the folder structure on the same patterns used in existing apps: `core/`, `pages/`, `shared/`, `layouts/`.
+- Implement only the pages listed in `4-actions/pages-<app-slug>.md`.
+- Reuse existing backend endpoints — do not duplicate business logic in the new app.
+- If new endpoints were flagged in Step 5.1b, implement those in `roya-ai-dynamo-api` first (following backend rules), then call them from the new app.
+- Apply the same auth strategy declared in the New App Definition (`same-backend-jwt` means reuse the existing JWT flow; `separate-auth` means a new auth module or provider).
+- Apply the same frontend isolation rule: no direct external API calls from the app — all traffic goes through `roya-ai-dynamo-api`.
+- For mobile apps (React Native / Flutter): replace PrimeNG with the platform's native component library; keep all API calls through the same backend.
+
+#### UI Screenshot Review (frontend and admin only)
+
+After the frontend code is implemented, screenshots of the running UI can be submitted for visual review.
+
+**How to submit**: Run the app locally, navigate to each new/modified page, take a screenshot, and attach it in the chat.
+
+**What the AI checks when screenshots are provided**:
+1. **Layout matches `pages.md`** — key components described in the page spec are present and visible (tables, forms, buttons, headers, empty states).
+2. **UI states are reachable** — loading, empty, error, and success states are observable.
+3. **Correct route** — the browser URL matches the route declared in `pages.md`.
+4. **No obvious regressions** — existing pages not in scope of this change have not broken.
+5. **RTL support** — if the page is displayed in Arabic/RTL mode, layout is correct (mirrored, right-aligned).
+6. **Brand consistency** — color palette (`#ff6043`, `#5922ea`, `#282828`), typography, and PrimeNG component usage are consistent with the rest of the app.
+
+**Screenshot feedback output**: If issues are found from screenshots, the AI describes the exact problem, references the relevant section in `pages.md`, and suggests the code fix. Screenshots do not replace the code checks in Step 5.5 — they are an additional visual layer.
+
+**Screenshots are optional**: If no screenshots are provided, the UI check in Step 5.5 is marked as "skipped — no screenshots provided" and does not block the verification report from passing.
+
+- **Done when**: All code changes are implemented, affected apps compile without errors, and any submitted screenshots have been reviewed.
+
+---
+
+### Step 5.5 — Post-Build Code Verification
+
+Run this **after all code is implemented**. Confirm the code matches the planning docs and all acceptance criteria are met.
+
+- **Input**: Implemented code + updated planning docs
+- **Template**: `2-templates/change-verification-report-template.md` — Part 2
+- **Output**: `6-changes/verify-code-change-<N>.md`
+- **Checks to run** (scoped to changed areas only):
+  1. **Endpoints in code** — every new/modified endpoint from `endpoints.md` exists in backend code with the correct HTTP method and route decorator
+  2. **Pages in code** — every new/modified page from `pages.md` exists in frontend code at the correct route
+  3. **Code layering — backend** — new/modified controllers delegate to services only; no DB queries or external SDK calls in controllers
+  4. **Frontend isolation** — no hardcoded external URLs in new/modified Angular pages or services; all API calls go through `environment.apiUrl`
+  5. **Auth implementation** — JWT guards, role decorators, and Angular route guards are applied in code as declared in the planning docs
+  6. **Acceptance criteria** — every item listed in `change-request.md` is verifiably met; unmet items must be explicitly deferred with justification
+  7. **UI screenshots** — if screenshots were submitted in Step 5.4, verify layout, UI states, route, brand consistency, and RTL correctness against `pages.md`; if no screenshots were provided, mark as skipped
+- **If issues are found**: fix the code and re-run the relevant checks. Do not proceed to Step 5.6 until the report shows PASS (or PASS with documented deferrals).
+- **Done when**: `verify-code-change-<N>.md` is written and shows **Overall: PASS**.
+
+---
+
+### Step 5.6 — Archive and Clear
+
+After the Post-Build Code Verification passes:
+
+1. Open `6-changes/change-log.md`.
+2. Append a new entry at the bottom (after the comment marker) following the log entry format defined in that file:
+   - Increment the change number.
+   - Fill in: date, change-type, affected-repos, scope, description, files modified, planning docs updated, outcome.
+   - Reference the two verification report files: `verify-plan-change-<N>.md` and `verify-code-change-<N>.md`.
+3. Clear `6-changes/change-request.md` back to its blank starter state (preserve the header comment and template fields — remove only the filled-in values).
+
+- **Done when**: `change-log.md` has the new entry (with report references) and `change-request.md` is blank and ready for the next change.
+
+---
+
+### Phase 5 — Done
+
+When Step 5.6 completes:
+- Planning docs are in sync with the code.
+- Pre-Build and Post-Build verification reports are saved in `6-changes/`.
+- `6-changes/change-log.md` has the new entry.
+- `6-changes/change-request.md` is cleared and ready for the next change.
+
+To make another change, fill in `6-changes/change-request.md` again and start Phase 5.
