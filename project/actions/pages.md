@@ -2,11 +2,28 @@
 
 ## Short Summary
 
-This file defines every Angular frontend page for **Roya AI Dynamo**. Pages are grouped by module matching `project/plan/modules.md`. All component names, services, DTOs, and backend endpoint links are derived from `project/actions/endpoints.md`, `project/plan/features.md`, and `project/description.md`.
+This file defines every routed Angular page for **Roya AI Dynamo**, derived from the actual code in the
+two frontend repos. Pages are grouped by **app** first, then by module (matching `project/plan/modules.md`).
+Backend endpoint links match `project/actions/endpoints.md`.
 
-All app routes are prefixed with `/app`. Auth routes are under `/auth`. Public share routes are under `/shared`.
+There are **two separate Angular 21 (standalone) apps** sharing one NestJS backend:
 
-UI library: **PrimeNG**. Colors: `#ff6043` (main), `#5922ea` (primary), `#282828` (secondary). i18n: EN (LTR) + AR (RTL).
+- **Customer Portal** — `roya-ai-dynamo-frontend` — end-user product (projects, data, dashboards, sharing).
+- **Admin Panel** — `roya-ai-dynamo-frontend-admin` — platform operations (clients, subscriptions, payments, audit, AI logs).
+
+Conventions:
+
+- All routes are **lazy** (`loadComponent`). Component paths below are relative to each app's `src/app/`.
+- Backend paths are shown with the global prefix `/api/v1` (frontend builds them from `environment.apiUrl`).
+- UI library: **PrimeNG** + PrimeIcons. Brand: `#ff6043` (main), `#5922ea` (primary), `#282828` (secondary). i18n: EN (LTR) + AR (RTL).
+
+---
+
+# App: Customer Portal (`roya-ai-dynamo-frontend`)
+
+Layouts: `AuthLayout` (auth pages) and `AppShell` (collapsible sidebar + topbar). Guards: `authGuard`
+(requires login), `guestGuard` (unauthenticated only), `adminGuard` (role `admin`). Auth interceptor attaches
+the bearer token and refreshes on 401.
 
 ---
 
@@ -19,72 +36,58 @@ UI library: **PrimeNG**. Colors: `#ff6043` (main), `#5922ea` (primary), `#282828
 - Name: `Login Page`
 - Route: `/auth/login`
 - Type: `auth`
-- Layout: `auth layout`
-- Summary: `Email/password login form and OAuth login options.`
+- Layout: `AuthLayout`
+- Guard: `guestGuard`
+- Summary: `Email/password login plus OAuth redirect buttons.`
 
 #### Description
 
-Displays the login form. Supports email/password and OAuth (Google, Microsoft). On success, stores tokens and redirects to `/app/dashboard`. On failure, shows inline error message.
-
-#### Purpose
-
-- Authenticate existing users
-- Provide OAuth social login entry point
-- Redirect already-authenticated users away
+Login form for existing users. Email/password submits to the API; OAuth buttons redirect the browser to the
+backend OAuth entry points. On success, stores tokens and navigates into the app.
 
 #### Main Component
 
 - Component Name: `LoginPage`
 - Folder: `src/app/pages/auth/login`
-- Files:
-  - `login.page.ts`
-  - `login.page.html`
-  - `login.page.scss`
-
-#### Child Components
-
-- `OAuthButtonsComponent - renders Google and Microsoft OAuth buttons`
+- Files: `login.page.ts`, `login.page.html`
 
 #### Services
 
-- `AuthService - calls login, stores tokens, manages redirect`
+- `AuthService - login, token storage, redirect`
 
 #### Models / DTOs
 
 - `LoginRequest - email, password`
-- `AuthResponse - accessToken, refreshToken, user profile`
+- `AuthResponse - accessToken, refreshToken, user`
 
 #### Backend Endpoints Used
 
-- `POST /auth/login - authenticate with email and password`
-- `POST /auth/oauth/callback - authenticate with OAuth code`
+- `POST /api/v1/auth/login - authenticate with email/password`
+- Browser redirect (not HttpClient): `/api/v1/auth/oauth/google`, `/api/v1/auth/oauth/microsoft`
 
 #### UI Sections
 
-- Roya AI Dynamo logo and app name
-- Login form: email, password fields
-- OAuth buttons section
-- "Forgot password?" link
-- "Don't have an account? Register" link
+- Brand header
+- Login form (email, password)
+- OAuth buttons (Google, Microsoft)
+- Links: "Forgot password?", "Register"
 
 #### User Actions
 
-- Submit login form
-- Click OAuth provider button
-- Navigate to forgot password
-- Navigate to register
+- Submit login
+- Start OAuth login
+- Navigate to forgot-password / register
 
 #### States
 
-- Loading: `disable form, show submit spinner`
-- Error: `show inline error toast or message below fields`
+- Loading: `disable form, submit spinner`
+- Error: `inline error`
 - Success: `redirect to /app/projects`
 
 #### Rules / Notes
 
-- If user is already authenticated, redirect to `/app/projects`
-- Never store raw password in state
-- RTL: flip layout for Arabic locale
+- Authenticated users are redirected away by `guestGuard`.
+- OAuth end-to-end is partial (backend `oauth/callback` is a stub).
 
 ---
 
@@ -93,29 +96,23 @@ Displays the login form. Supports email/password and OAuth (Google, Microsoft). 
 - Name: `Register Page`
 - Route: `/auth/register`
 - Type: `auth`
-- Layout: `auth layout`
-- Summary: `New account registration form.`
+- Layout: `AuthLayout`
+- Guard: `guestGuard`
+- Summary: `New-account registration form.`
 
 #### Description
 
-Accepts name, email, and password. Calls register endpoint, stores tokens on success, sends welcome email (handled by backend), and redirects to `/app/projects`.
+Collects name, email, and password and creates a new account, then signs the user in.
 
 #### Main Component
 
 - Component Name: `RegisterPage`
 - Folder: `src/app/pages/auth/register`
-- Files:
-  - `register.page.ts`
-  - `register.page.html`
-  - `register.page.scss`
-
-#### Child Components
-
-- `OAuthButtonsComponent - OAuth register alternative`
+- Files: `register.page.ts`, `register.page.html`
 
 #### Services
 
-- `AuthService - calls register, stores tokens`
+- `AuthService - register`
 
 #### Models / DTOs
 
@@ -124,30 +121,26 @@ Accepts name, email, and password. Calls register endpoint, stores tokens on suc
 
 #### Backend Endpoints Used
 
-- `POST /auth/register - create new account`
+- `POST /api/v1/auth/register - create account and return tokens`
 
 #### UI Sections
 
-- Name, email, password fields
-- Password strength indicator
-- OAuth register section
-- "Already have an account? Login" link
+- Brand header
+- Register form (name, email, password)
+- Link: "Already have an account? Login"
 
 #### User Actions
 
-- Submit registration form
-- Register via OAuth
+- Submit registration
+- Navigate to login
 
 #### States
 
-- Loading: `spinner on submit`
-- Error: `show field-level validation errors and backend error`
-- Success: `redirect to /app/projects`
+- Loading / Error / Success (redirect into app)
 
 #### Rules / Notes
 
-- Password minimum 8 characters
-- Show inline error if email already exists
+- Registration may be disabled globally via System Settings (`registrationEnabled`).
 
 ---
 
@@ -156,83 +149,105 @@ Accepts name, email, and password. Calls register endpoint, stores tokens on suc
 - Name: `Forgot Password Page`
 - Route: `/auth/forgot-password`
 - Type: `auth`
-- Layout: `auth layout`
-- Summary: `Enter email to receive a password reset link.`
+- Layout: `AuthLayout`
+- Guard: `guestGuard`
+- Summary: `Request a password-reset email.`
 
 #### Main Component
 
 - Component Name: `ForgotPasswordPage`
 - Folder: `src/app/pages/auth/forgot-password`
-- Files:
-  - `forgot-password.page.ts`
-  - `forgot-password.page.html`
-  - `forgot-password.page.scss`
+- Files: `forgot-password.page.ts`, `forgot-password.page.html`
 
 #### Services
 
-- `AuthService - calls forgot-password endpoint`
+- `AuthService - forgotPassword`
 
 #### Backend Endpoints Used
 
-- `POST /auth/forgot-password - request reset email`
+- `POST /api/v1/auth/forgot-password - send reset email`
 
-#### UI Sections
+#### UI Sections / Actions
 
-- Email field
-- Submit button
-- Success confirmation message (always shown after submit)
+- Email field, submit; confirmation message; link back to login.
 
 #### States
 
-- Loading: `disable form on submit`
-- Success: `show "Check your email" message regardless of email existence`
-
-#### Rules / Notes
-
-- Always show success message (backend prevents email enumeration)
+- Loading / Success ("check your email") / Error
 
 ---
 
 ### Page 4
 
 - Name: `Reset Password Page`
-- Route: `/auth/reset-password`
+- Route: `/auth/reset-password` (`?token=`)
 - Type: `auth`
-- Layout: `auth layout`
-- Summary: `Apply a new password using the reset token from email.`
+- Layout: `AuthLayout`
+- Guard: `guestGuard`
+- Summary: `Set a new password using a reset token.`
 
 #### Main Component
 
 - Component Name: `ResetPasswordPage`
 - Folder: `src/app/pages/auth/reset-password`
-- Files:
-  - `reset-password.page.ts`
-  - `reset-password.page.html`
-  - `reset-password.page.scss`
+- Files: `reset-password.page.ts`, `reset-password.page.html`
 
 #### Services
 
-- `AuthService - calls reset-password endpoint`
-
-#### Models / DTOs
-
-- `ResetPasswordRequest - token (from URL), newPassword`
+- `AuthService - resetPassword`
 
 #### Backend Endpoints Used
 
-- `POST /auth/reset-password - apply new password`
+- `POST /api/v1/auth/reset-password - set new password from token`
 
-#### UI Sections
+#### UI Sections / Actions
 
-- New password field
-- Confirm password field
-- Submit button
-- Error message if token expired/invalid
+- New password + confirm fields; submit; redirect to login on success.
 
-#### States
+#### Rules / Notes
 
-- Error: `show "Link expired or invalid" message`
-- Success: `redirect to /auth/login with success toast`
+- Reads `token` from the query string; invalid/expired token shows an error.
+
+---
+
+## Module: Sharing (public)
+
+---
+
+### Page 5
+
+- Name: `Shared Dashboard Viewer`
+- Route: `/shared/:token`
+- Type: `public view`
+- Layout: `none` (root outlet)
+- Guard: `none`
+- Summary: `Read-only public dashboard view via a share token.`
+
+#### Description
+
+Resolves a share token and renders the dashboard with its widget data read-only. No app shell or auth.
+
+#### Main Component
+
+- Component Name: `SharedViewerPage`
+- Folder: `src/app/pages/dashboards/shared-viewer`
+- Files: `shared-viewer.page.ts`, `shared-viewer.page.html`
+
+#### Services
+
+- Direct `HttpClient` call in the page (no dedicated service)
+
+#### Backend Endpoints Used
+
+- `GET /api/v1/shared/:token - resolve shared dashboard + cached chart data`
+
+#### UI Sections / States
+
+- Dashboard title, widget grid (read-only); loading skeleton; invalid/expired/revoked token error.
+
+#### Rules / Notes
+
+- Public, token-gated; honors link permission and expiry; increments access count server-side.
 
 ---
 
@@ -240,149 +255,108 @@ Accepts name, email, and password. Calls register endpoint, stores tokens on suc
 
 ---
 
-### Page 5
+### Page 6
 
 - Name: `Projects List Page`
 - Route: `/app/projects`
 - Type: `list`
-- Layout: `app shell`
-- Summary: `Shows all user projects with a card grid and a create button.`
-
-#### Description
-
-The main landing page after login. Displays projects as cards. Each card shows project name, description, dashboard count, and last updated date. Has a "New Project" button that opens a create dialog.
-
-#### Purpose
-
-- Browse all owned projects
-- Create a new project
-- Navigate into a project to see its dashboards
+- Layout: `AppShell`
+- Guard: `authGuard`
+- Summary: `Searchable list of the user's projects with create and delete.`
 
 #### Main Component
 
 - Component Name: `ProjectsListPage`
 - Folder: `src/app/pages/projects/projects-list`
-- Files:
-  - `projects-list.page.ts`
-  - `projects-list.page.html`
-  - `projects-list.page.scss`
-
-#### Child Components
-
-- `ProjectCardComponent - individual project card with name, description, dashboard count`
-- `CreateProjectDialogComponent - inline PrimeNG dialog for creating a project`
-- `EmptyStateComponent - shown when no projects exist`
+- Files: `projects-list.page.ts`, `projects-list.page.html`
 
 #### Services
 
-- `ProjectsService - loads project list, creates project, deletes project`
+- `ProjectsService - list, create, delete`
 
 #### Models / DTOs
 
-- `ProjectListItemDto - id, name, description, dashboardCount, createdAt`
+- `Project - id, name, description, isActive, createdAt`
 - `CreateProjectRequest - name, description`
 
 #### Backend Endpoints Used
 
-- `GET /projects - load paginated project list`
-- `POST /projects - create new project`
-- `DELETE /projects/:id - delete a project`
+- `GET /api/v1/projects - paginated list (page, limit, search)`
+- `POST /api/v1/projects - create project`
+- `DELETE /api/v1/projects/:id - delete project`
 
 #### UI Sections
 
-- Page header with title "My Projects" and "New Project" button
-- Search bar
-- Projects grid (card layout)
-- Empty state illustration and CTA
-- PrimeNG ConfirmDialog for delete confirmation
+- Header + "New Project" button
+- Search box
+- Project cards/table with open + delete
+- Pagination, empty state
 
 #### User Actions
 
-- Search projects by name
-- Click "New Project" to open create dialog
-- Click a project card to navigate to `/app/projects/:id`
-- Delete a project (with confirmation dialog)
+- Search, create (dialog), open detail, delete (confirm)
 
 #### States
 
-- Loading: `skeleton cards while loading`
-- Empty: `illustration + "Create your first project" CTA`
-- Error: `error banner with retry button`
-
-#### Rules / Notes
-
-- Editor only sees their own projects; admin sees all
-- Delete is irreversible — show confirmation dialog
-- RTL: card layout mirrors correctly in Arabic
+- Loading skeleton / empty ("No projects yet") / error
 
 ---
 
-### Page 6
+### Page 7
 
 - Name: `Project Detail Page`
 - Route: `/app/projects/:id`
-- Type: `details`
-- Layout: `app shell`
-- Summary: `Shows project info and its dashboards list. Entry point to create dashboards.`
+- Type: `detail`
+- Layout: `AppShell`
+- Guard: `authGuard`
+- Summary: `Project detail with its dashboards and a create-dashboard wizard.`
 
 #### Description
 
-Displays the project header (name, description, edit button) and a list of all dashboards inside this project as cards with status badges. Has a "New Dashboard" button.
+Shows the project, lists its dashboards, and provides a wizard to create a new AI dashboard by attaching
+confirmed CSV files and describing the desired purpose.
 
 #### Main Component
 
 - Component Name: `ProjectDetailPage`
 - Folder: `src/app/pages/projects/project-detail`
-- Files:
-  - `project-detail.page.ts`
-  - `project-detail.page.html`
-  - `project-detail.page.scss`
-
-#### Child Components
-
-- `DashboardCardComponent - card showing dashboard name, status badge, creation date`
-- `CreateDashboardDialogComponent - multi-step wizard dialog for creating a dashboard`
-- `EmptyStateComponent - shown when no dashboards exist`
+- Files: `project-detail.page.ts`, `project-detail.page.html`
 
 #### Services
 
-- `ProjectsService - loads project details and dashboard list`
-- `DashboardsService - creates dashboard`
+- `ProjectsService - get project`
+- `DashboardsService - list by project, create`
+- `DataService - list confirmed files for the wizard`
 
 #### Models / DTOs
 
-- `ProjectDetailsDto - id, name, description, dashboards[]`
-- `DashboardListItemDto - id, name, status, createdAt`
+- `Project`, `Dashboard`, `CsvFile`
+- `CreateDashboardRequest - projectId, name, purposeDescription, fileIds[]`
 
 #### Backend Endpoints Used
 
-- `GET /projects/:id - load project and its dashboards`
-- `POST /dashboards - create new dashboard`
+- `GET /api/v1/projects/:id - load project`
+- `GET /api/v1/dashboards?projectId=... - list dashboards in project`
+- `GET /api/v1/data/files - confirmed files for the picker`
+- `POST /api/v1/dashboards - create dashboard (then navigate to generating page)`
 
 #### UI Sections
 
-- Breadcrumb: Projects > {Project Name}
-- Project header with edit inline button
-- "New Dashboard" button
-- Dashboards grid with status badges (generating, ready, error)
-- Empty state
+- Project header (name, description, edit)
+- Dashboards grid/list
+- "New Dashboard" wizard: name, purpose description, file picker
 
 #### User Actions
 
-- Edit project name/description inline
-- Click "New Dashboard" to open create wizard
-- Click a dashboard card to navigate to `/app/dashboards/:id`
-- Navigate back to projects list
+- Open a dashboard, create a dashboard, edit project
 
 #### States
 
-- Loading: `skeleton loader`
-- Empty: `"No dashboards yet" with CTA`
+- Loading / empty (no dashboards) / error
 
 #### Rules / Notes
 
-- Dashboard cards with `generating` status show an animated progress indicator
-- Dashboard creation opens a multi-step dialog (step 1: name + purpose, step 2: attach CSV files)
+- Only `analyzed`/`confirmed` CSV files are selectable for generation.
 
 ---
 
@@ -390,228 +364,104 @@ Displays the project header (name, description, edit button) and a list of all d
 
 ---
 
-### Page 7
-
-- Name: `Dashboard Viewer Page`
-- Route: `/app/dashboards/:id`
-- Type: `dashboard`
-- Layout: `app shell`
-- Summary: `Live dashboard page that renders all chart widgets in parallel.`
-
-#### Description
-
-The core page of the product. Loads the dashboard definition once, then fires parallel requests for each widget's chart data. Widgets are rendered in a responsive grid layout using PrimeNG card containers. Includes a toolbar for refresh, export, and share actions.
-
-#### Purpose
-
-- View all AI-generated chart widgets for a dashboard
-- Refresh all data from source
-- Export dashboard as PDF or Excel
-- Share dashboard via link
-
-#### Main Component
-
-- Component Name: `DashboardViewerPage`
-- Folder: `src/app/pages/dashboards/dashboard-viewer`
-- Files:
-  - `dashboard-viewer.page.ts`
-  - `dashboard-viewer.page.html`
-  - `dashboard-viewer.page.scss`
-
-#### Child Components
-
-- `DashboardToolbarComponent - title, refresh, share, export actions`
-- `ChartWidgetComponent - renders any chart type based on widgetType enum`
-- `BarChartComponent - renders bar and column charts`
-- `LineChartComponent - renders line and area charts`
-- `PieChartComponent - renders pie and donut charts`
-- `KpiCardComponent - renders single KPI metric card`
-- `TableWidgetComponent - renders tabular aggregated data`
-- `ScatterChartComponent - renders scatter plots`
-- `ChartLoadingSkeletonComponent - per-widget loading skeleton`
-- `ShareDialogComponent - create and manage share links`
-- `ExportMenuComponent - PDF and Excel export options`
-- `DashboardGeneratingStateComponent - shown while dashboard is still generating`
-
-#### Services
-
-- `DashboardsService - loads dashboard definition, triggers refresh`
-- `ChartDataService - fetches chart data per widget`
-- `ShareService - creates and manages share links`
-- `ExportService - triggers PDF and Excel export`
-- `NotificationsService - receives "dashboard ready" signal`
-
-#### Models / DTOs
-
-- `DashboardDetailsDto - full dashboard with widgets`
-- `ChartWidgetDto - widget config with type, position, queryDefinition`
-- `ChartDataResponse - per-widget chart data`
-- `ShareLinkCreatedResponse`
-
-#### Backend Endpoints Used
-
-- `GET /dashboards/:id - load dashboard definition and widgets`
-- `GET /dashboards/:id/widgets/:widgetId/data - load chart data (called in parallel for all widgets)`
-- `POST /dashboards/:id/refresh - trigger data refresh`
-- `POST /dashboards/:id/share - create share link`
-- `GET /dashboards/:id/share - list share links`
-- `DELETE /dashboards/:id/share/:shareLinkId - revoke share link`
-- `POST /dashboards/:id/widgets - add new widget manually (editor/admin only)`
-- `DELETE /dashboards/:id/widgets/:widgetId - remove a widget (editor/admin only)`
-- `POST /dashboards/:id/export/pdf - request PDF export`
-- `GET /dashboards/:id/export/excel - download Excel`
-
-#### UI Sections
-
-- Breadcrumb: Projects > {Project} > {Dashboard Name}
-- Dashboard toolbar: title, "Refresh Data" button, "Share" button, "Export" dropdown
-- Responsive widget grid (2-column desktop, 1-column mobile)
-- Per-widget title bar with widget type icon
-- Chart renders using PrimeNG Chart component (Chart.js)
-- Table widget with PrimeNG Table
-
-#### User Actions
-
-- View all charts
-- Click "Refresh Data" to recalculate all widgets
-- Click "Share" to open share dialog
-- Click "Export" → PDF or Excel
-- Navigate to widget edit mode (editor/admin only)
-
-#### States
-
-- Generating: `full-page "AI is building your dashboard" animation`
-- Loading (initial): `skeleton per widget`
-- Loading (refresh): `per-widget spinner overlay`
-- Empty widget: `"No data available" card with widget title`
-- Error widget: `"Failed to load data" with retry icon`
-- Error (dashboard not found): `404 page`
-
-#### Rules / Notes
-
-- Widget data requests are fired in **parallel** using `forkJoin` or `combineLatest`
-- Poll `GET /dashboards/:id/status` at 3s intervals when status is `generating`; stop on `ready` or `error`
-- Target render time: < 2 seconds after data arrives
-- RTL: grid and toolbar mirror for Arabic
-- Viewer permission: hide edit/share toolbar actions; show only export and refresh (if permitted)
-- Share token: if URL includes `?shareToken=...`, pass token to all data requests
-
----
-
 ### Page 8
 
-- Name: `Dashboard Generation Status Page`
+- Name: `Dashboard Generating Page`
 - Route: `/app/dashboards/:id/generating`
-- Type: `details`
-- Layout: `app shell`
-- Summary: `Shown while AI is generating a dashboard. Auto-redirects when ready.`
-
-#### Description
-
-A transitional page displayed after dashboard creation while the AI generation background job runs. Shows an animated progress indicator, current job status message, and auto-redirects to the dashboard viewer when `status === 'ready'`.
+- Type: `status / polling`
+- Layout: `AppShell`
+- Guard: `authGuard`
+- Summary: `Polls AI generation status until the dashboard is ready or errors.`
 
 #### Main Component
 
 - Component Name: `DashboardGeneratingPage`
 - Folder: `src/app/pages/dashboards/dashboard-generating`
-- Files:
-  - `dashboard-generating.page.ts`
-  - `dashboard-generating.page.html`
-  - `dashboard-generating.page.scss`
+- Files: `dashboard-generating.page.ts`, `dashboard-generating.page.html`
 
 #### Services
 
-- `DashboardsService - polls generation status`
-
-#### Models / DTOs
-
-- `DashboardStatusDto - status, jobStatus, progress, errorMessage`
+- `DashboardsService - getStatus`
 
 #### Backend Endpoints Used
 
-- `GET /dashboards/:id/status - poll generation progress`
-- `POST /dashboards/:id/generate/retry - retry if status is error`
+- `GET /api/v1/dashboards/:id/status - polled every ~3s (status, jobStatus, progress, errorMessage)`
 
-#### UI Sections
+#### UI Sections / States
 
-- Animated illustration of AI working
-- Progress bar (0–100% from `progress` field)
-- Status message text (e.g., "Analyzing data types…", "Building chart structure…")
-- Error state with retry button
-
-#### States
-
-- Polling: `animated progress bar, periodic status text updates`
-- Success: `auto-redirect to /app/dashboards/:id`
-- Error: `show error message and "Retry Generation" button`
+- Progress indicator + status text; on `ready` redirect to viewer; on `error` show retry.
 
 #### Rules / Notes
 
-- Poll every 3 seconds
-- Stop polling on `ready` or `error`
+- Generation runs as an async BullMQ job; this page reflects job progress.
 
 ---
 
 ### Page 9
 
-- Name: `Widget Edit Page`
-- Route: `/app/dashboards/:id/widgets/:widgetId/edit`
-- Type: `edit`
-- Layout: `app shell`
-- Summary: `Editor for customizing a chart widget's type, title, and display config.`
+- Name: `Dashboard Viewer Page`
+- Route: `/app/dashboards/:id` (`?shareToken=`)
+- Type: `detail / interactive`
+- Layout: `AppShell`
+- Guard: `authGuard`
+- Summary: `Interactive dashboard: view widgets, edit layout, refresh, share, export.`
 
 #### Description
 
-Allows editor/admin to change the chart type, title, and display configuration of an AI-generated widget. Shows a live preview panel. Saves changes back to the widget via the update widget endpoint.
+Renders the widget grid with per-widget data, supports an inline edit mode (move/resize/retitle widgets),
+manual refresh, share-link management, and PDF/Excel export. Widget editing is **inline** here — there is no
+separate widget-edit route.
 
 #### Main Component
 
-- Component Name: `WidgetEditPage`
-- Folder: `src/app/pages/dashboards/widget-edit`
-- Files:
-  - `widget-edit.page.ts`
-  - `widget-edit.page.html`
-  - `widget-edit.page.scss`
+- Component Name: `DashboardViewerPage`
+- Folder: `src/app/pages/dashboards/dashboard-viewer`
+- Files: `dashboard-viewer.page.ts`, `dashboard-viewer.page.html`
 
 #### Child Components
 
-- `ChartWidgetComponent - live preview of the widget`
-- `WidgetTypePickerComponent - select chart type from available types`
-- `DisplayConfigFormComponent - configure colors, labels, axis settings`
+- Chart widgets (chart.js), grid (`angular-gridster2`), share dialog, export menu
 
 #### Services
 
-- `DashboardsService - loads dashboard and widget`
-- `ChartDataService - loads current widget data for preview`
+- `DashboardsService - get, widget data, update widget, refresh, share CRUD`
+- `ExportService - PDF request, Excel download URL`
+- `FilterService - client-side widget filter state`
 
 #### Models / DTOs
 
-- `ChartWidgetDto`
-- `UpdateWidgetRequest - widgetType, title, displayConfig`
+- `Dashboard`, `ChartWidget`, `ShareLink`, `ChartDataResponse`
 
 #### Backend Endpoints Used
 
-- `GET /dashboards/:id - load dashboard and widgets`
-- `GET /dashboards/:id/widgets/:widgetId/data - load chart data for preview`
-- `PUT /dashboards/:id/widgets/:widgetId - save widget changes`
+- `GET /api/v1/dashboards/:id - dashboard + widgets + datasources`
+- `GET /api/v1/dashboards/:dashboardId/widgets/:widgetId/data - per-widget data (shareToken?, filters?)`
+- `PUT /api/v1/dashboards/:dashboardId/widgets/:widgetId - save layout/title in edit mode`
+- `POST /api/v1/dashboards/:id/refresh - recompute chart data`
+- `GET /api/v1/dashboards/:dashboardId/share - list share links`
+- `POST /api/v1/dashboards/:dashboardId/share - create share link`
+- `DELETE /api/v1/dashboards/:dashboardId/share/:shareLinkId - revoke share link`
+- `POST /api/v1/dashboards/:dashboardId/export/pdf - request PDF export`
+- Browser GET: `/api/v1/dashboards/:dashboardId/export/excel?token=... - download Excel`
 
 #### UI Sections
 
-- Left panel: widget type picker, title input, display config form
-- Right panel: live chart preview
-- Save and Cancel buttons in toolbar
+- Toolbar (edit toggle, refresh, share, export)
+- Widget grid
+- Share dialog (permission, expiry, link list)
+
+#### User Actions
+
+- View/filter widgets, toggle edit + rearrange, refresh, create/revoke share links, export PDF/Excel
 
 #### States
 
-- Loading: `skeleton`
-- Saving: `spinner on save button`
-- Success: `redirect back to /app/dashboards/:id`
+- Loading per widget / error / empty widget
 
 #### Rules / Notes
 
-- Only `editor` and `admin` can access this page
-- On chart type change, live preview updates immediately
-- If `queryDefinition` changes, preview calls data endpoint again
+- PDF export is queued; the worker is **not implemented yet**, so the file is not produced.
+- Chart data is served from a Redis cache when fresh.
 
 ---
 
@@ -621,238 +471,92 @@ Allows editor/admin to change the chart type, title, and display configuration o
 
 ### Page 10
 
-- Name: `Data Library Page`
+- Name: `Data Files List Page`
 - Route: `/app/data`
 - Type: `list`
-- Layout: `app shell`
-- Summary: `Lists all uploaded CSV files. Entry point for upload and column editing.`
-
-#### Description
-
-Shows all CSV files uploaded by the current user in a PrimeNG table with status badges (uploading, analyzing, confirmed, error). Provides upload button, search, and filter by status. Rows link to the column editor page.
-
-#### Purpose
-
-- View all uploaded CSV files and their status
-- Upload new CSV files
-- Navigate to column description editor
+- Layout: `AppShell`
+- Guard: `authGuard`
+- Summary: `Lists uploaded CSV files with status and delete.`
 
 #### Main Component
 
-- Component Name: `DataLibraryPage`
-- Folder: `src/app/pages/data/data-library`
-- Files:
-  - `data-library.page.ts`
-  - `data-library.page.html`
-  - `data-library.page.scss`
-
-#### Child Components
-
-- `CsvUploadDialogComponent - chunked upload flow with progress bar`
-- `CsvFileTableComponent - table with columns: filename, size, rows, columns, status, uploaded date`
-- `StatusBadgeComponent - colored badge per status`
+- Component Name: `FilesListPage`
+- Folder: `src/app/pages/data/files-list`
+- Files: `files-list.page.ts`, `files-list.page.html`
 
 #### Services
 
-- `CsvDataService - loads CSV file list, deletes files`
-- `CsvUploadService - manages chunked upload flow (initiate → chunk → complete)`
+- `DataService - list files, delete file`
 
 #### Models / DTOs
 
-- `CsvFileListItemDto - id, originalFilename, fileSizeBytes, rowCount, columnCount, status, uploadedAt`
-- `UploadInitiateResponse`
+- `CsvFile - id, originalFilename, rowCount, columnCount, status, uploadedAt`
 
 #### Backend Endpoints Used
 
-- `GET /data/files - load CSV file list`
-- `POST /data/upload/initiate - start upload`
-- `POST /data/upload/:fileId/complete - confirm upload and trigger analysis`
-- `DELETE /data/files/:fileId - delete a CSV file`
+- `GET /api/v1/data/files - paginated list (page, limit, search, status)`
+- `DELETE /api/v1/data/files/:id - delete file (drops its dynamic data collection)`
 
-#### UI Sections
+#### UI Sections / Actions
 
-- Page header "My Data" with "Upload CSV" button
-- Search and status filter bar
-- Files table
-- Empty state
-
-#### User Actions
-
-- Click "Upload CSV" → opens upload dialog
-- Click a file row → navigate to `/app/data/:fileId`
-- Delete a file (with confirmation)
-- Retry failed analysis
+- Files table (name, rows, columns, status badge, actions), "Upload" button, delete confirm.
 
 #### States
 
-- Loading: `table skeleton`
-- Empty: `"Upload your first CSV" CTA`
-- Upload dialog: `drag-and-drop zone + progress bar`
-
-#### Rules / Notes
-
-- Max file size 50 MB; reject larger files client-side before upload
-- Files with `analyzing` status show a spinner in the status badge
-- Deleting a file shows a warning listing affected dashboards
+- Loading / empty / error; status reflects analyzing/analyzed/confirmed/error.
 
 ---
 
 ### Page 11
 
-- Name: `Column Editor Page`
-- Route: `/app/data/:fileId`
-- Type: `edit`
-- Layout: `app shell`
-- Summary: `Shows AI-generated column descriptions for the user to review and confirm.`
+- Name: `Upload Wizard Page`
+- Route: `/app/data/upload`
+- Type: `wizard`
+- Layout: `AppShell`
+- Guard: `authGuard`
+- Summary: `Upload a CSV, watch AI column analysis, then review/confirm column descriptions.`
 
 #### Description
 
-Displays the CSV file metadata and a table of all columns with their AI-inferred type and AI-generated description. The user can edit the description for each column inline, then confirm all columns to mark the file as ready for dashboard generation.
-
-#### Purpose
-
-- Review and correct AI-generated column descriptions
-- Confirm all columns to unlock dashboard creation
-- Understand what data is in the uploaded file
+Multi-step flow: upload the file (multipart), poll analysis status while the AI infers column types and
+descriptions, then review and edit column descriptions before confirming. Column review lives in this wizard —
+there is no separate column-editor route.
 
 #### Main Component
 
-- Component Name: `ColumnEditorPage`
-- Folder: `src/app/pages/data/column-editor`
-- Files:
-  - `column-editor.page.ts`
-  - `column-editor.page.html`
-  - `column-editor.page.scss`
-
-#### Child Components
-
-- `ColumnEditorTableComponent - table with inline text edit per row`
-- `ColumnTypeBadgeComponent - shows inferred data type badge`
-- `FileMetaSummaryComponent - filename, size, row count header`
-- `AnalysisProgressComponent - shown if file is still being analyzed`
+- Component Name: `UploadWizardPage`
+- Folder: `src/app/pages/data/upload-wizard`
+- Files: `upload-wizard.page.ts`, `upload-wizard.page.html`
 
 #### Services
 
-- `CsvDataService - loads file details and columns, saves column descriptions`
+- `DataService - upload, get file (poll), update columns`
 
 #### Models / DTOs
 
-- `CsvFileDetailsDto - file info + columns[]`
-- `ColumnMetadataDto - id, columnName, inferredType, aiDescription, userDescription, status`
-- `UpdateColumnsRequest - array of { columnId, userDescription }`
+- `CsvFile`, `ColumnMetadata`, `UpdateColumnsRequest - columns[{columnId, userDescription}]`
 
 #### Backend Endpoints Used
 
-- `GET /data/files/:fileId - load file details and columns`
-- `PATCH /data/files/:fileId/columns - save confirmed column descriptions`
-- `POST /data/files/:fileId/analyze/retry - retry analysis if in error state`
+- `POST /api/v1/data/upload/file - multipart upload (returns fileId, jobId)`
+- `GET /api/v1/data/files/:id - polled during analysis (file + columns)`
+- `PATCH /api/v1/data/files/:fileId/columns - save reviewed column descriptions`
 
 #### UI Sections
 
-- File summary header (name, size, row count)
-- Analysis progress bar (if file is still in `analyzing` state)
-- Columns table: column name | inferred type | AI description | user description (editable) | status
-- "Confirm All" button at the bottom
-- Success toast and redirect prompt when all columns confirmed
+- Step 1 dropzone; Step 2 analysis progress; Step 3 column review table
 
 #### User Actions
 
-- Edit individual column descriptions inline
-- Click "Confirm All" to save all descriptions and mark file as confirmed
-- Retry analysis if failed
+- Upload file, wait for analysis, edit column descriptions, confirm
 
 #### States
 
-- Analyzing: `show progress indicator; disable confirm button`
-- Ready to review: `enable all fields`
-- Saving: `spinner on confirm button`
-- Confirmed: `show success banner, unlock "Use in Dashboard" CTA`
+- Uploading / analyzing (poll) / review / error
 
 #### Rules / Notes
 
-- File must have all columns confirmed before it can be used in a new dashboard
-- If still in `analyzing` state, poll `GET /data/files/:fileId` every 3 seconds until status changes
-- RTL: column table text alignment mirrors for Arabic
-
----
-
-## Module: Sharing
-
----
-
-### Page 12
-
-- Name: `Shared Dashboard Page`
-- Route: `/shared/:token`
-- Type: `dashboard`
-- Layout: `public layout`
-- Summary: `Public read-only dashboard view accessed via a share link.`
-
-#### Description
-
-A public page, no authentication required. Resolves the share token from the URL, loads the dashboard definition and chart data, and renders the full dashboard in view-only mode. Optionally shows a "Refresh" button if `viewerCanRefresh` is true.
-
-#### Purpose
-
-- Allow external viewers to see a dashboard without logging in
-- Respect permission level (view vs edit)
-- Conditionally allow refresh
-
-#### Main Component
-
-- Component Name: `SharedDashboardPage`
-- Folder: `src/app/pages/shared/shared-dashboard`
-- Files:
-  - `shared-dashboard.page.ts`
-  - `shared-dashboard.page.html`
-  - `shared-dashboard.page.scss`
-
-#### Child Components
-
-- `ChartWidgetComponent - renders each chart widget`
-- `SharedDashboardHeaderComponent - dashboard name + "Powered by Roya" branding`
-- `ExportMenuComponent - PDF and Excel export (if permitted)`
-
-#### Services
-
-- `ShareService - resolves token, loads shared dashboard`
-- `ChartDataService - loads chart data with shareToken query param`
-
-#### Models / DTOs
-
-- `SharedDashboardDto - dashboardId, name, widgets, permission, viewerCanRefresh`
-- `ChartDataResponse`
-
-#### Backend Endpoints Used
-
-- `GET /shared/:token - resolve token and get dashboard`
-- `GET /dashboards/:id/widgets/:widgetId/data?shareToken=... - load chart data`
-- `POST /dashboards/:id/refresh?shareToken=... - refresh data (if permitted)`
-- `GET /dashboards/:id/export/excel?shareToken=... - download Excel`
-- `POST /dashboards/:id/export/pdf?shareToken=... - export PDF`
-
-#### UI Sections
-
-- Minimal header with dashboard name and Roya branding
-- Chart widget grid (same layout as viewer page)
-- Optional "Refresh Data" button
-- Optional "Export" button
-- Expired/revoked link error page
-
-#### States
-
-- Loading: `per-widget skeletons`
-- Expired: `"This link has expired" full-page message`
-- Revoked: `"This link is no longer available" full-page message`
-- Error: `generic error with no technical details`
-
-#### Rules / Notes
-
-- No login required — no JWT sent
-- Pass `shareToken` as query param to all data endpoints
-- Edit toolbar actions (share, delete) are hidden for viewers
-- If `permission === 'view'`, only view and export are enabled
-- `Powered by Roya AI Dynamo` branding shown in footer
+- Max file size enforced by System Settings (`maxFileSizeMb`, default 50MB).
 
 ---
 
@@ -860,346 +564,96 @@ A public page, no authentication required. Resolves the share token from the URL
 
 ---
 
+### Page 12
+
+- Name: `Notifications Page`
+- Route: `/app/notifications`
+- Type: `list`
+- Layout: `AppShell`
+- Guard: `authGuard`
+- Summary: `Full-page list of in-app notifications with mark-as-read.`
+
+#### Main Component
+
+- Component Name: `NotificationsPage`
+- Folder: `src/app/pages/notifications`
+- Files: `notifications.page.ts`, `notifications.page.html`
+
+#### Services
+
+- `NotificationsService - list, mark read, mark all read, unread count`
+
+#### Models / DTOs
+
+- `Notification - id, type, title, message, isRead, actionUrl, createdAt`
+
+#### Backend Endpoints Used
+
+- `GET /api/v1/notifications - paginated (page, limit, isRead)`
+- `PATCH /api/v1/notifications/:id/read - mark one read`
+- `PATCH /api/v1/notifications/read-all - mark all read`
+
+#### UI Sections / Actions
+
+- Notification list, per-item read, "Mark all as read".
+
+#### States
+
+- Loading / empty / error
+
+#### Rules / Notes
+
+- The `AppShell` topbar shows an unread badge via `GET /api/v1/notifications/unread-count`.
+- This is a full page, not a slide-over panel.
+
+---
+
+## Module: Subscriptions
+
+---
+
 ### Page 13
 
-- Name: `Notifications Panel`
-- Route: `(slide-over panel, accessible from app shell header)`
-- Type: `list`
-- Layout: `app shell (slide panel)`
-- Summary: `In-app notification list showing dashboard-ready and export-ready alerts.`
-
-#### Description
-
-A slide-over panel (PrimeNG Sidebar or Drawer) opened from the bell icon in the app shell header. Displays a paginated list of notifications. Supports mark-as-read and mark-all-as-read actions.
+- Name: `Subscriptions Page`
+- Route: `/app/subscriptions`
+- Type: `billing`
+- Layout: `AppShell`
+- Guard: `authGuard`
+- Summary: `View current plan/usage, browse plans, subscribe or cancel.`
 
 #### Main Component
 
-- Component Name: `NotificationsPanelComponent`
-- Folder: `client/src/app/components/notifications/notifications-panel`
-- Files:
-  - `notifications-panel.component.ts`
-  - `notifications-panel.component.html`
-  - `notifications-panel.component.scss`
-
-#### Child Components
-
-- `NotificationItemComponent - single notification row with type icon, message, read/unread state`
+- Component Name: `SubscriptionsPage`
+- Folder: `src/app/pages/subscriptions`
+- Files: `subscriptions.page.ts`, `subscriptions.page.html`
 
 #### Services
 
-- `NotificationsService - loads notifications, marks read`
+- `SubscriptionsService - list plans, my subscription, subscribe, cancel`
 
 #### Models / DTOs
 
-- `NotificationDto - id, type, title, message, isRead, relatedEntityType, relatedEntityId, createdAt`
+- `SubscriptionPlan - name, priceMonthlyUsd, limits`
+- `UserSubscription - planId, status, usage counters, period`
 
 #### Backend Endpoints Used
 
-- `GET /notifications - load notification list`
-- `PATCH /notifications/read - mark one or all as read`
+- `GET /api/v1/subscriptions/plans - available plans`
+- `GET /api/v1/subscriptions/me - current subscription + usage`
+- `POST /api/v1/subscriptions/subscribe - self-subscribe to a plan (SelfSubscribeDto{planId})`
+- `POST /api/v1/subscriptions/cancel - cancel own subscription`
 
-#### UI Sections
+#### UI Sections / Actions
 
-- Panel header: "Notifications" title + "Mark all as read" button
-- Unread count badge on bell icon in header
-- Notification list with per-item read/unread state
-- Empty state: "You're all caught up"
-
-#### User Actions
-
-- Open/close panel from bell icon
-- Click notification → navigate to related entity (e.g., dashboard)
-- Mark individual notification as read
-- Mark all as read
+- Current plan + usage card, plan cards with Subscribe, Cancel action.
 
 #### States
 
-- Loading: `skeleton list`
-- Empty: `"No notifications" message`
+- Loading / error; current plan highlighted.
 
 #### Rules / Notes
 
-- Unread count badge on header bell icon updated after marking read
-- `dashboard_ready` notification links to `/app/dashboards/:id`
-- `export_ready` notification links to the signed download URL
-
----
-
-## Module: Admin
-
----
-
-### Page 14
-
-- Name: `Admin Users List Page`
-- Route: `/app/admin/users`
-- Type: `list`
-- Layout: `app shell`
-- Summary: `Admin page listing all system users with filter, create, edit, and delete.`
-
-#### Description
-
-Full user management table for admin. Supports search by name/email, filter by role and active status, inline status toggle, navigate to edit, and delete with confirmation.
-
-#### Main Component
-
-- Component Name: `AdminUsersListPage`
-- Folder: `src/app/pages/admin/users-list`
-- Files:
-  - `users-list.page.ts`
-  - `users-list.page.html`
-  - `users-list.page.scss`
-
-#### Child Components
-
-- `UsersFilterBarComponent - search, role filter, status filter`
-- `UsersTableComponent - paginated PrimeNG table`
-- `CreateUserDialogComponent - inline dialog for admin-created users`
-
-#### Services
-
-- `AdminUsersService - CRUD operations for users`
-
-#### Models / DTOs
-
-- `UserListItemDto - id, name, email, role, isActive, lastLoginAt, createdAt`
-- `CreateUserRequest`
-- `UpdateUserRequest`
-
-#### Backend Endpoints Used
-
-- `GET /users - load paginated users list`
-- `POST /users - create new user`
-- `DELETE /users/:id - delete user`
-
-#### UI Sections
-
-- Page header "Users Management" + "New User" button
-- Filters bar
-- Users table: name, email, role badge, active toggle, actions
-- Pagination
-- Delete confirmation dialog
-
-#### User Actions
-
-- Search and filter users
-- Create new user via dialog
-- Navigate to edit user page
-- Toggle active status
-- Delete user (with confirm)
-
-#### States
-
-- Loading: `table skeleton`
-- Empty: `"No users found" message`
-
-#### Rules / Notes
-
-- Admin only — redirect non-admin users to `/app/projects`
-- Toggle active status updates `isActive` field inline
-
----
-
-### Page 15
-
-- Name: `Admin User Edit Page`
-- Route: `/app/admin/users/:id`
-- Type: `edit`
-- Layout: `app shell`
-- Summary: `Admin edit form for a specific user's profile, role, and status.`
-
-#### Main Component
-
-- Component Name: `AdminUserEditPage`
-- Folder: `src/app/pages/admin/user-edit`
-- Files:
-  - `user-edit.page.ts`
-  - `user-edit.page.html`
-  - `user-edit.page.scss`
-
-#### Services
-
-- `AdminUsersService - loads and updates user`
-
-#### Models / DTOs
-
-- `UserDetailsDto`
-- `UpdateUserRequest - name, email, role, isActive`
-
-#### Backend Endpoints Used
-
-- `GET /users/:id - load user details`
-- `PUT /users/:id - save changes`
-
-#### UI Sections
-
-- Breadcrumb: Admin > Users > {User Name}
-- Form: name, email, role select, active toggle
-- Save and Cancel buttons
-
-#### States
-
-- Loading: `form skeleton`
-- Saving: `spinner on save`
-- Success: `redirect to /app/admin/users with toast`
-
-#### Rules / Notes
-
-- Admin only
-- Admin cannot edit their own role to prevent privilege escalation lock-out
-
----
-
-### Page 16
-
-- Name: `Admin Subscriptions Page`
-- Route: `/app/admin/subscriptions`
-- Type: `list`
-- Layout: `app shell`
-- Summary: `Admin page to view and assign subscription plans to users.`
-
-#### Main Component
-
-- Component Name: `AdminSubscriptionsPage`
-- Folder: `src/app/pages/admin/subscriptions`
-- Files:
-  - `subscriptions.page.ts`
-  - `subscriptions.page.html`
-  - `subscriptions.page.scss`
-
-#### Child Components
-
-- `AssignSubscriptionDialogComponent - select user + plan + expiry date`
-- `SubscriptionsTableComponent - paginated table of subscriptions`
-
-#### Services
-
-- `AdminSubscriptionsService - loads and assigns subscriptions`
-
-#### Models / DTOs
-
-- `SubscriptionListItemDto`
-- `AssignSubscriptionRequest - userId, planId, expiresAt`
-
-#### Backend Endpoints Used
-
-- `GET /subscriptions - load paginated subscriptions list`
-- `POST /subscriptions - assign subscription`
-
-#### UI Sections
-
-- Page header "Subscriptions" + "Assign Plan" button
-- Status filter (active, expired, cancelled)
-- Subscriptions table: user, plan, status, usage, expires date, action
-- Assign dialog
-
-#### User Actions
-
-- Filter by plan/status
-- Assign or change a user's subscription plan
-
-#### Rules / Notes
-
-- Admin only
-
----
-
-### Page 17
-
-- Name: `Admin Audit Logs Page`
-- Route: `/app/admin/audit-logs`
-- Type: `list`
-- Layout: `app shell`
-- Summary: `Read-only paginated audit log viewer with filters.`
-
-#### Main Component
-
-- Component Name: `AdminAuditLogsPage`
-- Folder: `src/app/pages/admin/audit-logs`
-- Files:
-  - `audit-logs.page.ts`
-  - `audit-logs.page.html`
-  - `audit-logs.page.scss`
-
-#### Services
-
-- `AdminAuditLogsService - loads audit logs`
-
-#### Models / DTOs
-
-- `AuditLogDto - id, userId, action, entityType, entityId, ipAddress, timestamp, details`
-
-#### Backend Endpoints Used
-
-- `GET /audit-logs - load paginated audit logs`
-
-#### UI Sections
-
-- Page header "Audit Logs"
-- Filters: user search, action dropdown, entity type, date range
-- Logs table: timestamp, user, action, entity type, entity ID, IP address
-- Pagination
-
-#### User Actions
-
-- Filter by user, action, entity, and date range
-- Expand a row to see `details` JSON
-
-#### States
-
-- Loading: `table skeleton`
-
-#### Rules / Notes
-
-- Read-only — no edit, delete, or create actions
-- Admin only
-
----
-
-### Page 18
-
-- Name: `Admin Settings Page`
-- Route: `/app/admin/settings`
-- Type: `settings`
-- Layout: `app shell`
-- Summary: `System-wide key-value settings editor for admin.`
-
-#### Main Component
-
-- Component Name: `AdminSettingsPage`
-- Folder: `src/app/pages/admin/settings`
-- Files:
-  - `settings.page.ts`
-  - `settings.page.html`
-  - `settings.page.scss`
-
-#### Services
-
-- `AdminSettingsService - loads and updates settings`
-
-#### Models / DTOs
-
-- `SettingDto - key, value, description, updatedBy, updatedAt`
-
-#### Backend Endpoints Used
-
-- `GET /settings - load all settings`
-- `PATCH /settings/:key - update a setting`
-
-#### UI Sections
-
-- Settings list: each row has key, description, editable value field, save button
-- Last-updated info per row
-
-#### User Actions
-
-- Edit a setting value
-- Save individual setting
-
-#### Rules / Notes
-
-- Admin only
-- Never display or edit keys that contain sensitive tokens/secrets (filtered by backend)
+- Self-service subscribe/cancel are implemented (change-001). No external gateway checkout — assignment is direct.
 
 ---
 
@@ -1207,189 +661,533 @@ Full user management table for admin. Supports search by name/email, filter by r
 
 ---
 
-### Page 19
+### Page 14
 
 - Name: `Profile Settings Page`
 - Route: `/app/settings/profile`
 - Type: `settings`
-- Layout: `app shell`
-- Summary: `Authenticated user edits their own profile: name, language, avatar.`
+- Layout: `AppShell`
+- Guard: `authGuard`
+- Summary: `Edit profile (name, language) and change password.`
 
 #### Main Component
 
-- Component Name: `ProfileSettingsPage`
+- Component Name: `ProfilePage`
 - Folder: `src/app/pages/settings/profile`
-- Files:
-  - `profile.page.ts`
-  - `profile.page.html`
-  - `profile.page.scss`
+- Files: `profile.page.ts`, `profile.page.html`
 
 #### Services
 
-- `AuthService - reads current user`
-- `UsersService - updates profile`
+- `UsersService / AuthService - update profile, change password`
 
 #### Models / DTOs
 
-- `UserProfileDto`
 - `UpdateProfileRequest - name, languagePreference, avatarUrl`
+- `ChangePasswordRequest - currentPassword, newPassword`
 
 #### Backend Endpoints Used
 
-- `GET /auth/me - load current profile`
-- `PATCH /users/me - save profile changes`
+- `PUT /api/v1/users/me - update profile`
+- `PUT /api/v1/users/me/password - change password`
 
-#### UI Sections
+#### UI Sections / Actions
 
-- Avatar upload (or URL input)
-- Name field
-- Language picker: English / Arabic toggle
-- Save button
-
-#### User Actions
-
-- Edit display name
-- Switch language (triggers i18n + RTL toggle)
-- Upload or set avatar
+- Profile form (name, language), password form. Profile + password are one page (no separate password route).
 
 #### States
 
-- Loading: `form skeleton`
-- Saving: `spinner`
-- Success: `toast "Profile updated"`
+- Loading / saved / error
 
 #### Rules / Notes
 
-- Language change triggers immediate UI direction toggle (LTR ↔ RTL)
-- Avatar max size validated client-side
+- Initial values come from the cached current user (no `GET /users/me` on load).
+
+---
+
+## Module: In-Portal Admin (admin-guarded)
+
+These two admin pages live **inside** the Customer Portal and are gated by `adminGuard`. The full admin
+experience is the separate Admin Panel app.
+
+---
+
+### Page 15
+
+- Name: `Admin Users Page`
+- Route: `/app/admin/users`
+- Type: `admin list`
+- Layout: `AppShell`
+- Guard: `authGuard` + `adminGuard`
+- Summary: `In-portal user management (search, edit, delete).`
+
+#### Main Component
+
+- Component Name: `AdminUsersPage`
+- Folder: `src/app/pages/settings/admin-users`
+- Files: `admin-users.page.ts`, `admin-users.page.html`
+
+#### Services
+
+- `UsersService - list, update, delete`
+
+#### Backend Endpoints Used
+
+- `GET /api/v1/users - paginated list (page, limit, search)`
+- `PUT /api/v1/users/:id - update user`
+- `DELETE /api/v1/users/:id - delete user`
+
+#### UI Sections / Actions
+
+- Users table with search; edit role/name; delete (confirm).
+
+#### Rules / Notes
+
+- Admin only (`adminGuard` redirects non-admins to `/app/projects`).
+
+---
+
+### Page 16
+
+- Name: `Admin Settings Page`
+- Route: `/app/admin/settings`
+- Type: `admin placeholder`
+- Layout: `AppShell`
+- Guard: `authGuard` + `adminGuard`
+- Summary: `Placeholder for in-portal global configuration.`
+
+#### Main Component
+
+- Component Name: `AdminSettingsPage`
+- Folder: `src/app/pages/settings/admin-settings`
+- Files: `admin-settings.page.ts`, `admin-settings.page.html`
+
+#### Backend Endpoints Used
+
+- None yet (placeholder)
+
+#### Rules / Notes
+
+- Currently a stub; system settings management is fully implemented in the Admin Panel app.
+- Known issue: the `AppShell` sidebar links to `/app/dashboards`, which has **no route** and falls through to `/app/projects`.
+
+---
+
+# App: Admin Panel (`roya-ai-dynamo-frontend-admin`)
+
+Layouts: `AuthLayout` and `AppShell` (admin sidebar). Guards: `guestGuard` (login also rejects non-admin
+client-side), `authGuard`, `adminGuard`. All `/app/*` pages require `authGuard` + `adminGuard`.
+
+---
+
+## Module: Auth
+
+---
+
+### Page 17
+
+- Name: `Admin Login Page`
+- Route: `/auth/login`
+- Type: `auth`
+- Layout: `AuthLayout`
+- Guard: `guestGuard`
+- Summary: `Admin sign-in; rejects non-admin accounts.`
+
+#### Main Component
+
+- Component Name: `LoginPage`
+- Folder: `src/app/pages/auth/login`
+- Files: `login.page.ts`, `login.page.html`
+
+#### Services
+
+- `AuthService - login (throws if user role !== admin)`
+
+#### Backend Endpoints Used
+
+- `POST /api/v1/auth/login - authenticate`
+
+#### Rules / Notes
+
+- Client rejects non-admin users before storing the session.
+
+---
+
+### Page 18
+
+- Name: `Admin Forgot Password Page`
+- Route: `/auth/forgot-password`
+- Type: `auth`
+- Layout: `AuthLayout`
+- Guard: `guestGuard`
+- Summary: `Request a password-reset email.`
+
+#### Main Component
+
+- Component Name: `ForgotPasswordPage`
+- Folder: `src/app/pages/auth/forgot-password`
+
+#### Backend Endpoints Used
+
+- `POST /api/v1/auth/forgot-password`
+
+---
+
+### Page 19
+
+- Name: `Admin Reset Password Page`
+- Route: `/auth/reset-password` (`?token=`)
+- Type: `auth`
+- Layout: `AuthLayout`
+- Guard: `guestGuard`
+- Summary: `Set a new password from a reset token.`
+
+#### Main Component
+
+- Component Name: `ResetPasswordPage`
+- Folder: `src/app/pages/auth/reset-password`
+
+#### Backend Endpoints Used
+
+- `POST /api/v1/auth/reset-password`
+
+#### Rules / Notes
+
+- A `RegisterPage` component exists in this repo but is **not routed** (admin accounts are provisioned, not self-registered).
+
+---
+
+## Module: Admin — Overview
 
 ---
 
 ### Page 20
 
-- Name: `Change Password Page`
-- Route: `/app/settings/password`
-- Type: `settings`
-- Layout: `app shell`
-- Summary: `Form to change the current user's password.`
+- Name: `Overview Page`
+- Route: `/app/overview`
+- Type: `dashboard`
+- Layout: `AppShell`
+- Guard: `authGuard` + `adminGuard`
+- Summary: `Platform stats and AI cost chart.`
 
 #### Main Component
 
-- Component Name: `ChangePasswordPage`
-- Folder: `src/app/pages/settings/password`
-- Files:
-  - `change-password.page.ts`
-  - `change-password.page.html`
-  - `change-password.page.scss`
+- Component Name: `OverviewPage`
+- Folder: `src/app/pages/admin/overview`
+- Files: `overview.page.ts`, `overview.page.html`
 
 #### Services
 
-- `UsersService - calls change password endpoint`
-
-#### Models / DTOs
-
-- `ChangePasswordRequest - currentPassword, newPassword`
+- `AdminService - overview stats`
 
 #### Backend Endpoints Used
 
-- `PATCH /users/me/password - change password`
+- `GET /api/v1/admin/overview/stats - clients, projects, dashboards, subscriptions, 30-day AI cost`
 
-#### UI Sections
+#### UI Sections / States
 
-- Current password field
-- New password field with strength indicator
-- Confirm new password field
-- Save button
-
-#### States
-
-- Saving: `spinner`
-- Error: `"Current password is incorrect"`
-- Success: `toast + clear form`
+- Stat cards + AI cost chart; loading / error.
 
 ---
 
-## Module: Subscription (User-Facing)
+## Module: Admin — Client Management
 
 ---
 
 ### Page 21
 
-- Name: `My Subscription Page`
+- Name: `Clients Page`
+- Route: `/app/clients`
+- Type: `admin CRUD`
+- Layout: `AppShell`
+- Guard: `authGuard` + `adminGuard`
+- Summary: `Full client (user) management: CRUD + suspend/reactivate.`
+
+#### Main Component
+
+- Component Name: `ClientsPage`
+- Folder: `src/app/pages/admin/clients`
+- Files: `clients.page.ts`, `clients.page.html`
+
+#### Services
+
+- `ClientsService - list, create, update, suspend, reactivate, delete`
+
+#### Models / DTOs
+
+- `User`, `CreateUserRequest`, `UpdateUserRequest`
+
+#### Backend Endpoints Used
+
+- `GET /api/v1/users - paginated list (filters)`
+- `POST /api/v1/users - create user`
+- `PUT /api/v1/users/:id - update user`
+- `PATCH /api/v1/users/:id/suspend - suspend`
+- `PATCH /api/v1/users/:id/reactivate - reactivate`
+- `DELETE /api/v1/users/:id - delete`
+
+#### UI Sections / Actions
+
+- Users table with filters; create/edit dialog; suspend/reactivate toggle; delete confirm.
+
+#### States
+
+- Loading / empty / error
+
+---
+
+## Module: Admin — Subscriptions & Plans
+
+---
+
+### Page 22
+
+- Name: `Subscriptions Page`
 - Route: `/app/subscriptions`
-- Type: `details + list`
-- Layout: `app shell`
-- Summary: `Shows the current user's active plan, usage, and limits; lists available plans; lets the user subscribe to a new plan or cancel their current subscription.`
+- Type: `admin CRUD (tabs)`
+- Layout: `AppShell`
+- Guard: `authGuard` + `adminGuard`
+- Summary: `Manage user subscriptions and subscription plans (two tabs).`
 
 #### Main Component
 
 - Component Name: `SubscriptionsPage`
-- Folder: `src/app/pages/subscriptions`
-- Files:
-  - `subscriptions.page.ts`
+- Folder: `src/app/pages/admin/subscriptions`
+- Files: `subscriptions.page.ts`, `subscriptions.page.html`
 
 #### Services
 
-- `SubscriptionsService - loads plans, loads current subscription, self-subscribe, self-cancel`
+- `SubscriptionsAdminService - subscriptions + plans CRUD`
+- `ClientsService/UsersService - user picker`
 
 #### Models / DTOs
 
-- `SubscriptionPlan - _id, name, description, price, billingCycle, currency, limits`
-- `UserSubscription - planId, plan, status, usageStats (dashboardsCount, filesCount, dataUpdates)`
+- `SubscriptionPlan`, `UserSubscription`, `CreatePlanRequest`, `CreateSubscriptionRequest`, `ChangeSubscriptionRequest`
 
 #### Backend Endpoints Used
 
-- `GET /subscriptions/plans - load available active plans`
-- `GET /subscriptions/me - load current subscription and usage`
-- `POST /subscriptions/subscribe - subscribe to a selected plan (self-service)` *(added change-001)*
-- `POST /subscriptions/cancel - cancel current subscription (self-service)` *(added change-001)*
+- `GET /api/v1/users - client picker`
+- `GET /api/v1/subscriptions - list user subscriptions`
+- `POST /api/v1/subscriptions - create`
+- `PUT /api/v1/subscriptions/:id - update`
+- `POST /api/v1/subscriptions/change - change a user's plan`
+- `PATCH /api/v1/subscriptions/:userId/cancel - cancel a user's subscription`
+- `GET /api/v1/subscriptions/plans/all - all plans (incl. inactive)`
+- `POST /api/v1/subscriptions/plans - create plan`
+- `PUT /api/v1/subscriptions/plans/:id - update plan`
+- `DELETE /api/v1/subscriptions/plans/:id - delete plan`
 
-#### UI Sections
+#### UI Sections / Actions
 
-- **Current plan card**: plan name, status badge, usage meters (dashboards, data files, data updates vs limits), "Cancel Subscription" button (shown when status is active)
-- **Available plans grid**: one card per active plan showing price, billing cycle, feature limits, and "Upgrade" button (hidden for current plan)
-
-#### User Actions
-
-- Click "Upgrade" on a plan card → calls `POST /subscribe` → redirects to `redirectUrl`
-- Click "Cancel Subscription" → calls `POST /cancel` → refreshes current subscription display
+- Tab 1: user subscriptions table (assign/change/cancel). Tab 2: plans table (CRUD).
 
 #### States
 
-- Loading: skeleton while plans and current subscription load
-- Empty: no plans returned (unlikely; handled gracefully)
-- Error: toast shown on subscribe/cancel failure
+- Loading / empty / error
+
+---
+
+## Module: Admin — Payments
+
+---
+
+### Page 23
+
+- Name: `Payments Page`
+- Route: `/app/payments`
+- Type: `admin ledger`
+- Layout: `AppShell`
+- Guard: `authGuard` + `adminGuard`
+- Summary: `Manual payment ledger: record, filter, edit, delete payments.`
+
+#### Main Component
+
+- Component Name: `PaymentsPage`
+- Folder: `src/app/pages/admin/payments`
+- Files: `payments.page.ts`, `payments.page.html`
+
+#### Services
+
+- `PaymentsService - list, create, update, delete`
+
+#### Models / DTOs
+
+- `Payment`, `CreatePaymentRequest`, `UpdatePaymentRequest`, `ListPaymentsQuery`
+
+#### Backend Endpoints Used
+
+- `GET /api/v1/payments - filterable list (userId, status, from, to)`
+- `POST /api/v1/payments - record payment`
+- `PATCH /api/v1/payments/:id - update payment`
+- `DELETE /api/v1/payments/:id - delete payment`
+
+#### UI Sections / Actions
+
+- Filter bar, payments table, create/edit dialog, delete confirm.
 
 #### Rules / Notes
 
-- `POST /subscribe` response includes `{ redirectUrl }` — currently returns `/subscriptions` (no real payment checkout); future change will wire Stripe checkout
-- Cancel button visible only when `currentSub.status === 'active'`
-- If user has no subscription, the current plan section is hidden; only the plans grid is shown
+- Manual ledger only — there is no payment-gateway checkout (the `PAYMENT_PROVIDER` is a stub).
+
+---
+
+## Module: Admin — Audit Logs
+
+---
+
+### Page 24
+
+- Name: `Audit Log Page`
+- Route: `/app/audit`
+- Type: `admin list`
+- Layout: `AppShell`
+- Guard: `authGuard` + `adminGuard`
+- Summary: `Searchable, read-only audit trail of platform actions.`
+
+#### Main Component
+
+- Component Name: `AuditPage`
+- Folder: `src/app/pages/admin/audit`
+- Files: `audit.page.ts`, `audit.page.html`
+
+#### Services
+
+- `AuditService - list`
+
+#### Backend Endpoints Used
+
+- `GET /api/v1/audit - filterable list (userId, action, entityType, entityId, from, to)`
+
+#### UI Sections / States
+
+- Filter bar + audit table (actor, action, entity, time); loading / empty / error.
+
+#### Rules / Notes
+
+- Read-only; audit entries are immutable.
+
+---
+
+## Module: Admin — AI Logs
+
+---
+
+### Page 25
+
+- Name: `AI Logs Page`
+- Route: `/app/ai-logs`
+- Type: `admin list + detail`
+- Layout: `AppShell`
+- Guard: `authGuard` + `adminGuard`
+- Summary: `AI usage logs, cost summary, and per-request detail.`
+
+#### Main Component
+
+- Component Name: `AiLogsPage`
+- Folder: `src/app/pages/admin/ai-logs`
+- Files: `ai-logs.page.ts`, `ai-logs.page.html`
+
+#### Services
+
+- `AiLogsService - cost summary, list, detail`
+
+#### Models / DTOs
+
+- `AiLog - provider, model, tokens, costUsd, durationMs, status`
+
+#### Backend Endpoints Used
+
+- `GET /api/v1/ai-logs/cost-summary - aggregated cost over a period`
+- `GET /api/v1/ai-logs - filterable list (provider, model, status, from, to)`
+- `GET /api/v1/ai-logs/:id - single log detail`
+
+#### UI Sections / Actions
+
+- Cost summary cards/chart, logs table, detail drawer.
+
+#### States
+
+- Loading / empty / error
+
+---
+
+## Module: Admin — System Settings (profile)
+
+---
+
+### Page 26
+
+- Name: `Admin Profile Page`
+- Route: `/app/settings/profile`
+- Type: `settings`
+- Layout: `AppShell`
+- Guard: `authGuard` + `adminGuard`
+- Summary: `Edit admin profile (name, language) and change password.`
+
+#### Main Component
+
+- Component Name: `ProfilePage`
+- Folder: `src/app/pages/settings/profile`
+- Files: `profile.page.ts`, `profile.page.html`
+
+#### Services
+
+- `UsersService - update profile, change password`
+
+#### Backend Endpoints Used
+
+- `PUT /api/v1/users/me - update profile`
+- `PUT /api/v1/users/me/password - change password`
+
+#### Rules / Notes
+
+- Initializes from the cached current user (no `GET /users/me` on load).
+- Global system settings (`GET/PATCH /api/v1/settings`) are not yet wired to a dedicated admin settings page.
 
 ---
 
 ## Page Route Map Summary
 
-| # | Page Name | Route | Auth |
-|---|---|---|---|
-| 1 | Login Page | `/auth/login` | public |
-| 2 | Register Page | `/auth/register` | public |
-| 3 | Forgot Password Page | `/auth/forgot-password` | public |
-| 4 | Reset Password Page | `/auth/reset-password` | public |
-| 5 | Projects List Page | `/app/projects` | editor, admin |
-| 6 | Project Detail Page | `/app/projects/:id` | editor, admin |
-| 7 | Dashboard Viewer Page | `/app/dashboards/:id` | editor, admin, viewer (via token) |
-| 8 | Dashboard Generating Page | `/app/dashboards/:id/generating` | editor, admin |
-| 9 | Widget Edit Page | `/app/dashboards/:id/widgets/:widgetId/edit` | editor, admin |
-| 10 | Data Library Page | `/app/data` | editor, admin |
-| 11 | Column Editor Page | `/app/data/:fileId` | editor, admin |
-| 12 | Shared Dashboard Page | `/shared/:token` | public (token-gated) |
-| 13 | Notifications Panel | (slide panel in shell) | authenticated |
-| 14 | Admin Users List Page | `/app/admin/users` | admin |
-| 15 | Admin User Edit Page | `/app/admin/users/:id` | admin |
-| 16 | Admin Subscriptions Page | `/app/admin/subscriptions` | admin |
-| 17 | Admin Audit Logs Page | `/app/admin/audit-logs` | admin |
-| 18 | Admin Settings Page | `/app/admin/settings` | admin |
-| 19 | Profile Settings Page | `/app/settings/profile` | authenticated |
-| 20 | Change Password Page | `/app/settings/password` | authenticated |
-| 21 | My Subscription Page | `/app/subscriptions` | authenticated |
+### Customer Portal (`roya-ai-dynamo-frontend`)
+
+| # | Page | Route | Layout | Guard |
+|---|------|-------|--------|-------|
+| 1 | Login | `/auth/login` | AuthLayout | guestGuard |
+| 2 | Register | `/auth/register` | AuthLayout | guestGuard |
+| 3 | Forgot Password | `/auth/forgot-password` | AuthLayout | guestGuard |
+| 4 | Reset Password | `/auth/reset-password` | AuthLayout | guestGuard |
+| 5 | Shared Dashboard Viewer | `/shared/:token` | none | none (token) |
+| 6 | Projects List | `/app/projects` | AppShell | authGuard |
+| 7 | Project Detail | `/app/projects/:id` | AppShell | authGuard |
+| 8 | Dashboard Generating | `/app/dashboards/:id/generating` | AppShell | authGuard |
+| 9 | Dashboard Viewer | `/app/dashboards/:id` | AppShell | authGuard |
+| 10 | Data Files List | `/app/data` | AppShell | authGuard |
+| 11 | Upload Wizard | `/app/data/upload` | AppShell | authGuard |
+| 12 | Notifications | `/app/notifications` | AppShell | authGuard |
+| 13 | Subscriptions | `/app/subscriptions` | AppShell | authGuard |
+| 14 | Profile Settings | `/app/settings/profile` | AppShell | authGuard |
+| 15 | Admin Users | `/app/admin/users` | AppShell | authGuard + adminGuard |
+| 16 | Admin Settings | `/app/admin/settings` | AppShell | authGuard + adminGuard |
+
+### Admin Panel (`roya-ai-dynamo-frontend-admin`)
+
+| # | Page | Route | Layout | Guard |
+|---|------|-------|--------|-------|
+| 17 | Login | `/auth/login` | AuthLayout | guestGuard |
+| 18 | Forgot Password | `/auth/forgot-password` | AuthLayout | guestGuard |
+| 19 | Reset Password | `/auth/reset-password` | AuthLayout | guestGuard |
+| 20 | Overview | `/app/overview` | AppShell | authGuard + adminGuard |
+| 21 | Clients | `/app/clients` | AppShell | authGuard + adminGuard |
+| 22 | Subscriptions & Plans | `/app/subscriptions` | AppShell | authGuard + adminGuard |
+| 23 | Payments | `/app/payments` | AppShell | authGuard + adminGuard |
+| 24 | Audit Log | `/app/audit` | AppShell | authGuard + adminGuard |
+| 25 | AI Logs | `/app/ai-logs` | AppShell | authGuard + adminGuard |
+| 26 | Profile | `/app/settings/profile` | AppShell | authGuard + adminGuard |
+
+---
+
+## Known Frontend Gaps (vs. routes/links)
+
+- Customer `AppShell` sidebar links to `/app/dashboards`, which has **no route** (redirects to `/app/projects`).
+- Customer in-portal `Admin Settings` page is a placeholder.
+- Admin Panel `RegisterPage` component exists but is not routed.
+- Dashboard PDF export is requested from the viewer, but the backend PDF worker is not implemented yet.
