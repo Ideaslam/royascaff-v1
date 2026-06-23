@@ -3124,6 +3124,13 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 
 **Change:** Response now includes `redirectTo: '/onboarding'` and workspace context in the JWT/user object.
 
+### POST /api/v1/workspaces
+
+- **Auth:** JWT required
+- **Body:** `{ name: string }`
+- **Description:** Create a new workspace where the user is the owner/creator. Enforces maximum of 10 owned workspaces.
+- **Response:** `WorkspaceDto`
+
 ---
 
 ### GET /api/v1/workspaces/me

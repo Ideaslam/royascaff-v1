@@ -91,6 +91,8 @@ Stores user accounts with authentication credentials, role, profile, and languag
   languagePreference: String,
   refreshTokenHash: String | null,
   lastLoginAt: Date | null,
+  currentWorkspaceId: ObjectId | null,
+  defaultWorkspaceId: ObjectId | null,
   createdAt: Date,
   updatedAt: Date
 }
@@ -112,6 +114,8 @@ Stores user accounts with authentication credentials, role, profile, and languag
 | `languagePreference` | `String` | yes | Enum: `en`, `ar` — default `en` |
 | `refreshTokenHash` | `String` | no | Hashed refresh token for revocation support |
 | `lastLoginAt` | `Date` | no | Updated on each successful login |
+| `currentWorkspaceId` | `ObjectId` | no | Active workspace ID for session scoping |
+| `defaultWorkspaceId` | `ObjectId` | no | Set as default workspace for auto-routing on login |
 | `createdAt` | `Date` | yes | Mongoose timestamps |
 | `updatedAt` | `Date` | yes | Mongoose timestamps |
 

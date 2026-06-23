@@ -1856,7 +1856,7 @@ The following are documented as implemented-but-incomplete relative to the inten
 
 | Method | Signature | Side Effects |
 |--------|-----------|-------------|
-| `createWorkspace` | `(userId, name) → WorkspaceDto` | Creates Workspace doc, WorkspaceMembership (workspace-owner), WorkspaceBranding (empty), OnboardingProgress (step 1 false). Audit log. |
+| `createWorkspace` | `(userId, name) → WorkspaceDto` | Creates Workspace doc, WorkspaceMembership (workspace-owner), WorkspaceBranding (empty), OnboardingProgress (step 1 false). Audit log. Enforces maximum limit of 10 owned workspaces per user. |
 | `getWorkspace` | `(workspaceId) → WorkspaceDto` | — |
 | `updateWorkspace` | `(workspaceId, dto, userId) → WorkspaceDto` | Updates name/slug. Audit log. |
 | `checkSlugAvailability` | `(slug) → { available: boolean }` | DB lookup |

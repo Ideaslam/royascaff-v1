@@ -921,6 +921,7 @@ Add `onboardingGuard`:
 interface UserProfile {
   // ... existing fields ...
   currentWorkspaceId: string | null;
+  defaultWorkspaceId: string | null;
   workspaceSlug: string | null;
   workspaceRole: 'workspace-owner' | 'workspace-admin' | 'workspace-member' | null;
 }
