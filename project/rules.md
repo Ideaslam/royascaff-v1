@@ -41,6 +41,7 @@ When AI builds backend or frontend code:
 - JWT tokens are the sole auth mechanism for API access
 - OAuth is an additional login path, not a replacement for JWT
 - All auth-related secrets (JWT secret, OAuth client secrets) must live in environment variables only
+- **Two-layer roles:** system role (`users.role` / `UserRole`) vs workspace role (`workspace_memberships.role` / `WorkspaceRole`). See `project/plan/roles-and-authorization.md`. Never use system role for workspace authorization.
 
 ---
 

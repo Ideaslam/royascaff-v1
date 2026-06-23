@@ -10,6 +10,7 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 | 002 | 2026-06-23 | high | backend/subscriptions, customer-portal | PayUp called before invoice payment step | DONE | [bug-002-invoice-before-payup.md](./bug-002-invoice-before-payup.md) |
 | 003 | 2026-06-23 | medium | customer-portal/subscriptions | Cancelled subscription still shown as current plan | DONE | [bug-003-cancelled-plan-shows-current.md](./bug-003-cancelled-plan-shows-current.md) |
 | 004 | 2026-06-23 | medium | backend/workspace, customer-portal/settings | Workspace logo URL and members list display | DONE | [bug-004-workspace-logo-members-display.md](./bug-004-workspace-logo-members-display.md) |
+| 005 | 2026-06-24 | high | backend/workspace | Workspace invite 403 + pending invitations not listed | DONE | [bug-005-workspace-invite-no-context.md](./bug-005-workspace-invite-no-context.md) |
 
 ---
 
@@ -35,4 +36,4 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 ## Next Bug Number
 
-**Next**: 005
+**Next**: 006
