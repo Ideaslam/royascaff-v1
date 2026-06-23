@@ -807,3 +807,169 @@ experience is the separate Admin Panel app.
 - Customer `AppShell` sidebar links to `/app/dashboards`, which has **no route** (redirects to `/app/projects`).
 - Customer in-portal `Admin Settings` page is a placeholder.
 - Dashboard PDF export is requested from the viewer, but the backend PDF worker is not implemented yet.
+
+---
+
+## change-006: New Customer Portal Pages and Route Changes
+
+---
+
+### New Page: Onboarding Wizard
+
+- **Route:** `/onboarding` (outside of `/app/*` — no AppShell)
+- **File:** `pages/onboarding/onboarding.page.ts`
+- **Guard:** `authGuard` only (not `onboardingGuard` — this IS the onboarding page)
+- **Layout:** Full-page (own layout, no AppShell sidebar)
+
+#### Layout (Cisco-style two-column wizard)
+- Left column: step number + title, form content for the current step
+- Right column: illustration (SVG or lottie) + contextual description text for the step
+- Top: numbered step progress indicator (4 circles, connecting lines)
+- Bottom: Back / Skip (when applicable) / Continue buttons
+- Brand colors: `#5922ea` primary, `#ff6043` accent, white background
+
+#### Steps
+
+**Step 1: Create Workspace (mandatory)**
+- Input: Workspace Name (required)
+- Slug: auto-generated from name, displayed as read-only initially, editable with inline availability check (debounced 400ms)
+- Continue → calls `PATCH /api/v1/onboarding/progress { workspaceCreated: true }` after workspace is created
+- Cannot skip
+
+**Step 2: Branding (optional)**
+- Logo upload: drag-drop + click. Preview thumbnail.
+- Color template picker: palette cards (primary + 5 chart color swatches). Radio-select.
+- Skip → `PATCH /api/v1/onboarding/progress { brandingDone: true }`
+
+**Step 3: Invite Team (optional)**
+- Email input + role dropdown (workspace-admin / workspace-member)
+- "Add another" to build a list. Submit all invites on Continue.
+- Skip → `PATCH /api/v1/onboarding/progress { invitesDone: true }`
+
+**Step 4: Try It Out (optional)**
+- Tips layout (no form):
+  - "Upload your first file" → link to `/app/data/upload`
+  - "Use a sample CSV" → button that calls a seed endpoint then navigates to column definition
+  - "Create a dashboard" → link to `/app/projects`
+- Continue/Finish → `PATCH /api/v1/onboarding/progress { experimentDone: true }` → navigate to `/app/projects`
+
+---
+
+### New Page: Workspace Settings
+
+- **Route:** `/app/settings/workspace`
+- **File:** `pages/settings/workspace/workspace.page.ts`
+- **Guard:** `authGuard`, `onboardingGuard`
+
+#### Content
+- Workspace name field (editable)
+- Workspace slug (editable + inline availability check)
+- Save button → `PATCH /api/v1/workspaces/:id`
+- Danger Zone: "Delete Workspace" — opens confirmation dialog (user must type workspace name), then `DELETE /api/v1/workspaces/:id`
+
+---
+
+### New Page: Members & Invitations
+
+- **Route:** `/app/settings/members`
+- **File:** `pages/settings/members/members.page.ts`
+- **Guard:** `authGuard`, `onboardingGuard`
+
+#### Content
+- Current members table: Name, Email, Role, Joined, Actions (change role, remove — owner-only columns)
+- Pending invitations table: Email, Role, Sent Date, Status, Actions (resend, revoke)
+- Invite form: email input + role select + "Invite" button → `POST /api/v1/workspaces/:id/invitations`
+
+---
+
+### New Page: Workspace Branding
+
+- **Route:** `/app/settings/branding`
+- **File:** `pages/settings/branding/branding.page.ts`
+- **Guard:** `authGuard`, `onboardingGuard`
+
+#### Content
+- Logo section: current logo preview, upload button, delete logo button
+- Color template section: palette card grid (active templates only). Selected state highlighted. Apply button.
+
+---
+
+### Modified: AppShell (`layouts/app-shell/app-shell.ts`)
+
+1. **Workspace Switcher** (topbar): Dropdown showing workspace name + role. Lists all workspaces. "Create new workspace" option. Switch calls `POST /api/v1/workspaces/switch` then reloads.
+2. **Sidebar nav additions:**
+   - Workspace Settings → `/app/settings/workspace`
+   - Members → `/app/settings/members`
+   - Branding → `/app/settings/branding`
+
+---
+
+### Modified: Auth Guard (`core/guards/auth.guard.ts`)
+
+Add `onboardingGuard`:
+- Reads `currentUser()` from AuthService
+- Calls `GET /api/v1/onboarding/progress`
+- If `workspaceCreated === false` → redirects to `/onboarding`
+- Otherwise → `true`
+- All `/app/*` routes use `[authGuard, onboardingGuard]`
+
+---
+
+### Modified: Auth Models (`core/models/auth.models.ts`)
+
+```typescript
+interface UserProfile {
+  // ... existing fields ...
+  currentWorkspaceId: string | null;
+  workspaceSlug: string | null;
+  workspaceRole: 'workspace-owner' | 'workspace-admin' | 'workspace-member' | null;
+}
+
+interface WorkspaceInfo {
+  id: string;
+  name: string;
+  slug: string;
+  role: string;
+}
+
+interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: UserProfile;
+  redirectTo?: string;
+}
+```
+
+---
+
+### Modified: Auth Service (`core/services/auth.service.ts`)
+
+`register()` pipe: after `storeSession()`, check `res.data.redirectTo` and navigate to it (replaces default `/app/projects` navigation).
+
+Add `storeWorkspaceContext()` that stores/updates workspace fields in the stored `user` object.
+
+---
+
+### New Service: WorkspaceService (`core/services/workspace.service.ts`)
+
+HTTP wrapper for all workspace API endpoints:
+- `getMyWorkspaces()` → `GET /workspaces/me`
+- `getWorkspace(id)` → `GET /workspaces/:id`
+- `updateWorkspace(id, dto)` → `PATCH /workspaces/:id`
+- `checkSlugAvailability(slug)` → `GET /workspaces/slug-availability?slug=x`
+- `switchWorkspace(workspaceId)` → `POST /workspaces/switch`
+- `deleteWorkspace(id, confirmName)` → `DELETE /workspaces/:id`
+- `getBranding(id)` → `GET /workspaces/:id/branding`
+- `uploadLogo(id, file)` → `POST /workspaces/:id/branding/logo`
+- `deleteLogo(id)` → `DELETE /workspaces/:id/branding/logo`
+- `selectColorTemplate(id, templateId)` → `PATCH /workspaces/:id/branding/color-template`
+- `getOnboardingProgress()` → `GET /onboarding/progress`
+- `updateOnboardingProgress(dto)` → `PATCH /onboarding/progress`
+- `getColorTemplates(activeOnly?)` → `GET /color-templates?activeOnly=true`
+
+---
+
+### New Service: WorkspaceMembersService (`core/services/workspace-members.service.ts`)
+
+HTTP wrapper for member + invitation endpoints.
+

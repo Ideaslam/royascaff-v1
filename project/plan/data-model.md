@@ -1459,3 +1459,181 @@ Then add in Phase 2:
 
 - `sharelinks` — when sharing feature is implemented
 - `subscriptionplans`, `usersubscriptions`, `payments` — when subscription and billing is implemented
+---
+
+## change-006: Workspace & Onboarding — New and Modified Entities
+
+### Modified: users
+
+Add field:
+
+| Field | Type | Required | Default | Notes |
+|-------|------|----------|---------|-------|
+| `currentWorkspaceId` | `ObjectId` (ref: Workspace) | no | `null` | The workspace the user is currently active in; set on registration, updated on switch |
+
+### New: workspaces
+
+| Field | Type | Required | Default | Notes |
+|-------|------|----------|---------|-------|
+| `_id` | ObjectId | auto | — | |
+| `slug` | string | yes | — | URL-safe, unique. Pattern: `{word}-{word}-{4digits}`. Unique index |
+| `name` | string | yes | — | Human display name |
+| `ownerId` | ObjectId (ref: User) | yes | — | User who created the workspace |
+| `status` | WorkspaceStatus | yes | `active` | `active` / `suspended` / `deleted` |
+| `createdAt` | Date | auto | — | |
+| `updatedAt` | Date | auto | — | |
+
+Indexes: unique `{ slug: 1 }`, `{ ownerId: 1 }`, `{ status: 1 }`
+
+### New: workspace_memberships
+
+| Field | Type | Required | Default | Notes |
+|-------|------|----------|---------|-------|
+| `_id` | ObjectId | auto | — | |
+| `workspaceId` | ObjectId (ref: Workspace) | yes | — | |
+| `userId` | ObjectId (ref: User) | yes | — | |
+| `role` | WorkspaceRole | yes | — | `workspace-owner` / `workspace-admin` / `workspace-member` |
+| `joinedAt` | Date | yes | now | |
+| `createdAt` | Date | auto | — | |
+| `updatedAt` | Date | auto | — | |
+
+Indexes: unique `{ workspaceId: 1, userId: 1 }`, `{ userId: 1 }`
+
+### New: workspace_invitations
+
+| Field | Type | Required | Default | Notes |
+|-------|------|----------|---------|-------|
+| `_id` | ObjectId | auto | — | |
+| `workspaceId` | ObjectId (ref: Workspace) | yes | — | |
+| `invitedByUserId` | ObjectId (ref: User) | yes | — | |
+| `email` | string | yes | — | Email address invited (lowercase) |
+| `role` | WorkspaceRole | yes | — | Role to assign on acceptance |
+| `token` | string | yes | — | Unique secure token; indexed for accept lookup |
+| `status` | InvitationStatus | yes | `pending` | `pending` / `accepted` / `revoked` / `expired` |
+| `expiresAt` | Date | yes | — | 7 days after creation |
+| `acceptedAt` | Date | no | `null` | |
+| `createdAt` | Date | auto | — | |
+
+Indexes: unique `{ token: 1 }`, `{ workspaceId: 1, email: 1 }`, `{ expiresAt: 1 }` (TTL optional)
+
+### New: workspace_brandings
+
+| Field | Type | Required | Default | Notes |
+|-------|------|----------|---------|-------|
+| `_id` | ObjectId | auto | — | |
+| `workspaceId` | ObjectId (ref: Workspace) | yes | — | Unique per workspace |
+| `logoUrl` | string | no | `null` | R2 storage URL |
+| `logoStorageKey` | string | no | `null` | R2 storage key for deletion |
+| `colorTemplateId` | ObjectId (ref: ColorTemplate) | no | `null` | Selected palette |
+| `createdAt` | Date | auto | — | |
+| `updatedAt` | Date | auto | — | |
+
+Indexes: unique `{ workspaceId: 1 }`
+
+### New: onboarding_progress
+
+| Field | Type | Required | Default | Notes |
+|-------|------|----------|---------|-------|
+| `_id` | ObjectId | auto | — | |
+| `workspaceId` | ObjectId (ref: Workspace) | yes | — | Unique per workspace |
+| `userId` | ObjectId (ref: User) | yes | — | The owner who created the workspace |
+| `workspaceCreated` | boolean | yes | `false` | Step 1 complete |
+| `brandingDone` | boolean | yes | `false` | Step 2 done or skipped |
+| `invitesDone` | boolean | yes | `false` | Step 3 done or skipped |
+| `experimentDone` | boolean | yes | `false` | Step 4 done or skipped |
+| `completedAt` | Date | no | `null` | When the wizard was fully dismissed |
+| `createdAt` | Date | auto | — | |
+| `updatedAt` | Date | auto | — | |
+
+Indexes: unique `{ workspaceId: 1 }`, `{ userId: 1 }`
+
+### New: color_templates
+
+| Field | Type | Required | Default | Notes |
+|-------|------|----------|---------|-------|
+| `_id` | ObjectId | auto | — | |
+| `name` | string | yes | — | Display name (e.g. "Ocean Blue") |
+| `primary` | string | yes | — | Hex color (e.g. `#1a73e8`) |
+| `secondary` | string | yes | — | Hex color |
+| `accent` | string | yes | — | Hex color |
+| `chartColors` | string[5] | yes | — | Array of 5 hex colors for chart series |
+| `isActive` | boolean | yes | `true` | Hidden from workspace branding selection if false |
+| `createdAt` | Date | auto | — | |
+| `updatedAt` | Date | auto | — | |
+
+Indexes: `{ isActive: 1 }`
+
+### Modified: usersubscriptions
+
+Replace `userId` with `workspaceId`:
+
+| Field | Change | Notes |
+|-------|--------|-------|
+| `userId` | **removed** | — |
+| `workspaceId` | **added** (ObjectId, ref: Workspace, unique) | Billing is per-workspace; unique index enforces one active subscription per workspace |
+
+### Modified: payments
+
+Add field:
+
+| Field | Type | Required | Default | Notes |
+|-------|------|----------|---------|-------|
+| `workspaceId` | ObjectId (ref: Workspace) | no | `null` | Added for workspace billing context (nullable for legacy records) |
+
+### Dynamic workspace-prefixed collections
+
+The following collections previously used static names. With change-006 they use the pattern `ws_{workspaceSlug}_{suffix}`.
+
+| Previous name | New pattern | Notes |
+|--------------|-------------|-------|
+| `csvfiles` | `ws_{slug}_csvfiles` | `ownerId` field retained for creation tracking |
+| `columnmetadata` | `ws_{slug}_columnmetadata` | Same fields |
+| `dashboards` | `ws_{slug}_dashboards` | `projectId` field retained |
+| `chartwidgets` | `ws_{slug}_chartwidgets` | Same fields |
+| `chartdatacache` | `ws_{slug}_chartdatacache` | Same fields |
+| `dashboarddatasources` | `ws_{slug}_dashboarddatasources` | Same fields |
+
+**Pattern:** Repositories that own these collections accept a `workspaceSlug: string` parameter and resolve the collection name via:
+```typescript
+private getModel(workspaceSlug: string): Model<T> {
+  const collectionName = `ws_${workspaceSlug}_${this.suffix}`;
+  if (this.connection.models[collectionName]) {
+    return this.connection.models[collectionName] as Model<T>;
+  }
+  return this.connection.model<T>(collectionName, this.schema);
+}
+```
+
+### New enums
+
+```
+WorkspaceStatus = ["active", "suspended", "deleted"]
+WorkspaceRole = ["workspace-owner", "workspace-admin", "workspace-member"]
+InvitationStatus = ["pending", "accepted", "revoked", "expired"]
+```
+
+### JWT Payload (modified)
+
+```typescript
+interface JwtPayload {
+  sub: string;           // userId
+  email: string;
+  role: UserRole;        // system role: admin / editor / viewer
+  currentWorkspaceId: string;
+  workspaceSlug: string;
+  workspaceRole: WorkspaceRole;
+}
+```
+
+### Request User (CurrentUser) — modified
+
+```typescript
+interface RequestUser {
+  id: string;
+  email: string;
+  role: UserRole;
+  currentWorkspaceId: string;
+  workspaceSlug: string;
+  workspaceRole: WorkspaceRole;
+}
+```

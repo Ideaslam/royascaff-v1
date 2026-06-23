@@ -3111,3 +3111,259 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 | Admin | 1 |
 | AI Logs | 3 |
 | **Total** | **85** |
+
+---
+
+## change-006: New and Modified Endpoints
+
+---
+
+## Module: Workspace
+
+### Modified: POST /api/v1/auth/register
+
+**Change:** Response now includes `redirectTo: '/onboarding'` and workspace context in the JWT/user object.
+
+---
+
+### GET /api/v1/workspaces/me
+
+- **Auth:** JWT required
+- **Description:** List all workspaces the authenticated user belongs to
+- **Response:** `WorkspaceDto[]`
+
+---
+
+### GET /api/v1/workspaces/slug-availability
+
+- **Auth:** JWT required
+- **Query:** `?slug=horizon-data-4821`
+- **Description:** Check if a workspace slug is available
+- **Response:** `{ available: boolean }`
+
+---
+
+### GET /api/v1/workspaces/:id
+
+- **Auth:** JWT required (workspace member)
+- **Description:** Get workspace details
+- **Response:** `WorkspaceDto`
+
+---
+
+### PATCH /api/v1/workspaces/:id
+
+- **Auth:** JWT required (workspace-owner or workspace-admin)
+- **Body:** `{ name?, slug? }`
+- **Description:** Update workspace name or slug
+- **Response:** `WorkspaceDto`
+
+---
+
+### DELETE /api/v1/workspaces/:id
+
+- **Auth:** JWT required (workspace-owner only)
+- **Body:** `{ confirmName: string }` — must match workspace name
+- **Description:** Delete workspace and all its data
+- **Response:** `204 No Content`
+
+---
+
+### POST /api/v1/workspaces/switch
+
+- **Auth:** JWT required
+- **Body:** `{ workspaceId: string }`
+- **Description:** Switch active workspace. Re-issues tokens with new workspace context.
+- **Response:** `AuthResponseDto` (new tokens + updated user)
+
+---
+
+### GET /api/v1/workspaces/:id/members
+
+- **Auth:** JWT required (workspace member)
+- **Description:** List workspace members
+- **Response:** `MemberDto[]`
+
+---
+
+### DELETE /api/v1/workspaces/:id/members/:userId
+
+- **Auth:** JWT required (workspace-owner or workspace-admin)
+- **Description:** Remove a member from the workspace
+- **Response:** `204 No Content`
+
+---
+
+### PATCH /api/v1/workspaces/:id/members/:userId/role
+
+- **Auth:** JWT required (workspace-owner or workspace-admin)
+- **Body:** `{ role: WorkspaceRole }`
+- **Description:** Change a member's workspace role
+- **Response:** `MemberDto`
+
+---
+
+### POST /api/v1/workspaces/:id/invitations
+
+- **Auth:** JWT required (workspace-owner or workspace-admin)
+- **Body:** `{ email: string, role: WorkspaceRole }`
+- **Description:** Invite a user by email to join the workspace. Sends invitation email.
+- **Response:** `InvitationDto`
+
+---
+
+### GET /api/v1/workspaces/:id/invitations
+
+- **Auth:** JWT required (workspace member)
+- **Description:** List pending invitations for the workspace
+- **Response:** `InvitationDto[]`
+
+---
+
+### POST /api/v1/workspaces/invitations/:invitationId/resend
+
+- **Auth:** JWT required (workspace-owner or workspace-admin)
+- **Description:** Resend invitation email
+- **Response:** `{ message: string }`
+
+---
+
+### DELETE /api/v1/workspaces/invitations/:invitationId
+
+- **Auth:** JWT required (workspace-owner or workspace-admin)
+- **Description:** Revoke invitation
+- **Response:** `204 No Content`
+
+---
+
+### GET /api/v1/workspaces/invitation/accept
+
+- **Auth:** Public
+- **Query:** `?token=<invitation-token>`
+- **Description:** Accept a workspace invitation. Creates WorkspaceMembership. Redirects to portal login (or dashboard if already authenticated).
+- **Response:** `{ workspaceId: string, workspaceName: string }`
+
+---
+
+### GET /api/v1/workspaces/:id/branding
+
+- **Auth:** JWT required (workspace member)
+- **Description:** Get workspace branding
+- **Response:** `BrandingDto`
+
+---
+
+### POST /api/v1/workspaces/:id/branding/logo
+
+- **Auth:** JWT required (workspace-owner or workspace-admin)
+- **Body:** multipart/form-data `file`
+- **Description:** Upload workspace logo to R2
+- **Response:** `BrandingDto`
+
+---
+
+### DELETE /api/v1/workspaces/:id/branding/logo
+
+- **Auth:** JWT required (workspace-owner or workspace-admin)
+- **Description:** Remove workspace logo
+- **Response:** `BrandingDto`
+
+---
+
+### PATCH /api/v1/workspaces/:id/branding/color-template
+
+- **Auth:** JWT required (workspace-owner or workspace-admin)
+- **Body:** `{ colorTemplateId: string }`
+- **Description:** Select a color template for the workspace
+- **Response:** `BrandingDto`
+
+---
+
+### GET /api/v1/onboarding/progress
+
+- **Auth:** JWT required
+- **Description:** Get the onboarding progress for the active workspace
+- **Response:** `OnboardingProgressDto`
+
+---
+
+### PATCH /api/v1/onboarding/progress
+
+- **Auth:** JWT required
+- **Body:** `{ workspaceCreated?, brandingDone?, invitesDone?, experimentDone? }`
+- **Description:** Update onboarding step completion flags
+- **Response:** `OnboardingProgressDto`
+
+---
+
+## Module: Color Templates
+
+### GET /api/v1/color-templates
+
+- **Auth:** JWT required
+- **Query:** `?activeOnly=true`
+- **Description:** List color templates. For workspace branding, use `?activeOnly=true`.
+- **Response:** `ColorTemplateDto[]`
+
+---
+
+### GET /api/v1/color-templates/:id
+
+- **Auth:** JWT required
+- **Description:** Get a single color template
+- **Response:** `ColorTemplateDto`
+
+---
+
+### POST /api/v1/color-templates
+
+- **Auth:** JWT required (admin only)
+- **Body:** `{ name, primary, secondary, accent, chartColors[5], isActive? }`
+- **Description:** Create a new color template
+- **Response:** `ColorTemplateDto`
+
+---
+
+### PATCH /api/v1/color-templates/:id
+
+- **Auth:** JWT required (admin only)
+- **Body:** partial ColorTemplateDto fields
+- **Description:** Update a color template
+- **Response:** `ColorTemplateDto`
+
+---
+
+### DELETE /api/v1/color-templates/:id
+
+- **Auth:** JWT required (admin only)
+- **Description:** Delete a color template. Clears references in WorkspaceBranding.
+- **Response:** `204 No Content`
+
+---
+
+## Module: Admin (Workspace management)
+
+### GET /api/v1/admin/workspaces
+
+- **Auth:** JWT required (admin only)
+- **Query:** paginated + search
+- **Description:** List all workspaces (admin cross-workspace view)
+- **Response:** `PaginatedResponse<WorkspaceAdminDto>` (includes owner name, member count, plan)
+
+---
+
+### PATCH /api/v1/admin/workspaces/:id/status
+
+- **Auth:** JWT required (admin only)
+- **Body:** `{ status: 'active' | 'suspended' }`
+- **Description:** Suspend or reactivate a workspace
+- **Response:** `WorkspaceAdminDto`
+
+---
+
+### DELETE /api/v1/admin/workspaces/:id
+
+- **Auth:** JWT required (admin only)
+- **Description:** Admin-initiated workspace deletion
+- **Response:** `204 No Content`
+

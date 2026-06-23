@@ -1832,3 +1832,152 @@ The following are documented as implemented-but-incomplete relative to the inten
 - **NotificationsService.notify is not wired to processors.** The method (and optional email) exists, but the CSV-analysis and dashboard-generation processors do not call it, so completion/failure events do not currently produce notifications.
 - **SubscriptionRepository.incrementUsage is not wired.** A usage-increment helper exists on the repository but no usage-enforcement / quota flow calls it.
 - **DashboardGenerationComplete is an empty stub.** The class exists with no logic, dependencies, or wiring — reserved for future post-generation handling.
+
+---
+
+## change-006: New and Modified Services
+
+---
+
+## Module: Workspace
+
+`src/modules/workspace/services`
+
+---
+
+### WorkspaceService
+
+- Name: `WorkspaceService`
+- Type: `internal`
+- Module: `Workspace`
+- Summary: `Workspace lifecycle — create, read, update (name/slug), delete, switch active workspace.`
+
+#### Public Methods
+
+| Method | Signature | Side Effects |
+|--------|-----------|-------------|
+| `createWorkspace` | `(userId, name) → WorkspaceDto` | Creates Workspace doc, WorkspaceMembership (workspace-owner), WorkspaceBranding (empty), OnboardingProgress (step 1 false). Audit log. |
+| `getWorkspace` | `(workspaceId) → WorkspaceDto` | — |
+| `updateWorkspace` | `(workspaceId, dto, userId) → WorkspaceDto` | Updates name/slug. Audit log. |
+| `checkSlugAvailability` | `(slug) → { available: boolean }` | DB lookup |
+| `switchWorkspace` | `(userId, workspaceId) → AuthResponseDto` | Re-issues JWT with new workspace context. Updates `user.currentWorkspaceId`. |
+| `deleteWorkspace` | `(workspaceId, userId) → void` | Drops all `ws_{slug}_*` dynamic collections. Deletes workspace, memberships, invitations, branding, onboarding. Audit log. |
+| `listUserWorkspaces` | `(userId) → WorkspaceDto[]` | Joins WorkspaceMembership → Workspace |
+| `adminListWorkspaces` | `(paginationDto) → PaginatedResponse<WorkspaceDto>` | Admin-only; no workspace scoping |
+| `adminUpdateStatus` | `(workspaceId, status) → WorkspaceDto` | Admin suspend/unsuspend. Audit log. |
+
+---
+
+### WorkspaceMemberService
+
+- Name: `WorkspaceMemberService`
+- Type: `internal`
+- Module: `Workspace`
+- Summary: `Manage workspace membership list and roles.`
+
+#### Public Methods
+
+| Method | Signature | Side Effects |
+|--------|-----------|-------------|
+| `listMembers` | `(workspaceId) → MemberDto[]` | — |
+| `removeMember` | `(workspaceId, userId, requesterId) → void` | Deletes WorkspaceMembership. Audit log. |
+| `changeRole` | `(workspaceId, userId, role, requesterId) → MemberDto` | Updates membership role. Cannot change owner's role. |
+
+---
+
+### WorkspaceInvitationService
+
+- Name: `WorkspaceInvitationService`
+- Type: `internal`
+- Module: `Workspace`
+- Summary: `Create, resend, revoke, and accept workspace invitations. Sends invitation emails via MailProvider.`
+
+#### Public Methods
+
+| Method | Signature | Side Effects |
+|--------|-----------|-------------|
+| `invite` | `(workspaceId, email, role, inviterId) → InvitationDto` | Creates WorkspaceInvitation, sends email via `MAIL_PROVIDER`. |
+| `resendInvite` | `(invitationId, requesterId) → void` | Re-sends email. |
+| `revokeInvite` | `(invitationId, requesterId) → void` | Sets status = revoked. |
+| `acceptInvitation` | `(token) → { workspaceId }` | Validates token/expiry. Creates WorkspaceMembership. Sets status = accepted. |
+| `listInvitations` | `(workspaceId) → InvitationDto[]` | — |
+
+---
+
+### WorkspaceBrandingService
+
+- Name: `WorkspaceBrandingService`
+- Type: `internal`
+- Module: `Workspace`
+- Summary: `Manage workspace branding: logo upload to R2, color template selection.`
+
+#### Public Methods
+
+| Method | Signature | Side Effects |
+|--------|-----------|-------------|
+| `uploadLogo` | `(workspaceId, file, userId) → BrandingDto` | Uploads to R2 via STORAGE_PROVIDER. Deletes previous logo if exists. Updates WorkspaceBranding. |
+| `selectColorTemplate` | `(workspaceId, colorTemplateId, userId) → BrandingDto` | Validates template exists + is active. Updates WorkspaceBranding. |
+| `getBranding` | `(workspaceId) → BrandingDto` | — |
+| `deleteLogo` | `(workspaceId, userId) → BrandingDto` | Deletes from R2. Clears `logoUrl`. |
+
+---
+
+### OnboardingService
+
+- Name: `OnboardingService`
+- Type: `internal`
+- Module: `Workspace`
+- Summary: `Read and update the onboarding progress record.`
+
+#### Public Methods
+
+| Method | Signature | Side Effects |
+|--------|-----------|-------------|
+| `getProgress` | `(workspaceId) → OnboardingProgressDto` | — |
+| `updateProgress` | `(workspaceId, dto) → OnboardingProgressDto` | Partial update of step flags. |
+
+---
+
+## Module: Color Templates
+
+`src/modules/color-templates/services`
+
+---
+
+### ColorTemplateService
+
+- Name: `ColorTemplateService`
+- Type: `internal`
+- Module: `Color Templates`
+- Summary: `Admin CRUD for color templates. Public read of active templates for workspace branding selection.`
+
+#### Public Methods
+
+| Method | Signature | Side Effects |
+|--------|-----------|-------------|
+| `create` | `(dto) → ColorTemplateDto` | Creates document. |
+| `findAll` | `(activeOnly: boolean) → ColorTemplateDto[]` | — |
+| `findById` | `(id) → ColorTemplateDto` | 404 if not found. |
+| `update` | `(id, dto) → ColorTemplateDto` | — |
+| `delete` | `(id) → void` | Hard delete. Clears references in WorkspaceBranding. |
+| `toggleActive` | `(id, isActive) → ColorTemplateDto` | — |
+
+---
+
+## Module: Auth (modified — change-006)
+
+### AuthService changes
+
+`register()` now also:
+1. Calls `WorkspaceService.createWorkspace(userId, name)` — auto-creates the workspace.
+2. Includes `currentWorkspaceId`, `workspaceSlug`, `workspaceRole` in the JWT via updated `issueTokens()`.
+3. Returns `{ ...tokens, user, redirectTo: '/onboarding' }` in the registration response.
+
+`issueTokens()` now accepts `(userId, email, role, workspaceId, workspaceSlug, workspaceRole)` and includes these in the JWT payload.
+
+### JwtStrategy changes
+
+`validate()` now resolves the workspace context:
+1. Looks up `WorkspaceMembership` for `(payload.sub, payload.currentWorkspaceId)`.
+2. Returns `{ id, email, role, currentWorkspaceId, workspaceSlug, workspaceRole }` in request.user.
+

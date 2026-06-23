@@ -415,3 +415,106 @@ Conventions:
 ## Known Frontend Gaps (vs. routes/links)
 
 - Admin Panel `RegisterPage` component exists but is not routed.
+
+---
+
+## change-006: New Admin Panel Pages and Route Changes
+
+---
+
+### New Page: Workspaces
+
+- **Route:** `/app/workspaces`
+- **File:** `pages/admin/workspaces/workspaces.page.ts`
+- **Guard:** `authGuard`, `adminGuard`
+
+#### Content
+- Paginated table: Workspace Name, Slug, Owner Email, Members Count, Plan, Status, Created Date
+- Search by name or slug
+- Row actions: View (expand to show members list), Suspend/Unsuspend, Delete
+- Suspend → `PATCH /api/v1/admin/workspaces/:id/status { status: 'suspended' }`
+- Delete → confirmation dialog, then `DELETE /api/v1/admin/workspaces/:id`
+
+---
+
+### New Page: Color Templates
+
+- **Route:** `/app/color-templates`
+- **File:** `pages/admin/color-templates/color-templates.page.ts`
+- **Guard:** `authGuard`, `adminGuard`
+
+#### Content
+- Table: Name, Color swatches (primary + 5 chart), Active toggle, Actions (Edit, Delete)
+- "New Template" button → inline form or dialog:
+  - Fields: Name, Primary (hex picker), Secondary (hex picker), Accent (hex picker), Chart Color 1–5 (hex pickers), Active toggle
+  - Live preview: row of color swatches
+- Edit → dialog pre-filled with template data
+- Delete → confirmation, then `DELETE /api/v1/color-templates/:id`
+- Toggle active → `PATCH /api/v1/color-templates/:id { isActive: !current }`
+
+---
+
+### Modified: Admin Panel Routes (`app.routes.ts`)
+
+Add to `/app` children:
+```typescript
+{ path: 'workspaces', loadComponent: () => import('./pages/admin/workspaces/workspaces.page').then(m => m.WorkspacesPage) },
+{ path: 'color-templates', loadComponent: () => import('./pages/admin/color-templates/color-templates.page').then(m => m.ColorTemplatesPage) },
+```
+
+---
+
+### Modified: Admin AppShell (`layouts/app-shell/app-shell.ts`)
+
+Add to `navItems`:
+```typescript
+{ label: 'Workspaces', icon: 'pi-building', route: '/app/workspaces' },
+{ label: 'Color Templates', icon: 'pi-palette', route: '/app/color-templates' },
+```
+
+---
+
+### New Service: WorkspacesAdminService (`core/services/workspaces-admin.service.ts`)
+
+- `listWorkspaces(query)` → `GET /admin/workspaces`
+- `updateStatus(id, status)` → `PATCH /admin/workspaces/:id/status`
+- `deleteWorkspace(id)` → `DELETE /admin/workspaces/:id`
+
+---
+
+### New Service: ColorTemplatesService (`core/services/color-templates.service.ts`)
+
+- `list()` → `GET /color-templates`
+- `create(dto)` → `POST /color-templates`
+- `update(id, dto)` → `PATCH /color-templates/:id`
+- `delete(id)` → `DELETE /color-templates/:id`
+
+---
+
+### Modified: Admin Models (`core/models/admin.models.ts`)
+
+Add interfaces:
+```typescript
+interface Workspace {
+  id: string;
+  name: string;
+  slug: string;
+  ownerEmail: string;
+  memberCount: number;
+  plan: string | null;
+  status: 'active' | 'suspended' | 'deleted';
+  createdAt: string;
+}
+
+interface ColorTemplate {
+  id: string;
+  name: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  chartColors: string[];
+  isActive: boolean;
+  createdAt: string;
+}
+```
+
