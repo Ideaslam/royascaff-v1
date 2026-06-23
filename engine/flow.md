@@ -262,6 +262,31 @@ Create one client spec **per frontend app**. Web apps get `pages.md` (use `engin
 ### Goal
 Generate backend and frontend code into the repositories (defined in `project/profile.md`) following all planning documents and rules.
 
+---
+
+### ⛔ Pre-Build Confirmation Gate (MANDATORY — do not skip)
+
+Before writing **any** code in Phase 3, the AI **must** stop and present the following to the user for explicit approval. Code generation does **not** begin until the user replies with confirmation.
+
+**What to present**:
+1. **What will be built** — list every backend module, schema, service, controller, and endpoint from the planning docs that will be generated.
+2. **What will be created on the frontend** — list every page, component, service, and route that will be generated, per app.
+3. **Target repos/folders** — the exact repository paths (from `project/profile.md`) where files will be written.
+4. **Frontend visual approach** — confirm the design system, brand tokens, and UI library that will be used (from `project/profile.md`). If a reference screenshot/mockup/Figma link is available, confirm it now. If none is provided, state that the existing design system will be followed.
+
+**How to present**:
+- Format the summary as a concise, readable list (not prose).
+- End with a single clear question: **"Can I proceed with building the code?"**
+- Wait for an explicit **"yes" / "go ahead" / "confirmed"** (or equivalent) before continuing.
+- If the user requests changes to the plan, update the relevant planning docs and re-present the summary before asking again.
+- **Do not interpret silence, ambiguous replies, or follow-up questions as confirmation.**
+
+**This gate applies to**:
+- All new-app builds (Phases 0–4).
+- Any re-run of Phase 3 (e.g. after planning doc corrections).
+
+---
+
 ### Step 3.1 — Generate Backend Code
 
 - **Input**: 
@@ -482,7 +507,7 @@ To start a change:
 
 The template explains every field and includes a complete example. When the request is filled, tell the AI: **"Start Phase 5"**.
 
-**Or let the AI interview you (recommended).** Describe the change in plain language. The AI runs the **Discovery Questions** for the matching `change-type` (defined in `engine/templates/change-request-template.md`) to understand the whole change, drafts `change-request.md` from your answers, and **asks you to confirm before applying anything** (Step 5.0a). If the frontend is touched, it also asks you to confirm the visual style, optionally with a reference screenshot.
+**Or let the AI interview you (default path).** Just describe the change in plain language — one sentence is enough to start. The AI immediately runs a structured interview (Step 5.0a) covering business context, technical scope, data, permissions, edge cases, and frontend style. It drafts `change-request.md` from your answers and **asks you to confirm before touching any planning doc or code**. Nothing is written until you say yes.
 
 ---
 
@@ -499,21 +524,82 @@ The template explains every field and includes a complete example. When the requ
 
 ---
 
-### Step 5.0a — Discovery & Confirmation
+### Step 5.0a — Discovery Interview & Confirmation
 
-Run this whenever the change is not yet fully specified — always for Path 2 (AI interviews the user), and for any Path 1 request whose `description` is thin or ambiguous. The goal is to understand the **whole** change before any planning doc or code is touched, then get explicit sign-off.
+**This step is mandatory for every change, in both paths.** The goal is to fully understand the change through a structured interview before any planning doc or code file is created or modified. Nothing is drafted, planned, or touched until the interview is complete and you confirm the result.
 
 - **Input**: the user's plain-language idea (or the partial `change-request.md`) + the `change-type`
-- **Template**: `engine/templates/change-request-template.md` → **"Discovery Questions by Change Type"**
+- **Template**: `engine/templates/change-request-template.md` → **"Discovery Interview by Change Type"**
 - **Output**: a complete `project/changes/change-<NNN>-<slug>/change-request.md`, **confirmed by the user**
-- **Actions**:
-  1. **Identify the `change-type`** from the user's request. If unclear, ask which type fits before continuing.
-  2. **Ask the Discovery Questions** for that type — always the **Universal** block first, then the type-specific block. Skip a question only when its answer is already obvious from the description or the planning docs; never skip the whole block. Ask the questions in one or a few grouped messages, not one at a time.
-  3. **Frontend style** — if `affected-repos` includes `frontend` or `admin`, or any page/UI is in scope, also ask the **Frontend Style** block. Invite an optional reference screenshot/mockup/Figma link for the intended style; if none is given, follow the existing design system in `project/profile.md`.
-  4. **Draft `change-request.md`** from the answers, filling every field (metadata, scope, description, acceptance criteria, notes).
-  5. **Confirmation gate (mandatory)** — present the drafted request back to the user and ask them to confirm. Do **not** proceed to Step 5.0b until the user approves. Incorporate any corrections and re-confirm.
-  6. For a frontend change, the style confirmation in step 3 is part of this gate: confirm the visual approach (and any reference provided) before moving on.
-- **Done when**: `change-request.md` is complete **and** the user has explicitly confirmed it (including the visual style for frontend changes).
+
+---
+
+#### Phase A — Identify the Change Type
+
+1. Read the user's description and identify the `change-type` from the list in the template.
+2. If the type is unclear, ask the user to choose before continuing — do not guess.
+3. State the identified type back to the user before starting the interview (e.g. "This looks like a `new-feature`. Starting the discovery interview now.").
+
+---
+
+#### Phase B — Run the Discovery Interview
+
+Ask every question in the following order. **Do not skip any section.** Present each section as a clearly labelled group so the user can answer section-by-section, not question-by-question.
+
+**Section 1 — Business Context** (always)
+Ask the questions in the **"Business Context"** block from the template (motivation, who is affected, desired outcome, out-of-scope, constraints, priority).
+
+**Section 2 — Type-Specific Technical Details** (always)
+Ask the questions in the **type-specific block** for the identified `change-type` from the template. These cover the technical depth: user story, data, integrations, permissions, edge cases.
+
+**Section 3 — Data & Integrations** (always, if not already covered in Section 2)
+Ask the questions in the **"Data & Integrations"** block from the template: new fields/entities, external providers, async jobs, AI usage.
+
+**Section 4 — Security & Permissions** (always)
+Ask the questions in the **"Security & Permissions"** block: who can trigger it, role/ownership checks, sensitive data, audit trail.
+
+**Section 5 — Edge Cases & Errors** (always)
+Ask the questions in the **"Edge Cases & Errors"** block: invalid input, empty states, concurrent actions, failure handling, rollback.
+
+**Section 6 — Frontend Style** (only when the frontend is touched)
+If `affected-repos` includes `frontend` or `admin`, or any page/UI is in scope, ask the **"Frontend Style"** block: which pages, design system, reference screenshot/Figma link, layout, states, RTL.
+
+**Rules for asking questions**:
+- Present all questions for a section together in one message — do not ask one question per message.
+- Wait for the user's answers before moving to the next section.
+- If an answer is unclear or missing, ask a follow-up before proceeding.
+- Skip a specific question only when the answer is already unambiguous from what the user said — never skip a whole section.
+- Do not start drafting `change-request.md` until all sections are answered.
+
+---
+
+#### Phase C — Draft the Change Request
+
+After all sections are answered:
+
+1. Create the folder `project/changes/change-<NNN>-<slug>/` (next number from `project/changes/change-log.md`).
+2. Draft `change-request.md` using the **Change Request Block** from the template. Fill in every field: `metadata`, `scope`, `description`, `acceptance-criteria`, and `notes`. For `new-app` changes, fill the **New App Definition** section too.
+3. The `description` field must capture: the problem, the desired behavior, who is affected, the user story (happy path + edge cases), permissions, data changes, and what is out of scope.
+4. The `acceptance-criteria` must be a numbered list of **testable, observable outcomes** — not vague summaries.
+
+---
+
+#### Phase D — ⛔ Confirmation Gate (MANDATORY)
+
+Present the full drafted `change-request.md` to the user. Format it clearly, section by section. Then ask:
+
+> **"Does this change request look correct? Please confirm to proceed, or tell me what to correct."**
+
+**Rules**:
+- Do **not** proceed to Step 5.0b until the user explicitly confirms.
+- If the user requests any correction — even a small one — apply it and re-present the full request before asking again.
+- **Do not interpret silence, vague replies, or follow-up questions as confirmation.**
+- For frontend changes: the visual style confirmation (Section 6 answers + any reference provided) is part of this gate. Confirm the visual approach explicitly before moving on.
+- Only after an explicit **"yes" / "confirmed" / "go ahead"** (or equivalent) does the flow continue to Step 5.0b.
+
+---
+
+- **Done when**: `change-request.md` is saved in the change folder **and** the user has explicitly confirmed it — including the visual style for any frontend change.
 
 ---
 
@@ -682,14 +768,24 @@ Run this **before writing any code**. Confirm the updated planning documents are
 
 Generate or modify code in the actual repos (defined in `project/profile.md`) following the updated planning docs and all rules.
 
-#### Confirmation gate (before applying any code change)
+#### ⛔ Confirmation Gate (MANDATORY — do not skip)
 
-Before writing or modifying any code, confirm with the user:
-1. **Summarize what will be applied** — the endpoints, services, pages, schemas, and files that will be created or modified (the create/complete/modify list from `recon.md` plus the ripple set).
-2. **Get explicit approval** — do **not** start editing code until the user confirms. This is in addition to the change-request confirmation in Step 5.0a; the plan may have evolved through recon and impact analysis, so re-confirm the concrete code-level scope here.
-3. **Frontend style confirmation** — if the change touches the frontend (`affected-repos` includes `frontend` or `admin`, or a page/UI is in scope), confirm the visual approach before implementing it: which app/pages change, whether it follows the existing design system / brand tokens (per `project/profile.md`), and any reference screenshot/mockup/Figma link the user wants to match. The reference is **optional** — if none is given, follow the existing design system. Do not implement frontend visuals until the style is confirmed.
+Before writing or modifying **any** code, the AI **must** stop and present the following to the user for explicit approval. Code changes do **not** begin until the user replies with confirmation.
 
-Once confirmed, proceed with the changes below.
+**What to present**:
+1. **What will be applied** — list every file that will be created or modified: schemas, services, controllers, endpoints, pages, components, routes. Use the create/complete/modify list from `recon.md` plus the full ripple set from Step 5.1.
+2. **Target repos/folders** — the exact repository paths (from `project/profile.md`) where each file will be written or changed.
+3. **Frontend style** — if `affected-repos` includes `frontend` or `admin`, or any page/UI is in scope: state which app/pages change, confirm the design system / brand tokens that will be followed (from `project/profile.md`), and note any reference screenshot/mockup/Figma link. If none is provided, state that the existing design system will be followed.
+
+**How to present**:
+- Format the summary as a concise, readable list (not prose).
+- End with a single clear question: **"Can I proceed with implementing the code?"**
+- Wait for an explicit **"yes" / "go ahead" / "confirmed"** (or equivalent) before continuing.
+- If the user requests adjustments, update the relevant planning docs and re-present the summary before asking again.
+- **Do not interpret silence, ambiguous replies, or follow-up questions as confirmation.**
+- This gate is **separate from** and **in addition to** the change-request confirmation in Step 5.0a — the plan may have evolved through recon and impact analysis, so re-confirm the concrete code-level scope here.
+
+Once the user explicitly confirms, proceed with the changes below.
 
 #### Backend changes
 - Apply to the backend repo defined in `project/profile.md`.

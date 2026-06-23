@@ -17,10 +17,10 @@ There are two ways to produce a `change-request.md`:
 4. One change per file. If you have multiple unrelated changes, complete them sequentially.
 5. Tell the AI: **"Start Phase 5"** to trigger the workflow.
 
-**Path 2 — The AI interviews you (recommended).**
-You describe the change in plain language. The AI then runs the **Discovery Questions** for the matching `change-type` (see the section below), so it understands the *whole* change — not just a one-line description. From your answers it drafts `change-request.md` and **asks you to confirm before applying anything**. If the change touches the frontend, it also asks you to confirm the **visual style**, optionally with a reference screenshot.
+**Path 2 — The AI interviews you (default path).**
+Just describe the change in one sentence. The AI runs a structured **Discovery Interview** (all sections below) to fully understand the change before drafting anything. It covers business context, technical scope, data, permissions, edge cases, and frontend style. After gathering all answers it drafts `change-request.md` and **asks you to confirm before touching any planning doc or code**.
 
-The discovery → draft → confirm gate is mandatory in both paths: the AI never starts implementing code until you have confirmed the drafted request.
+The interview → draft → confirm gate is **mandatory in both paths**: the AI never proceeds past the change request until you explicitly confirm it.
 
 As Phase 5 runs, the AI adds more files to the same folder: `recon.md` (existing-code review, Step 5.0b), then `verify-plan.md` and `verify-code.md`. You only author `change-request.md` (or confirm the AI's draft of it).
 
@@ -117,174 +117,200 @@ Any additional context: design decisions, constraints, related issues, links, or
 
 ---
 
-## Discovery Questions by Change Type
+## Discovery Interview by Change Type
 
-A one-line description is never enough to plan a change safely. Before drafting `change-request.md`, the AI must understand the **whole** change. Use the question bank for the matching `change-type` below.
+A one-line description is never enough to plan a change safely. The AI must run a full structured interview before drafting anything. The interview has six fixed sections — the AI presents each section as a labelled group and waits for your answers before moving to the next.
 
-**How to use these questions**
-- The AI asks the questions for the relevant `change-type`. Always ask the **Universal** block first, then the type-specific block.
-- If the change touches the frontend (`affected-repos` includes `frontend` or `admin`, or a page/UI is in scope), also ask the **Frontend Style** block.
-- Skip a question only when the answer is already obvious from the description or the planning docs — never skip the whole block.
-- The questions map directly onto the Change Request Block fields. Answers become `scope`, `description`, `acceptance-criteria`, and `notes`.
-- When the answers are gathered, the AI drafts `change-request.md` and **asks you to confirm before applying** (see `flow.md`, Step 5.0a).
-
----
-
-### Universal (ask for every change-type)
-
-1. **Problem / motivation** — what business or user problem does this solve? Why now?
-2. **Who is affected** — which users, roles, or apps experience this change?
-3. **Desired outcome** — describe the end state in one or two sentences. How will we know it works?
-4. **In / out of scope** — what is explicitly *not* part of this change?
-5. **Constraints** — anything that must not change, break, or regress? Deadlines, dependencies, related changes?
+**How the interview works**
+- The AI identifies the `change-type` first, states it back to you, then starts the interview.
+- Sections 1–5 are always asked. Section 6 (Frontend Style) is asked only when the frontend is touched.
+- Each section is sent as a single grouped message — not one question at a time.
+- Skip a specific question only when the answer is already unambiguous from what you said — never skip a whole section.
+- Only after all sections are answered does the AI draft `change-request.md` and present it for your confirmation (see `flow.md`, Step 5.0a — Phase D).
 
 ---
 
-### `new-feature`
+### Section 1 — Business Context (always — every change-type)
 
-> Adding a feature to an existing module.
+Present these questions together in one message.
+
+1. **Problem / motivation** — what business or user problem does this solve? Why is it needed now?
+2. **Who is affected** — which users, roles, or apps will experience this change?
+3. **Desired outcome** — describe the end state in one or two sentences. How will we know it's done correctly?
+4. **Out of scope** — what is explicitly *not* part of this change? What should remain unchanged?
+5. **Constraints & dependencies** — anything that must not break or regress? Any deadlines, blocked-by changes, or related work in progress?
+6. **Priority** — high / medium / low, and why?
+
+---
+
+### Section 2 — Type-Specific Technical Details (always — pick the block that matches the change-type)
+
+Present all questions for the relevant block in one message.
+
+---
+
+#### `new-feature` — Adding a feature to an existing module
 
 1. **Module** — which existing module does this feature belong to? (from `modules.md`)
-2. **User story** — walk through the happy path step by step, from the user's first action to the final result.
-3. **Trigger** — how is it started? (button/page action, schedule, event/webhook, another service)
-4. **Data** — what does it read and write? Any new fields, collections, or enums needed?
-5. **External / AI** — does it call any third-party integration or AI provider? (these need an external service + a rule)
-6. **Permissions** — who is allowed to use it? Any role or ownership checks?
-7. **Edge cases & errors** — what should happen on invalid input, empty data, failure, or unauthorized access?
-8. **UI?** — is there a page or component? If yes, answer the **Frontend Style** block too.
+2. **User story** — walk through the happy path step by step: from the user's first action to the final result.
+3. **Trigger** — how is it started? (button/page action, schedule/cron, event/webhook, another service calling it)
+4. **Backend requirement** — does it need a new endpoint, a new service method, or both?
+5. **Frontend requirement** — does it need a new page, a new component on an existing page, or no UI?
+6. **New data** — any new fields, collections, or enums needed in the data model?
+7. **Third-party / AI** — does it call any external provider or AI model? Which one, and what for?
 
 ---
 
-### `new-module`
-
-> Adding an entirely new domain.
+#### `new-module` — Adding an entirely new domain
 
 1. **Capability** — what business capability does this module own, in one sentence?
-2. **Features** — list the features this module will contain (each becomes an entry in `features.md`).
-3. **Dependencies** — which existing modules does it rely on or extend?
-4. **Data** — what new entities/collections does it introduce? Relationships to existing data?
+2. **Features list** — list every feature this module will contain (each becomes an entry in `features.md`).
+3. **Module dependencies** — which existing modules does it rely on, call, or extend?
+4. **New entities** — what new collections/entities does it introduce? What are the relationships to existing data?
 5. **Surface** — backend-only, or does it have frontend pages? Which apps?
-6. **Integrations** — any new external providers, async jobs, or AI usage?
+6. **External integrations** — any new third-party providers, async jobs, or AI usage?
+7. **Phase 1 scope** — what is the minimal set of features for the first working version?
 
 ---
 
-### `new-app`
-
-> Creating an entirely new application.
-
-The dedicated **New App Definition** section (below in the Change Request Block) is the question bank for this type. In addition, confirm:
+#### `new-app` — Creating an entirely new application
 
 1. **Why a new app** — why a separate app rather than a feature in an existing one?
-2. **Reuse vs new** — which existing modules/features/endpoints are reused, and what is genuinely new?
-3. **Platform & auth** — target platform and auth strategy (shared backend JWT, separate auth, SSO)?
-4. **First screens** — the minimal set of pages for a usable first version.
+2. **Platform** — web, iOS, Android, or cross-platform mobile?
+3. **Tech stack** — what framework/library should be used? (or "follow existing" if same as another app)
+4. **Auth strategy** — shared backend JWT (reuse existing auth), separate auth, SSO, or none?
+5. **Reuse vs new** — which existing modules/features are reused as-is, and what is genuinely new?
+6. **First screens** — list the minimal pages/views needed for a usable first version.
+7. **Backend** — will this app share the existing backend, or does it need a separate API?
 
 ---
 
-### `modify-feature`
+#### `modify-feature` — Changing how an existing feature behaves
 
-> Changing how an existing feature behaves.
-
-1. **Which feature** — name it as it appears in `features.md`.
-2. **Current behavior** — how does it work today?
-3. **Desired behavior** — what should it do instead? Be specific about the difference.
-4. **Must-not-break** — what existing behavior, callers, or data must stay intact?
-5. **Ripple** — which endpoints, services, or pages are likely affected?
-6. **Compatibility** — any backward-compatibility or data-migration concerns?
+1. **Which feature** — name it exactly as it appears in `features.md`.
+2. **Current behavior** — describe how it works today (step by step if needed).
+3. **Desired behavior** — what should it do instead? Be specific about the exact difference.
+4. **Must-not-break** — which callers, dependents, or existing behaviors must stay intact?
+5. **Ripple risk** — which endpoints, services, pages, or integrations are likely affected by this change?
+6. **Data compatibility** — does existing data in the DB need to be migrated or backfilled?
 
 ---
 
-### `modify-endpoint`
+#### `modify-endpoint` — Adding, removing, or changing an API endpoint
 
-> Adding, removing, or changing an API endpoint.
-
-1. **Which endpoint** — method + route (from `endpoints.md`), or "new endpoint".
-2. **What changes** — request input, response output, auth level, validation, or business logic?
-3. **Callers** — which frontend pages/services or external clients call it? Is this a breaking change for them?
-4. **Versioning** — does it need a new version, or can it change in place?
-5. **Service linkage** — which service(s) does it call? Do those already exist in `services.md`?
+1. **Which endpoint** — HTTP method + route (from `endpoints.md`), or "new endpoint" if creating one.
+2. **What changes** — request input shape, response output, auth level, validation rules, or business logic?
+3. **Callers** — which frontend pages, services, or external clients call it? Is this a breaking change for them?
+4. **Versioning** — does it need a new route version, or can it change in place?
+5. **Service linkage** — which service(s) does it call? Do those exist in `services.md`, or do they need updating?
 
 ---
 
-### `modify-page`
+#### `modify-page` — Adding, removing, or changing a frontend page or major UI component
 
-> Adding, removing, or changing a frontend page or major UI component.
-
-1. **Which page** — route/name (from `pages.md`), or "new page".
-2. **UI change** — what layout, components, or interactions change?
-3. **States** — how do loading / empty / error / success states change?
-4. **Data** — does it need new or changed endpoints?
-5. **Style** — answer the **Frontend Style** block.
+1. **Which page** — route and name (from the app's `pages.md`), or "new page" if creating one.
+2. **UI change** — what layout, components, or interactions change? Describe concretely.
+3. **State changes** — how do loading / empty / error / success states change?
+4. **Backend dependency** — does it need new or changed endpoints to support this UI change?
+5. **Style** — answer **Section 6 (Frontend Style)** for this change.
 
 ---
 
-### `modify-service`
+#### `modify-service` — Changing internal or external service logic
 
-> Changing internal or external service logic.
-
-1. **Which service** — name it (from `services.md`); internal or external?
-2. **Method change** — which method signatures or behaviors change?
-3. **Callers** — which endpoints/services depend on it? Impact on them?
-4. **Provider** — for external services, what changes in the integration?
-5. **Side effects** — async jobs, events, audit logs, or transactions affected?
+1. **Which service** — name it (from `services.md`); is it internal or external?
+2. **Method changes** — which method signatures or behaviors change? What changes specifically?
+3. **Callers** — which endpoints or other services depend on this service? What is the impact on them?
+4. **Provider change** — for external services, what changes in the third-party integration contract?
+5. **Side effects** — any async jobs, events, audit logs, or transactions affected?
 
 ---
 
-### `modify-data-model`
-
-> Adding/removing fields, collections, indexes, or enums.
+#### `modify-data-model` — Adding/removing fields, collections, indexes, or enums
 
 1. **Which entity** — collection/entity name (from `data-model.md`).
-2. **Field changes** — for each field: name, type, required?, default, constraints. Added / removed / changed?
-3. **Migration** — is there existing data? How is it migrated or backfilled?
-4. **Indexes & enums** — any index or enum additions/changes?
-5. **Consumers** — which services, endpoints, and pages read or write these fields?
+2. **Field changes** — for each changed field: name, type, required?, default value, and constraints. Is it added, removed, or modified?
+3. **Existing data migration** — is there live data in this collection? How will it be migrated or backfilled?
+4. **Index and enum changes** — any new, removed, or modified indexes or enum values?
+5. **Consumers** — which services, endpoints, and pages read or write these fields? What changes for them?
 
 ---
 
-### `refactor`
+#### `refactor` — Restructuring code without changing external behavior
 
-> Restructuring code without changing external behavior.
-
-1. **What & why** — what is being restructured, and what's the payoff (readability, performance, reuse)?
-2. **Behavior guarantee** — confirm external behavior (APIs, UI, data) stays identical.
-3. **Boundaries** — what is explicitly out of scope / must not be touched?
-4. **Verification** — how will we confirm equivalence (tests, before/after comparison)?
+1. **What and why** — what exactly is being restructured, and what is the payoff (readability, performance, reuse, maintainability)?
+2. **Behavior guarantee** — confirm external behavior (APIs, UI, stored data) stays 100% identical.
+3. **Boundaries** — what is explicitly out of scope / must not be touched during this refactor?
+4. **Verification plan** — how will we confirm the before/after behavior is equivalent?
 
 ---
 
-### `bug-fix`
+#### `bug-fix` — Fixing incorrect behavior with minimal scope
 
-> Fixing incorrect behavior with minimal scope.
-
-1. **Symptom** — what is the incorrect behavior? Steps to reproduce.
+1. **Symptom** — describe the incorrect behavior. How do you reproduce it (steps)?
 2. **Expected vs actual** — what should happen vs what happens now?
-3. **Root cause** — known or suspected cause?
-4. **Smallest safe fix** — the minimal change that fixes it without widening scope.
-5. **Regression risk** — what could this fix accidentally affect?
+3. **Root cause** — known or suspected cause? Which layer (controller, service, frontend, data)?
+4. **Smallest safe fix** — what is the minimal change that resolves it without widening scope?
+5. **Regression risk** — what adjacent behavior could this fix accidentally break?
 
 ---
 
-### `general`
+#### `general` — Mixed or cross-cutting change
 
-> Mixed or cross-cutting change.
-
-Ask the **Universal** block, then pull the relevant questions from each `change-type` the change actually touches (e.g. an endpoint + a page + a data-model change → ask all three blocks). Capture every distinct area so nothing is missed.
+Ask **Section 1 (Business Context)** first. Then identify every distinct area the change touches (e.g. endpoint + page + data model) and ask the type-specific block for each area. Capture every area so nothing is missed.
 
 ---
 
-### Frontend Style (ask whenever the frontend/admin is touched)
+### Section 3 — Data & Integrations (always — skip questions already answered in Section 2)
 
-> Required when `affected-repos` includes `frontend` or `admin`, or any page/UI is in scope.
+Present these as a labelled group.
 
-1. **Where** — which app and page(s) change visually?
-2. **Design system** — should it match the existing design system and brand tokens (per `project/profile.md`), or is this a new visual direction?
-3. **Reference (optional)** — do you have a screenshot, mockup, or Figma link for the intended style? Attach it in the chat. *(Optional — if none is provided, the AI follows the existing design system.)*
-4. **Layout & components** — any specific layout, components, spacing, or interactions you want?
-5. **States** — how should loading / empty / error / success look?
-6. **RTL / localization** — any right-to-left or localization requirements (per `project/profile.md`)?
+1. **New data** — any new collections, fields, enums, or indexes? Or modifications to existing ones?
+2. **External providers** — any new third-party API, SDK, or service being introduced? (payment, storage, email, SMS, AI, analytics, etc.)
+3. **Existing integrations** — does this change affect how an existing external provider is called?
+4. **Async / background jobs** — any queued jobs, webhooks, scheduled tasks, or event-driven flows?
+5. **AI usage** — any LLM, embedding, classification, or AI-generation involved? Which provider and model?
 
-The AI presents the proposed visual approach and **asks you to confirm the style before implementing** the frontend. Providing a reference screenshot is always optional and never blocks the change.
+---
+
+### Section 4 — Security & Permissions (always)
+
+Present these as a labelled group.
+
+1. **Who can trigger it** — which user roles or system actors are allowed to use this feature/endpoint?
+2. **Ownership checks** — can a user only act on their own data, or can admins act on any record?
+3. **Auth level** — public, authenticated, or role-restricted (e.g. admin-only, owner-only)?
+4. **Sensitive data** — does this feature handle PII, financial data, passwords, tokens, or other sensitive information?
+5. **Audit trail** — should this action be logged or audited? (who did what, and when)
+6. **Rate limiting / abuse** — any risk of abuse, spam, or resource exhaustion that needs a guard?
+
+---
+
+### Section 5 — Edge Cases & Errors (always)
+
+Present these as a labelled group.
+
+1. **Invalid input** — what should happen when the request is missing required fields, has wrong types, or violates constraints?
+2. **Empty / not found** — what happens when a lookup returns no results or a referenced record doesn't exist?
+3. **Partial failures** — if processing multiple items (batch/bulk), what happens when some succeed and some fail?
+4. **Concurrent actions** — can two users trigger this at the same time? Is there a race condition risk?
+5. **External failure** — if a third-party call fails or times out, what should the system do? (retry, fail silently, surface error)
+6. **Rollback / undo** — if something goes wrong mid-way, what is the recovery path?
+
+---
+
+### Section 6 — Frontend Style (only when the frontend is touched)
+
+Ask only when `affected-repos` includes `frontend` or `admin`, or any page/UI is in scope. Present as a labelled group.
+
+1. **Which app and pages** — which application and which specific pages/screens change visually?
+2. **Design system** — should it match the existing design system and brand tokens (per `project/profile.md`), or is there a new visual direction?
+3. **Reference (optional)** — do you have a screenshot, mockup, or Figma link for the intended style? Attach it in the chat. *(Optional — if none provided, AI follows the existing design system.)*
+4. **Layout & components** — any specific layout structure, component choices, spacing rules, or interactions you want?
+5. **UI states** — how should loading / empty / error / success states look or behave?
+6. **RTL / localization** — any right-to-left layout or localization requirements (per `project/profile.md`)?
+
+The AI confirms the visual approach back to you as part of the Phase D confirmation gate — frontend visuals are **not** implemented until you explicitly approve the style.
 
 ---
 
