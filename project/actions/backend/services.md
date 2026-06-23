@@ -917,8 +917,9 @@ Domain service spanning two concerns: the plan catalog (public active plans + ad
 - `assignSubscription(userId, planId, actorId?, ip?) — upserts a user's subscription to a plan, audits SUBSCRIPTION_ASSIGN`
 - `changeSubscription(userId, planId, actorId?, ip?) — switches a user's plan, audits SUBSCRIPTION_CHANGE`
 - `cancelSubscription(userId, actorId?, ip?) — cancels a user's subscription, audits SUBSCRIPTION_CHANGE`
-- `selfSubscribe(userId, planId, ip?) — customer self-service: assigns plan to the calling user, audits SUBSCRIPTION_ASSIGN, returns { redirectUrl }` *(added change-001)*
+- `selfSubscribe(userId, planId, ip?) — customer self-service: now starts a PayUp checkout via PaymentCheckoutService and returns { redirectUrl } to the hosted checkout; activation deferred to confirmed payment` *(modified change-003)*
 - `selfCancel(userId, ip?) — customer self-service: cancels the calling user's own subscription, audits SUBSCRIPTION_CHANGE, returns { message }` *(added change-001)*
+- `activateFromPayment(userId, planId) — internal: activates/upserts the user's subscription; called by SubscriptionActivationProcessor after a confirmed payment` *(added change-003)*
 
 #### Dependencies
 
@@ -926,8 +927,15 @@ Domain service spanning two concerns: the plan catalog (public active plans + ad
   - `SubscriptionRepository — SubscriptionPlan + UserSubscription persistence (also exposes an unused incrementUsage helper)`
 - Internal Services:
   - `AuditLogService — audit trail`
+  - `PaymentCheckoutService — initiates the gateway checkout for self-subscribe (change-003)`
 - External Providers:
-  - `UserRepository — validates the target user exists (imported from the Auth module)`
+  - `UserRepository — validates the target user exists / reads email for checkout (imported from the Auth module)`
+
+#### Related Processor
+
+- `SubscriptionActivationProcessor` — BullMQ `@Processor('subscription-activation')`; consumes the activation
+  event enqueued by `PaymentCheckoutService.confirm`, calls `SubscriptionsService.activateFromPayment`, and
+  audits `SUBSCRIPTION_ASSIGN`. Retryable/durable (change-003).
 
 #### Entities / DTOs
 
@@ -1011,7 +1019,68 @@ Domain service implementing a manual payment ledger for admins. Supports listing
 
 - All methods are `async`
 - Side effects: audit writes
-- Decoupled from `PAYMENT_PROVIDER` (see Implementation gaps)
+- The admin ledger (`PaymentsService`) is decoupled from the gateway; gateway-driven logs are written by `PaymentCheckoutService` into the same `Payment` collection
+
+---
+
+### Service 2
+
+- Name: `PaymentCheckoutService`
+- Type: `internal`
+- Module: `Payments`
+- Summary: `Orchestrates the PayUp hosted-checkout flow: payment log lifecycle + event-driven subscription activation.`
+
+#### Description
+
+Domain service that drives the gateway checkout. It creates a `pending` payment log, builds the public
+confirm/cancel return URLs (carrying our own `paymentId`), calls the `PaymentProvider` (PayUp) to create a
+hosted-checkout session, and updates the log with the session id/token and return URLs. On return it verifies
+the session with the provider, finalizes the log (`paid`/`failed`), and — on success — enqueues a durable
+`subscription-activation` BullMQ job. It never calls the PayUp HTTP API directly (only via `PaymentProvider`).
+
+#### Purpose
+
+- Initiate a checkout session for a plan and persist the payment log
+- Finalize the log on the public confirm/cancel return endpoints (idempotent)
+- Emit the event that activates the subscription after a confirmed payment
+
+#### Type Details
+
+- Category: `domain`
+- Provider: `N/A` (delegates to `PAYMENT_PROVIDER`)
+- Capability: `payment`
+
+#### Public Methods
+
+- `initiateSubscriptionCheckout({ userId, planId, planName, amountUsd, customerEmail }, ip?) — creates a pending payment log, creates the PayUp session, updates the log, returns { redirectUrl }`
+- `confirm(paymentId) — verifies the session, sets log paid + paidAt + reference, enqueues subscription-activation; returns the portal redirect URL; idempotent on already-paid`
+- `cancel(paymentId) — sets log failed; returns the portal redirect URL`
+
+#### Dependencies
+
+- Repositories:
+  - `PaymentRepository — payment-log persistence`
+- Internal Services:
+  - `AuditLogService — audit trail (PAYMENT_CREATE, PAYMENT_UPDATE)`
+- External Providers:
+  - `PAYMENT_PROVIDER (PayUpProvider) — create/verify checkout session`
+- Queues:
+  - `subscription-activation (BullMQ) — enqueue activation on confirmed payment`
+
+#### Entities / DTOs
+
+- `Payment — payment log (now incl. gateway, providerSessionId, providerSessionToken, confirmUrl, cancelUrl, redirectUrl)`
+- `PaymentStatus — enum`
+
+#### Business Rules
+
+- Activation is never performed inline — only via the enqueued event
+- Confirm is idempotent: a log already `paid` is returned without re-enqueueing
+- Amounts come from the plan (server-side), never from the client
+
+#### Constraints / Notes
+
+- All methods `async`; HTTP isolation is enforced by delegating to `PaymentProvider`
 
 ---
 
@@ -1591,30 +1660,37 @@ Implements the `StorageProvider` interface and is bound to the `STORAGE_PROVIDER
 
 ### Service 4
 
-- Name: `DefaultPaymentProvider`
+- Name: `PayUpProvider` (default) / `DefaultPaymentProvider` (fallback)
 - Type: `external`
 - Module: `Integration Providers`
-- Summary: `Stub payment adapter (bound to PAYMENT_PROVIDER) — no real gateway integration; currently unused.`
+- Summary: `PayUp payment adapter (bound to PAYMENT_PROVIDER) implementing the PayUp backend integration; DefaultPaymentProvider remains a safe no-op fallback.`
 
 #### Description
 
-Implements the `PaymentProvider` interface and is bound to the global `PAYMENT_PROVIDER` token, but is a no-op stub: signature validation always returns false and webhook processing does nothing. The Payments module operates as a manual ledger and does not consume this provider.
+`PayUpProvider` implements the `PaymentProvider` interface and is bound to the global `PAYMENT_PROVIDER`
+token when `PAYMENT_PROVIDER=payup` (the default). It performs the PayUp **backend integration** over the
+Node global `fetch` (no extra dependency), fully isolated inside the integration layer: exchange API keys
+for an SDK token, create a hosted-checkout session, and read session status. `DefaultPaymentProvider`
+remains as a no-op fallback that throws "not configured" on checkout methods so misconfiguration fails loud.
 
 #### Purpose
 
-- Reserve the integration seam for a future payment gateway
-- Provide a safe default so DI resolves while no gateway is configured
+- Encapsulate all PayUp HTTP calls and token handling behind the provider interface
+- Select the PayUp API base URL by environment (sandbox vs prod; overridable)
+- Provide create/verify checkout-session capabilities to `PaymentCheckoutService`
 
 #### Type Details
 
 - Category: `integration`
-- Provider: `N/A (stub)`
+- Provider: `PayUp`
 - Capability: `payment`
 
 #### Public Methods
 
-- `validateWebhookSignature(payload: Buffer, signature: string): boolean — always returns false (stub)`
-- `processWebhookEvent(event: any): Promise<void> — no-op (stub)`
+- `createCheckoutSession(input): Promise<{ sessionId, sessionToken, redirectUrl, status, amount, currency }> — POST /v1/auth then POST /v1/checkout/session`
+- `getCheckoutSession(sessionToken): Promise<{ status, ... }> — GET /v1/checkout/session/{token} for authoritative status`
+- `validateWebhookSignature(payload: Buffer, signature: string): boolean — reserved for future webhook events`
+- `processWebhookEvent(event: any): Promise<void> — reserved for future webhook events`
 
 #### Dependencies
 
@@ -1623,20 +1699,23 @@ Implements the `PaymentProvider` interface and is bound to the global `PAYMENT_P
 - Internal Services:
   - `none`
 - External Providers:
-  - `none`
+  - `PayUp REST API (https, via global fetch)`
+- Config:
+  - `payup.apiBaseUrl, payup.publicKey, payup.secretKey, app.apiBaseUrl, app.frontendUrl`
 
 #### Entities / DTOs
 
-- `none`
+- `none (returns plain session DTOs)`
 
 #### Business Rules
 
-- No real signature verification or event handling implemented
+- API keys and SDK token never leave the provider or appear in responses/logs
+- Base URL chosen by `NODE_ENV` unless `PAYUP_API_BASE_URL` is set
 
 #### Constraints / Notes
 
-- External provider stub — bound globally but not injected anywhere (see Implementation gaps)
-- `processWebhookEvent` is `async`; no side effects
+- All HTTP isolated here; business services depend on the `PaymentProvider` interface, not the SDK/HTTP
+- `DefaultPaymentProvider.createCheckoutSession` throws when selected without configuration
 
 ---
 
@@ -1696,7 +1775,7 @@ The following are documented as implemented-but-incomplete relative to the inten
 - **PDF export has no worker.** `ExportService.requestPdfExport` enqueues `pdf-export` and `BackgroundJobsService` registers the queue, but no `@Processor('pdf-export')` consumer exists — jobs are created and never processed.
 - **Cache recalculation has no worker.** `DashboardsService.refreshDashboard` enqueues `cache-recalculation` and the queue is registered, but there is no `@Processor('cache-recalculation')` consumer.
 - **OAuth callback is a stub.** `AuthService.oauthLogin` and provider linking exist, but the controller OAuth callback is not implemented and there is no `integrations/oauth` adapter — the end-to-end OAuth flow is not wired.
-- **PAYMENT_PROVIDER is unused.** `DefaultPaymentProvider` is a no-op stub (`validateWebhookSignature` always false, `processWebhookEvent` no-op) and is not injected anywhere; the Payments module is a manual admin ledger only.
+- **PAYMENT_PROVIDER is now wired (PayUp).** `PayUpProvider` implements the backend integration and is injected into `PaymentCheckoutService`, which drives self-subscribe checkout, the payment log, and event-driven activation. `DefaultPaymentProvider` is the no-op fallback for when no provider is configured.
 - **NotificationsService.notify is not wired to processors.** The method (and optional email) exists, but the CSV-analysis and dashboard-generation processors do not call it, so completion/failure events do not currently produce notifications.
 - **SubscriptionRepository.incrementUsage is not wired.** A usage-increment helper exists on the repository but no usage-enforcement / quota flow calls it.
 - **DashboardGenerationComplete is an empty stub.** The class exists with no logic, dependencies, or wiring — reserved for future post-generation handling.

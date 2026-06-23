@@ -1129,8 +1129,8 @@ Let a user self-subscribe to a chosen plan from the Customer Portal.
 
 ##### Notes
 
-- Implemented in change-001 (2026-06-22). `POST /api/v1/subscriptions/subscribe` is now live.
-- Does not process a real payment — assigns the subscription directly and returns a redirect URL to `/subscriptions`. Payment-gateway checkout is deferred to a future change.
+- Implemented in change-001 (2026-06-22); upgraded to real payment in change-003 (2026-06-23). `POST /api/v1/subscriptions/subscribe` is live.
+- **Now processes a real payment via PayUp**: returns the hosted-checkout `redirectUrl`; the subscription activates only after the payment is confirmed (via the `subscription-activation` event).
 
 ---
 
@@ -1417,7 +1417,8 @@ Create and administer subscriptions tied to users.
 
 ### Module Purpose
 
-A manual payment ledger for admins to record and maintain payment entries. This is a bookkeeping ledger, **not** a payment-gateway checkout flow.
+A payment log for admins to track payments and the resulting subscriptions. Combines a manual bookkeeping
+ledger **and** the live PayUp gateway checkout log (change-003).
 
 ### Module Scope
 
@@ -1431,12 +1432,12 @@ A manual payment ledger for admins to record and maintain payment entries. This 
 
 ##### Purpose
 
-Let admins record, browse, edit, and delete payment entries manually.
+Let admins record, browse, edit, and delete payment entries manually, and view gateway-generated logs.
 
 ##### Main Subfeatures
 
 - List/filter payments (by user, status, date range; paginated)
-- View a single payment
+- View a single payment (incl. gateway + session reference + plan)
 - Create a payment record
 - Edit a payment record
 - Delete a payment record
@@ -1446,15 +1447,34 @@ Let admins record, browse, edit, and delete payment entries manually.
 - User reference (and optional subscription/plan reference)
 - Amount (USD) and currency
 - Status, method, reference
+- Gateway (`manual` / `payup`) + provider session reference *(change-003)*
 - Paid-at date and notes
 
 ##### Visibility
 
 - `both`
 
+#### Feature 2: PayUp Gateway Checkout (backend integration) *(change-003)*
+
+##### Purpose
+
+Take real subscription payments through PayUp and activate the subscription only after a confirmed payment.
+
+##### Main Subfeatures
+
+- Customer self-subscribe opens a PayUp hosted-checkout session (backend integration: auth → create session)
+- A `pending` payment log is written on init, then updated with the PayUp session + return URLs
+- Public confirm/cancel return endpoints finalize the log on the customer's return from PayUp
+- A confirmed payment emits a durable `subscription-activation` BullMQ event that activates the subscription
+- API base URL auto-selected by environment (sandbox vs prod), overridable by env var
+
+##### Visibility
+
+- `both` (customer initiates; admin tracks)
+
 ##### Notes
 
-- Manual ledger only — no gateway checkout or webhook processing is implemented
+- All PayUp HTTP is isolated in `src/integrations/payment/` (`PayUpProvider`); keys are env-only.
 
 ---
 
@@ -1603,11 +1623,11 @@ View and update platform-wide configuration.
 | `Admin — Overview` | 2 | 2 | 2 |
 | `Admin — Client Management` | 7 | 7 | 7 |
 | `Admin — Subscriptions & Plans` | 2 | 2 | 2 |
-| `Admin — Payments` | 1 | 1 | 1 |
+| `Admin — Payments` | 2 | 2 | 2 |
 | `Admin — Audit Logs` | 1 | 1 | 1 |
 | `Admin — AI Logs` | 2 | 2 | 2 |
 | `Admin — System Settings` | 1 | 1 | 1 |
-| **Total** | **61** | **61** | **56** |
+| **Total** | **62** | **62** | **57** |
 
 > Notes on counts: "Backend Features" counts features with a working backend implementation. "Frontend Features" counts features with a UI; `Token Refresh`, `AI Column Analysis`, the two AI Processing jobs, and `Chart Data API` have no dedicated page.
 
@@ -1709,6 +1729,7 @@ View and update platform-wide configuration.
 
 #### Module: Admin — Payments
 - Payment Ledger Management
+- PayUp Gateway Checkout (backend integration)
 
 #### Module: Admin — Audit Logs
 - View Audit Logs
@@ -1734,4 +1755,4 @@ View and update platform-wide configuration.
   - `Dashboards` → Manual Data Refresh: enqueues a `cache-recalculation` job but **no worker** consumes it.
   - `Notifications`: `NotificationsService.notify` exists but is **not wired** to the AI/export workers, so notifications are not auto-generated yet.
   - `Subscriptions` → Subscribe / Cancel: **implemented** in change-001 (2026-06-22). Both `POST /subscriptions/subscribe` and `POST /subscriptions/cancel` now exist on the backend.
-- `Admin — Payments` is a **manual ledger**, not a payment-gateway checkout; there is no gateway/webhook implementation.
+- `Admin — Payments` is now both a **manual ledger** and a **PayUp gateway checkout log** (change-003). Subscription activation happens via a durable `subscription-activation` event after a confirmed payment.

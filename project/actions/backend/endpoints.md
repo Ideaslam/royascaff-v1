@@ -2378,17 +2378,18 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 #### Return
 
 - Status: `201`
-- DTO / Shape: `{ redirectUrl: string }` — URL to redirect the user after subscription (currently `/subscriptions`)
+- DTO / Shape: `{ redirectUrl: string }` — the PayUp hosted-checkout URL the frontend redirects to
 
 #### Services Called
 
-- `SubscriptionsService.selfSubscribe(userId, planId) — assigns the plan to the current user and returns a redirect URL`
+- `SubscriptionsService.selfSubscribe(userId, planId) → PaymentCheckoutService.initiateSubscriptionCheckout — creates a pending payment log, opens a PayUp checkout session, returns the hosted-checkout redirect URL`
 
 #### Constraints / Notes
 
-- Does not process a payment — assigns the subscription directly. Real payment-gateway checkout (Stripe) is deferred.
+- **Modified (change-003):** now starts a real PayUp checkout. The subscription is **not** activated here —
+  it activates only after the payment is confirmed (via the `subscription-activation` event).
 - Returns `404` if the plan does not exist.
-- Writes an audit log entry (`SUBSCRIPTION_ASSIGN` action).
+- Writes an audit log entry (`PAYMENT_CREATE` for the new payment log; `SUBSCRIPTION_ASSIGN` later on activation).
 
 ---
 
@@ -2597,6 +2598,73 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 #### Services Called
 
 - `PaymentsService.delete() - deletes a payment`
+
+---
+
+### Endpoint 82
+
+- Name: `PayUp Confirm Return`
+- Method: `GET`
+- Route: `/api/v1/payments/payup/confirm`
+- Summary: `Public gateway return target after a successful PayUp checkout.`
+
+#### Auth
+
+- Access: `Public` (`@Public()` — no JWT; not under the admin controller)
+- Roles: `N/A`
+
+#### Input
+
+- Params: `none`
+- Query: `ref: string (our paymentId)`, `outcome?: string`
+- Body: `none`
+
+#### Return
+
+- Status: `302` redirect to the customer portal subscriptions page (with a `payment=success|failed` flag)
+
+#### Services Called
+
+- `PaymentCheckoutService.confirm(paymentId) — verifies the PayUp session, sets the payment log to paid, enqueues the subscription-activation event (idempotent)`
+
+#### Constraints / Notes
+
+- **New (change-003).** Public because PayUp redirects the customer's browser here; correlated by our own
+  `paymentId`, never by client-supplied amount.
+- Idempotent: an already-`paid` log redirects without re-activating.
+- Writes `PAYMENT_UPDATE` audit; activation audit happens in the processor.
+
+---
+
+### Endpoint 83
+
+- Name: `PayUp Cancel Return`
+- Method: `GET`
+- Route: `/api/v1/payments/payup/cancel`
+- Summary: `Public gateway return target after a cancelled/failed PayUp checkout.`
+
+#### Auth
+
+- Access: `Public` (`@Public()` — no JWT)
+- Roles: `N/A`
+
+#### Input
+
+- Params: `none`
+- Query: `ref: string (our paymentId)`, `outcome?: string`
+- Body: `none`
+
+#### Return
+
+- Status: `302` redirect to the customer portal subscriptions page (with a `payment=cancelled` flag)
+
+#### Services Called
+
+- `PaymentCheckoutService.cancel(paymentId) — sets the payment log to failed`
+
+#### Constraints / Notes
+
+- **New (change-003).** Public browser-redirect target. Does not activate any subscription.
 
 ---
 
@@ -2879,9 +2947,9 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 | Export | 3 |
 | Notifications | 4 |
 | Subscriptions | 15 |
-| Payments | 5 |
+| Payments | 7 |
 | Audit | 1 |
 | Settings | 2 |
 | Admin | 1 |
 | AI Logs | 3 |
-| **Total** | **81** |
+| **Total** | **83** |

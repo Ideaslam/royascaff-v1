@@ -8,3 +8,4 @@ Step 5.6. Full detail for each change — the filled `change-request.md` and bot
 |-----|------------|------|-----------|-------|---------|--------|
 | 001 | 2026-06-22 | new-feature | customer-portal | Subscriptions — self-service subscribe + cancel | PASS | [change-001-subscription-self-service](change-001-subscription-self-service/) |
 | 002 | 2026-06-22 | modify-page | admin-panel | Admin Subscriptions Page — plan-vs-code sync (no code change) | PASS | [change-002-admin-subscriptions-plan-sync](change-002-admin-subscriptions-plan-sync/) |
+| 003 | 2026-06-23 | new-feature | customer-portal (+ admin-panel) | PayUp payment provider — backend integration, payment log, event-driven activation | PASS | [change-003-payup-payment-provider](change-003-payup-payment-provider/) |

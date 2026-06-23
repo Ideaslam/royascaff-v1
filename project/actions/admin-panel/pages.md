@@ -240,7 +240,7 @@ Conventions:
 - Type: `admin ledger`
 - Layout: `AppShell`
 - Guard: `authGuard` + `adminGuard`
-- Summary: `Manual payment ledger: record, filter, edit, delete payments.`
+- Summary: `Payment log: track manual + PayUp gateway payments; filter, edit, delete.`
 
 #### Main Component
 
@@ -254,7 +254,7 @@ Conventions:
 
 #### Models / DTOs
 
-- `Payment`, `CreatePaymentRequest`, `UpdatePaymentRequest`, `ListPaymentsQuery`
+- `Payment` (incl. `gateway`, `providerSessionId`, `planId`), `CreatePaymentRequest`, `UpdatePaymentRequest`, `ListPaymentsQuery`
 
 #### Backend Endpoints Used
 
@@ -265,11 +265,12 @@ Conventions:
 
 #### UI Sections / Actions
 
-- Filter bar, payments table, create/edit dialog, delete confirm.
+- Filter bar, payments table (now incl. Gateway, Plan, Session reference columns), create/edit dialog, delete confirm.
 
 #### Rules / Notes
 
-- Manual ledger only — there is no payment-gateway checkout (the `PAYMENT_PROVIDER` is a stub).
+- Tracks both the **manual ledger** and the **PayUp gateway** payment log (change-003). Gateway entries
+  (`gateway: payup`) are written by the checkout flow; admins read them to track payment → subscription.
 
 ---
 

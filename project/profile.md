@@ -113,7 +113,7 @@ system rules in `rules.md`). The frontend never calls these directly — all tra
 | MailJet | Transactional email | Welcome, generation-complete, share, password reset |
 | Cloudflare R2 | Object storage (CSV, exports, PDFs) | S3-compatible (swappable: AWS S3, Azure Blob, GCS) |
 | Redis | Cache + job queue + sessions + rate limiting | BullMQ queues |
-| Payment Gateway | SaaS subscription billing | Provider-agnostic interface (Stripe, PayPal); provider via env var |
+| Payment Gateway (PayUp) | SaaS subscription billing | Provider-agnostic `PaymentProvider` interface; default provider `PayUp` (backend integration). Provider via `PAYMENT_PROVIDER`; PayUp keys `PAYUP_PUBLIC_KEY` / `PAYUP_SECRET_KEY`; base URL auto-selected by `NODE_ENV` (sandbox vs prod), overridable by `PAYUP_API_BASE_URL`. Hosted-checkout flow with public return endpoints; subscription activated via a durable BullMQ event after confirmed payment. |
 | Google Analytics (GA4) | Product analytics | Client tracking |
 | Grafana / Prometheus | Monitoring & observability | API latency, error rates, job + AI cost metrics |
 | OAuth Providers | Social login | Google, Microsoft (OAuth 2.0) |

@@ -685,30 +685,35 @@ Payment processing uses an adapter pattern. Webhook signatures must be validated
 
 #### Required Behavior
 
-- Must implement payment via an `IPaymentProvider` interface in `src/integrations/payment/`
-- Current default provider is configurable via `PAYMENT_PROVIDER` environment variable
-- Must handle the following webhook events: `payment.succeeded`, `payment.failed`, `subscription.renewed`, `subscription.cancelled`
-- Must validate webhook signature before processing any event
-- Must update user subscription status atomically on webhook receipt
+- Must implement payment via the `PaymentProvider` interface in `src/integrations/payment/`
+- Current default provider is **PayUp** (backend integration), configurable via `PAYMENT_PROVIDER` environment variable
+- Must implement the PayUp **backend integration**: exchange API keys for an SDK token (`POST /v1/auth` — secret key as `Authorization: Bearer`, public key via `x-public-key`), create a hosted-checkout session (`POST /v1/checkout/session`) with the selected plan as an inline product plus `returnUrl`/`cancelUrl`/`metadata`, and verify the authoritative status on return (`GET /v1/checkout/session/{token}`)
+- Must select the PayUp API base URL by environment: `production` → prod host, otherwise sandbox; overridable by `PAYUP_API_BASE_URL`
+- Must store a **payment log** (the `Payment` collection) when checkout is initiated (`pending`, gateway `payup`, plan + user + amount), then update it with the PayUp session id/token and the confirm/cancel return URLs
+- Must expose **public** confirm and cancel return endpoints (`GET /payments/payup/confirm`, `GET /payments/payup/cancel`) that PayUp redirects the browser to; confirm verifies the session, sets the log to `paid`, and **enqueues a durable BullMQ `subscription-activation` event**; cancel sets the log to `failed`
+- Must activate the user's subscription only **after** a confirmed payment, via the `SubscriptionActivationProcessor` consuming the `subscription-activation` queue (event-driven, decoupled, retryable)
+- Must keep webhook seam available (`validateWebhookSignature` / `processWebhookEvent`) for future provider events
 - Must expose only safe subscription status information to the frontend (plan name, limits, expiry — no payment tokens)
 
 #### Provider / Integration
 
-- Provider: Configurable (Stripe or equivalent)
-- Integration layer: `src/integrations/payment/`
-- Secrets: `PAYMENT_SECRET_KEY`, `PAYMENT_WEBHOOK_SECRET` — environment variables only
+- Provider: `PayUp` (default; provider-agnostic interface — swappable via `PAYMENT_PROVIDER`)
+- Integration layer: `src/integrations/payment/` (`PayUpProvider`)
+- Orchestration: `PaymentCheckoutService` (`src/modules/payments/`) owns the log + flow; never calls PayUp HTTP directly
+- Secrets: `PAYUP_PUBLIC_KEY`, `PAYUP_SECRET_KEY`, `PAYMENT_WEBHOOK_SECRET` — environment variables only
 
 #### Constraints
 
-- Webhook endpoint must be public (no auth) but must validate provider signature
-- Idempotency: duplicate webhook events must not double-process
+- Return/confirm/cancel endpoints must be public (no JWT) — correlated by our own `paymentId` (`ref` query param), never by trusting client-supplied amounts
+- Idempotency: a confirm callback for an already-`paid` log must not re-activate or double-process
+- API base URL and keys come from environment only
 
 #### Must Not
 
 - Store payment card data, CVV, or raw payment tokens in the database
-- Call payment provider SDK directly from a controller or business service
-- Expose `PAYMENT_SECRET_KEY` in any API response or frontend bundle
-- Process webhook events without signature validation
+- Call the PayUp HTTP API directly from a controller or business service — only through `PayUpProvider`
+- Expose `PAYUP_SECRET_KEY` (or any key/SDK token) in any API response, log at INFO+, or frontend bundle
+- Activate a subscription before the payment is confirmed
 
 ---
 

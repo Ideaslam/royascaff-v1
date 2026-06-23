@@ -697,6 +697,10 @@ Tracks all asynchronous background jobs across the system: CSV analysis, dashboa
 - `pdf_export` — PDF report generation for a dashboard
 - `cache_recalculation` — re-running aggregations after data refresh
 
+> **BullMQ queues (not all are tracked as `backgroundjobs` records):** `csv-analysis`,
+> `dashboard-generation`, `pdf-export`, `cache-recalculation`, and `subscription-activation`
+> (change-003 — durable event that activates a user's subscription after a confirmed PayUp payment).
+
 ### `status` enum
 
 - `queued` — waiting in BullMQ queue
@@ -953,7 +957,10 @@ One subscription record per user (model `UserSubscription`). Links a user to a p
 
 ## 15. payments
 
-Admin manual payment ledger (model `Payment`, owned by the Payments module). Records each payment against a user, and optionally the subscription and plan it applies to. There is no external payment provider integration — entries are recorded manually by admins.
+Payment log (model `Payment`, owned by the Payments module). Serves two purposes: an admin manual ledger
+**and** the gateway payment log written by `PaymentCheckoutService` during the PayUp hosted-checkout flow.
+Each record links to a user, and optionally the subscription and plan it applies to. *(change-003 added the
+gateway/session/return-URL fields.)*
 
 ### Mongoose shape
 
@@ -970,6 +977,13 @@ Admin manual payment ledger (model `Payment`, owned by the Payments module). Rec
   reference: String,
   paidAt: Date | null,
   notes: String,
+  // gateway / checkout fields (change-003)
+  gateway: String,
+  providerSessionId: String,
+  providerSessionToken: String,
+  confirmUrl: String,
+  cancelUrl: String,
+  redirectUrl: String,
   createdAt: Date,
   updatedAt: Date
 }
@@ -987,9 +1001,15 @@ Admin manual payment ledger (model `Payment`, owned by the Payments module). Rec
 | `currency` | `String` | yes | Currency code; default `USD` |
 | `status` | `String` | yes | Enum: `paid`, `pending`, `refunded`, `failed` — default `pending` |
 | `method` | `String` | no | Payment method label; default `''` |
-| `reference` | `String` | no | External reference / receipt number; default `''` |
+| `reference` | `String` | no | External reference / receipt number (PayUp session id when settled); default `''` |
 | `paidAt` | `Date` | no | Timestamp the payment was settled; default `null` |
 | `notes` | `String` | no | Free-text admin notes; default `''` |
+| `gateway` | `String` | no | Payment gateway; `manual` (admin ledger) or `payup`; default `manual` *(change-003)* |
+| `providerSessionId` | `String` | no | PayUp checkout session id; default `''` *(change-003)* |
+| `providerSessionToken` | `String` | no | PayUp session token used to verify status; default `''` *(change-003)* |
+| `confirmUrl` | `String` | no | Public return URL sent to PayUp on success; default `''` *(change-003)* |
+| `cancelUrl` | `String` | no | Public return URL sent to PayUp on cancel; default `''` *(change-003)* |
+| `redirectUrl` | `String` | no | Hosted-checkout URL returned by PayUp; default `''` *(change-003)* |
 | `createdAt` | `Date` | yes | Mongoose timestamps |
 | `updatedAt` | `Date` | yes | Mongoose timestamps |
 
@@ -1010,6 +1030,7 @@ Admin manual payment ledger (model `Payment`, owned by the Payments module). Rec
 
 - Compound index on `{ userId: 1, createdAt: -1 }` (user payment history, newest first)
 - Compound index on `{ status: 1, createdAt: -1 }` (admin ledger filtering)
+- Index on `{ providerSessionToken: 1 }` (lookup on gateway return; sparse) *(change-003)*
 
 ---
 
