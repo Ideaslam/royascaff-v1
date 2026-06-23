@@ -648,10 +648,12 @@ Then use the table below to map `change-type` to required doc updates:
 | `modify-service` | — | — | maybe | ✓ | maybe | — | maybe | — |
 | `modify-data-model` | — | — | ✓ | maybe | maybe | maybe | — | maybe |
 | `refactor` | — | — | — | maybe | maybe | maybe | — | — |
-| `bug-fix` | — | — | — | — | — | — | — | — |
+| `bug-fix` | see Phase 6 | see Phase 6 | see Phase 6 | see Phase 6 | see Phase 6 | see Phase 6 | see Phase 6 | see Phase 6 |
 | `general` | assess | assess | assess | assess | assess | assess | assess | assess |
 
 Legend: ✓ = always update, maybe = update if the change touches that area, — = skip, assess = decide case by case
+
+**Note on `bug-fix`**: Phase 6 automatically determines whether a bug requires Phase 5 (full change request with plan updates) or Phase 6 Path B (direct fix with no plan updates). See **Phase 6 — Bug Fix Flow** for the decision tree.
 
 (All plan docs above live under `project/plan/`; action docs live **per app** under
 `project/actions/<app-key>/` — `services.md`/`endpoints.md` for the API app, `pages.md` for web apps,
@@ -882,3 +884,217 @@ When Step 5.6 completes:
 - `project/changes/change-log.md` has a new row pointing at that folder.
 
 To make another change, create the next `project/changes/change-<NNN>-<slug>/` folder (copy the template in as `change-request.md`), fill it, and start Phase 5.
+
+---
+
+## Phase 6 — Bug Fix Flow
+
+### Goal
+Provide a lightweight, fast-track process for bug fixes that automatically determines whether the fix requires a full change request (architectural impact) or can follow a simplified direct-fix path (isolated code correction).
+
+---
+
+### Entry Point
+
+Bug fixes can be reported in two ways:
+
+1. **Plain language description** — user describes the bug (e.g. "Login button doesn't work on mobile")
+2. **Bug report file** — user creates `project/bugs/bug-<NNN>-<slug>.md` following `engine/templates/bug-report-template.md`
+
+When a bug is reported, the AI immediately starts **Step 6.0 — Bug Triage**.
+
+---
+
+### Step 6.0 — Bug Triage
+
+Understand the bug and determine which path it should follow.
+
+- **Input**: Bug description (plain language or bug report file)
+- **Actions**:
+  1. If the user provided plain language only, ask clarifying questions to gather:
+     - What is broken / not working as expected?
+     - Where does it happen? (which page/screen/endpoint/module)
+     - What is the expected behavior?
+     - Steps to reproduce (if applicable)
+     - Severity: critical / high / medium / low
+  2. Identify the **affected area**: which app(s), module(s), file(s) are involved
+  3. Determine the **fix scope** using the decision tree below
+
+---
+
+### Decision Tree: Change Request vs. Direct Fix
+
+Ask these questions in order:
+
+**Q1. Does the fix require changes to the plan?**
+- New entity fields, new endpoints, new pages, new services, new integrations, modified business logic that affects other features → **YES, escalate to Change Request**
+- Otherwise → continue to Q2
+
+**Q2. Does the fix affect multiple modules or apps?**
+- Fix touches more than one module or app → **YES, escalate to Change Request**
+- Otherwise → continue to Q3
+
+**Q3. Does the fix require a data migration?**
+- Schema changes, data transformations, or backfill needed → **YES, escalate to Change Request**
+- Otherwise → **NO, proceed with Direct Fix**
+
+---
+
+### Path A — Escalate to Change Request (Architectural Impact)
+
+When the decision tree says **YES** to any question:
+
+1. Create `project/changes/change-<NNN>-bug-fix-<slug>/` folder (next number from `project/changes/change-log.md`)
+2. Set `change-type: bug-fix` in `change-request.md`
+3. Proceed to **Phase 5 Step 5.0** with the bug details as the change description
+4. Follow the full change request flow (discovery interview, recon, impact analysis, plan updates, code implementation, verification)
+5. The bug is considered **resolved** when Phase 5 completes (Step 5.6 archives the change)
+
+**Done when**: The change is logged in `project/changes/change-log.md` with type `bug-fix` and the bug folder contains the full change artifacts.
+
+---
+
+### Path B — Direct Fix (Isolated Code Correction)
+
+When the decision tree says **NO** (no architectural impact):
+
+Follow these steps for a lightweight, fast-track fix.
+
+---
+
+### Step 6.1 — Create Bug Log Entry
+
+- **Input**: Bug description + affected area from Step 6.0
+- **Output**: `project/bugs/bug-<NNN>-<slug>.md`
+- **Actions**:
+  1. If the bug report file doesn't exist yet, create it now using this format:
+
+```markdown
+# Bug #<NNN> — <Short Title>
+
+## Status
+**PENDING** — Fix in progress, awaiting confirmation
+
+## Reported
+- **Date**: <YYYY-MM-DD>
+- **Severity**: critical | high | medium | low
+- **Affected area**: <app/module/file>
+
+## Description
+<What is broken / not working as expected>
+
+## Expected Behavior
+<What should happen instead>
+
+## Steps to Reproduce (if applicable)
+1. <Step 1>
+2. <Step 2>
+3. ...
+
+## Root Cause
+<Brief technical explanation of the cause — filled after investigation>
+
+## Fix Applied
+<Brief description of the code changes made — filled after implementation>
+
+## Verification
+- [ ] Fix implemented in code
+- [ ] No regressions introduced
+- [ ] User confirmed fix resolves the issue
+
+## Related Files
+- <list of modified files>
+```
+
+  2. Save to `project/bugs/bug-<NNN>-<slug>.md` (next number from `project/bugs/bug-log.md`)
+  3. Set **Status: PENDING**
+
+- **Done when**: Bug log file exists with PENDING status.
+
+---
+
+### Step 6.2 — Investigate & Fix
+
+- **Input**: `project/bugs/bug-<NNN>-<slug>.md` + affected code
+- **Actions**:
+  1. **Investigate the root cause**:
+     - Read the affected files (identified in Step 6.0)
+     - Trace the code path that produces the bug
+     - Identify the exact line(s) or logic causing the issue
+  2. **Document the root cause** in the bug log file (update "Root Cause" section)
+  3. **Implement the fix**:
+     - Apply code changes to fix the bug
+     - Follow all rules from `engine/rules/backend-rule.md` / `engine/rules/frontend-rule.md` and `project/rules.md`
+     - Keep the fix **minimal and isolated** — do not refactor unrelated code
+     - Do not add new features or change behavior outside the bug scope
+  4. **Document the fix** in the bug log file (update "Fix Applied" section)
+  5. **List modified files** in the bug log file (update "Related Files" section)
+  6. **Run basic verification**:
+     - Check that the fixed code compiles without errors
+     - Check that no linter errors were introduced in the modified files
+     - Verify the fix logically addresses the root cause
+
+- **Done when**: Code is fixed, bug log is updated with root cause + fix description + related files, and basic verification passes.
+
+---
+
+### Step 6.3 — ⛔ Confirmation Gate (MANDATORY)
+
+Before marking the bug as DONE, the AI **must** stop and ask the user for confirmation.
+
+**What to present**:
+1. **Bug summary** — brief recap of what was broken
+2. **Root cause** — what caused the bug
+3. **Fix applied** — what code changes were made
+4. **Files modified** — list of changed files
+5. **Verification checklist** — show the checklist from the bug log
+
+**How to ask**:
+- Present the summary clearly and concisely
+- End with: **"The fix is ready. Can you confirm this resolves the issue so I can mark it as DONE?"**
+- Wait for an explicit **"yes" / "confirmed" / "looks good"** (or equivalent)
+- If the user reports the bug is **not** fixed or introduces a regression:
+  - Update the bug log with the feedback
+  - Go back to **Step 6.2** and revise the fix
+  - Re-present for confirmation when done
+- **Do not interpret silence, ambiguous replies, or follow-up questions as confirmation.**
+
+---
+
+### Step 6.4 — Mark as Done
+
+Once the user explicitly confirms the fix:
+
+1. Update the bug log file:
+   - Change **Status** from `PENDING` to `DONE`
+   - Add a "Confirmed" line: `**Confirmed**: <YYYY-MM-DD>`
+   - Check all boxes in the "Verification" section
+2. Append one row to `project/bugs/bug-log.md`:
+   - Format: `# | Date | Severity | Area | Summary | Status | File`
+   - Where `File` links to `bug-<NNN>-<slug>.md`
+
+- **Done when**: Bug log status is DONE, verification checklist is complete, and `project/bugs/bug-log.md` has the new row.
+
+---
+
+### Path B — Done
+
+When Step 6.4 completes:
+- The bug is fixed in code
+- The bug log `project/bugs/bug-<NNN>-<slug>.md` has status DONE and documents the root cause, fix, and verification
+- `project/bugs/bug-log.md` has a new row pointing at the bug file
+
+For the next bug, repeat Phase 6 from Step 6.0.
+
+---
+
+## Bug Fix Flow — Summary
+
+| Decision | Path | Steps | Outputs |
+|----------|------|-------|---------|
+| Needs plan change, multi-module impact, or data migration | **Path A — Change Request** | Phase 5 full flow | `project/changes/change-<NNN>-bug-fix-<slug>/` with change request + recon + verification reports |
+| Isolated code fix, no architectural impact | **Path B — Direct Fix** | 6.0 Triage → 6.1 Log → 6.2 Fix → 6.3 Confirm → 6.4 Done | `project/bugs/bug-<NNN>-<slug>.md` with pending → done transition |
+
+**Key principle**: Bugs that touch the plan become change requests. Bugs that are pure code corrections follow the lightweight direct-fix path.
+
+---
