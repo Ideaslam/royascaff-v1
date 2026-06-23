@@ -183,8 +183,9 @@ Application service for user records beyond auth. Handles a user editing their o
 - `createUser(dto: CreateUserDto, actorId?, ip?) — admin-creates a user with chosen role, audits USER_REGISTER`
 - `updateUser(id: string, dto: UpdateUserDto, actorId?, ip?) — admin-updates name/email/role/isActive/password, audits USER_UPDATE`
 - `deleteUser(id: string, actorId?, ip?) — hard-deletes a user, audits USER_DELETE`
-- `suspendUser(id, actorId?, ip?) — sets isActive=false, audits USER_SUSPEND`
-- `reactivateUser(id, actorId?, ip?) — sets isActive=true, audits USER_REACTIVATE`
+- `suspendUser(id, actorId?, ip?) — sets isActive=false, revokes refreshTokenHash, audits USER_DEACTIVATE` *(extended change-004)*
+- `reactivateUser(id, actorId?, ip?) — sets isActive=true, audits USER_ACTIVATE`
+- `autoSuspendForUnpaidInvoices(userId, actorId?, ip?) — internal: called when 2 consecutive unpaid payments detected; audits USER_AUTO_SUSPEND` *(change-004)*
 
 #### Dependencies
 
@@ -919,15 +920,20 @@ Domain service spanning two concerns: the plan catalog (public active plans + ad
 - `cancelSubscription(userId, actorId?, ip?) — cancels a user's subscription, audits SUBSCRIPTION_CHANGE`
 - `selfSubscribe(userId, planId, ip?) — customer self-service: now starts a PayUp checkout via PaymentCheckoutService and returns { redirectUrl } to the hosted checkout; activation deferred to confirmed payment` *(modified change-003)*
 - `selfCancel(userId, ip?) — customer self-service: cancels the calling user's own subscription, audits SUBSCRIPTION_CHANGE, returns { message }` *(added change-001)*
-- `activateFromPayment(userId, planId) — internal: activates/upserts the user's subscription; called by SubscriptionActivationProcessor after a confirmed payment` *(added change-003)*
+- `activateFromPayment(userId, planId, paymentId?) — internal: activates/upserts subscription; called by SubscriptionActivationProcessor` *(change-003)*
+- `activateSubscription(subscriptionId, actorId?, ip?) — admin: sets status active, period dates, audits SUBSCRIPTION_ACTIVATE` *(change-004)*
+- `deactivateSubscription(subscriptionId, actorId?, ip?) — admin: sets status inactive, audits SUBSCRIPTION_DEACTIVATE` *(change-004)*
+- `selfSubscribe(userId, planId, ip?) — free plan: enqueue activation job; paid plan: PayUp checkout` *(modified change-004)*
 
 #### Dependencies
 
 - Repositories:
-  - `SubscriptionRepository — SubscriptionPlan + UserSubscription persistence (also exposes an unused incrementUsage helper)`
+  - `SubscriptionRepository — SubscriptionPlan + UserSubscription persistence`
 - Internal Services:
   - `AuditLogService — audit trail`
-  - `PaymentCheckoutService — initiates the gateway checkout for self-subscribe (change-003)`
+  - `PaymentCheckoutService — initiates PayUp checkout for paid self-subscribe (change-003)`
+  - `SubscriptionLimitService — usage/limit checks and enriched /me response (change-004)`
+  - `subscription-activation queue — enqueues activation for free + paid paths`
 - External Providers:
   - `UserRepository — validates the target user exists / reads email for checkout (imported from the Auth module)`
 
@@ -943,19 +949,66 @@ Domain service spanning two concerns: the plan catalog (public active plans + ad
 - `UserSubscription — per-user subscription (status, dates, notes)`
 - `CreatePlanDto / UpdatePlanDto / CreateSubscriptionDto / UpdateSubscriptionDto / AssignSubscriptionDto / ChangeSubscriptionDto — admin inputs`
 - `SelfSubscribeDto { planId: string } — customer self-subscribe input` *(added change-001)*
-- `SubscriptionStatus — enum`
+- `SubscriptionStatus — enum (active, inactive, expired, cancelled)`
+- `MySubscriptionResponseDto — subscription + accountStatus + limits + usage` *(change-004)*
 
 #### Business Rules
 
 - Plan and user existence are validated before assignment/creation
 - `assign`/`change` upsert a single subscription per user
 - Public plan listing returns only active plans
+- Activation sets `currentPeriodStart` / `currentPeriodEnd` (+1 month) and resets monthly counters *(change-004)*
+- Resource lock (`expired` / `inactive` / `cancelled`): block dashboard create, file upload, data update/refresh *(change-004)*
 
 #### Constraints / Notes
 
 - All methods are `async`
 - Side effects: audit writes
-- `SubscriptionRepository.incrementUsage` is implemented but not wired to any quota enforcement (see Implementation gaps)
+- Usage limits enforced via `SubscriptionLimitService` when `status = active` *(change-004)*
+
+---
+
+### Service 2
+
+- Name: `SubscriptionLimitService`
+- Type: `internal`
+- Module: `Subscriptions`
+- Summary: `Extensible subscription quota enforcement via a limit registry.`
+
+#### Description
+
+Central service for checking and incrementing subscription usage limits. Each limit key (`maxDashboards`, `maxDataUploadsPerMonth`, `maxDataUpdatesPerMonth`) registers a handler in `SubscriptionLimitRegistry`. New limits = plan field + registry entry + one `assertAllowed` call at the action site.
+
+#### Public Methods
+
+- `check(userId, limitKey) — returns { allowed, current, limit, message? }`
+- `assertAllowed(userId, limitKey) — throws ForbiddenException if over limit or subscription not active`
+- `incrementUsage(userId, limitKey) — atomically increments monthly counter after successful action`
+- `buildUsageEnvelope(userId) — limits + current usage for GET /me`
+- `assertResourceUnlocked(userId) — throws if subscription expired/inactive/cancelled (resource lock)`
+
+#### Dependencies
+
+- `SubscriptionRepository — plan + subscription + incrementUsage`
+- `DashboardRepository — count dashboards for maxDashboards`
+
+#### Constraints / Notes
+
+- Must be called from business services (Dashboards, Data) — not controllers
+- Monthly limits use `$inc` on `usersubscriptions` counters
+
+---
+
+### Service 3
+
+- Name: `SubscriptionPeriodRolloverProcessor`
+- Type: `internal (BullMQ @Processor)`
+- Module: `Subscriptions`
+- Summary: `Resets monthly usage counters and marks expired subscriptions.`
+
+#### Public Methods
+
+- Consumes `subscription-period-rollover` repeatable job — resets counters where `currentPeriodEnd <= now`; sets `status = expired` when period ends without renewal
 
 ---
 
@@ -1054,7 +1107,7 @@ the session with the provider, finalizes the log (`paid`/`failed`), and — on s
 
 - `initiateSubscriptionCheckout({ userId, planId, planName, amountUsd, customerEmail }, ip?) — creates a pending payment log, creates the PayUp session, updates the log, returns { redirectUrl }`
 - `confirm(paymentId) — verifies the session, sets log paid + paidAt + reference, enqueues subscription-activation; returns the portal redirect URL; idempotent on already-paid`
-- `cancel(paymentId) — sets log failed; returns the portal redirect URL`
+- `cancel(paymentId) — sets log failed; checks consecutive unpaid → may call UsersService.autoSuspendForUnpaidInvoices; returns portal redirect URL`
 
 #### Dependencies
 

@@ -614,7 +614,7 @@ there is no separate column-editor route.
 - Type: `billing`
 - Layout: `AppShell`
 - Guard: `authGuard`
-- Summary: `View current plan/usage, browse plans, subscribe or cancel.`
+- Summary: `View account/subscription status, current usage vs limits, browse plans, subscribe (paid or free) or cancel.`
 
 #### Main Component
 
@@ -624,31 +624,37 @@ there is no separate column-editor route.
 
 #### Services
 
-- `SubscriptionsService - list plans, my subscription, subscribe, cancel`
+- `SubscriptionsService - list plans, my subscription (with limits/usage), subscribe, cancel`
 
 #### Models / DTOs
 
-- `SubscriptionPlan - name, priceMonthlyUsd, limits`
-- `UserSubscription - planId, status, usage counters, period`
+- `SubscriptionPlan - name, priceMonthlyUsd, maxDashboards, maxDataUploadsPerMonth, maxDataUpdatesPerMonth`
+- `MySubscriptionResponse - subscription, accountStatus, limits, usage`
 
 #### Backend Endpoints Used
 
 - `GET /api/v1/subscriptions/plans - available plans`
-- `GET /api/v1/subscriptions/me - current subscription + usage`
-- `POST /api/v1/subscriptions/subscribe - self-subscribe to a plan (SelfSubscribeDto{planId})`
+- `GET /api/v1/subscriptions/me - subscription + accountStatus + limits + usage`
+- `POST /api/v1/subscriptions/subscribe - self-subscribe (paid → redirectUrl; free → activated)`
 - `POST /api/v1/subscriptions/cancel - cancel own subscription`
 
 #### UI Sections / Actions
 
-- Current plan + usage card, plan cards with Subscribe, Cancel action.
+- Account status banner (if suspended — shown only after failed login; on page: subscription status)
+- Current plan + usage bars (dashboards, uploads/month, updates/month vs limits)
+- Plan cards: Subscribe (paid redirects to PayUp; free activates inline + reload)
+- Cancel action for active paid/cancelled states
+- Upgrade prompt when subscription expired/inactive
 
 #### States
 
-- Loading / error; current plan highlighted.
+- Loading / error; current plan highlighted; usage at-limit warning; free-plan activating spinner
 
 #### Rules / Notes
 
-- Self-service subscribe/cancel are implemented (change-001). No external gateway checkout — assignment is direct.
+- **Modified (change-004):** align models with API; handle free subscribe (no redirect); show usage vs limits from enriched `/me`.
+- Global 403 handler on upload/create/refresh routes user here with upgrade message.
+- PayUp return query params (`payment=success|failed|cancelled`) shown as toast.
 
 ---
 

@@ -214,6 +214,8 @@ Conventions:
 - `PUT /api/v1/subscriptions/:id - update`
 - `POST /api/v1/subscriptions/change - change a user's plan`
 - `PATCH /api/v1/subscriptions/:userId/cancel - cancel a user's subscription`
+- `POST /api/v1/subscriptions/:id/activate - admin activate subscription` *(change-004)*
+- `POST /api/v1/subscriptions/:id/deactivate - admin deactivate subscription` *(change-004)*
 - `GET /api/v1/subscriptions/plans/all - all plans (incl. inactive)`
 - `POST /api/v1/subscriptions/plans - create plan`
 - `PUT /api/v1/subscriptions/plans/:id - update plan`
@@ -221,7 +223,9 @@ Conventions:
 
 #### UI Sections / Actions
 
-- Tab 1: user subscriptions table (assign/change/cancel). Tab 2: plans table (CRUD).
+- Tab 1: user subscriptions table (assign/change/cancel/**activate/deactivate**). Tab 2: plans table (CRUD incl. free plans with `priceMonthlyUsd = 0`).
+- Activate/Deactivate buttons per subscription row (change-004).
+- Status filter includes `inactive`.
 
 #### States
 

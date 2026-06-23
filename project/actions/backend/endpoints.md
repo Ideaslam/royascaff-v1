@@ -585,7 +585,12 @@ Accepts an OAuth authorization code payload but is **not wired** to `AuthService
 
 #### Services Called
 
-- `UsersService.suspend() - sets the user inactive`
+- `UsersService.suspendUser() - sets isActive=false, revokes refresh tokens, audits USER_DEACTIVATE`
+
+#### Constraints / Notes
+
+- **Extended (change-004):** revokes `refreshTokenHash` on suspend; login message "Account is suspended"; JWT validation returns `403` with `ACCOUNT_SUSPENDED` code (not 401).
+- Auto-suspend (two consecutive unpaid payments) also calls this method.
 
 ---
 
@@ -615,7 +620,7 @@ Accepts an OAuth authorization code payload but is **not wired** to `AuthService
 
 #### Services Called
 
-- `UsersService.reactivate() - sets the user active again`
+- `UsersService.reactivateUser() - sets isActive=true, audits USER_ACTIVATE`
 
 ---
 
@@ -2106,7 +2111,7 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 - Name: `Get My Subscription`
 - Method: `GET`
 - Route: `/api/v1/subscriptions/me`
-- Summary: `Return the current user's subscription and usage.`
+- Summary: `Return the current user's subscription, account status, and usage vs plan limits.`
 
 #### Auth
 
@@ -2122,11 +2127,19 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 #### Return
 
 - Status: `200`
-- DTO / Shape: `SubscriptionDto`
+- DTO / Shape: `MySubscriptionResponseDto`
+  - `subscription: SubscriptionDto | null`
+  - `accountStatus: { isActive: boolean }`
+  - `limits: { maxDashboards, maxDataUploadsPerMonth, maxDataUpdatesPerMonth }`
+  - `usage: { dashboards, uploadsUsedThisMonth, updatesUsedThisMonth }`
 
 #### Services Called
 
-- `SubscriptionsService.getMySubscription() - loads the current user's subscription`
+- `SubscriptionsService.getMySubscription() - loads subscription + builds limits/usage envelope via SubscriptionLimitService`
+
+#### Constraints / Notes
+
+- **Modified (change-004):** returns structured usage vs limits for all registered limit keys.
 
 ---
 
@@ -2378,18 +2391,21 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 #### Return
 
 - Status: `201`
-- DTO / Shape: `{ redirectUrl: string }` — the PayUp hosted-checkout URL the frontend redirects to
+- DTO / Shape:
+  - Paid plan (`priceMonthlyUsd > 0`): `{ redirectUrl: string }` — PayUp hosted-checkout URL
+  - Free plan (`priceMonthlyUsd = 0`): `{ activated: true }` — no redirect; subscription activates via BullMQ event
 
 #### Services Called
 
-- `SubscriptionsService.selfSubscribe(userId, planId) → PaymentCheckoutService.initiateSubscriptionCheckout — creates a pending payment log, opens a PayUp checkout session, returns the hosted-checkout redirect URL`
+- Paid: `SubscriptionsService.selfSubscribe → PaymentCheckoutService.initiateSubscriptionCheckout`
+- Free: `SubscriptionsService.selfSubscribe → enqueue subscription-activation job (no payment log)`
 
 #### Constraints / Notes
 
-- **Modified (change-003):** now starts a real PayUp checkout. The subscription is **not** activated here —
-  it activates only after the payment is confirmed (via the `subscription-activation` event).
+- **Modified (change-003):** paid plans start PayUp checkout; activation after confirmed payment.
+- **Modified (change-004):** free plans skip PayUp; enqueue `subscription-activation` BullMQ job (same processor as paid).
 - Returns `404` if the plan does not exist.
-- Writes an audit log entry (`PAYMENT_CREATE` for the new payment log; `SUBSCRIPTION_ASSIGN` later on activation).
+- Writes audit log (`PAYMENT_CREATE` for paid; `SUBSCRIPTION_ASSIGN` on activation).
 
 ---
 
@@ -2425,6 +2441,70 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 - Returns `404` if the user has no subscription.
 - Sets `status: cancelled` and `endDate: now` on the subscription record.
 - Writes an audit log entry (`SUBSCRIPTION_CHANGE` action with `status: cancelled`).
+
+---
+
+### Endpoint 82
+
+- Name: `Activate Subscription`
+- Method: `POST`
+- Route: `/api/v1/subscriptions/:id/activate`
+- Summary: `Admin activates a user subscription (sets status active, valid period dates).`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params:
+  - `id: string - subscription ObjectId`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `SubscriptionDto`
+
+#### Services Called
+
+- `SubscriptionsService.activateSubscription(id, actorId?, ip?) — sets status active, period dates, audits SUBSCRIPTION_ACTIVATE`
+
+---
+
+### Endpoint 83
+
+- Name: `Deactivate Subscription`
+- Method: `POST`
+- Route: `/api/v1/subscriptions/:id/deactivate`
+- Summary: `Admin deactivates a user subscription (sets status inactive; resource lock applies).`
+
+#### Auth
+
+- Access: `JWT + role:admin`
+- Roles: `admin`
+
+#### Input
+
+- Params:
+  - `id: string - subscription ObjectId`
+- Query: `none`
+- Body: `none`
+
+#### Return
+
+- Status: `200`
+- DTO / Shape: `SubscriptionDto`
+
+#### Services Called
+
+- `SubscriptionsService.deactivateSubscription(id, actorId?, ip?) — sets status inactive, audits SUBSCRIPTION_DEACTIVATE`
+
+#### Constraints / Notes
+
+- User retains login access; mutating actions blocked by subscription resource lock.
 
 ---
 
@@ -2946,10 +3026,10 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 | Sharing | 4 |
 | Export | 3 |
 | Notifications | 4 |
-| Subscriptions | 15 |
+| Subscriptions | 17 |
 | Payments | 7 |
 | Audit | 1 |
 | Settings | 2 |
 | Admin | 1 |
 | AI Logs | 3 |
-| **Total** | **83** |
+| **Total** | **85** |

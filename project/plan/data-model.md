@@ -923,7 +923,7 @@ One subscription record per user (model `UserSubscription`). Links a user to a p
 | `_id` | `ObjectId` | yes | Primary key |
 | `userId` | `ObjectId` | yes | Ref `users` — **unique**, one subscription per user |
 | `planId` | `ObjectId` | yes | Ref `subscriptionplans` |
-| `status` | `String` | yes | Enum: `active`, `expired`, `cancelled` — default `active` |
+| `status` | `String` | yes | Enum: `active`, `inactive`, `expired`, `cancelled` — default `active` |
 | `startDate` | `Date` | yes | Subscription start date |
 | `endDate` | `Date` | no | Null for subscriptions without an end date |
 | `uploadsUsedThisMonth` | `Number` | yes | Running upload count for the current period; default 0 |
@@ -936,8 +936,9 @@ One subscription record per user (model `UserSubscription`). Links a user to a p
 
 ### `status` enum
 
-- `active` — subscription is currently valid
-- `expired` — past its end date / period
+- `active` — subscription is currently valid; usage limits enforced
+- `inactive` — admin-deactivated; user can log in but resource lock applies (no create/upload/update)
+- `expired` — past its end date / period without renewal; same resource lock as `inactive`
 - `cancelled` — manually cancelled
 
 ### Relations
@@ -1408,12 +1409,12 @@ SortOrder = ["asc", "desc"]
 CacheStatus = ["valid", "stale"]
 SharePermission = ["view", "edit"]
 ShareLinkStatus = ["active", "revoked", "expired"]
-BackgroundJobType = ["csv_analysis", "dashboard_generation", "pdf_export", "cache_recalculation"]
+BackgroundJobType = ["csv_analysis", "dashboard_generation", "pdf_export", "cache_recalculation", "subscription_period_rollover"]
 BackgroundJobStatus = ["queued", "processing", "completed", "failed"]
 BackgroundJobEntityType = ["csvfile", "dashboard"]
 NotificationType = ["dashboard_ready", "generation_error", "csv_analysis_complete", "export_ready", "dashboard_shared"]
-AuditAction = ["user.register", "user.login", "user.logout", "user.login_failed", "user.update", "user.delete", "user.deactivate", "user.activate", "project.create", "project.update", "project.delete", "dashboard.create", "dashboard.update", "dashboard.delete", "dashboard.duplicate", "dashboard.refresh", "csvfile.upload", "csvfile.delete", "sharelink.create", "sharelink.revoke", "export.pdf", "export.excel", "export.csv", "subscription.assign", "subscription.upgrade", "subscription.cancel", "settings.update"]
-SubscriptionStatus = ["active", "expired", "cancelled"]
+AuditAction = ["user.register", "user.login", "user.logout", "user.login_failed", "user.update", "user.delete", "user.deactivate", "user.activate", "user.auto_suspend", "project.create", "project.update", "project.delete", "dashboard.create", "dashboard.update", "dashboard.delete", "dashboard.duplicate", "dashboard.refresh", "csvfile.upload", "csvfile.delete", "sharelink.create", "sharelink.revoke", "export.pdf", "export.excel", "export.csv", "subscription.assign", "subscription.upgrade", "subscription.cancel", "subscription.activate", "subscription.deactivate", "settings.update"]
+SubscriptionStatus = ["active", "inactive", "expired", "cancelled"]
 PaymentStatus = ["paid", "pending", "refunded", "failed"]
 AiLogStatus = ["pending", "success", "failed"]
 // Subscription plans are NOT a fixed enum — they are documents in the subscriptionplans collection.

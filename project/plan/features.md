@@ -1155,6 +1155,65 @@ Let a user cancel their own subscription from the Customer Portal.
 
 ---
 
+#### Feature 5: Subscription Usage Limits *(change-004)*
+
+##### Purpose
+
+Enforce plan-defined limits on resources and actions (dashboards, monthly uploads, monthly data updates) with an extensible registry so new limits can be added without rewriting enforcement logic.
+
+##### Main Subfeatures
+
+- `SubscriptionLimitRegistry` — one handler per limit key (`maxDashboards`, `maxDataUploadsPerMonth`, `maxDataUpdatesPerMonth`)
+- `SubscriptionLimitService.check` / `assertAllowed` — called from business services before writes
+- Atomic counter increment via `SubscriptionRepository.incrementUsage` for monthly limits
+- Dashboard count via live query (or cached) for `maxDashboards`
+- Monthly counter reset on period rollover job
+
+##### Visibility
+
+- `backend`
+
+##### Notes
+
+- Applies only when subscription `status = active`; expired/inactive/cancelled hit resource lock first
+- Returns `403` with clear user-facing message when limit exceeded
+
+---
+
+#### Feature 6: Subscription Resource Lock *(change-004)*
+
+##### Purpose
+
+When a subscription is `expired` or admin-`inactive`, the user can log in and view data but cannot create dashboards, upload files, or update/refresh data.
+
+##### Main Subfeatures
+
+- `SubscriptionResourceGuard` (or shared service helper) blocks mutating actions
+- Allowed: read dashboards/files, view subscription page, subscribe/upgrade
+
+##### Visibility
+
+- `backend`
+
+---
+
+#### Feature 7: Free Plan Subscribe *(change-004)*
+
+##### Purpose
+
+Let users subscribe to a free plan (`priceMonthlyUsd = 0`) without PayUp checkout, activated via the same durable `subscription-activation` BullMQ event as paid plans.
+
+##### Main Subfeatures
+
+- `POST /subscriptions/subscribe` branches: free → enqueue activation; paid → PayUp checkout (change-003)
+- No payment log for free plans
+
+##### Visibility
+
+- `both`
+
+---
+
 ## Module: Admin — Overview
 
 ### Module Purpose
@@ -1410,6 +1469,41 @@ Create and administer subscriptions tied to users.
 ##### Notes
 
 - Self-service customer `subscribe` / `cancel` are **implemented** on the backend (`POST /api/v1/subscriptions/subscribe`, `POST /api/v1/subscriptions/cancel`, change-001)
+
+---
+
+#### Feature 3: Activate / Deactivate User Subscription *(change-004)*
+
+##### Purpose
+
+Let admins activate or deactivate a user's subscription without deleting it — distinct from cancel (which sets `cancelled`).
+
+##### Main Subfeatures
+
+- Activate subscription (`POST /subscriptions/:id/activate`) — sets `status = active`, valid period dates
+- Deactivate subscription (`POST /subscriptions/:id/deactivate`) — sets `status = inactive`; user retains login but resource lock applies
+
+##### Visibility
+
+- `both`
+
+---
+
+#### Feature 4: Account Suspension *(change-004)*
+
+##### Purpose
+
+Block suspended accounts from entering the system. Suspension can be admin-initiated or automatic after two consecutive unpaid payment invoices.
+
+##### Main Subfeatures
+
+- Admin suspend/reactivate via existing `PATCH /users/:id/suspend|reactivate` (extended: revoke refresh tokens, clearer errors)
+- Auto-suspend when two consecutive payment records end unpaid without an intervening `paid` payment
+- Suspended users: login rejected; API returns `403` with `ACCOUNT_SUSPENDED`
+
+##### Visibility
+
+- `backend` (admin UI already exists on Clients page)
 
 ---
 

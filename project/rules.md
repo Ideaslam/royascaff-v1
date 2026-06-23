@@ -692,6 +692,7 @@ Payment processing uses an adapter pattern. Webhook signatures must be validated
 - Must store a **payment log** (the `Payment` collection) when checkout is initiated (`pending`, gateway `payup`, plan + user + amount), then update it with the PayUp session id/token and the confirm/cancel return URLs
 - Must expose **public** confirm and cancel return endpoints (`GET /payments/payup/confirm`, `GET /payments/payup/cancel`) that PayUp redirects the browser to; confirm verifies the session, sets the log to `paid`, and **enqueues a durable BullMQ `subscription-activation` event**; cancel sets the log to `failed`
 - Must activate the user's subscription only **after** a confirmed payment, via the `SubscriptionActivationProcessor` consuming the `subscription-activation` queue (event-driven, decoupled, retryable)
+- **Free plans** (`priceMonthlyUsd = 0`) must **not** enter PayUp checkout — subscribe enqueues the same `subscription-activation` event without a payment log (change-004)
 - Must keep webhook seam available (`validateWebhookSignature` / `processWebhookEvent`) for future provider events
 - Must expose only safe subscription status information to the frontend (plan name, limits, expiry — no payment tokens)
 
@@ -713,7 +714,34 @@ Payment processing uses an adapter pattern. Webhook signatures must be validated
 - Store payment card data, CVV, or raw payment tokens in the database
 - Call the PayUp HTTP API directly from a controller or business service — only through `PayUpProvider`
 - Expose `PAYUP_SECRET_KEY` (or any key/SDK token) in any API response, log at INFO+, or frontend bundle
-- Activate a subscription before the payment is confirmed
+- Activate a subscription before the payment is confirmed (paid plans only — free plans activate via event without payment)
+
+---
+
+### Subscriptions — Account & Status Enforcement *(change-004)*
+
+#### Module / Feature
+
+- `Subscriptions` / Account suspension, subscription resource lock, usage limits, free plan
+
+#### Summary
+
+Two independent enforcement layers: **account status** (can enter system?) and **subscription status** (can mutate resources?).
+
+#### Required Behavior
+
+- **Account suspended** (`users.isActive = false`): reject login with "Account is suspended"; all API calls return `403` with `ACCOUNT_SUSPENDED`; revoke refresh tokens on suspend.
+- **Auto-suspend**: two consecutive unpaid payment records (failed/abandoned pending, no intervening `paid`) → auto-suspend; requires admin reactivation.
+- **Subscription resource lock** (`status` in `expired`, `inactive`, `cancelled`): user may log in and read; block dashboard create, file upload, data update/refresh with `403 SUBSCRIPTION_LOCKED`.
+- **Admin subscription activate/deactivate**: dedicated endpoints; `inactive` is admin-only deactivation distinct from `expired`.
+- **Usage limits**: enforce via `SubscriptionLimitService` + registry when `status = active`; return `403` with clear message when exceeded.
+- **Period rollover**: repeatable BullMQ job resets monthly counters and marks natural expiry.
+
+#### Must Not
+
+- Treat account suspension and subscription lock as the same check
+- Skip OAuth `isActive` validation on login
+- Send free plans (`priceMonthlyUsd = 0`) to PayUp
 
 ---
 
@@ -733,7 +761,7 @@ These rules apply across multiple modules and must be respected everywhere:
 
 6. **Cache Invalidation on Data Change** — Any operation that modifies a dashboard's underlying data (manual refresh, CSV deletion) must invalidate all Redis and MongoDB cache entries for that dashboard's widgets before returning a success response.
 
-7. **Subscription Limit Enforcement** — Dashboard creation, CSV upload, and data refresh must check subscription limits at the service layer before executing. Limit checks must happen after authentication and before any data is written. Return `403` with a clear message when limits are exceeded.
+7. **Subscription Limit Enforcement** — Dashboard creation, CSV upload, and data refresh must check subscription limits at the service layer before executing via `SubscriptionLimitService.assertAllowed`. Limit checks must happen after authentication and before any data is written. Return `403` with a clear message when limits are exceeded. New limits are added by registering a handler in `SubscriptionLimitRegistry` — do not duplicate enforcement logic. Resource lock (`expired`/`inactive`/`cancelled`) is checked before limit checks.
 
 8. **GDPR Data Deletion** — User deletion must cascade to all owned data: projects, dashboards, widgets, cache entries, share links, CSV metadata, CSV data row collections, audit logs (redact user ID, keep event), notifications, background jobs. Deletion must complete within 30 days. Each business module must expose a `deleteUserData(userId)` method callable by the Users module.
 
