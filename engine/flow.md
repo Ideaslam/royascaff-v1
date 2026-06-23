@@ -1013,7 +1013,7 @@ Follow these steps for a lightweight, fast-track fix.
 
 ---
 
-### Step 6.2 — Investigate & Fix
+### Step 6.2 — Investigate & Document Root Cause
 
 - **Input**: `project/bugs/bug-<NNN>-<slug>.md` + affected code
 - **Actions**:
@@ -1022,25 +1022,62 @@ Follow these steps for a lightweight, fast-track fix.
      - Trace the code path that produces the bug
      - Identify the exact line(s) or logic causing the issue
   2. **Document the root cause** in the bug log file (update "Root Cause" section)
-  3. **Implement the fix**:
-     - Apply code changes to fix the bug
+  3. **Propose the fix approach**:
+     - Describe the exact code change needed to resolve the bug
+     - List every file that will be modified
+     - Keep the proposed fix **minimal and isolated** — do not plan refactoring of unrelated code
+  4. **Update the bug log** with the proposed fix description and the files list (pre-fill "Fix Applied" and "Related Files" sections as a proposal)
+
+- **Done when**: Root cause is understood and documented, proposed fix is described in the bug log, and **no code has been changed yet**.
+
+---
+
+### Step 6.3 — ⛔ Pre-Fix Confirmation Gate (MANDATORY)
+
+Before writing **any** code, the AI **must** stop and present the investigation findings to the user for explicit approval.
+
+**What to present**:
+1. **Bug summary** — brief recap of what is broken
+2. **Root cause** — the exact line(s) or logic causing the issue
+3. **Proposed fix** — what code changes will be made and why
+4. **Files to be modified** — list of every file that will change
+
+**How to ask**:
+- Present the summary clearly and concisely
+- End with: **"This is the root cause and proposed fix. Can I proceed with applying the changes?"**
+- Wait for an explicit **"yes" / "go ahead" / "confirmed"** (or equivalent) before continuing
+- If the user disagrees with the analysis or wants a different approach:
+  - Update the bug log with the revised understanding
+  - Go back to **Step 6.2** and re-investigate
+  - Re-present for confirmation when done
+- **Do not interpret silence, ambiguous replies, or follow-up questions as confirmation.**
+
+---
+
+### Step 6.4 — Implement Fix
+
+Once the user explicitly confirms the proposed fix:
+
+- **Input**: confirmed proposed fix from Step 6.3 + affected code
+- **Actions**:
+  1. **Apply code changes**:
+     - Implement exactly the fix described in Step 6.3
      - Follow all rules from `engine/rules/backend-rule.md` / `engine/rules/frontend-rule.md` and `project/rules.md`
      - Keep the fix **minimal and isolated** — do not refactor unrelated code
      - Do not add new features or change behavior outside the bug scope
-  4. **Document the fix** in the bug log file (update "Fix Applied" section)
-  5. **List modified files** in the bug log file (update "Related Files" section)
-  6. **Run basic verification**:
+  2. **Update the bug log** (finalize "Fix Applied" and "Related Files" sections to reflect what was actually changed)
+  3. **Run basic verification**:
      - Check that the fixed code compiles without errors
      - Check that no linter errors were introduced in the modified files
      - Verify the fix logically addresses the root cause
 
-- **Done when**: Code is fixed, bug log is updated with root cause + fix description + related files, and basic verification passes.
+- **Done when**: Code is fixed, bug log is updated with final fix description + related files, and basic verification passes.
 
 ---
 
-### Step 6.3 — ⛔ Confirmation Gate (MANDATORY)
+### Step 6.5 — ⛔ Post-Fix Confirmation Gate (MANDATORY)
 
-Before marking the bug as DONE, the AI **must** stop and ask the user for confirmation.
+After the fix is implemented, the AI **must** stop and ask the user to confirm it resolves the issue before marking it as DONE.
 
 **What to present**:
 1. **Bug summary** — brief recap of what was broken
@@ -1051,19 +1088,19 @@ Before marking the bug as DONE, the AI **must** stop and ask the user for confir
 
 **How to ask**:
 - Present the summary clearly and concisely
-- End with: **"The fix is ready. Can you confirm this resolves the issue so I can mark it as DONE?"**
+- End with: **"The fix is applied. Can you confirm this resolves the issue so I can mark it as DONE?"**
 - Wait for an explicit **"yes" / "confirmed" / "looks good"** (or equivalent)
-- If the user reports the bug is **not** fixed or introduces a regression:
+- If the user reports the bug is **not** fixed or a regression was introduced:
   - Update the bug log with the feedback
-  - Go back to **Step 6.2** and revise the fix
+  - Go back to **Step 6.2** and re-investigate
   - Re-present for confirmation when done
 - **Do not interpret silence, ambiguous replies, or follow-up questions as confirmation.**
 
 ---
 
-### Step 6.4 — Mark as Done
+### Step 6.6 — Mark as Done
 
-Once the user explicitly confirms the fix:
+Once the user explicitly confirms the fix resolves the issue:
 
 1. Update the bug log file:
    - Change **Status** from `PENDING` to `DONE`
@@ -1079,7 +1116,7 @@ Once the user explicitly confirms the fix:
 
 ### Path B — Done
 
-When Step 6.4 completes:
+When Step 6.6 completes:
 - The bug is fixed in code
 - The bug log `project/bugs/bug-<NNN>-<slug>.md` has status DONE and documents the root cause, fix, and verification
 - `project/bugs/bug-log.md` has a new row pointing at the bug file
@@ -1093,7 +1130,7 @@ For the next bug, repeat Phase 6 from Step 6.0.
 | Decision | Path | Steps | Outputs |
 |----------|------|-------|---------|
 | Needs plan change, multi-module impact, or data migration | **Path A — Change Request** | Phase 5 full flow | `project/changes/change-<NNN>-bug-fix-<slug>/` with change request + recon + verification reports |
-| Isolated code fix, no architectural impact | **Path B — Direct Fix** | 6.0 Triage → 6.1 Log → 6.2 Fix → 6.3 Confirm → 6.4 Done | `project/bugs/bug-<NNN>-<slug>.md` with pending → done transition |
+| Isolated code fix, no architectural impact | **Path B — Direct Fix** | 6.0 Triage → 6.1 Log → 6.2 Investigate → 6.3 Pre-Fix Confirm → 6.4 Fix → 6.5 Post-Fix Confirm → 6.6 Done | `project/bugs/bug-<NNN>-<slug>.md` with pending → done transition |
 
 **Key principle**: Bugs that touch the plan become change requests. Bugs that are pure code corrections follow the lightweight direct-fix path.
 
