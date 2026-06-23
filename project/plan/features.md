@@ -1131,6 +1131,38 @@ Let a user self-subscribe to a chosen plan from the Customer Portal.
 
 - Implemented in change-001 (2026-06-22); upgraded to real payment in change-003 (2026-06-23). `POST /api/v1/subscriptions/subscribe` is live.
 - **Now processes a real payment via PayUp**: returns the hosted-checkout `redirectUrl`; the subscription activates only after the payment is confirmed (via the `subscription-activation` event).
+- **change-005:** active subscribers use upgrade/downgrade instead of subscribe; `inactive` users blocked from all self-service billing.
+
+---
+
+#### Feature 3b: Upgrade / Downgrade Plan *(change-005)*
+
+##### Purpose
+
+Let active subscribers change tier via payment-gated invoice (or free activation for downgrade to free).
+
+##### Main Subfeatures
+
+- Upgrade to higher-priced plan → pending invoice + PayUp
+- Downgrade to lower-priced paid plan → pending invoice + PayUp
+- Downgrade to free → immediate activation (no invoice)
+- Pending invoice list + pay/resume checkout
+
+##### Visibility
+
+- `frontend` + `backend`
+
+---
+
+#### Feature 3c: Admin Paid Flag on Assign/Create/Change *(change-005)*
+
+##### Purpose
+
+Admin can mark subscription changes as already paid (immediate activation) or leave unpaid (customer pays via PayUp).
+
+##### Visibility
+
+- `admin-panel` + `backend`
 
 ---
 

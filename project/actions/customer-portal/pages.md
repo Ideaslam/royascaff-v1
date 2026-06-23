@@ -636,13 +636,19 @@ there is no separate column-editor route.
 - `GET /api/v1/subscriptions/plans - available plans`
 - `GET /api/v1/subscriptions/me - subscription + accountStatus + limits + usage`
 - `POST /api/v1/subscriptions/subscribe - self-subscribe (paid → redirectUrl; free → activated)`
+- `POST /api/v1/subscriptions/upgrade - upgrade active plan (change-005)`
+- `POST /api/v1/subscriptions/downgrade - downgrade active plan (change-005)`
+- `GET /api/v1/subscriptions/me/pending-payments - unpaid invoices (change-005)`
+- `POST /api/v1/subscriptions/payments/:paymentId/pay - resume PayUp checkout (change-005)`
 - `POST /api/v1/subscriptions/cancel - cancel own subscription`
 
 #### UI Sections / Actions
 
 - Account status banner (if suspended — shown only after failed login; on page: subscription status)
 - Current plan + usage bars (dashboards, uploads/month, updates/month vs limits)
-- Plan cards: Subscribe (paid redirects to PayUp; free activates inline + reload)
+- Plan cards: Subscribe / Upgrade / Downgrade based on price vs current plan *(change-005)*
+- Pending invoices section with Pay now *(change-005)*
+- Admin-deactivated (`inactive`) users see lock message; plan actions hidden *(change-005)*
 - Cancel action for active paid/cancelled states
 - Upgrade prompt when subscription expired/inactive
 

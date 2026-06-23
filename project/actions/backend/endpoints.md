@@ -2293,15 +2293,22 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 - Body: `AssignSubscriptionDto`
   - `userId: string (required)`
   - `planId: string (required)`
+  - `paid: boolean (optional, default false)` *(change-005)*
 
 #### Return
 
 - Status: `201`
-- DTO / Shape: `SubscriptionDto`
+- DTO / Shape:
+  - `paid: false` (paid plan): `{ message: string, userId, planId }` — pending invoice created
+  - `paid: true` or free plan: `SubscriptionDto`
 
 #### Services Called
 
-- `SubscriptionsService.assignSubscription() - assigns the plan to the user`
+- `SubscriptionsService.assignSubscription(userId, planId, actorId, ip, paid)` *(change-005)*
+
+#### Constraints / Notes
+
+- **Modified (change-005):** `paid: false` creates pending invoice; customer pays via PayUp. `paid: true` settles immediately via admin actor.
 
 ---
 
@@ -2324,15 +2331,22 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 - Body: `ChangeSubscriptionDto`
   - `userId: string (required)`
   - `planId: string (required)`
+  - `paid: boolean (optional, default false)` *(change-005)*
 
 #### Return
 
 - Status: `201`
-- DTO / Shape: `SubscriptionDto`
+- DTO / Shape:
+  - `paid: false` (paid plan): `{ message: string, userId, planId }`
+  - `paid: true` or free plan: `SubscriptionDto`
 
 #### Services Called
 
-- `SubscriptionsService.changeSubscription() - switches the user's plan`
+- `SubscriptionsService.changeSubscription(userId, planId, actorId, ip, paid)` *(change-005)*
+
+#### Constraints / Notes
+
+- **Modified (change-005):** infers upgrade/downgrade action from price comparison; `paid` flag same semantics as assign.
 
 ---
 
@@ -2404,6 +2418,7 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 
 - **Modified (change-003):** paid plans start PayUp checkout; activation after confirmed payment.
 - **Modified (change-004):** free plans skip PayUp; enqueue `subscription-activation` BullMQ job (same processor as paid).
+- **Modified (change-005):** blocks if user has **active** subscription (use upgrade/downgrade); blocks if **inactive** (`403 SUBSCRIPTION_ADMIN_LOCKED`); paid subscribe always creates pending invoice.
 - Returns `404` if the plan does not exist.
 - Writes audit log (`PAYMENT_CREATE` for paid; `SUBSCRIPTION_ASSIGN` on activation).
 
@@ -2505,6 +2520,69 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 #### Constraints / Notes
 
 - User retains login access; mutating actions blocked by subscription resource lock.
+- **Modified (change-005):** customer self-service subscribe/upgrade/downgrade also blocked while `inactive`.
+
+---
+
+### Endpoint 84 *(change-005)*
+
+- Name: `Self Upgrade Plan`
+- Method: `POST`
+- Route: `/api/v1/subscriptions/upgrade`
+- Summary: `Customer upgrades to a higher-priced plan via PayUp invoice.`
+
+#### Auth
+
+- Access: `JWT`
+- Body: `SelfSubscribeDto { planId }`
+- Return: `{ redirectUrl }` or `{ activated: true }` (free target)
+- Services: `SubscriptionsService.selfUpgrade`
+
+---
+
+### Endpoint 85 *(change-005)*
+
+- Name: `Self Downgrade Plan`
+- Method: `POST`
+- Route: `/api/v1/subscriptions/downgrade`
+- Summary: `Customer downgrades to a lower-priced plan (PayUp or free activation).`
+
+#### Auth
+
+- Access: `JWT`
+- Body: `SelfSubscribeDto { planId }`
+- Return: `{ redirectUrl }` or `{ activated: true }`
+- Services: `SubscriptionsService.selfDowngrade`
+
+---
+
+### Endpoint 86 *(change-005)*
+
+- Name: `List My Pending Payments`
+- Method: `GET`
+- Route: `/api/v1/subscriptions/me/pending-payments`
+- Summary: `Customer lists unpaid subscription invoices.`
+
+#### Auth
+
+- Access: `JWT`
+- Return: `PendingPaymentDto[]`
+- Services: `SubscriptionsService.listPendingPayments`
+
+---
+
+### Endpoint 87 *(change-005)*
+
+- Name: `Pay Pending Invoice`
+- Method: `POST`
+- Route: `/api/v1/subscriptions/payments/:paymentId/pay`
+- Summary: `Resume PayUp checkout for a pending subscription invoice.`
+
+#### Auth
+
+- Access: `JWT`
+- Return: `{ redirectUrl: string }`
+- Services: `SubscriptionsService.payPendingInvoice`
 
 ---
 

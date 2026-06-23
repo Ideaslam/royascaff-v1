@@ -210,9 +210,9 @@ Conventions:
 
 - `GET /api/v1/users - client picker`
 - `GET /api/v1/subscriptions - list user subscriptions`
-- `POST /api/v1/subscriptions - create`
+- `POST /api/v1/subscriptions - create (optional paid flag, change-005)`
 - `PUT /api/v1/subscriptions/:id - update`
-- `POST /api/v1/subscriptions/change - change a user's plan`
+- `POST /api/v1/subscriptions/change - change a user's plan (optional paid flag, change-005)`
 - `PATCH /api/v1/subscriptions/:userId/cancel - cancel a user's subscription`
 - `POST /api/v1/subscriptions/:id/activate - admin activate subscription` *(change-004)*
 - `POST /api/v1/subscriptions/:id/deactivate - admin deactivate subscription` *(change-004)*
@@ -223,7 +223,7 @@ Conventions:
 
 #### UI Sections / Actions
 
-- Tab 1: user subscriptions table (assign/change/cancel/**activate/deactivate**). Tab 2: plans table (CRUD incl. free plans with `priceMonthlyUsd = 0`).
+- Tab 1: user subscriptions table (assign/change/cancel/**activate/deactivate**). Create/change dialogs include **Mark as paid** checkbox (default off → pending invoice). Tab 2: plans table (CRUD incl. free plans with `priceMonthlyUsd = 0`).
 - Activate/Deactivate buttons per subscription row (change-004).
 - Status filter includes `inactive`.
 
