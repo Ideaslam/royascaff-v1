@@ -11,7 +11,7 @@
 ## 1. Build Verification
 
 Both the backend and frontend builds have completed successfully:
-- **Backend API build**: Completed successfully (`npm run build` inside `roya-ai-dynamo-api`).
+- **Backend API build**: Completed successfully (`npm run build` inside `roya-ai-dynamo-api` after adding endpoints and context-matching logic).
 - **Frontend client build**: Completed successfully (`npm run build` inside `roya-ai-dynamo-frontend` after increasing style budgets in [angular.json](file:///Users/islamhaa/projects/orgs/roya/projects/roya-dynamo/roya-ai-dynamo-frontend/angular.json)).
 
 ---
@@ -50,7 +50,21 @@ All acceptance criteria mapped out in the planning phases have been implemented 
 
 ---
 
-## 3. Post-Build Summary
+## 3. Bug Fix: Workspace ID Serialization Error
+- **Issue**: Standard mongoose serialization only returns `_id` and does not include the virtual `id` on returned JSON properties unless explicitly configured. This caused the frontend code calling `ws.id` (which was `undefined`) to pass `undefined` as the target workspace, resulting in a validation failure `workspaceId must be a string` on backend switch request.
+- **Resolution**:
+  1. Enabled virtual serialization `toJSON` and `toObject` hooks in [workspace.schema.ts](file:///Users/islamhaa/projects/orgs/roya/projects/roya-dynamo/roya-ai-dynamo-api/src/modules/workspace/schemas/workspace.schema.ts) mapping `ret.id = ret._id.toString()`.
+  2. Added explicit `id: w!._id.toString()` mapping in `listUserWorkspaces` and `adminListWorkspaces` in [workspace.service.ts](file:///Users/islamhaa/projects/orgs/roya/projects/roya-dynamo/roya-ai-dynamo-api/src/modules/workspace/services/workspace.service.ts).
+
+---
+
+## 4. Bug Fix: Workspace Switcher Disappearance (Context Retention)
+- **Issue**: After switching workspaces, the frontend calls `GET /users/me` to refresh the session metadata and localStorage state. However, the database `User` collection does not permanently store the active workspace's slug or the user's role in that specific workspace (these are resolved dynamically inside the JWT payload). As a result, the returned user payload from the database contained `workspaceSlug: null` and `workspaceRole: null`, which caused the AppShell switcher element (conditioned on `@if (workspaceName())`) to hide.
+- **Resolution**: Updated `UsersController`'s `GET /users/me`, `PUT /users/me` and `PATCH /users/me` endpoints in [users.controller.ts](file:///Users/islamhaa/projects/orgs/roya/projects/roya-dynamo/roya-ai-dynamo-api/src/modules/users/controllers/users.controller.ts) to merge `id`, `workspaceSlug`, and `workspaceRole` dynamically from the request context's `@CurrentUser()` (extracted from the authenticated JWT) into the returned profile object.
+
+---
+
+## 5. Post-Build Summary
 
 | Criteria / Target | Status | Verification Detail |
 |-------------------|:------:|---------------------|
