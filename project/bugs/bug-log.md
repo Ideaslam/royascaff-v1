@@ -9,6 +9,7 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 | 001 | 2026-06-23 | low | backend/repositories | Mongoose `new` option deprecated warning | DONE | [bug-001-mongoose-new-option-deprecated.md](./bug-001-mongoose-new-option-deprecated.md) |
 | 002 | 2026-06-23 | high | backend/subscriptions, customer-portal | PayUp called before invoice payment step | DONE | [bug-002-invoice-before-payup.md](./bug-002-invoice-before-payup.md) |
 | 003 | 2026-06-23 | medium | customer-portal/subscriptions | Cancelled subscription still shown as current plan | DONE | [bug-003-cancelled-plan-shows-current.md](./bug-003-cancelled-plan-shows-current.md) |
+| 004 | 2026-06-23 | medium | backend/workspace, customer-portal/settings | Workspace logo URL and members list display | DONE | [bug-004-workspace-logo-members-display.md](./bug-004-workspace-logo-members-display.md) |
 
 ---
 
@@ -26,7 +27,7 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 ## Usage
 
-**For direct fixes** (Path B): append a row when the bug is marked DONE in Step 6.4.
+**For direct fixes** (Path B): append a row with Status = **PENDING** when the bug is logged (Step 6.1); update the row to **DONE** after user confirmation (Step 6.4).
 
 **For escalated bugs** (Path A): append a row with Status = ESCALATED and File pointing to the change folder in `project/changes/`.
 
@@ -34,4 +35,4 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 ## Next Bug Number
 
-**Next**: 004
+**Next**: 005
