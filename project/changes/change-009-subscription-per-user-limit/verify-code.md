@@ -16,6 +16,7 @@
 | Endpoint / Method | Code file | Match? | Description |
 |-------------------|-----------|:------:|-------------|
 | `POST /api/v1/workspaces/:workspaceId/invite` | `workspace-invite.controller.ts` | ✓ | Enforces per-user limit. |
+| `GET /api/v1/subscriptions/me` | `subscriptions.controller.ts` | ✓ | Scoped lookup to current workspace context. |
 | `GET /api/v1/subscriptions/me/pending-payments` | `subscriptions.controller.ts` | ✓ | Scoped lookup to workspace context. |
 | `POST /api/v1/subscriptions/payments/:paymentId/pay` | `subscriptions.controller.ts` | ✓ | Scoped lookup to workspace context. |
 | `PATCH /api/v1/workspaces/:workspaceId/invitations/:invitationId/resend` | `workspace-members.controller.ts` | ✓ | Cleaned up unused `requesterId` argument. |
@@ -67,6 +68,7 @@
 | 5 | Checkout redirect on frontend | ✓ | `workspace-settings.page.ts` intercepts and redirects |
 | 6 | On Payment: transition invitation to `pending` + send email | ✓ | `subscriptions.service.ts` activateFromPayment |
 | 7 | Admin panel subscription plan config inputs | ✓ | `subscriptions.page.ts` (admin-frontend) |
+| 8 | Synchronous Free Plan Activation | ✓ | SubscriptionsService `activateFromPayment` called synchronously on free plan subscribe/downgrade to avoid queue dependency |
 
 ---
 
