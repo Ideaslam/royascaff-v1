@@ -14,6 +14,7 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 | 006 | 2026-06-24 | high | backend/workspace, customer-portal | Invitation email link returns 404 | DONE | [bug-006-invitation-email-link-404.md](./bug-006-invitation-email-link-404.md) |
 | 007 | 2026-06-24 | high | backend/workspace, customer-portal | Invitation link redirects to login without context | DONE | [bug-007-invitation-link-redirects-login.md](./bug-007-invitation-link-redirects-login.md) |
 | 008 | 2026-06-24 | high | backend/subscriptions, backend/payments | Payment checkout resume throws User Not Found (404) | DONE | [bug-008-pay-invoice-user-not-found.md](./bug-008-pay-invoice-user-not-found.md) |
+| 009 | 2026-06-25 | high | backend/payments, backend/subscriptions | Pay invoice fails — wrong PayUp checkout endpoint | DONE | [bug-009-payup-unreachable-wrong-endpoint.md](./bug-009-payup-unreachable-wrong-endpoint.md) |
 
 ---
 
