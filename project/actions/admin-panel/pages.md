@@ -223,7 +223,7 @@ Conventions:
 
 #### UI Sections / Actions
 
-- Tab 1: user subscriptions table (assign/change/cancel/**activate/deactivate**). Create/change dialogs include **Mark as paid** checkbox (default off → pending invoice). Tab 2: plans table (CRUD incl. free plans with `priceMonthlyUsd = 0`).
+- Tab 1: user subscriptions table (assign/change/cancel/**activate/deactivate**). Create/change dialogs include **Mark as paid** checkbox (default off → pending invoice). Tab 2: plans table (CRUD incl. free plans with `priceMonthlyUsd = 0`). Create/Edit plan dialog includes input fields for **Free Users Limit** and **Price Per Extra User (USD)**, and the plans table includes columns for these values.
 - Activate/Deactivate buttons per subscription row (change-004).
 - Status filter includes `inactive`.
 

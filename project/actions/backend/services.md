@@ -1896,7 +1896,7 @@ The following are documented as implemented-but-incomplete relative to the inten
 
 | Method | Signature | Side Effects |
 |--------|-----------|-------------|
-| `invite` | `(workspaceId, email, role, inviterId) → InvitationDto` | Creates WorkspaceInvitation, sends email via `MAIL_PROVIDER`. |
+| `invite` | `(workspaceId, email, role, inviterId) → { direct: boolean, paymentId?: string, invitation?: InvitationDto }` | Checks free user limits. If within limit, creates WorkspaceInvitation, sends email via `MAIL_PROVIDER`. If limit reached, creates WorkspaceInvitation with status `pending-payment` and creates a pending PayUp invoice of `pricePerExtraUserMonthlyUsd`. |
 | `resendInvite` | `(invitationId, requesterId) → void` | Re-sends email. |
 | `revokeInvite` | `(invitationId, requesterId) → void` | Sets status = revoked. |
 | `acceptInvitation` | `(token) → { workspaceId }` | Validates token/expiry. Creates WorkspaceMembership. Sets status = accepted. |

@@ -864,6 +864,8 @@ Catalog of subscription plan definitions (model `SubscriptionPlan`). Admin-manag
   maxDataUploadsPerMonth: Number,
   maxDataUpdatesPerMonth: Number,
   isActive: Boolean,
+  freeUsers: Number,
+  pricePerExtraUserMonthlyUsd: Number,
   createdAt: Date,
   updatedAt: Date
 }
@@ -881,6 +883,8 @@ Catalog of subscription plan definitions (model `SubscriptionPlan`). Admin-manag
 | `maxDataUploadsPerMonth` | `Number` | yes | Max CSV uploads per month; min 0 |
 | `maxDataUpdatesPerMonth` | `Number` | yes | Max data updates/refreshes per month; min 0 |
 | `isActive` | `Boolean` | yes | Default `true`; inactive plans hidden from assignment |
+| `freeUsers` | `Number` | yes | Number of users included for free in the plan; default 5 |
+| `pricePerExtraUserMonthlyUsd` | `Number` | yes | Price in USD per month per extra user beyond limit; default 10 |
 | `createdAt` | `Date` | yes | Mongoose timestamps |
 | `updatedAt` | `Date` | yes | Mongoose timestamps |
 
@@ -989,6 +993,10 @@ gateway/session/return-URL fields.)*
   confirmUrl: String,
   cancelUrl: String,
   redirectUrl: String,
+  action: String,
+  previousPlanId: ObjectId,
+  settledByAdminId: ObjectId,
+  invitationId: ObjectId,
   createdAt: Date,
   updatedAt: Date
 }
@@ -1015,6 +1023,10 @@ gateway/session/return-URL fields.)*
 | `confirmUrl` | `String` | no | Public return URL sent to PayUp on success; default `''` *(change-003)* |
 | `cancelUrl` | `String` | no | Public return URL sent to PayUp on cancel; default `''` *(change-003)* |
 | `redirectUrl` | `String` | no | Hosted-checkout URL returned by PayUp; default `''` *(change-003)* |
+| `action` | `String` | no | Enum: `subscribe`, `upgrade`, `downgrade`, `admin_assign`, `add_user` |
+| `previousPlanId` | `ObjectId` | no | Ref `subscriptionplans`; default `null` |
+| `settledByAdminId` | `ObjectId` | no | Ref `users` for admin manual settle; default `null` |
+| `invitationId` | `ObjectId` | no | Ref `workspace_invitations` for extra user invoices; default `null` |
 | `createdAt` | `Date` | yes | Mongoose timestamps |
 | `updatedAt` | `Date` | yes | Mongoose timestamps |
 
@@ -1030,6 +1042,7 @@ gateway/session/return-URL fields.)*
 - One `payment` belongs to one `user`
 - One `payment` optionally references one `usersubscription` (`subscriptionId`)
 - One `payment` optionally references one `subscriptionplan` (`planId`)
+- One `payment` optionally references one `workspace_invitation` (`invitationId`)
 
 ### Index Recommendations
 
@@ -1513,7 +1526,7 @@ Indexes: unique `{ workspaceId: 1, userId: 1 }`, `{ userId: 1 }`
 | `email` | string | yes | — | Email address invited (lowercase) |
 | `role` | WorkspaceRole | yes | — | Role to assign on acceptance |
 | `token` | string | yes | — | Unique secure token; indexed for accept lookup |
-| `status` | InvitationStatus | yes | `pending` | `pending` / `accepted` / `revoked` / `expired` |
+| `status` | InvitationStatus | yes | `pending` | `pending` / `pending-payment` / `accepted` / `revoked` / `expired` |
 | `expiresAt` | Date | yes | — | 7 days after creation |
 | `acceptedAt` | Date | no | `null` | |
 | `createdAt` | Date | auto | — | |

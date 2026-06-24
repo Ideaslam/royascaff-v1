@@ -3210,12 +3210,12 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 
 ---
 
-### POST /api/v1/workspaces/:id/invitations
+### POST /api/v1/workspaces/:id/invite
 
 - **Auth:** JWT required (workspace-owner or workspace-admin)
 - **Body:** `{ email: string, role: WorkspaceRole }`
-- **Description:** Invite a user by email to join the workspace. Sends invitation email.
-- **Response:** `InvitationDto`
+- **Description:** Invite a user by email to join the workspace. Checks free user limits. If within limit, creates invitation as `pending` and sends email. If limit reached, creates invitation as `pending-payment`, generates a PayUp payment, and returns checkout info.
+- **Response:** `{ direct: boolean, paymentId?: string, invitation?: InvitationDto }`
 
 ---
 
