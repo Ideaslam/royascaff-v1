@@ -9,7 +9,8 @@ It is split into two zones with a strict boundary.
 
 How to build, never what this system is. Product-agnostic; reusable across any product with zero edits.
 
-- `engine/flow.md` — the orchestration guide (Phases 0–5). **Start here.**
+- `engine/flow.md` — the orchestration guide for new builds (Phases 0–6). **Start here for greenfield.**
+- `engine/reverse-engineer-flow.md` — the reverse-engineer guide for existing/legacy codebases (Phases R.0–R.Done). **Start here to onboard an existing app.**
 - `engine/templates/` — generic document templates.
 - `engine/rules/` — generic backend and frontend conventions.
 
@@ -43,4 +44,5 @@ it stays a portable, self-contained blueprint.
 ## How to use
 
 - **New build**: open `engine/flow.md` and follow Phase 0 → Phase 4.
+- **Onboard an existing / legacy codebase**: open `engine/reverse-engineer-flow.md` and follow Phase R.0 → R.Done. This reads the code and populates `project/` automatically, then hands off to Phase 5/6 of `flow.md`.
 - **Change an existing app**: create `project/changes/change-<NNN>-<slug>/` from `engine/templates/change-request-template.md`, fill it, then run Phase 5.
