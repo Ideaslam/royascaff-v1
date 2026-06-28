@@ -628,6 +628,8 @@ Accepts an OAuth authorization code payload but is **not wired** to `AuthService
 
 `@Controller('projects')`
 
+**Workspace context (change-013):** All endpoints resolve data from `ws_{user.workspaceSlug}_projects`. The JWT must include `workspaceSlug` (set on login/workspace switch). API routes unchanged; no `workspaceId` in URL.
+
 ---
 
 ### Endpoint 18

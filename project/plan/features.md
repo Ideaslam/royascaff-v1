@@ -289,12 +289,12 @@ Allow a user to change their password after confirming the current one.
 
 ### Module Purpose
 
-Provide the organizational container that groups dashboards. Users create and manage projects in the Customer Portal.
+Provide the organizational container that groups dashboards within the **active workspace**. Users create and manage projects in the Customer Portal; data is stored in `ws_{workspaceSlug}_projects`.
 
 ### Module Scope
 
-- Backend: `yes`
-- Frontend: `yes`
+- Backend: `yes` — workspace-scoped via JWT `workspaceSlug`
+- Frontend: `yes` — no API changes; workspace context from JWT after switch
 - Audience: `authenticated editors and admins (Customer Portal)`
 
 ### Features In This Module
@@ -309,6 +309,7 @@ Allow a user to create a new project to organize dashboards.
 
 - Submit project name (max 200 chars) and optional description
 - Set the project owner to the current user
+- Persist in the active workspace's `ws_{slug}_projects` collection
 
 ##### Visibility
 
@@ -328,10 +329,10 @@ Show the user's projects in a searchable, paginated list.
 
 ##### Main Subfeatures
 
-- Paginated list of projects
+- Paginated list of projects in the **current workspace**
 - Search by project name
 - Filter by active status
-- Admin sees all projects; others see only owned projects (enforced in the service)
+- Admin sees all projects in the workspace; others see only owned projects (enforced in the service)
 
 ##### Visibility
 

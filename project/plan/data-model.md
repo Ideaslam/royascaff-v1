@@ -9,7 +9,7 @@ This document defines the complete MongoDB and Mongoose data model for **Roya AI
 The backend domains covered by this model:
 
 - users and authentication
-- projects
+- projects (workspace-prefixed: `ws_{slug}_projects`)
 - CSV file metadata and per-file data row collections
 - column metadata (AI-analyzed and user-confirmed)
 - dashboards and chart widget configurations
@@ -43,13 +43,13 @@ The backend domains covered by this model:
 ### Required Collections (Phase 1 — MVP)
 
 - `users`
-- `projects`
-- `dashboards`
-- `csvfiles`
-- `columnmetadata`
-- `chartwidgets`
-- `dashboarddatasources`
-- `chartdatacache`
+- `ws_{slug}_projects` (dynamic, per workspace — see change-006/013)
+- `ws_{slug}_dashboards` (dynamic, per workspace)
+- `ws_{slug}_csvfiles` (dynamic, per workspace)
+- `ws_{slug}_columnmetadata` (dynamic, per workspace)
+- `ws_{slug}_chartwidgets` (dynamic, per workspace)
+- `ws_{slug}_dashboarddatasources` (dynamic, per workspace)
+- `ws_{slug}_chartdatacache` (dynamic, per workspace)
 - `backgroundjobs`
 - `notifications`
 - `auditlogs`
@@ -139,7 +139,11 @@ Stores user accounts with authentication credentials, role, profile, and languag
 
 ## 2. projects
 
-Organizational containers that group dashboards. Owned by one user; no uniqueness constraint on name.
+Organizational containers that group dashboards. Owned by one user; scoped to a workspace via dynamic collection `ws_{workspaceSlug}_projects` (change-013). No uniqueness constraint on name within a workspace.
+
+### Collection name
+
+`ws_{workspaceSlug}_projects` — resolved at runtime by `ProjectRepository.getModel(workspaceSlug)`.
 
 ### Mongoose shape
 
@@ -170,7 +174,8 @@ Organizational containers that group dashboards. Owned by one user; no uniquenes
 ### Relations
 
 - One `project` belongs to one `user` (`ownerId`)
-- One `project` has many `dashboards`
+- One `project` has many `dashboards` (within the same workspace collection prefix)
+- Projects are isolated per workspace — no cross-workspace project references
 
 ### Index Recommendations
 
@@ -1603,6 +1608,7 @@ The following collections previously used static names. With change-006 they use
 
 | Previous name | New pattern | Notes |
 |--------------|-------------|-------|
+| `projects` | `ws_{slug}_projects` | Same fields; scoped per workspace (change-013) |
 | `csvfiles` | `ws_{slug}_csvfiles` | `ownerId` field retained for creation tracking |
 | `columnmetadata` | `ws_{slug}_columnmetadata` | Same fields |
 | `dashboards` | `ws_{slug}_dashboards` | `projectId` field retained |

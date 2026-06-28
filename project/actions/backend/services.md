@@ -228,11 +228,11 @@ Application service for user records beyond auth. Handles a user editing their o
 - Name: `ProjectsService`
 - Type: `internal`
 - Module: `Projects`
-- Summary: `CRUD for projects (dashboard containers) with owner-or-admin access enforcement.`
+- Summary: `CRUD for projects (dashboard containers) with owner-or-admin access enforcement. Scoped to the JWT workspace via dynamic collection ws_{slug}_projects.`
 
 #### Description
 
-Domain service for projects, which group dashboards under an owner. Enforces that only the owner or an admin may read or mutate a project; admins see all projects, regular users see only their own in lists.
+Domain service for projects, which group dashboards under an owner within a workspace. Resolves the MongoDB collection from `workspaceSlug` (same pattern as dashboards). Enforces that only the owner or an admin may read or mutate a project; admins see all projects in the workspace, regular users see only their own in lists.
 
 #### Purpose
 
@@ -248,16 +248,16 @@ Domain service for projects, which group dashboards under an owner. Enforces tha
 
 #### Public Methods
 
-- `create(dto: CreateProjectDto, userId: string, ip?) — creates a project owned by userId, audits PROJECT_CREATE`
-- `list(userId: string, userRole: string, filters): Promise<PaginatedResponseDto> — paginated; non-admins scoped to ownerId`
-- `getById(id: string, userId: string, userRole: string) — fetch one with owner-or-admin guard`
-- `update(id, dto: UpdateProjectDto, userId, userRole, ip?) — guarded update, audits PROJECT_UPDATE`
-- `delete(id, userId, userRole, ip?) — guarded delete, audits PROJECT_DELETE`
+- `create(dto: CreateProjectDto, userId: string, workspaceSlug: string, ip?) — creates a project in ws_{slug}_projects, audits PROJECT_CREATE`
+- `list(userId: string, userRole: string, workspaceSlug: string, filters): Promise<PaginatedResponseDto> — paginated within workspace; non-admins scoped to ownerId`
+- `getById(id: string, userId: string, userRole: string, workspaceSlug: string) — fetch one with owner-or-admin guard`
+- `update(id, dto: UpdateProjectDto, userId, userRole, workspaceSlug, ip?) — guarded update, audits PROJECT_UPDATE`
+- `delete(id, userId, userRole, workspaceSlug, ip?) — guarded delete, audits PROJECT_DELETE`
 
 #### Dependencies
 
 - Repositories:
-  - `ProjectRepository — project persistence and pagination`
+  - `ProjectRepository — dynamic ws_{slug}_projects persistence via getModel(workspaceSlug)`
 - Internal Services:
   - `AuditLogService — audit trail`
 - External Providers:
@@ -1268,7 +1268,7 @@ Domain service for the application's global settings singleton. Returns the curr
 
 #### Description
 
-Application service for the admin overview. Runs counts (clients, active clients, projects, dashboards, active subscriptions, new clients this month) and a 30-day AI cost summary in parallel and assembles a single stats payload. Reads models/repositories directly for aggregation efficiency.
+Application service for the admin overview. Runs counts (clients, active clients, projects, dashboards, active subscriptions, new clients this month) and a 30-day AI cost summary in parallel and assembles a single stats payload. Projects and dashboards are counted by summing documents across all `ws_*_projects` and `ws_*_dashboards` collections (change-013).
 
 #### Purpose
 
