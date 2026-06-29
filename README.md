@@ -9,8 +9,13 @@ It is split into two zones with a strict boundary.
 
 How to build, never what this system is. Product-agnostic; reusable across any product with zero edits.
 
-- `engine/flow.md` — the orchestration guide (Phases 0–5). **Start here.**
-- `engine/templates/` — generic document templates.
+- `engine/flow.md` — the flow router. **Start here.** Routes to the correct phase flow.
+- `engine/conventions.md` — global defaults (route prefix, auth model, envelope, pagination, UI states).
+- `engine/flows/` — phase-specific workflows:
+  - `initial-build.md` — Phases 0–4 (used once)
+  - `change-mode.md` — Phase 5 (daily workflow, with fast-track path)
+  - `bug-fix.md` — Phase 6
+- `engine/templates/` — generic document templates. Verbose guidance lives in `templates/references/`.
 - `engine/rules/` — generic backend and frontend conventions.
 
 **The engine must never contain system-specific data** (repo names, brand colors, product-specific
@@ -19,20 +24,21 @@ stack or paths). Those live only in `project/`.
 ## `project/` — this system's blueprint (single source of truth)
 
 What this system is and its current state. Copying `project/` alone must be enough for someone to
-understand and rebuild the current app — this is the **rebuild test** (Verification check 14).
+understand and rebuild the current app — this is the **rebuild test**.
 
-- `project/profile.md` — apps, repos, tech stack, brand tokens, environments, integrations. The engine
-  refers to this for every concrete fact. Built from `engine/templates/profile-template.md` (Phase 0, Step 0.0b);
-  its Applications **Key** column defines both `target-app` values and the per-app `project/actions/<key>/` folders.
+- `project/profile.md` — apps, repos, tech stack, brand tokens, environments, integrations.
 - `project/description.md` — the product specification.
-- `project/plan/` — modules, features, data model.
-- `project/actions/` — action specs organized **per app** (one folder per application, keyed by its `profile.md` app key): API apps hold `services.md` + `endpoints.md`, web apps hold `pages.md`, mobile apps hold `views.md`. The call chain `pages/views → endpoints → services` now crosses app folders.
-- `project/rules.md` — system-specific feature rules (beyond the generic engine rules).
-- `project/verify/` — full-system verification reports.
-- `project/changes/` — `change-log.md` (append-only index, one row per change) plus one folder per change
-  (`change-<NNN>-<slug>/`) holding its filled `change-request.md`, `recon.md` (existing-code review),
-  `verify-plan.md`, and `verify-code.md`. The blank request form is the engine template
-  `engine/templates/change-request-template.md`.
+- `project/plan/` — modules (with features), data model, roles & authorization.
+- `project/actions/` — action specs organized **per app**, split into **per-module files**:
+  - `backend/endpoints/` — per-module endpoint tables with `EP-` IDs + `_index.md` registry
+  - `backend/services/` — per-module service specs with `SVC-` IDs + `_index.md` registry
+  - `customer-portal/pages/` — per-module page specs + `_index.md` registry
+  - `admin-panel/pages/` — per-module page specs + `_index.md` registry
+- `project/rules.md` — system-specific feature rules with `RULE-` IDs.
+- `project/verify/` — full-system verification reports (Phase 4).
+- `project/changes/` — `change-log.md` (append-only index) plus one folder per change
+  (`change-<NNN>-<slug>/`) holding its `change-request.md`, `impact.md`, and `verify-code.md`.
+- `project/bugs/` — bug reports and fix log.
 
 ## The sync guarantee
 
@@ -44,3 +50,4 @@ it stays a portable, self-contained blueprint.
 
 - **New build**: open `engine/flow.md` and follow Phase 0 → Phase 4.
 - **Change an existing app**: create `project/changes/change-<NNN>-<slug>/` from `engine/templates/change-request-template.md`, fill it, then run Phase 5.
+- **Fix a bug**: open `engine/flow.md`, route to Phase 6.
