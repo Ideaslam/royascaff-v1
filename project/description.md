@@ -1033,9 +1033,8 @@ Before moving to Phase 1 (Planning), verify:
 
 Now that the description is complete, proceed to **Phase 1: Plan** in [`engine/flow.md`](../engine/flow.md):
 
-1. Generate `project/plan/modules.md`
-2. Generate `project/plan/features.md`
-3. Generate `project/rules.md`
-4. Generate `project/plan/data-model.md`
+1. Generate `project/plan/modules.md` (includes features)
+2. Generate `project/rules.md`
+3. Generate `project/plan/data-model.md`
 
 Then move to **Phase 2: Actions** to generate endpoints and pages specifications.

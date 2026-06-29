@@ -4,56 +4,61 @@
 
 This folder contains the **action specifications** for every application in the solution. They are part of `project/` — the single source of truth for the current system. Specs are organized **per app**, so you can see the services, endpoints, and screens of each application on its own.
 
-## Structure — one folder per app
+## Structure — one folder per app, split by module
 
-Each application from the **Applications** table in `project/profile.md` gets its own folder, named by its **app key**. The spec files inside a folder depend on the app type:
+Each application gets its own folder. Specs are **split into per-module files** with an `_index.md` routing registry at the top of each directory:
 
 ```
 project/actions/
   <api-app>/                 # backend / API app
-    services.md              # service map (internal + external providers)
-    endpoints.md             # HTTP API specification
+    endpoints/
+      _index.md              # ROUTING REGISTRY: module → file → EP- ID range
+      auth.md                # endpoints for Auth module
+      workspace.md           # endpoints for Workspace module
+      ...
+    services/
+      _index.md              # ROUTING REGISTRY: module → file → SVC- ID
+      auth.md                # services for Auth module
+      ...
   <web-app>/                 # web SPA (customer portal, admin panel, …)
-    pages.md                 # routed page specification
-  <mobile-app>/              # mobile app (iOS / Android / cross-platform)
-    views.md                 # mobile screen specification
+    pages/
+      _index.md              # page registry: page name → route
+      auth.md                # pages for auth flows
+      ...
+  <mobile-app>/              # mobile app (would follow same pattern with views/)
 ```
 
-| App type | Folder | Spec files |
-|----------|--------|-----------|
-| Backend / API | `<api-app-key>/` | `services.md`, `endpoints.md` |
-| Web SPA | `<web-app-key>/` | `pages.md` |
-| Mobile app | `<mobile-app-key>/` | `views.md` |
-
-If the solution has **multiple APIs** (e.g. a `customer-api` and an `admin-api`), each gets its own folder with its own `services.md` + `endpoints.md`. Today this system has a **single shared API** (`backend/`) consumed by all frontends.
+| App type | Folder | Spec structure |
+|----------|--------|---------------|
+| Backend / API | `<api-app-key>/` | `endpoints/_index.md` + per-module, `services/_index.md` + per-module |
+| Web SPA | `<web-app-key>/` | `pages/_index.md` + per-group |
+| Mobile app | `<mobile-app-key>/` | `views/_index.md` + per-group |
 
 ### Current apps in this system
 
-| App key | App | Type | Spec files |
-|---------|-----|------|-----------|
-| `backend` | API (`roya-ai-dynamo-api`) | Backend / API | `backend/services.md`, `backend/endpoints.md` |
-| `customer-portal` | Customer Portal (`roya-ai-dynamo-frontend`) | Web SPA | `customer-portal/pages.md` |
-| `admin-panel` | Admin Panel (`roya-ai-dynamo-frontend-admin`) | Web SPA | `admin-panel/pages.md` |
+| App key | App | Type | Spec location |
+|---------|-----|------|--------------|
+| `backend` | API (`roya-ai-dynamo-api`) | Backend / API | `backend/endpoints/`, `backend/services/` |
+| `customer-portal` | Customer Portal (`roya-ai-dynamo-frontend`) | Web SPA | `customer-portal/pages/` |
+| `admin-panel` | Admin Panel (`roya-ai-dynamo-frontend-admin`) | Web SPA | `admin-panel/pages/` |
+
+## How to use the registries
+
+1. Read `_index.md` first to find which file(s) contain the module you need
+2. Load only those files — never scan the whole directory
+3. The registry maps module → file → ID range (e.g., Auth → `auth.md` → `EP-AUTH-01..08`)
 
 ## The call chain
 
-The dependency direction is unchanged — it now just crosses app folders:
-
 ```text
-<web-app>/pages.md  ─┐
-<mobile-app>/views.md ┼─►  <api-app>/endpoints.md  ─►  <api-app>/services.md  ─►  repositories / external providers
+<web-app>/pages/*  ─┐
+<mobile-app>/views/* ┼─►  <api-app>/endpoints/*  ─►  <api-app>/services/*  ─►  repositories / providers
 ```
 
 Client screens (pages/views) call the API's endpoints; endpoints call services; services call repositories and isolated external providers. A client spec never calls a service directly.
 
-**Order matters** when generating an API app: create its `services.md` first, then `endpoints.md`. Client specs (`pages.md` / `views.md`) are created after the endpoints they depend on exist.
+**Order matters** when generating an API app: create services first, then endpoints. Client specs are created after the endpoints they depend on exist.
 
-## Usage
+## Defaults
 
-These files are generated from:
-- All planning documents in `project/plan/`
-- `project/profile.md` (the Applications table defines the app keys/folders)
-- `project/rules.md` (system-specific rules) and `engine/rules/` (generic rules)
-- `engine/templates/` (structured templates: `services-template.md`, `endpoints-template.md`, `pages-template.md`, `views-template.md`)
-
-Follow the orchestration steps in `engine/flow.md` to keep these documents consistent. In Change Mode (Phase 5) they are updated in place — within the matching app folder — so the plan always equals the latest state of the code.
+Global defaults (route prefix, auth model, envelope, pagination, UI states) live in `engine/conventions.md`. Spec files only document **deviations** from those defaults.

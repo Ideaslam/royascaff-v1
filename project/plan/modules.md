@@ -1,1474 +1,283 @@
-# Modules
-
-## Short Summary
-
-This module map defines the application structure for **Roya AI Dynamo**, an AI-powered SaaS dashboard generation platform. Users upload CSV files, AI analyzes the data structure, and an interactive dashboard is automatically generated without manual configuration.
-
-Source inputs:
-
-- `project/description.md`
-- `project/plan/features.md`
-- `roya-ai-dynamo-api/src` (NestJS backend)
-- `roya-ai-dynamo-frontend` (Customer Portal)
-- `roya-ai-dynamo-frontend-admin` (Admin Panel)
-
-Its purpose is to define the module list that will later be used to build:
-
-- `project/actions/backend/endpoints.md`
-- each app's `project/actions/<app-key>/pages.md`
-- backend feature folders (`roya-ai-dynamo-api/src/modules/`)
-- frontend feature folders (`roya-ai-dynamo-frontend/src/app/` and `roya-ai-dynamo-frontend-admin/src/app/`)
-
-This file is not an endpoint list and not a page list. It is the module source-of-truth used before those files are created. Module names mirror `project/plan/features.md` 1:1.
-
----
-
-## How To Use This File
-
-When AI builds `project/actions/backend/endpoints.md`:
-
-- group endpoints under the matching module from this file
-- use the exact module name in `## Module: {Module Name}`
-
-When AI builds each app's `project/actions/<app-key>/pages.md`:
-
-- group pages under the matching frontend module from this file
-- use the exact module name in `## Module: {Module Name}`
-
-When AI builds backend code:
-
-- create one NestJS feature module per business module where scope includes backend
-- follow the conventions in `engine/rules/backend-rule.md`
-
-When AI builds frontend code:
-
-- create one Angular feature area per frontend-visible module, in the correct app (Customer Portal or Admin Panel)
-- keep shell/layout modules separate from business modules
-- follow the conventions in `engine/rules/frontend-rule.md`
-
----
-
-## Product Module Strategy
-
-Roya AI Dynamo ships as **two separate Angular 21 frontend apps over one shared NestJS backend**:
-
-- **Customer Portal** (`roya-ai-dynamo-frontend`) — the end-user app for projects, CSV data, dashboards, sharing, exports, notifications, and self-service subscriptions.
-- **Admin Panel** (`roya-ai-dynamo-frontend-admin`) — the operator app for platform overview, client management, plans & subscriptions, payments, audit logs, AI logs, and system settings.
-
-Both apps consume the same backend at `roya-ai-dynamo-api/src` (global prefix `/api/v1`). **All admin features live in the Admin Panel app**, not in the Customer Portal. Modules are split into three layers:
-
-- **Business modules** own the core customer product workflows (Customer Portal + backend): authentication, users, projects, data (CSV), AI processing, dashboards, sharing, export, notifications, and customer subscriptions.
-- **Admin modules** own platform management (Admin Panel + backend): overview, client management, subscriptions & plans, payments, audit logs, AI logs, and system settings. Several admin modules reuse business-module backends.
-- **Shared/Infrastructure modules** own cross-cutting concerns: the two app shells, background jobs, caching, file storage, AI provider, email, and the (stub) payment gateway.
-
-Backend reality: `roya-ai-dynamo-api/src/modules/{admin, ai-processing, audit, auth, background-jobs, dashboards, data, export, notifications, payments, projects, settings, sharing, subscriptions, users}` and integrations at `roya-ai-dynamo-api/src/integrations/{ai, mail, payment, storage}`. OAuth is configuration-only (`roya-ai-dynamo-api/src/config`) with login logic in the `auth` module; the `src/integrations/oauth/` folder exists but is empty.
-
----
-
 ## Business Modules
 
-### 1. Auth
-
-#### Purpose
-
-Handle user registration, login, logout, password reset, and JWT token lifecycle (issue/refresh/revoke). Own the current-user endpoint used by both frontends to bootstrap their app shells.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `public and authenticated users (Customer Portal + Admin Panel)`
-
-#### Related Features
-
-- Auth → User Registration, User Login, OAuth Login (Google / Microsoft), Token Refresh, Password Reset, Logout, Current User Profile
-
-#### Backend Module
-
-- Folder: `src/modules/auth/`
-- Owns:
-  - user registration and login (rate-limited)
-  - JWT access/refresh token issuance and rotation
-  - password reset flow (forgot-password / reset-password)
-  - logout (refresh token invalidation)
-  - current user endpoint (`/auth/me`) and auth guards used by all protected endpoints
-  - OAuth login service logic (`AuthService.oauthLogin`)
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend/src/app/pages/auth/` (Customer Portal) and `roya-ai-dynamo-frontend-admin/src/app/pages/auth/` (Admin Panel)
-- Owns:
-  - login page (both apps)
-  - register page (Customer Portal only)
-  - forgot-password and reset-password pages (both apps)
-  - auth layout (`layouts/auth-layout/`), separate from the app shell
-
-#### Data Model / Entities
-
-- `users` (authentication fields only; profile management is in the Users module)
-
-#### Depends On
-
-- `Users`
-
-#### Notes
-
-- Auth pages use the auth layout, not the app shell
-- The Admin Panel login additionally requires the `admin` role (enforced by an admin route guard)
-- OAuth is **partial**: provider config (in `src/config`) and `AuthService.oauthLogin` exist, but `POST /api/v1/auth/oauth/callback` is a stub and not wired end-to-end. The `src/integrations/oauth/` folder is empty.
-
----
-
-### 2. Users
-
-#### Purpose
-
-Own the user entity and self-service account management (profile and password). The same backend powers admin-facing client operations, which are documented under **Admin — Client Management**.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `authenticated users (self-service profile)`
-
-#### Related Features
-
-- Users → View and Edit Own Profile, Change Own Password
-
-#### Backend Module
-
-- Folder: `src/modules/users/`
-- Owns:
-  - user profile read/update (name, email, avatar, language preference)
-  - change-own-password (verify current, persist new hash)
-  - admin-facing user CRUD, suspend/reactivate, and delete (reused by Admin — Client Management)
-  - never returns `passwordHash` / `refreshTokenHash`
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend/src/app/pages/settings/profile/` (Customer Portal self-service)
-- Owns:
-  - account profile page (self-service profile editing + password change)
-
-#### Data Model / Entities
-
-- `users`
-
-#### Depends On
-
-- `Auth`
-
-#### Notes
-
-- Self-service profile is under `/app/settings/profile`
-- Admin-facing client operations reuse this backend but live in the Admin Panel (**Admin — Client Management**)
-
----
-
-### 3. Projects
-
-#### Purpose
-
-Provide the organizational container for dashboards. Users create projects to group related dashboards together.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `authenticated editors and admins (Customer Portal)`
-
-#### Related Features
-
-- Projects → Create Project, List Projects, View Project, Edit Project, Delete Project
-
-#### Backend Module
-
-- Folder: `src/modules/projects/`
-- Owns:
-  - project CRUD (create, read, update, delete)
-  - project listing with search, pagination, and active-status filter
-  - owner-or-admin access validation
-  - cascade deletion of dashboards (and their widgets, share links, cache entries, data source links) when a project is deleted
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend/src/app/pages/projects/`
-- Owns:
-  - projects list page (`/app/projects`)
-  - project detail / dashboard list page (`/app/projects/:id`)
-
-#### Data Model / Entities
-
-- `projects`
-
-#### Depends On
-
-- `Auth`
-- `Users`
-
-#### Notes
-
-- Project names do not need to be unique
-- Only the project owner or an admin can edit or delete a project
-- Cascade deletion is irreversible
-
----
-
-### 4. Data (CSV Management)
-
-#### Purpose
-
-Handle the full CSV lifecycle: upload, storage, row persistence into per-file dynamic collections, column metadata management, AI column analysis triggering, and file reuse across dashboards.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `authenticated editors and admins (Customer Portal)`
-
-#### Related Features
-
-- Data (CSV Management) → Upload CSV File, List My CSV Files, View CSV File Details, AI Column Analysis (Background), Review and Edit Column Descriptions, Retry Column Analysis, Delete CSV File
-
-#### Backend Module
-
-- Folder: `src/modules/data/`
-- Owns:
-  - direct multipart CSV upload (streamed to Cloudflare R2) and legacy presigned upload flow
-  - file metadata persistence (`csvfiles` collection)
-  - CSV row parsing into per-file dynamic collections (`csvdata_{fileId}`)
-  - column metadata creation and update (`columnmetadata`)
-  - file listing/search/filter per user and file deletion (drops data rows, reports affected dashboards)
-  - queuing AI column analysis (and retry) on the `csv-analysis` queue
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend/src/app/pages/data/`
-- Owns:
-  - CSV upload wizard page (`/app/data/upload`)
-  - my data files list page (`/app/data`)
-  - column description review/editing (within the data flow)
-
-#### Data Model / Entities
-
-- `csvfiles`
-- `csvdata_{fileId}` (per-file dynamic collections)
-- `columnmetadata`
-
-#### Depends On
-
-- `Auth`
-- `AI Processing` (triggers column analysis job)
-- `Storage` (uploads raw file to Cloudflare R2)
-- `Background Jobs` (async processing)
-
-#### Notes
-
-- Each CSV file gets its own MongoDB collection for its data rows to support dynamic schema
-- AI never reads data rows; it only receives column names, inferred types, and sample statistics
-- Deleting a CSV file is destructive and reports dependent dashboards in the result
-
----
-
-### 5. AI Processing
-
-#### Purpose
-
-Orchestrate AI-powered background jobs (CSV column analysis and dashboard structure generation) via BullMQ workers. Acts as the domain layer between business logic and the AI provider integration. **Backend-only — no frontend pages.**
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `no`
-- Audience: `system (triggered by the Data and Dashboards modules)`
-
-#### Related Features
-
-- AI Processing → CSV Column Analysis Job, AI Dashboard Generation Job
-
-#### Backend Module
-
-- Folder: `src/modules/ai-processing/`
-- Owns:
-  - `csv-analysis` queue worker: load rows, infer columns, compute sample statistics, generate per-column descriptions, write to `columnmetadata`
-  - `dashboard-generation` queue worker: select widgets from the catalog, define aggregation queries, write `chartwidgets`, set dashboard status `ready`
-  - prompt construction and AI response parsing/validation
-  - job status updates via the `backgroundjobs` record
-
-#### Data Model / Entities
-
-- `backgroundjobs`
-- `columnmetadata` (writes AI-generated descriptions)
-- `dashboards` / `chartwidgets` (writes generated widget structure)
-
-#### Depends On
-
-- `Background Jobs`
-- `AI Provider` integration (`src/integrations/ai/`)
-- `Data`
-- `Dashboards`
-
-#### Notes
-
-- AI receives only column names, inferred types, and sample statistics — never raw data rows
-- AI selects widgets and defines query specs; the backend executes the actual MongoDB aggregations
-- Status is surfaced through the Data (column analysis) and Dashboards (generation) pages — there is no dedicated AI frontend area
-- **Gap:** the `pdf-export` and `cache-recalculation` queues have jobs enqueued but **no worker consumes them yet**
-
----
-
-### 6. Dashboards
-
-#### Purpose
-
-Own the full dashboard lifecycle: creation with a purpose description, AI generation status, the dynamic viewer, widget CRUD/customization, the cache-first chart data API with filters, refresh, duplicate, delete, and generation retry.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `authenticated editors (create/edit), viewers (read via share link)`
-
-#### Related Features
-
-- Dashboards → Create Dashboard, Dashboard Generation Status, List Dashboards, View Dashboard (Dynamic Viewer), Chart Data API (Cache-First, Filterable), Manual Data Refresh, Dashboard Customization (Widget CRUD), Edit Dashboard Details, Duplicate Dashboard, Delete Dashboard, Retry Dashboard Generation
-
-#### Backend Module
-
-- Folder: `src/modules/dashboards/`
-- Owns:
-  - dashboard CRUD (create, read, update, delete, duplicate)
-  - dashboard status management (`generating`, `ready`, `error`) and generation retry
-  - widget configuration persistence (`chartwidgets`) and data source linking (`dashboarddatasources`)
-  - triggering AI dashboard generation on the `dashboard-generation` queue
-  - cache-first chart data endpoint (Redis → aggregation), optional JSON filters, JWT or share-token access
-  - manual data refresh: invalidate cache and enqueue a `cache-recalculation` job
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend/src/app/pages/dashboards/`
-- Owns:
-  - dashboard generation/status page (`/app/dashboards/:id/generating`)
-  - dynamic dashboard viewer page (`/app/dashboards/:id`)
-  - shared public viewer page (`/shared/:token`)
-  - widget customization within the viewer/editor
-
-#### Data Model / Entities
-
-- `dashboards`
-- `chartwidgets`
-- `dashboarddatasources`
-- `chartdatacache`
-
-#### Depends On
-
-- `Projects`
-- `Data`
-- `AI Processing` (triggers generation job)
-- `Caching` (Redis + DB cache for chart data)
-- `Background Jobs`
-
-#### Notes
-
-- The viewer calls chart data endpoints in parallel to load multiple charts simultaneously
-- Dashboard duplication is ready immediately (no regeneration)
-- Cascade deletion removes widgets, data source links, cache entries, and share links
-- **Partial:** Manual Data Refresh enqueues a `cache-recalculation` job, but no worker consumes it yet
-
----
-
-### 7. Sharing
-
-#### Purpose
-
-Generate and manage secure, token-based share links for dashboards with view or edit permission, optional expiry, and revocation. Resolve public dashboards by share token.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `editors (create/manage links), public viewers (access via token)`
-
-#### Related Features
-
-- Sharing → Create Share Link, Manage Share Links, View Shared Dashboard (Public)
-
-#### Backend Module
-
-- Folder: `src/modules/sharing/`
-- Owns:
-  - share link generation (unique URL-safe token, returned once)
-  - permission (view/edit), optional expiry, and viewer-refresh flag
-  - share link listing and revocation per dashboard
-  - public share link resolution (look up dashboard by token, enforce permission)
-  - cascade invalidation when the parent dashboard is deleted
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend/src/app/pages/dashboards/` (share management within dashboard pages; public viewer at `shared-viewer/`)
-- Owns:
-  - share link management panel (within dashboard pages)
-  - shared dashboard public view page (`/shared/:token`)
-
-#### Data Model / Entities
-
-- `sharelinks`
-
-#### Depends On
-
-- `Dashboards`
-- `Auth` (optional — share links work without authentication for viewers)
-
-#### Notes
-
-- Deleting a dashboard immediately invalidates all its share links
-- Expired/revoked links return a clear error, not a `404`
-
----
-
-### 8. Export
-
-#### Purpose
-
-Generate and deliver dashboard exports. Excel and CSV are synchronous file streams; PDF is queued (async).
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `editors and viewers with export permission`
-
-#### Related Features
-
-- Export → Export Dashboard as PDF, Export Data as Excel, Export Data as CSV
-
-#### Backend Module
-
-- Folder: `src/modules/export/`
-- Owns:
-  - PDF export job queuing (returns `202` with a job id) on the `pdf-export` queue
-  - synchronous Excel (`.xlsx`) workbook stream of widget/dashboard data
-  - synchronous CSV stream of a widget's data
-  - raw file streams bypass the success envelope
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend/src/app/pages/dashboards/` (export triggers within the dashboard viewer)
-- Owns:
-  - export action triggers and download handling within the viewer
-
-#### Data Model / Entities
-
-- `backgroundjobs` (for async PDF generation)
-
-#### Depends On
-
-- `Dashboards`
-- `Storage`
-- `Background Jobs`
-
-#### Notes
-
-- **Partial:** the PDF job is enqueued on `pdf-export`, but no worker is implemented yet — the PDF is never produced
-- Excel/CSV are synchronous direct downloads
-
----
-
-### 9. Notifications
-
-#### Purpose
-
-Provide the in-app notification center: list notifications, show the unread count for the shell bell, and mark notifications read.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `all authenticated users (Customer Portal)`
-
-#### Related Features
-
-- Notifications → In-App Notification Center
-
-#### Backend Module
-
-- Folder: `src/modules/notifications/`
-- Owns:
-  - notification record creation (`NotificationsService.notify`)
-  - paginated notification listing (filterable by read state)
-  - unread count for the shell bell badge
-  - mark-one-read and mark-all-read
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend/src/app/pages/notifications/`
-- Owns:
-  - notifications list page (`/app/notifications`)
-  - notification bell + unread badge in the Customer Portal app shell header
-
-#### Data Model / Entities
-
-- `notifications`
-
-#### Depends On
-
-- `Auth`
-- `Email` integration (`src/integrations/mail/`)
-- `Background Jobs` (notifications intended to be triggered by job completion)
-
-#### Notes
-
-- **Partial wiring:** `NotificationsService.notify` exists but is not yet called by the AI/export workers, so notifications are not auto-generated by background events yet
-- Transactional emails (welcome, password reset) are sent directly by the Auth flow via the MailJet integration, not through this module
-
----
-
-### 10. Subscriptions
-
-#### Purpose
-
-Customer-facing subscription area: view available plans and view the current user's own subscription and usage, plus self-service subscribe/cancel. (Admin-side plan and subscription management lives in **Admin — Subscriptions & Plans**.)
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `authenticated users (Customer Portal)`
-
-#### Related Features
-
-- Subscriptions → View Available Plans, View My Subscription and Usage, Subscribe to a Plan, Cancel My Subscription
-
-#### Backend Module
-
-- Folder: `src/modules/subscriptions/`
-- Owns:
-  - list active plans (`GET /subscriptions/plans`)
-  - current user's subscription + usage (`GET /subscriptions/me`)
-  - self-service subscribe (`POST /subscriptions/subscribe`) and cancel (`POST /subscriptions/cancel`)
-  - (admin-side plan/subscription management endpoints are shared here; see Admin — Subscriptions & Plans)
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend/src/app/pages/subscriptions/`
-- Owns:
-  - subscriptions page (`/app/subscriptions`): view plans + own subscription/usage, subscribe and cancel
-
-#### Data Model / Entities
-
-- `subscriptionplans`
-- `usersubscriptions`
-
-#### Depends On
-
-- `Users`
-- `Auth`
-
-#### Notes
-
-- Self-service Subscribe/Cancel are **implemented** (change-001, 2026-06-22): `POST /subscriptions/subscribe` and `POST /subscriptions/cancel` are live
-- Subscribe does not process a real payment — it assigns the subscription directly and returns a redirect URL; payment-gateway checkout is deferred to a future change
-- Cancel sets status `cancelled` and `endDate` to the current date
-
----
-
-### 11. Workspace
-
-#### Purpose
-
-Own the multi-tenancy layer: every company/organization is a Workspace. Handle workspace creation (triggered automatically on registration), slug management, membership and roles, invitation flow, multi-workspace switching, workspace branding, and workspace deletion.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `authenticated users (Customer Portal) + admin (Admin Panel)`
-
-#### Related Features
-
-- Workspace → Create Workspace, Workspace Slug Management, Workspace Members + Roles, Workspace Invitation Flow, Multi-Workspace Switching, Workspace Branding (Logo + Color Template), Workspace Deletion
-
-#### Backend Module
-
-- Folder: `src/modules/workspace/`
-- Owns:
-  - workspace CRUD (create, get, update slug/name, delete)
-  - slug auto-generation (`{word}-{word}-{4digits}`) + availability check
-  - `WorkspaceMembership` — member list, add, remove, role change
-  - `WorkspaceInvitation` — invite by email, accept via token, resend
-  - `WorkspaceBranding` — logo upload (via R2), color template selection
-  - `OnboardingProgress` — create on registration, update per step, read for redirect logic
-  - multi-workspace switching (`POST /workspaces/switch` → re-issue JWT)
-  - workspace deletion (drop all workspace-prefixed collections + memberships + branding)
-
-#### Frontend Module
-
-- Customer Portal: `pages/workspace/` (settings), shared workspace switcher component in AppShell
-- Owns (customer-portal):
-  - workspace settings page (`/app/settings/workspace`)
-  - members & invitations page (`/app/settings/members`)
-  - branding page (`/app/settings/branding`)
-  - workspace switcher in the top navigation bar
-
-#### Data Model / Entities
-
-- `workspaces`
-- `workspace_memberships`
-- `workspace_invitations`
-- `workspace_brandings`
-- `onboarding_progress`
-
-#### Depends On
-
-- `Auth`
-- `Storage` (logo upload)
-- `Email` (invitation emails)
-- `Color Templates` (branding color template reference)
-
-#### Notes
-
-- Workspace creation is triggered by `AuthService.register()` — not by a separate create endpoint in the normal user flow.
-- JWT carries `{ currentWorkspaceId, workspaceSlug, workspaceRole }`.
-- All data service/repo methods for workspace-prefixed collections receive `workspaceSlug` from the JWT via `@CurrentUser()`.
-- Workspace deletion is owner-only with typed-name confirmation.
-
----
-
-### 12. Onboarding
-
-#### Purpose
-
-Guide new workspace owners through a 4-step wizard immediately after registration. Step 1 (workspace creation) is mandatory. Steps 2–4 (branding, invite, experiment) are skippable. Progress is tracked in the DB so the wizard resumes on browser reopen.
-
-#### Scope
-
-- Backend: `yes` (progress tracking API)
-- Frontend: `yes` (Customer Portal only)
-- Audience: `newly registered users (Customer Portal)`
-
-#### Related Features
-
-- Onboarding → 4-Step Wizard, Onboarding Progress Tracking, Sample CSV Experiment
-
-#### Backend Module
-
-- Handled within `src/modules/workspace/` (OnboardingProgress schema + controller)
-- Owns:
-  - `GET /onboarding/progress` — returns the current onboarding progress record
-  - `PATCH /onboarding/progress` — update step completion flags
-  - sample CSV seed data (`src/integrations/sample-data/sample-csv.seeder.ts`)
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend/src/app/pages/onboarding/`
-- Owns:
-  - onboarding wizard page (`/onboarding`) — 4 steps, two-column Cisco-style layout
-  - step 1: create workspace (mandatory)
-  - step 2: branding (skippable)
-  - step 3: invite team (skippable)
-  - step 4: try it out (tips + sample CSV link, skippable)
-
-#### Data Model / Entities
-
-- `onboarding_progress`
-
-#### Depends On
-
-- `Workspace`
-- `Auth`
-- `Data` (sample CSV feature in step 4)
-
-#### Notes
-
-- `onboardingGuard` redirects to `/onboarding` if step 1 not complete.
-- The wizard is one-time only; re-entry is blocked.
-- After step 1, all portal routes are accessible; steps 2–4 are optional.
+## 1. Auth
+- Scope: BE (`src/modules/auth/`) + FE (`pages/auth/` in CP & AP)
+- Audience: public and authenticated users (CP + AP)
+
+### Features
+1. **User Registration** [both] — name/email/password form, email uniqueness check, bcrypt hash, default non-admin role, issue JWT tokens; rate-limited (10/min); subject to `registrationEnabled` setting; register page in CP only.
+2. **User Login** [both] — email/password auth, issue access + refresh tokens, return user profile for bootstrap; rate-limited (10/min); AP login requires `admin` role (admin route guard).
+3. **OAuth Login (Google / Microsoft)** [both] — provider config via env, `AuthService.oauthLogin` maps identity to user; **partial**: `oauth/callback` is a stub, not wired end-to-end; `src/integrations/oauth/` is empty.
+4. **Token Refresh** [backend-only] — validate refresh token, issue new access token, rotate refresh; called via HTTP interceptor, no dedicated page.
+5. **Password Reset** [both] — forgot-password (always returns 200 to prevent enumeration) sends reset link via MailJet; validate token (expiry, one-time); apply new password; pages in both apps.
+6. **Logout** [both] — invalidate server-side refresh token hash, clear frontend auth state.
+7. **Current User Profile** [both] — `/auth/me` returns id/email/role; used by both app shells on load and after token refresh.
+
+## 2. Users
+- Scope: BE (`src/modules/users/`) + FE (`pages/settings/profile/` in CP)
+- Audience: authenticated users (self-service profile)
+
+### Features
+1. **View and Edit Own Profile** [both] — view/update name, email, language preference, avatar; profile page in both apps; users cannot change own role; never returns `passwordHash`/`refreshTokenHash`.
+2. **Change Own Password** [both] — verify current password before updating; persist new hash. Admin-facing user CRUD is under Admin — Client Management (reuses this backend).
+
+## 3. Projects
+- Scope: BE (`src/modules/projects/`) + FE (`pages/projects/` in CP)
+- Audience: authenticated editors and admins (CP); workspace-scoped via JWT `workspaceSlug`, stored in `ws_{slug}_projects`
+
+### Features
+1. **Create Project** [both] — name (max 200 chars) + optional description; names not unique; owner set to current user.
+2. **List Projects** [both] — paginated, searchable by name, filter by active status; admin sees all workspace projects, others see owned only.
+3. **View Project** [both] — project details + dashboard list with status badges; quick actions (create dashboard, delete project); owner-or-admin access enforced.
+4. **Edit Project** [both] — update name and description; owner-or-admin only.
+5. **Delete Project** [both] — cascade deletes all dashboards (widgets, share links, cache entries, data source links); irreversible.
+
+## 4. Data (CSV Management)
+- Scope: BE (`src/modules/data/`) + FE (`pages/data/` in CP)
+- Audience: authenticated editors and admins (CP)
+
+### Features
+1. **Upload CSV File** [both] — direct multipart upload (streamed to R2) or presigned upload (legacy); CSV only, max 50 MB; parses rows into per-file collection `csvdata_{fileId}`; creates `columnmetadata` per column; auto-queues AI analysis; AI never receives raw rows.
+2. **List My CSV Files** [both] — paginated, search by filename, filter by status (analyzing/ready/error); shows name, size, upload date, row count, status.
+3. **View CSV File Details** [both] — file metadata + columnmetadata with inferred type, samples, and AI descriptions.
+4. **AI Column Analysis (Background)** [backend-only] — owned by AI Processing worker; infers columns, computes sample stats, sends column names/types/stats to AI provider, writes descriptions to `columnmetadata`; never passes raw rows to AI.
+5. **Review and Edit Column Descriptions** [both] — display AI-generated descriptions, edit `userDescription` per column, save to `columnmetadata`; confirmed descriptions form semantic context for dashboard generation.
+6. **Retry Column Analysis** [both] — re-queue analysis job (returns 202), reset job status.
+7. **Delete CSV File** [both] — drops `columnmetadata` + `csvdata_{fileId}` collection + `csvfiles` record; reports affected dashboards in result; destructive and irreversible.
+
+## 5. AI Processing
+- Scope: BE only (`src/modules/ai-processing/`) — no frontend pages
+- Audience: system (triggered by Data and Dashboards modules)
+
+### Features
+1. **CSV Column Analysis Job** [backend-only] — consumes `csv-analysis` queue; loads rows, infers columns, computes sample stats, calls AI for per-column descriptions, writes to `columnmetadata`, updates `backgroundjobs` record; never passes raw rows to AI.
+2. **AI Dashboard Generation Job** [backend-only] — consumes `dashboard-generation` queue; loads dashboard purpose + confirmed `columnmetadata`, selects widgets from `WidgetDefinition` catalog, defines aggregation queries, writes `chartwidgets`, sets dashboard status `ready`, updates `backgroundjobs`. **Gap**: `pdf-export` and `cache-recalculation` queues are declared/enqueued but have no worker yet.
+
+## 6. Dashboards
+- Scope: BE (`src/modules/dashboards/`) + FE (`pages/dashboards/` in CP)
+- Audience: authenticated editors (create/edit), viewers (read via share link)
+
+### Features
+1. **Create Dashboard** [both] — name + purpose description (min 10 chars, used as AI context), select one or more confirmed CSV sources, save with status `generating`, queue AI generation job (returns 202).
+2. **Dashboard Generation Status** [both] — poll status endpoint (status/job/progress/error); progress indicator; redirect to viewer on completion, retry on failure.
+3. **List Dashboards** [both] — paginated, filterable by project and status (generating/ready/error), search by name, quick actions (open/duplicate/delete).
+4. **View Dashboard (Dynamic Viewer)** [both] — loads layout/widgets/data sources, parallel chart data calls per widget, per-widget loading/error states, responsive language-aware (EN/AR) layout; shared public viewer at `/shared/:token`.
+5. **Chart Data API (Cache-First, Filterable)** [backend-only] — Redis cache → MongoDB aggregation on miss; optional JSON-encoded filters; JWT or share-token access; skip throttling (parallel widget loads); returns empty result structure not 404 on no rows.
+6. **Manual Data Refresh** [both] — invalidate cache entries, enqueue recalculation job (returns 202); **partial**: `cache-recalculation` queue has no worker yet, recalculation does not complete async.
+7. **Dashboard Customization (Widget CRUD)** [both] — add/edit/delete widgets (type, title, position, query definition, display config); invalidates cache on edit/delete.
+8. **Edit Dashboard Details** [both] — update name and purpose description.
+9. **Duplicate Dashboard** [both] — clones dashboard + widgets + data source links; ready immediately (no regeneration).
+10. **Delete Dashboard** [both] — cascade deletes widgets, cache entries, share links; active share links immediately invalidated.
+11. **Retry Dashboard Generation** [both] — re-queue generation job (returns 202), reset dashboard/job status.
+
+## 7. Sharing
+- Scope: BE (`src/modules/sharing/`) + FE (share panel in `pages/dashboards/` + `shared-viewer/` in CP)
+- Audience: editors (create/manage links), public viewers (access via token)
+
+### Features
+1. **Create Share Link** [both] — generate unique URL-safe token (returned once), set permission (view/edit), optional expiry date, viewer-refresh flag.
+2. **Manage Share Links** [both] — list active/revoked links per dashboard with permission/dates/access count; revoke link (immediate invalidation); cascade invalidation when parent dashboard deleted.
+3. **View Shared Dashboard (Public)** [both] — resolve dashboard by token, validate active + not expired, enforce permission + viewer-refresh flag, return dashboard with cached chart data; no auth required; expired/revoked returns clear error not 404.
+
+## 8. Export
+- Scope: BE (`src/modules/export/`) + FE (export triggers in `pages/dashboards/` in CP)
+- Audience: editors and viewers with export permission
+
+### Features
+1. **Export Dashboard as PDF** [both] — queues `pdf-export` job (returns 202 with job id); **partial**: no worker implemented yet, PDF is never produced.
+2. **Export Data as Excel** [both] — synchronous `.xlsx` workbook stream of widget/dashboard data; raw file stream bypasses success envelope.
+3. **Export Data as CSV** [both] — synchronous CSV stream of a widget's data; raw file stream bypasses success envelope.
+
+## 9. Notifications
+- Scope: BE (`src/modules/notifications/`) + FE (`pages/notifications/` in CP)
+- Audience: all authenticated users (CP)
+
+### Features
+1. **In-App Notification Center** [both] — paginated list (filterable by read state), unread count for shell bell badge, mark-one-read, mark-all-read; **partial wiring**: `NotificationsService.notify` exists but not called by AI/export workers yet; transactional emails (welcome, password reset) sent directly by Auth via MailJet, not through this module.
+
+## 10. Subscriptions
+- Scope: BE (`src/modules/subscriptions/`) + FE (`pages/subscriptions/` in CP)
+- Audience: authenticated users (CP)
+
+### Features
+1. **View Available Plans** [both] — list active plans with price and limits (max dashboards, monthly upload/update limits).
+2. **View My Subscription and Usage** [both] — current subscription (plan, status, dates) + current usage vs plan limits.
+3. **Subscribe to a Plan** [frontend] — self-service subscribe via PayUp hosted-checkout (change-003); returns `redirectUrl`; subscription activates only after payment confirmed via `subscription-activation` event; active subscribers use upgrade/downgrade instead (change-005); inactive users blocked from self-service billing.
+4. **Upgrade / Downgrade Plan** [both] — *(change-005)* upgrade to higher-priced plan → pending invoice + PayUp; downgrade to lower paid → invoice + PayUp; downgrade to free → immediate activation (no invoice); pending invoice list + pay/resume checkout.
+5. **Admin Paid Flag on Assign/Create/Change** [admin-panel + backend] — *(change-005)* admin marks subscription changes as already paid (immediate activation) or unpaid (customer pays via PayUp).
+6. **Cancel My Subscription** [frontend] — self-service cancel; sets status `cancelled` + `endDate` = now; implemented change-001.
+7. **Subscription Usage Limits** [backend] — *(change-004)* `SubscriptionLimitRegistry` with handlers per limit key (`maxDashboards`, `maxDataUploadsPerMonth`, `maxDataUpdatesPerMonth`); `check`/`assertAllowed` before writes; atomic counter increment via `SubscriptionRepository.incrementUsage`; monthly counter reset on period rollover; returns 403 when exceeded; applies only when `status = active`.
+8. **Subscription Resource Lock** [backend] — *(change-004)* expired/inactive/cancelled subscriptions block mutating actions (create dashboards, upload files, update/refresh data); reads, view subscription, subscribe/upgrade allowed.
+9. **Free Plan Subscribe** [both] — *(change-004)* free plan (`priceMonthlyUsd = 0`) skips PayUp checkout, activates via same durable `subscription-activation` BullMQ event as paid plans; no payment log for free plans.
+
+## 11. Workspace
+- Scope: BE (`src/modules/workspace/`) + FE (`pages/workspace/` in CP + workspace switcher in AppShell)
+- Audience: authenticated users (CP) + admin (AP)
+
+### Features
+1. **Create Workspace** [both] — triggered by `AuthService.register()` (not a separate user-facing endpoint); auto-generates slug `{word}-{word}-{4digits}`.
+2. **Workspace Slug Management** [both] — slug availability check, update slug/name; JWT carries `{ currentWorkspaceId, workspaceSlug, workspaceRole }`.
+3. **Workspace Members + Roles** [both] — member list, add, remove, role change via `WorkspaceMembership`; members page at `/app/settings/members`.
+4. **Workspace Invitation Flow** [both] — invite by email, accept via token, resend; uses Email integration for invitation emails.
+5. **Multi-Workspace Switching** [both] — `POST /workspaces/switch` re-issues JWT with new workspace context; workspace switcher component in top navigation bar.
+6. **Workspace Branding (Logo + Color Template)** [both] — logo upload via R2, color template selection from active templates; branding page at `/app/settings/branding`.
+7. **Workspace Deletion** [both] — owner-only with typed-name confirmation; drops all workspace-prefixed collections + memberships + branding.
+
+## 12. Onboarding
+- Scope: BE (`src/modules/workspace/` — OnboardingProgress schema + controller) + FE (`pages/onboarding/` in CP)
+- Audience: newly registered users (CP)
+
+### Features
+1. **4-Step Wizard** [both] — step 1: create workspace (mandatory); step 2: branding (skippable); step 3: invite team (skippable); step 4: try it out with sample CSV (skippable); two-column Cisco-style layout; one-time only, re-entry blocked.
+2. **Onboarding Progress Tracking** [both] — `GET/PATCH /onboarding/progress`; `onboardingGuard` redirects to `/onboarding` if step 1 not complete; after step 1 all portal routes accessible.
+3. **Sample CSV Experiment** [both] — sample CSV seed data (`src/integrations/sample-data/sample-csv.seeder.ts`); tips + sample CSV link in step 4.
 
 ---
 
 ## Admin Modules
 
-All admin modules are served by the **Admin Panel** app (`roya-ai-dynamo-frontend-admin`), behind `authGuard + adminGuard`. Several reuse business-module backends.
+All admin modules are in the **Admin Panel** (`roya-ai-dynamo-frontend-admin`), behind `authGuard + adminGuard`. Several reuse business-module backends.
 
-### 13. Admin — Overview
+## 13. Admin — Overview
+- Scope: BE (`src/modules/admin/`) + FE (`pages/admin/overview/` in AP)
+- Audience: admin (AP)
 
-#### Purpose
+### Features
+1. **Platform Statistics** [both] — aggregate KPI counts (clients, projects, dashboards, subscriptions) as overview cards; reads across `users`, `projects`, `dashboards`, `usersubscriptions`, `ailogs`.
+2. **AI Cost Summary (30-Day)** [both] — summarize AI cost over recent 30-day window, render trend chart; backed by AI Logs cost-summary aggregation.
 
-Give admins a platform health snapshot: key counts (clients, projects, dashboards, subscriptions) and a 30-day AI cost summary chart.
+## 14. Admin — Client Management
+- Scope: BE (`src/modules/users/` — reused) + FE (`pages/admin/clients/` in AP)
+- Audience: admin (AP)
 
-#### Scope
+### Features
+1. **List / Search Clients** [both] — paginated user list with role/status/last-login/created; search by name/email; filter by role and active status; never returns `passwordHash`/`refreshTokenHash`.
+2. **View Client Details** [both] — load user by id with full profile and status.
+3. **Create Client** [both] — create user with name, email, password, and role.
+4. **Edit Client (Role / Status)** [both] — edit name/email/role, toggle active status, admin-initiated password reset.
+5. **Suspend Client** [both] — set user inactive (blocks login, preserves data).
+6. **Reactivate Client** [both] — set previously suspended user active again.
+7. **Delete Client** [both] — cascade delete owned data; destructive; aligns with GDPR right-to-erasure.
 
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `admin (Admin Panel)`
+## 15. Admin — Subscriptions & Plans
+- Scope: BE (`src/modules/subscriptions/` — shared) + FE (`pages/admin/subscriptions/` in AP)
+- Audience: admin (AP)
 
-#### Related Features
+### Features
+1. **Manage Subscription Plans** [both] — plan CRUD (name, description, monthly price USD, max dashboards, monthly upload/update limits, active flag); admin list includes inactive plans.
+2. **Manage User Subscriptions** [both] — list/view/create/update subscriptions (paginated, status filter); assign plan, change plan, cancel user subscription (`:userId/cancel`).
+3. **Activate / Deactivate User Subscription** [both] — *(change-004)* activate sets `status = active` + valid period dates; deactivate sets `status = inactive` + resource lock applies; distinct from cancel.
+4. **Account Suspension** [backend] — *(change-004)* admin suspend/reactivate (extended: revoke refresh tokens, clearer errors); auto-suspend after 2 consecutive unpaid payments without intervening `paid` payment; suspended users: login rejected with `ACCOUNT_SUSPENDED`.
 
-- Admin — Overview → Platform Statistics, AI Cost Summary (30-Day)
+## 16. Admin — Payments
+- Scope: BE (`src/modules/payments/`) + FE (`pages/admin/payments/` in AP)
+- Audience: admin (AP)
 
-#### Backend Module
+### Features
+1. **Payment Ledger Management** [both] — list/filter/view/create/edit/delete payment entries; fields: user ref, subscription/plan ref (optional), amount/currency, status, method, reference, gateway (`manual`/`payup`), provider session ref *(change-003)*, paid-at, notes.
+2. **PayUp Gateway Checkout** [both] — *(change-003)* customer self-subscribe opens PayUp hosted-checkout session; pending payment log on init; public confirm/cancel return endpoints finalize log; confirmed payment emits durable `subscription-activation` BullMQ event; API base URL auto-selected by env (sandbox/prod); PayUp HTTP isolated in `src/integrations/payment/` (`PayUpProvider`), keys are env-only.
 
-- Folder: `src/modules/admin/`
-- Owns:
-  - platform statistics aggregation (`GET /admin/overview/stats`)
-  - 30-day AI cost summary (backed by the AI Logs cost-summary aggregation)
+## 17. Admin — Audit Logs
+- Scope: BE (`src/modules/audit/` — `@Global`) + FE (`pages/admin/audit/` in AP)
+- Audience: admin (AP)
 
-#### Frontend Module
+### Features
+1. **View Audit Logs** [both] — paginated list with filters (user, action, entity type, entity id, date range); full detail (old/new values, IP, user agent); immutable read-only (no create/update/delete endpoints); records written by backend modules via shared `@Global` audit service.
 
-- Folder: `roya-ai-dynamo-frontend-admin/src/app/pages/admin/overview/`
-- Owns:
-  - overview page (`/app/overview`): KPI cards + AI cost trend chart
+## 18. Admin — AI Logs
+- Scope: BE (`src/integrations/ai/` — `ai-logs.controller.ts`) + FE (`pages/admin/ai-logs/` in AP)
+- Audience: admin (AP)
 
-#### Data Model / Entities
+### Features
+1. **View AI Usage Logs** [both] — paginated list with filters (provider, model, status, date range); single log detail (404 if missing); per-request cost computed from `aimodels` pricing.
+2. **AI Cost Summary Over Time** [both] — aggregate cost over `from`/`to` range; feeds Admin — Overview 30-day cost chart.
 
-- reads across `users`, `projects`, `dashboards`, `usersubscriptions`, `ailogs`
+## 19. Admin — System Settings
+- Scope: BE (`src/modules/settings/`) + FE (`pages/settings/` in AP)
+- Audience: admin (AP)
 
-#### Depends On
+### Features
+1. **Global System Settings** [both] — get/update singleton: `registrationEnabled`, `maxFileSizeMb`, `defaultMaxDashboards`, `supportedLanguages`; admin-only (role guard); never expose raw API keys in any frontend response.
 
-- `Auth`
-- `Admin — AI Logs` (cost summary)
+## 20. Admin — Workspace Management
+- Scope: BE (`src/modules/workspace/` — admin endpoints, admin-guarded) + FE (`pages/admin/workspaces/` in AP)
+- Audience: admin (AP)
 
-#### Notes
+### Features
+1. **List All Workspaces** [both] — cross-workspace view (no automatic workspace scoping); paginated workspace list.
+2. **View Workspace Details** [both] — inspect workspace details and memberships.
+3. **Suspend Workspace** [both] — admin suspends a workspace.
+4. **Delete Workspace** [both] — admin deletes workspace and all workspace-scoped data.
 
-- Admin-only; the dedicated `admin` backend module exposes the overview stats endpoint
+## 21. Admin — Color Templates
+- Scope: BE (`src/modules/color-templates/`) + FE (`pages/admin/color-templates/` in AP)
+- Audience: admin (AP)
 
----
-
-### 14. Admin — Client Management
-
-#### Purpose
-
-Admin-facing client (user) administration. Backend operations reuse the **Users** module backend; the UI lives in the Admin Panel.
-
-#### Scope
-
-- Backend: `yes` (reuses the `Users` backend)
-- Frontend: `yes`
-- Audience: `admin (Admin Panel)`
-
-#### Related Features
-
-- Admin — Client Management → List / Search Clients, View Client Details, Create Client, Edit Client (Role / Status), Suspend Client, Reactivate Client, Delete Client
-
-#### Backend Module
-
-- Folder: `src/modules/users/` (admin-facing CRUD, suspend/reactivate, delete)
-- Owns:
-  - paginated/searchable/filterable user listing
-  - user create/edit (role/status), admin-initiated password reset
-  - suspend (set inactive), reactivate (set active), delete (cascade owned data)
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend-admin/src/app/pages/admin/clients/`
-- Owns:
-  - clients list page and create/edit/detail (`/app/clients`)
-
-#### Data Model / Entities
-
-- `users`
-
-#### Depends On
-
-- `Users`
-- `Auth`
-
-#### Notes
-
-- Backend reuses the `Users` module; the separation is for the Admin Panel UI
-- Never returns `passwordHash` / `refreshTokenHash`; delete aligns with GDPR right-to-erasure
+### Features
+1. **Create Color Template** [both] — define template: name, primary, secondary, accent, chartColors[5], isActive.
+2. **List Color Templates** [both] — admin sees all (including inactive); active templates used by workspace branding selection.
+3. **Update Color Template** [both] — edit template properties.
+4. **Delete Color Template** [both] — remove template.
+5. **Toggle Active Status** [both] — activate/deactivate template; applied to chart widget renders + exports (chart color cycle); system alert/warning/danger colors never overridden.
 
 ---
-
-### 15. Admin — Subscriptions & Plans
-
-#### Purpose
-
-Admin management of subscription plans and user subscriptions: define plans (CRUD) and assign/create/update/change/cancel user subscriptions.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `admin (Admin Panel)`
-
-#### Related Features
-
-- Admin — Subscriptions & Plans → Manage Subscription Plans, Manage User Subscriptions
-
-#### Backend Module
-
-- Folder: `src/modules/subscriptions/`
-- Owns:
-  - plan CRUD (name, description, monthly price, max dashboards, monthly upload/update limits, active flag)
-  - subscription listing (paginated, status filter) and single view
-  - create/update subscription, assign plan, change plan, cancel a user's subscription (`:userId/cancel`)
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend-admin/src/app/pages/admin/subscriptions/`
-- Owns:
-  - subscriptions & plans management page (`/app/subscriptions`)
-
-#### Data Model / Entities
-
-- `subscriptionplans`
-- `usersubscriptions`
-
-#### Depends On
-
-- `Users`
-- `Subscriptions` (shares the backend module)
-
-#### Notes
-
-- Customer self-service subscribe/cancel live in the **Subscriptions** module (now implemented)
-
----
-
-### 16. Admin — Payments
-
-#### Purpose
-
-A manual payment ledger for admins to record and maintain payment entries. This is a bookkeeping ledger, **not** a payment-gateway checkout flow.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `admin (Admin Panel)`
-
-#### Related Features
-
-- Admin — Payments → Payment Ledger Management
-
-#### Backend Module
-
-- Folder: `src/modules/payments/`
-- Owns:
-  - payment record CRUD (create, read, edit, delete)
-  - list/filter payments (by user, status, date range; paginated)
-  - fields: user (and optional subscription/plan) reference, amount/currency, status, method, reference, paid-at, notes
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend-admin/src/app/pages/admin/payments/`
-- Owns:
-  - payments ledger page (`/app/payments`)
-
-#### Data Model / Entities
-
-- `payments`
-
-#### Depends On
-
-- `Users`
-- `Auth`
-
-#### Notes
-
-- Manual ledger only — no gateway checkout or webhook processing is implemented (the `Payment Gateway` integration is an unused stub)
-
----
-
-### 17. Admin — Audit Logs
-
-#### Purpose
-
-Give admins read-only access to the immutable, system-wide audit trail of user and system actions.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `admin (Admin Panel)`
-
-#### Related Features
-
-- Admin — Audit Logs → View Audit Logs
-
-#### Backend Module
-
-- Folder: `src/modules/audit/` (`@Global`)
-- Owns:
-  - paginated audit log listing with filters (user, action, entity type, entity id, date range)
-  - full log entry detail (old/new values, IP, user agent)
-  - a shared audit service that other modules call to write records
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend-admin/src/app/pages/admin/audit/`
-- Owns:
-  - audit logs list + detail page (`/app/audit`)
-
-#### Data Model / Entities
-
-- `auditlogs`
-
-#### Depends On
-
-- `Auth`
-- `Users`
-
-#### Notes
-
-- The `audit` module is `@Global`; records are written by backend modules via the shared audit service
-- Audit logs are immutable — read-only; no create/update/delete endpoints
-
----
-
-### 18. Admin — AI Logs
-
-#### Purpose
-
-Give admins visibility into AI usage: per-request logs, per-request cost, cost summary over time, and individual log detail.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `admin (Admin Panel)`
-
-#### Related Features
-
-- Admin — AI Logs → View AI Usage Logs, AI Cost Summary Over Time
-
-#### Backend Module
-
-- Folder: `src/integrations/ai/` (`ai-logs.controller.ts`)
-- Owns:
-  - paginated AI log listing with filters (provider, model, status, date range)
-  - single AI log detail (`404` if missing)
-  - cost summary over a `from`/`to` range (feeds the Admin — Overview chart)
-  - per-request cost computed from model pricing
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend-admin/src/app/pages/admin/ai-logs/`
-- Owns:
-  - AI usage + cost page (`/app/ai-logs`)
-
-#### Data Model / Entities
-
-- `ailogs`
-- `aimodels` (model pricing)
-
-#### Depends On
-
-- `Auth`
-- `AI Provider` integration (logs are written by AI calls)
-
-#### Notes
-
-- The AI logs read API lives in the `ai` integration alongside the AI provider client
-- Feeds the Admin — Overview 30-day cost summary
-
----
-
-### 19. Admin — System Settings
-
-#### Purpose
-
-Manage the global system settings singleton: registration toggle, max file size, default max dashboards, and supported languages.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `admin (Admin Panel)`
-
-#### Related Features
-
-- Admin — System Settings → Global System Settings
-
-#### Backend Module
-
-- Folder: `src/modules/settings/`
-- Owns:
-  - get the system settings singleton
-  - update settings: `registrationEnabled`, `maxFileSizeMb`, `defaultMaxDashboards`, `supportedLanguages`
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend-admin/src/app/pages/settings/`
-- Owns:
-  - system settings page (`/app/settings`)
-
-#### Data Model / Entities
-
-- `systemsettings` (global singleton)
-
-#### Depends On
-
-- `Auth`
-
-#### Notes
-
-- Admin-only (role guard); the settings backend is shared and the management UI is exposed in the admin-guarded settings area
-- Never expose raw API keys in any frontend response
-
----
-
-### 20. Admin — Workspace Management
-
-#### Purpose
-
-Give super-admins visibility into all workspaces: list, inspect, suspend, and delete. Cross-workspace view — no automatic workspace scoping.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `admin (Admin Panel)`
-
-#### Related Features
-
-- Admin — Workspace Management → List All Workspaces, View Workspace Details, Suspend Workspace, Delete Workspace
-
-#### Backend Module
-
-- Folder: `src/modules/workspace/` (admin endpoints on the same module, admin-guarded)
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend-admin/src/app/pages/admin/workspaces/`
-- Owns:
-  - workspaces list page (`/app/workspaces`)
-
-#### Data Model / Entities
-
-- `workspaces`, `workspace_memberships`
-
-#### Depends On
-
-- `Workspace`
-- `Auth`
-
----
-
-### 21. Admin — Color Templates
-
-#### Purpose
-
-Allow super-admins to define and manage the predefined color palette templates that workspaces can apply to their chart renders and exports.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `admin (Admin Panel)`
-
-#### Related Features
-
-- Admin — Color Templates → Create Color Template, List Color Templates, Update Color Template, Delete Color Template, Toggle Active Status
-
-#### Backend Module
-
-- Folder: `src/modules/color-templates/`
-- Owns:
-  - color template CRUD (name, primary, secondary, accent, chartColors[5], isActive)
-  - list active templates (used by workspace branding selection)
-  - admin CRUD (all templates incl. inactive)
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend-admin/src/app/pages/admin/color-templates/`
-- Owns:
-  - color templates management page (`/app/color-templates`)
-
-#### Data Model / Entities
-
-- `color_templates`
-
-#### Depends On
-
-- `Auth`
-
-#### Notes
-
-- Color templates are defined by the super-admin.
-- Applied to chart widget renders + exports (chart color cycle).
-- System alert/warning/danger colors are never overridden.
-
----
-
 
 ## Shared / Infrastructure Modules
 
-### 1. Customer Portal Shell (Frontend Only)
+Infrastructure modules are called by business module services; they do not expose public business endpoints (exception: AI integration hosts the admin AI logs read API).
 
-#### Purpose
+## S1. Customer Portal Shell
+- Scope: FE only (`roya-ai-dynamo-frontend/src/app/layouts/app-shell/`)
+- Audience: all authenticated users (CP)
 
-Provide the authenticated Customer Portal layout: top header with notification bell and language switcher, side navigation, and the main router outlet for all customer pages.
+### Features
+1. **App Shell Layout** [frontend] — header (logo, notification bell + unread badge, user menu, language switcher), sidebar navigation, route outlet for `/app/*`; `authGuard` protected; language switcher triggers RTL/LTR direction change (EN LTR / AR RTL).
 
-#### Scope
+## S2. Admin Panel Shell
+- Scope: FE only (`roya-ai-dynamo-frontend-admin/src/app/layouts/app-shell/`)
+- Audience: admin users (AP)
 
-- Backend: `no`
-- Frontend: `yes`
-- Audience: `all authenticated users (Customer Portal)`
+### Features
+1. **Admin Shell Layout** [frontend] — header, sidebar navigation for admin sections, route outlet for `/app/*`; `authGuard + adminGuard` protected; non-admins cannot enter; auth pages use admin auth layout, not the shell.
 
-#### Related Features
+## S3. Background Jobs
+- Scope: BE only (`src/modules/background-jobs/`)
+- Audience: system
 
-- Dynamic Dashboard Viewer (hosted within the shell)
-- In-App Notification Center (bell in header)
+### Features
+1. **BullMQ Queue Infrastructure** [backend] — queue setup, worker registration, job persistence in `backgroundjobs` (queued/processing/completed/failed), retry logic, 5-min timeout per AI job; active queues: `csv-analysis`, `dashboard-generation` (workers in AI Processing); declared but no worker: `pdf-export`, `cache-recalculation`; completed jobs intended to trigger notifications (wiring pending).
 
-#### Frontend Module
+## S4. Caching
+- Scope: BE only (cross-cutting, no dedicated folder)
+- Audience: system
 
-- Folder: `roya-ai-dynamo-frontend/src/app/layouts/app-shell/`
-- Owns:
-  - app shell layout component
-  - header (logo, notification bell + unread badge, user menu, language switcher)
-  - sidebar navigation
-  - route outlet for all `/app/*` customer pages
+### Features
+1. **Chart Data Cache Layer** [backend] — Redis + MongoDB (`chartdatacache`) cache for pre-calculated chart data; cache key = widget id + query hash; TTL management; lookup order: Redis → MongoDB → recalculate; cache invalidation on manual data refresh; Redis also backs BullMQ queues.
 
-#### Depends On
+## S5. Storage
+- Scope: BE only (`src/integrations/storage/`)
+- Audience: system
 
-- `Auth`
-- `Notifications`
+### Features
+1. **File Storage Provider** [backend] — S3-compatible upload (Cloudflare R2), signed URL downloads, file deletion; provider-agnostic interface (`STORAGE_PROVIDER` env var); all file operations go through this service — no direct SDK calls from business modules.
 
-#### Notes
+## S6. AI Provider
+- Scope: BE only (`src/integrations/ai/`)
+- Audience: system
 
-- Routes under `/app/*` are protected by `authGuard`
-- Language switcher triggers RTL/LTR direction change (English LTR / Arabic RTL)
+### Features
+1. **AI Provider Client** [backend] — Anthropic (Claude) API client, prompt sending + response parsing; provider-agnostic interface (`AI_PROVIDER` env var); AI usage logging (`ailogs`, `aimodels`); AI Logs read API lives here alongside provider client; API key server-side only, never exposed to frontend or logs.
 
----
+## S7. Email
+- Scope: BE only (`src/integrations/mail/`)
+- Audience: system
 
-### 2. Admin Panel Shell (Frontend Only)
+### Features
+1. **Transactional Email Service** [backend] — Mailjet client, email templates (welcome, password reset, share/dashboard notifications); provider-agnostic interface (`MAIL_PROVIDER` env var); currently called directly by Auth flow; notifications auto-email wiring pending.
 
-#### Purpose
+## S8. Payment Gateway
+- Scope: BE only (`src/integrations/payment/`)
+- Audience: system
 
-Provide the authenticated Admin Panel layout: header, side navigation, and the router outlet for all admin pages, gated to admin users.
-
-#### Scope
-
-- Backend: `no`
-- Frontend: `yes`
-- Audience: `admin users (Admin Panel)`
-
-#### Related Features
-
-- Admin — Overview, Client Management, Subscriptions & Plans, Payments, Audit Logs, AI Logs, System Settings (all hosted within the shell)
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend-admin/src/app/layouts/app-shell/`
-- Owns:
-  - admin app shell layout component
-  - header and sidebar navigation for admin sections
-  - route outlet for all `/app/*` admin pages
-
-#### Depends On
-
-- `Auth`
-
-#### Notes
-
-- Routes under `/app/*` are protected by `authGuard + adminGuard`; non-admins cannot enter
-- Auth pages use the admin auth layout, not the app shell
-
----
-
-### 3. Background Jobs
-
-#### Purpose
-
-Provide the shared infrastructure for queuing, executing, monitoring, and retrying asynchronous background jobs across modules.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `no`
-- Audience: `system`
-
-#### Related Features
-
-- AI Processing → CSV Column Analysis Job, AI Dashboard Generation Job (async)
-- Export → Export Dashboard as PDF (queued)
-- Dashboards → Manual Data Refresh (queued)
-
-#### Backend Module
-
-- Folder: `src/modules/background-jobs/`
-- Owns:
-  - BullMQ queue setup and worker registration
-  - job persistence in `backgroundjobs` (queued, processing, completed, failed)
-  - retry logic and timeout enforcement (5-minute max per AI job)
-  - queues: `csv-analysis`, `dashboard-generation`, `pdf-export` (no worker yet), `cache-recalculation` (no worker yet)
-
-#### Data Model / Entities
-
-- `backgroundjobs`
-
-#### Depends On
-
-- `Caching` / Redis (BullMQ broker)
-
-#### Notes
-
-- `csv-analysis` and `dashboard-generation` have active workers (in AI Processing)
-- `pdf-export` and `cache-recalculation` are declared and enqueued but **have no worker yet**
-- Completed jobs are intended to trigger notifications (wiring pending)
-
----
-
-### 4. Caching
-
-#### Purpose
-
-Provide shared Redis + MongoDB caching for pre-calculated chart data. All chart data lookups go through this layer before hitting the aggregation pipeline.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `no`
-- Audience: `system`
-
-#### Related Features
-
-- Dashboards → Chart Data API (Cache-First), Manual Data Refresh (cache invalidation)
-
-#### Backend Module
-
-- Owns:
-  - Redis cache read/write for chart results
-  - MongoDB persistent cache fallback (`chartdatacache`)
-  - cache key generation (widget id + query hash) and TTL management
-  - cache invalidation on manual data refresh
-
-#### Data Model / Entities
-
-- `chartdatacache`
-
-#### Depends On
-
-- Redis
-
-#### Notes
-
-- Cache lookup order: Redis → MongoDB cache → recalculate
-- Redis also backs the BullMQ queues used by Background Jobs
-
----
-
-### 5. Storage
-
-#### Purpose
-
-Abstract file storage operations (upload, download, delete) behind a provider-agnostic interface, with Cloudflare R2 as the current implementation.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `no`
-- Audience: `system`
-
-#### Related Features
-
-- Data (CSV Management) → Upload CSV File
-- Export → PDF storage
-
-#### Backend Module
-
-- Folder: `src/integrations/storage/`
-- Owns:
-  - S3-compatible upload (Cloudflare R2)
-  - signed URL generation for downloads
-  - file deletion
-  - provider interface allowing swap (AWS S3, Azure Blob, etc.)
-
-#### Depends On
-
-- None (pure infrastructure)
-
-#### Notes
-
-- All file operations go through this service — no direct SDK calls from business modules
-- Provider selected via the `STORAGE_PROVIDER` environment variable
-
----
-
-### 6. AI Provider
-
-#### Purpose
-
-Abstract all AI provider API calls behind a provider-agnostic interface. Used by the AI Processing module; also persists AI usage logs consumed by Admin — AI Logs.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `no`
-- Audience: `system`
-
-#### Backend Module
-
-- Folder: `src/integrations/ai/`
-- Owns:
-  - Anthropic (Claude) API client (`anthropic.provider.ts`)
-  - prompt sending and response parsing
-  - provider interface (allows swapping providers)
-  - AI usage logging (`ailogs`) and model pricing (`aimodels`), exposed via `ai-logs.controller.ts`
-
-#### Data Model / Entities
-
-- `ailogs`
-- `aimodels`
-
-#### Depends On
-
-- None (pure infrastructure)
-
-#### Notes
-
-- Provider selected via the `AI_PROVIDER` environment variable; the current provider is Anthropic
-- API key is server-side only; never exposed to frontend or logs
-- The AI Logs read API (Admin — AI Logs) lives here alongside the provider client
-
----
-
-### 7. Email
-
-#### Purpose
-
-Deliver transactional emails via Mailjet. Used by the Auth flow (password reset) and intended for the Notifications module.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `no`
-- Audience: `system`
-
-#### Backend Module
-
-- Folder: `src/integrations/mail/`
-- Owns:
-  - Mailjet API client
-  - email templates (welcome, password reset, share/dashboard notifications)
-  - provider interface for future swap
-
-#### Depends On
-
-- None (pure infrastructure)
-
-#### Notes
-
-- Provider selected via the `MAIL_PROVIDER` environment variable; the current provider is Mailjet
-- Currently called directly by the Auth flow; Notifications auto-email wiring is pending
-
----
-
-### 8. Payment Gateway
-
-#### Purpose
-
-Intended provider-agnostic interface for processing SaaS subscription payments. **Currently a stub — not used.**
-
-#### Scope
-
-- Backend: `yes` (stub)
-- Frontend: `no`
-- Audience: `system`
-
-#### Backend Module
-
-- Folder: `src/integrations/payment/`
-- Owns:
-  - payment provider client interface (provider selected via `PAYMENT_PROVIDER`)
-  - subscription/checkout and webhook handling (not implemented)
-
-#### Depends On
-
-- None (pure infrastructure)
-
-#### Notes
-
-- **Unused stub.** No gateway checkout or webhook processing is wired
-- Customer subscribe assigns subscriptions directly without a real payment; admin payments are a manual ledger (see Admin — Payments)
-
----
-
-## Module Priority For Implementation Planning
-
-### Phase 1: Core Workflow (MVP)
-
-These modules form the end-to-end customer journey:
-
-- `Auth`
-- `Users`
-- `Projects`
-- `Data` (CSV Management)
-- `AI Processing`
-- `Dashboards`
-- `Background Jobs` (shared — required by AI Processing)
-- `Caching` (shared — required by Dashboards)
-- `Storage` (shared — required by Data)
-- `AI Provider` (shared — required by AI Processing)
-- `Customer Portal Shell` (frontend — hosts all customer pages)
-
-### Phase 2: Engagement, Collaboration, and Delivery
-
-- `Sharing`
-- `Export`
-- `Notifications`
-- `Subscriptions` (customer self-service)
-- `Email` (shared — required by Notifications / password reset)
-
-### Phase 3: Platform Administration (Admin Panel)
-
-- `Admin Panel Shell` (frontend — hosts all admin pages)
-- `Admin — Overview`
-- `Admin — Client Management`
-- `Admin — Subscriptions & Plans`
-- `Admin — Payments`
-- `Admin — Audit Logs`
-- `Admin — AI Logs`
-- `Admin — System Settings`
-- `Payment Gateway` (shared — stub, deferred)
-
----
-
-## Module Dependency Summary
-
-- `Auth` depends on `Users`
-- `Users` depends on `Auth`
-- `Projects` depends on `Auth`, `Users`
-- `Data` depends on `Auth`, `AI Processing`, `Storage`, `Background Jobs`
-- `AI Processing` depends on `Background Jobs`, `AI Provider`, `Data`, `Dashboards`
-- `Dashboards` depends on `Projects`, `Data`, `AI Processing`, `Caching`, `Background Jobs`
-- `Sharing` depends on `Dashboards`, `Auth`
-- `Export` depends on `Dashboards`, `Storage`, `Background Jobs`
-- `Notifications` depends on `Auth`, `Email`, `Background Jobs`
-- `Subscriptions` depends on `Users`, `Auth`
-- `Admin — Overview` depends on `Auth`, `Admin — AI Logs`
-- `Admin — Client Management` depends on `Users`, `Auth`
-- `Admin — Subscriptions & Plans` depends on `Users`, `Subscriptions`
-- `Admin — Payments` depends on `Users`, `Auth`
-- `Admin — Audit Logs` depends on `Auth`, `Users`
-- `Admin — AI Logs` depends on `Auth`, `AI Provider`
-- `Admin — System Settings` depends on `Auth`
-- `Customer Portal Shell` depends on `Auth`, `Notifications`
-- `Admin Panel Shell` depends on `Auth`
-- `Background Jobs` depends on `Caching` / Redis
-- `Caching` depends on Redis
-
----
-
-## Important Planning Notes
-
-- The product ships as **two frontend apps over one backend**: the Customer Portal (`roya-ai-dynamo-frontend`) and the Admin Panel (`roya-ai-dynamo-frontend-admin`). All API routes are served under `/api/v1`. Admin features live in the Admin Panel app only.
-- One module may contain many endpoints and many pages — for example, `Dashboards` owns the generation, viewer, customization pages, and all chart data endpoints.
-- `AI Processing` is backend-only. Its status is surfaced through `Data` (column analysis) and `Dashboards` (generation status) pages, not a separate AI frontend area.
-- `Customer Portal Shell` and `Admin Panel Shell` are frontend-only layout modules with no backend domain; the admin shell adds `adminGuard` on top of `authGuard`.
-- Several admin modules reuse business-module backends: `Admin — Client Management` reuses `Users`; `Admin — Subscriptions & Plans` reuses `Subscriptions`; `Admin — AI Logs` lives in the `ai` integration. The separation is for the Admin Panel UI.
-- `Background Jobs`, `Caching`, `Storage`, `AI Provider`, `Email`, and `Payment Gateway` are infrastructure modules — they are called by business module services rather than exposing public business endpoints directly (the `ai` integration is an exception: it also hosts the admin AI logs read API).
-- OAuth is configuration-only in `src/config` with login logic in the `auth` module; `src/integrations/oauth/` exists but is empty. End-to-end OAuth is **partial** (callback is a stub).
-- Known partial / planned items:
-  - `Auth` → OAuth Login: config + service exist, but `oauth/callback` is a stub (**partial**).
-  - `Export` → PDF: job is queued but **no `pdf-export` worker** is implemented.
-  - `Dashboards` → Manual Data Refresh: enqueues a `cache-recalculation` job but **no worker** consumes it.
-  - `Notifications`: `NotificationsService.notify` exists but is **not wired** to AI/export workers yet.
-  - `Payment Gateway`: an **unused stub**; no gateway checkout or webhook processing.
-  - `Subscriptions` → Subscribe / Cancel: **implemented** in change-001 (2026-06-22); both endpoints are live (no real payment processing yet).
-- `Admin — Payments` is a **manual ledger**, not a payment-gateway checkout.
-- Do not create a separate module per page or per API route — group by business capability.
-
-
+### Features
+1. **Payment Provider Interface** [backend] — provider-agnostic interface (`PAYMENT_PROVIDER` env var); PayUp provider implemented for subscription checkout *(change-003)*: auth → create session, confirm/cancel return endpoints, durable `subscription-activation` event; API base URL auto-selected by environment (sandbox/prod), overridable by env var.
