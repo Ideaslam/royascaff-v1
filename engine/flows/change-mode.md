@@ -156,7 +156,7 @@ Runs **before any endpoint or page is decided**. Base decisions on the real code
 Skip recon portion for `change-type: new-app` (no existing code to review).
 
 - **Input**: Resolved scope from Step 5.0 + repos in `project/profile.md` + `project/plan/` + `project/actions/`
-- **Template**: `engine/templates/code-recon-template.md`
+- **Template**: `engine/templates/impact-template.md`
 - **Output**: `project/changes/change-<NNN>-<slug>/impact.md`
 - **Scope rule**: Resolve affected module(s), look up `_index.md` registries for exact files. Load ONLY those module files. Do NOT load unrelated modules.
 
@@ -342,7 +342,7 @@ Screenshots are optional. If not provided, UI check marked "skipped" and does no
 ### Step 5.5 — Post-Build Code Verification
 
 - **Input**: Implemented code + updated planning docs
-- **Template**: `engine/templates/change-verification-report-template.md` — Part 2
+- **Template**: `engine/templates/verification-template.md`
 - **Output**: `project/changes/change-<NNN>-<slug>/verify-code.md`
 - **Checks** (scoped to changed areas):
   1. **Endpoints in code** — new/modified endpoints exist with correct method/route

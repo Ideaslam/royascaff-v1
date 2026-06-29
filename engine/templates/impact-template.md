@@ -1,6 +1,6 @@
 # Impact Analysis Template
 
-Code recon + impact analysis in one artifact. Step 5.0b — before planning endpoints/pages. Saved as `recon.md`.
+Code recon + impact analysis in one artifact. Step 5.0b — before planning endpoints/pages. Saved as `impact.md`.
 
 > Verbose guidance → `references/impact-template-guide.md`
 
