@@ -8,11 +8,11 @@ This folder contains the **planning documents** that define the system's modules
 
 Generated in Phase 1 of the framework:
 
-- **`modules.md`** — Module map grouping business capabilities into backend/frontend modules
-- **`features.md`** — Feature specifications organized by module
-- **`data-model.md`** — Database schema and entity definitions
+- **`modules.md`** — Module map with features inlined (merged from old `modules.md` + `features.md`)
+- **`data-model.md`** — Database schema and entity definitions (field-table format)
+- **`roles-and-authorization.md`** — Two-layer role model (System `UserRole` vs Workspace `WorkspaceRole`)
 
-(The service map lives in the API app's `project/actions/<api-app>/services.md` — e.g. `backend/services.md` — it heads the action call chain.)
+(Service and endpoint specs live per-module in `project/actions/backend/services/` and `project/actions/backend/endpoints/`. See their `_index.md` registries for routing.)
 
 ## Usage
 
