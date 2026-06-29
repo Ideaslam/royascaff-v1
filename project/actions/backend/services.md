@@ -48,7 +48,7 @@ Application service for the entire authentication lifecycle. Verifies credential
 
 #### Public Methods
 
-- `register(dto: RegisterDto, ip?: string): Promise<AuthResponseDto> — rejects duplicate email, bcrypt-hashes password, creates an EDITOR user, issues tokens, sends welcome email, audits USER_REGISTER`
+- `register(dto: RegisterDto, ip?: string): Promise<AuthResponseDto> — rejects duplicate email, bcrypt-hashes password, creates an EDITOR user, automatically initializes their workspace via WorkspaceService.createWorkspace, issues tokens with workspace context (currentWorkspaceId, workspaceSlug, workspaceRole), sends welcome email, audits USER_REGISTER`
 - `login(dto: LoginDto, ip?: string): Promise<AuthResponseDto> — validates credentials and active status, updates lastLoginAt, audits USER_LOGIN / USER_LOGIN_FAILED`
 - `oauthLogin(provider: string, oauthUserId: string, email: string, name: string, ip?: string): Promise<AuthResponseDto> — finds-or-links-or-creates a user from an OAuth identity and issues tokens (present but the controller OAuth callback is a stub)`
 - `refresh(dto: RefreshTokenDto): Promise<{ accessToken; refreshToken }> — verifies refresh JWT, compares against stored hash, issues a new pair`
@@ -62,6 +62,7 @@ Application service for the entire authentication lifecycle. Verifies credential
 - Repositories:
   - `UserRepository — user persistence, email/OAuth lookups, reset-token queries`
 - Internal Services:
+  - `WorkspaceService — auto-creates workspace on user registration`
   - `AuditLogService — security audit trail for auth events`
 - External Providers:
   - `JwtService (@nestjs/jwt) — signs/verifies access and refresh tokens`
@@ -70,10 +71,10 @@ Application service for the entire authentication lifecycle. Verifies credential
 
 #### Entities / DTOs
 
-- `User — persisted entity (passwordHash, refreshTokenHash, oauthProviders, reset fields)`
+- `User — persisted entity (passwordHash, refreshTokenHash, oauthProviders, reset fields, currentWorkspaceId, defaultWorkspaceId)`
 - `RegisterDto / LoginDto / RefreshTokenDto — request inputs`
-- `AuthResponseDto — { accessToken, refreshToken, user: UserProfileDto }`
-- `UserProfileDto — safe public user projection`
+- `AuthResponseDto — { accessToken, refreshToken, user: UserProfileDto, redirectTo: string }`
+- `UserProfileDto — safe public user projection including currentWorkspaceId and defaultWorkspaceId`
 
 #### Business Rules
 
@@ -117,7 +118,7 @@ Passport strategy registered via `PassportStrategy(Strategy)`. Extracts the bear
 
 #### Public Methods
 
-- `validate(payload: JwtPayload): Promise<{ id: string; email: string; role: string }> — loads the user by payload.sub, throws UnauthorizedException if missing/inactive, returns the request principal`
+- `validate(payload: JwtPayload): Promise<RequestUser> — loads the user by payload.sub, looks up their WorkspaceMembership for payload.currentWorkspaceId, throws UnauthorizedException if missing/inactive or not a member of the workspace, returns the request principal RequestUser with workspace details`
 
 #### Dependencies
 
@@ -1835,10 +1836,6 @@ The following are documented as implemented-but-incomplete relative to the inten
 
 ---
 
-## change-006: New and Modified Services
-
----
-
 ## Module: Workspace
 
 `src/modules/workspace/services`
@@ -1962,22 +1959,4 @@ The following are documented as implemented-but-incomplete relative to the inten
 | `delete` | `(id) → void` | Hard delete. Clears references in WorkspaceBranding. |
 | `toggleActive` | `(id, isActive) → ColorTemplateDto` | — |
 
----
-
-## Module: Auth (modified — change-006)
-
-### AuthService changes
-
-`register()` now also:
-1. Calls `WorkspaceService.createWorkspace(userId, name)` — auto-creates the workspace.
-2. Includes `currentWorkspaceId`, `workspaceSlug`, `workspaceRole` in the JWT via updated `issueTokens()`.
-3. Returns `{ ...tokens, user, redirectTo: '/onboarding' }` in the registration response.
-
-`issueTokens()` now accepts `(userId, email, role, workspaceId, workspaceSlug, workspaceRole)` and includes these in the JWT payload.
-
-### JwtStrategy changes
-
-`validate()` now resolves the workspace context:
-1. Looks up `WorkspaceMembership` for `(payload.sub, payload.currentWorkspaceId)`.
-2. Returns `{ id, email, role, currentWorkspaceId, workspaceSlug, workspaceRole }` in request.user.
 

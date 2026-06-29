@@ -907,14 +907,14 @@ Catalog of subscription plan definitions (model `SubscriptionPlan`). Admin-manag
 
 ## 14. usersubscriptions
 
-One subscription record per user (model `UserSubscription`). Links a user to a plan and tracks the current period and monthly usage counters used for limit enforcement.
+One subscription record per workspace (model `UserSubscription`). Links a workspace to a plan and tracks the current period and monthly usage counters used for limit enforcement.
 
 ### Mongoose shape
 
 ```ts
 {
   _id: ObjectId,
-  userId: ObjectId,
+  workspaceId: ObjectId,
   planId: ObjectId,
   status: String,
   startDate: Date,
@@ -934,7 +934,7 @@ One subscription record per user (model `UserSubscription`). Links a user to a p
 | Field | Type | Required | Notes |
 |---|---|---:|---|
 | `_id` | `ObjectId` | yes | Primary key |
-| `userId` | `ObjectId` | yes | Ref `users` — **unique**, one subscription per user |
+| `workspaceId` | `ObjectId` | yes | Ref `workspaces` — **unique**, one subscription per workspace |
 | `planId` | `ObjectId` | yes | Ref `subscriptionplans` |
 | `status` | `String` | yes | Enum: `active`, `inactive`, `expired`, `cancelled` — default `active` |
 | `startDate` | `Date` | yes | Subscription start date |
@@ -956,7 +956,7 @@ One subscription record per user (model `UserSubscription`). Links a user to a p
 
 ### Relations
 
-- One `usersubscription` belongs to one `user` (unique)
+- One `usersubscription` belongs to one `workspace` (unique)
 - One `usersubscription` references one `subscriptionplan`
 - One `usersubscription` may be referenced by many `payments` (`subscriptionId`)
 
@@ -982,6 +982,7 @@ gateway/session/return-URL fields.)*
 {
   _id: ObjectId,
   userId: ObjectId,
+  workspaceId: ObjectId | null,
   subscriptionId: ObjectId | null,
   planId: ObjectId | null,
   amountUsd: Number,
@@ -1013,6 +1014,7 @@ gateway/session/return-URL fields.)*
 |---|---|---:|---|
 | `_id` | `ObjectId` | yes | Primary key |
 | `userId` | `ObjectId` | yes | Ref `users` |
+| `workspaceId` | `ObjectId` | no | Ref `workspaces`; default `null` (added for workspace billing context, nullable for legacy records) |
 | `subscriptionId` | `ObjectId` | no | Ref `usersubscriptions`; default `null` |
 | `planId` | `ObjectId` | no | Ref `subscriptionplans`; default `null` |
 | `amountUsd` | `Number` | yes | Payment amount in USD; min 0 |
@@ -1045,6 +1047,7 @@ gateway/session/return-URL fields.)*
 ### Relations
 
 - One `payment` belongs to one `user`
+- One `payment` optionally references one `workspace` (`workspaceId`)
 - One `payment` optionally references one `usersubscription` (`subscriptionId`)
 - One `payment` optionally references one `subscriptionplan` (`planId`)
 - One `payment` optionally references one `workspace_invitation` (`invitationId`)
@@ -1054,6 +1057,7 @@ gateway/session/return-URL fields.)*
 - Compound index on `{ userId: 1, createdAt: -1 }` (user payment history, newest first)
 - Compound index on `{ status: 1, createdAt: -1 }` (admin ledger filtering)
 - Index on `{ providerSessionToken: 1 }` (lookup on gateway return; sparse) *(change-003)*
+- Index on `workspaceId` (optional, for fast workspace-level invoice lookup)
 
 ---
 
@@ -1259,6 +1263,257 @@ AI model pricing table (model `AiModelPricing`, collection `aimodels`, owned by 
 ### Index Recommendations
 
 - Unique compound index on `{ provider: 1, modelId: 1 }`
+- Index on `isActive`
+
+---
+
+## 20. workspaces
+
+Multi-tenancy workspace entity (model `Workspace`, collection `workspaces`).
+
+### Mongoose shape
+
+```ts
+{
+  _id: ObjectId,
+  slug: String,
+  name: String,
+  ownerId: ObjectId,
+  status: String,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Fields
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `_id` | ObjectId | yes | Primary key |
+| `slug` | string | yes | URL-safe, unique. Pattern: `{word}-{word}-{4digits}`. Unique index |
+| `name` | string | yes | Human display name |
+| `ownerId` | ObjectId | yes | User who created the workspace (Ref `users`) |
+| `status` | string | yes | Enum: `active`, `suspended`, `deleted` — default `active` |
+| `createdAt` | Date | yes | Mongoose timestamps |
+| `updatedAt` | Date | yes | Mongoose timestamps |
+
+### Relations
+
+- One `workspace` is owned by one `user` (`ownerId`)
+- One `workspace` has many `workspace_memberships`
+- One `workspace` has many `workspace_invitations`
+- One `workspace` has one `workspace_branding`
+
+### Index Recommendations
+
+- Unique index on `slug`
+- Index on `ownerId`
+- Index on `status`
+
+---
+
+## 21. workspace_memberships
+
+Maps users to their workspaces with a role (model `WorkspaceMembership`, collection `workspace_memberships`).
+
+### Mongoose shape
+
+```ts
+{
+  _id: ObjectId,
+  workspaceId: ObjectId,
+  userId: ObjectId,
+  role: String,
+  joinedAt: Date,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Fields
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `_id` | ObjectId | yes | Primary key |
+| `workspaceId` | ObjectId | yes | Ref `workspaces` |
+| `userId` | ObjectId | yes | Ref `users` |
+| `role` | string | yes | Enum: `workspace-owner`, `workspace-admin`, `workspace-member` |
+| `joinedAt` | Date | yes | Timestamp the member joined (default `Date.now`) |
+| `createdAt` | Date | yes | Mongoose timestamps |
+| `updatedAt` | Date | yes | Mongoose timestamps |
+
+### Relations
+
+- One `workspace_membership` links one `workspace` and one `user`
+
+### Index Recommendations
+
+- Unique compound index on `{ workspaceId: 1, userId: 1 }`
+- Index on `userId`
+
+---
+
+## 22. workspace_invitations
+
+Workspace invitations sent to email addresses (model `WorkspaceInvitation`, collection `workspace_invitations`).
+
+### Mongoose shape
+
+```ts
+{
+  _id: ObjectId,
+  workspaceId: ObjectId,
+  invitedByUserId: ObjectId,
+  email: String,
+  role: String,
+  token: String,
+  status: String,
+  expiresAt: Date,
+  acceptedAt: Date | null,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Fields
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `_id` | ObjectId | yes | Primary key |
+| `workspaceId` | ObjectId | yes | Ref `workspaces` |
+| `invitedByUserId` | ObjectId | yes | Ref `users` |
+| `email` | string | yes | Email address invited (lowercase) |
+| `role` | string | yes | Enum: `workspace-owner`, `workspace-admin`, `workspace-member` |
+| `token` | string | yes | Unique secure token; indexed for accept lookup |
+| `status` | string | yes | Enum: `pending`, `pending-payment`, `accepted`, `revoked`, `expired` — default `pending` |
+| `expiresAt` | Date | yes | Expiration date (usually 7 days after creation) |
+| `acceptedAt` | Date | no | When the invitation was accepted; default `null` |
+| `createdAt` | Date | yes | Mongoose timestamps |
+| `updatedAt` | Date | yes | Mongoose timestamps |
+
+### Index Recommendations
+
+- Unique index on `token`
+- Unique compound index on `{ workspaceId: 1, email: 1 }`
+- Index on `expiresAt` (can be used for TTL)
+
+---
+
+## 23. workspace_brandings
+
+Custom branding configuration for a workspace (model `WorkspaceBranding`, collection `workspace_brandings`).
+
+### Mongoose shape
+
+```ts
+{
+  _id: ObjectId,
+  workspaceId: ObjectId,
+  logoUrl: String | null,
+  logoStorageKey: String | null,
+  colorTemplateId: ObjectId | null,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Fields
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `_id` | ObjectId | yes | Primary key |
+| `workspaceId` | ObjectId | yes | Ref `workspaces` |
+| `logoUrl` | string | no | Cloudflare R2 storage URL; default `null` |
+| `logoStorageKey` | string | no | R2 storage key for deletion; default `null` |
+| `colorTemplateId` | ObjectId | no | Ref `color_templates`; default `null` |
+| `createdAt` | Date | yes | Mongoose timestamps |
+| `updatedAt` | Date | yes | Mongoose timestamps |
+
+### Index Recommendations
+
+- Unique index on `workspaceId`
+
+---
+
+## 24. onboarding_progress
+
+Tracks onboarding steps completion for a workspace owner (model `OnboardingProgress`, collection `onboarding_progress`).
+
+### Mongoose shape
+
+```ts
+{
+  _id: ObjectId,
+  workspaceId: ObjectId,
+  userId: ObjectId,
+  workspaceCreated: Boolean,
+  brandingDone: Boolean,
+  invitesDone: Boolean,
+  experimentDone: Boolean,
+  completedAt: Date | null,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Fields
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `_id` | ObjectId | yes | Primary key |
+| `workspaceId` | ObjectId | yes | Ref `workspaces` |
+| `userId` | ObjectId | yes | Ref `users` — the owner who created the workspace |
+| `workspaceCreated` | boolean | yes | Step 1 complete; default `false` |
+| `brandingDone` | boolean | yes | Step 2 done or skipped; default `false` |
+| `invitesDone` | boolean | yes | Step 3 done or skipped; default `false` |
+| `experimentDone` | boolean | yes | Step 4 done or skipped; default `false` |
+| `completedAt` | Date | no | When the wizard was fully dismissed; default `null` |
+| `createdAt` | Date | yes | Mongoose timestamps |
+| `updatedAt` | Date | yes | Mongoose timestamps |
+
+### Index Recommendations
+
+- Unique index on `workspaceId`
+- Unique index on `userId`
+
+---
+
+## 25. color_templates
+
+System-predefined color templates managed by admins (model `ColorTemplate`, collection `color_templates`).
+
+### Mongoose shape
+
+```ts
+{
+  _id: ObjectId,
+  name: String,
+  primary: String,
+  secondary: String,
+  accent: String,
+  chartColors: [String],
+  isActive: Boolean,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Fields
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `_id` | ObjectId | yes | Primary key |
+| `name` | string | yes | Display name (e.g. "Ocean Blue") |
+| `primary` | string | yes | Hex color code (e.g. `#1a73e8`) |
+| `secondary` | string | yes | Hex color code |
+| `accent` | string | yes | Hex color code |
+| `chartColors` | [string] | yes | Array of 5 hex colors for chart series |
+| `isActive` | boolean | yes | Hidden from selection if false; default `true` |
+| `createdAt` | Date | yes | Mongoose timestamps |
+| `updatedAt` | Date | yes | Mongoose timestamps |
+
+### Index Recommendations
+
 - Index on `isActive`
 
 ---
@@ -1481,182 +1736,4 @@ Then add in Phase 2:
 
 - `sharelinks` — when sharing feature is implemented
 - `subscriptionplans`, `usersubscriptions`, `payments` — when subscription and billing is implemented
----
 
-## change-006: Workspace & Onboarding — New and Modified Entities
-
-### Modified: users
-
-Add field:
-
-| Field | Type | Required | Default | Notes |
-|-------|------|----------|---------|-------|
-| `currentWorkspaceId` | `ObjectId` (ref: Workspace) | no | `null` | The workspace the user is currently active in; set on registration, updated on switch |
-
-### New: workspaces
-
-| Field | Type | Required | Default | Notes |
-|-------|------|----------|---------|-------|
-| `_id` | ObjectId | auto | — | |
-| `slug` | string | yes | — | URL-safe, unique. Pattern: `{word}-{word}-{4digits}`. Unique index |
-| `name` | string | yes | — | Human display name |
-| `ownerId` | ObjectId (ref: User) | yes | — | User who created the workspace |
-| `status` | WorkspaceStatus | yes | `active` | `active` / `suspended` / `deleted` |
-| `createdAt` | Date | auto | — | |
-| `updatedAt` | Date | auto | — | |
-
-Indexes: unique `{ slug: 1 }`, `{ ownerId: 1 }`, `{ status: 1 }`
-
-### New: workspace_memberships
-
-| Field | Type | Required | Default | Notes |
-|-------|------|----------|---------|-------|
-| `_id` | ObjectId | auto | — | |
-| `workspaceId` | ObjectId (ref: Workspace) | yes | — | |
-| `userId` | ObjectId (ref: User) | yes | — | |
-| `role` | WorkspaceRole | yes | — | `workspace-owner` / `workspace-admin` / `workspace-member` |
-| `joinedAt` | Date | yes | now | |
-| `createdAt` | Date | auto | — | |
-| `updatedAt` | Date | auto | — | |
-
-Indexes: unique `{ workspaceId: 1, userId: 1 }`, `{ userId: 1 }`
-
-### New: workspace_invitations
-
-| Field | Type | Required | Default | Notes |
-|-------|------|----------|---------|-------|
-| `_id` | ObjectId | auto | — | |
-| `workspaceId` | ObjectId (ref: Workspace) | yes | — | |
-| `invitedByUserId` | ObjectId (ref: User) | yes | — | |
-| `email` | string | yes | — | Email address invited (lowercase) |
-| `role` | WorkspaceRole | yes | — | Role to assign on acceptance |
-| `token` | string | yes | — | Unique secure token; indexed for accept lookup |
-| `status` | InvitationStatus | yes | `pending` | `pending` / `pending-payment` / `accepted` / `revoked` / `expired` |
-| `expiresAt` | Date | yes | — | 7 days after creation |
-| `acceptedAt` | Date | no | `null` | |
-| `createdAt` | Date | auto | — | |
-
-Indexes: unique `{ token: 1 }`, `{ workspaceId: 1, email: 1 }`, `{ expiresAt: 1 }` (TTL optional)
-
-### New: workspace_brandings
-
-| Field | Type | Required | Default | Notes |
-|-------|------|----------|---------|-------|
-| `_id` | ObjectId | auto | — | |
-| `workspaceId` | ObjectId (ref: Workspace) | yes | — | Unique per workspace |
-| `logoUrl` | string | no | `null` | R2 storage URL |
-| `logoStorageKey` | string | no | `null` | R2 storage key for deletion |
-| `colorTemplateId` | ObjectId (ref: ColorTemplate) | no | `null` | Selected palette |
-| `createdAt` | Date | auto | — | |
-| `updatedAt` | Date | auto | — | |
-
-Indexes: unique `{ workspaceId: 1 }`
-
-### New: onboarding_progress
-
-| Field | Type | Required | Default | Notes |
-|-------|------|----------|---------|-------|
-| `_id` | ObjectId | auto | — | |
-| `workspaceId` | ObjectId (ref: Workspace) | yes | — | Unique per workspace |
-| `userId` | ObjectId (ref: User) | yes | — | The owner who created the workspace |
-| `workspaceCreated` | boolean | yes | `false` | Step 1 complete |
-| `brandingDone` | boolean | yes | `false` | Step 2 done or skipped |
-| `invitesDone` | boolean | yes | `false` | Step 3 done or skipped |
-| `experimentDone` | boolean | yes | `false` | Step 4 done or skipped |
-| `completedAt` | Date | no | `null` | When the wizard was fully dismissed |
-| `createdAt` | Date | auto | — | |
-| `updatedAt` | Date | auto | — | |
-
-Indexes: unique `{ workspaceId: 1 }`, `{ userId: 1 }`
-
-### New: color_templates
-
-| Field | Type | Required | Default | Notes |
-|-------|------|----------|---------|-------|
-| `_id` | ObjectId | auto | — | |
-| `name` | string | yes | — | Display name (e.g. "Ocean Blue") |
-| `primary` | string | yes | — | Hex color (e.g. `#1a73e8`) |
-| `secondary` | string | yes | — | Hex color |
-| `accent` | string | yes | — | Hex color |
-| `chartColors` | string[5] | yes | — | Array of 5 hex colors for chart series |
-| `isActive` | boolean | yes | `true` | Hidden from workspace branding selection if false |
-| `createdAt` | Date | auto | — | |
-| `updatedAt` | Date | auto | — | |
-
-Indexes: `{ isActive: 1 }`
-
-### Modified: usersubscriptions
-
-Replace `userId` with `workspaceId`:
-
-| Field | Change | Notes |
-|-------|--------|-------|
-| `userId` | **removed** | — |
-| `workspaceId` | **added** (ObjectId, ref: Workspace, unique) | Billing is per-workspace; unique index enforces one active subscription per workspace |
-
-### Modified: payments
-
-Add field:
-
-| Field | Type | Required | Default | Notes |
-|-------|------|----------|---------|-------|
-| `workspaceId` | ObjectId (ref: Workspace) | no | `null` | Added for workspace billing context (nullable for legacy records) |
-
-### Dynamic workspace-prefixed collections
-
-The following collections previously used static names. With change-006 they use the pattern `ws_{workspaceSlug}_{suffix}`.
-
-| Previous name | New pattern | Notes |
-|--------------|-------------|-------|
-| `projects` | `ws_{slug}_projects` | Same fields; scoped per workspace (change-013) |
-| `csvfiles` | `ws_{slug}_csvfiles` | `ownerId` field retained for creation tracking |
-| `columnmetadata` | `ws_{slug}_columnmetadata` | Same fields |
-| `dashboards` | `ws_{slug}_dashboards` | `projectId` field retained |
-| `chartwidgets` | `ws_{slug}_chartwidgets` | Same fields |
-| `chartdatacache` | `ws_{slug}_chartdatacache` | Same fields |
-| `dashboarddatasources` | `ws_{slug}_dashboarddatasources` | Same fields |
-
-**Pattern:** Repositories that own these collections accept a `workspaceSlug: string` parameter and resolve the collection name via:
-```typescript
-private getModel(workspaceSlug: string): Model<T> {
-  const collectionName = `ws_${workspaceSlug}_${this.suffix}`;
-  if (this.connection.models[collectionName]) {
-    return this.connection.models[collectionName] as Model<T>;
-  }
-  return this.connection.model<T>(collectionName, this.schema);
-}
-```
-
-### New enums
-
-```
-WorkspaceStatus = ["active", "suspended", "deleted"]
-WorkspaceRole = ["workspace-owner", "workspace-admin", "workspace-member"]
-InvitationStatus = ["pending", "accepted", "revoked", "expired"]
-```
-
-### JWT Payload (modified)
-
-```typescript
-interface JwtPayload {
-  sub: string;           // userId
-  email: string;
-  role: UserRole;        // system role: admin / editor / viewer
-  currentWorkspaceId: string;
-  workspaceSlug: string;
-  workspaceRole: WorkspaceRole;
-}
-```
-
-### Request User (CurrentUser) — modified
-
-```typescript
-interface RequestUser {
-  id: string;
-  email: string;
-  role: UserRole;
-  currentWorkspaceId: string;
-  workspaceSlug: string;
-  workspaceRole: WorkspaceRole;
-}
-```

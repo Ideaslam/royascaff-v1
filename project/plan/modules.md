@@ -572,11 +572,125 @@ Customer-facing subscription area: view available plans and view the current use
 
 ---
 
+### 11. Workspace
+
+#### Purpose
+
+Own the multi-tenancy layer: every company/organization is a Workspace. Handle workspace creation (triggered automatically on registration), slug management, membership and roles, invitation flow, multi-workspace switching, workspace branding, and workspace deletion.
+
+#### Scope
+
+- Backend: `yes`
+- Frontend: `yes`
+- Audience: `authenticated users (Customer Portal) + admin (Admin Panel)`
+
+#### Related Features
+
+- Workspace → Create Workspace, Workspace Slug Management, Workspace Members + Roles, Workspace Invitation Flow, Multi-Workspace Switching, Workspace Branding (Logo + Color Template), Workspace Deletion
+
+#### Backend Module
+
+- Folder: `src/modules/workspace/`
+- Owns:
+  - workspace CRUD (create, get, update slug/name, delete)
+  - slug auto-generation (`{word}-{word}-{4digits}`) + availability check
+  - `WorkspaceMembership` — member list, add, remove, role change
+  - `WorkspaceInvitation` — invite by email, accept via token, resend
+  - `WorkspaceBranding` — logo upload (via R2), color template selection
+  - `OnboardingProgress` — create on registration, update per step, read for redirect logic
+  - multi-workspace switching (`POST /workspaces/switch` → re-issue JWT)
+  - workspace deletion (drop all workspace-prefixed collections + memberships + branding)
+
+#### Frontend Module
+
+- Customer Portal: `pages/workspace/` (settings), shared workspace switcher component in AppShell
+- Owns (customer-portal):
+  - workspace settings page (`/app/settings/workspace`)
+  - members & invitations page (`/app/settings/members`)
+  - branding page (`/app/settings/branding`)
+  - workspace switcher in the top navigation bar
+
+#### Data Model / Entities
+
+- `workspaces`
+- `workspace_memberships`
+- `workspace_invitations`
+- `workspace_brandings`
+- `onboarding_progress`
+
+#### Depends On
+
+- `Auth`
+- `Storage` (logo upload)
+- `Email` (invitation emails)
+- `Color Templates` (branding color template reference)
+
+#### Notes
+
+- Workspace creation is triggered by `AuthService.register()` — not by a separate create endpoint in the normal user flow.
+- JWT carries `{ currentWorkspaceId, workspaceSlug, workspaceRole }`.
+- All data service/repo methods for workspace-prefixed collections receive `workspaceSlug` from the JWT via `@CurrentUser()`.
+- Workspace deletion is owner-only with typed-name confirmation.
+
+---
+
+### 12. Onboarding
+
+#### Purpose
+
+Guide new workspace owners through a 4-step wizard immediately after registration. Step 1 (workspace creation) is mandatory. Steps 2–4 (branding, invite, experiment) are skippable. Progress is tracked in the DB so the wizard resumes on browser reopen.
+
+#### Scope
+
+- Backend: `yes` (progress tracking API)
+- Frontend: `yes` (Customer Portal only)
+- Audience: `newly registered users (Customer Portal)`
+
+#### Related Features
+
+- Onboarding → 4-Step Wizard, Onboarding Progress Tracking, Sample CSV Experiment
+
+#### Backend Module
+
+- Handled within `src/modules/workspace/` (OnboardingProgress schema + controller)
+- Owns:
+  - `GET /onboarding/progress` — returns the current onboarding progress record
+  - `PATCH /onboarding/progress` — update step completion flags
+  - sample CSV seed data (`src/integrations/sample-data/sample-csv.seeder.ts`)
+
+#### Frontend Module
+
+- Folder: `roya-ai-dynamo-frontend/src/app/pages/onboarding/`
+- Owns:
+  - onboarding wizard page (`/onboarding`) — 4 steps, two-column Cisco-style layout
+  - step 1: create workspace (mandatory)
+  - step 2: branding (skippable)
+  - step 3: invite team (skippable)
+  - step 4: try it out (tips + sample CSV link, skippable)
+
+#### Data Model / Entities
+
+- `onboarding_progress`
+
+#### Depends On
+
+- `Workspace`
+- `Auth`
+- `Data` (sample CSV feature in step 4)
+
+#### Notes
+
+- `onboardingGuard` redirects to `/onboarding` if step 1 not complete.
+- The wizard is one-time only; re-entry is blocked.
+- After step 1, all portal routes are accessible; steps 2–4 are optional.
+
+---
+
 ## Admin Modules
 
 All admin modules are served by the **Admin Panel** app (`roya-ai-dynamo-frontend-admin`), behind `authGuard + adminGuard`. Several reuse business-module backends.
 
-### 11. Admin — Overview
+### 13. Admin — Overview
 
 #### Purpose
 
@@ -620,7 +734,7 @@ Give admins a platform health snapshot: key counts (clients, projects, dashboard
 
 ---
 
-### 12. Admin — Client Management
+### 14. Admin — Client Management
 
 #### Purpose
 
@@ -666,7 +780,7 @@ Admin-facing client (user) administration. Backend operations reuse the **Users*
 
 ---
 
-### 13. Admin — Subscriptions & Plans
+### 15. Admin — Subscriptions & Plans
 
 #### Purpose
 
@@ -712,7 +826,7 @@ Admin management of subscription plans and user subscriptions: define plans (CRU
 
 ---
 
-### 14. Admin — Payments
+### 16. Admin — Payments
 
 #### Purpose
 
@@ -757,7 +871,7 @@ A manual payment ledger for admins to record and maintain payment entries. This 
 
 ---
 
-### 15. Admin — Audit Logs
+### 17. Admin — Audit Logs
 
 #### Purpose
 
@@ -803,7 +917,7 @@ Give admins read-only access to the immutable, system-wide audit trail of user a
 
 ---
 
-### 16. Admin — AI Logs
+### 18. Admin — AI Logs
 
 #### Purpose
 
@@ -851,7 +965,7 @@ Give admins visibility into AI usage: per-request logs, per-request cost, cost s
 
 ---
 
-### 17. Admin — System Settings
+### 19. Admin — System Settings
 
 #### Purpose
 
@@ -894,6 +1008,90 @@ Manage the global system settings singleton: registration toggle, max file size,
 - Never expose raw API keys in any frontend response
 
 ---
+
+### 20. Admin — Workspace Management
+
+#### Purpose
+
+Give super-admins visibility into all workspaces: list, inspect, suspend, and delete. Cross-workspace view — no automatic workspace scoping.
+
+#### Scope
+
+- Backend: `yes`
+- Frontend: `yes`
+- Audience: `admin (Admin Panel)`
+
+#### Related Features
+
+- Admin — Workspace Management → List All Workspaces, View Workspace Details, Suspend Workspace, Delete Workspace
+
+#### Backend Module
+
+- Folder: `src/modules/workspace/` (admin endpoints on the same module, admin-guarded)
+
+#### Frontend Module
+
+- Folder: `roya-ai-dynamo-frontend-admin/src/app/pages/admin/workspaces/`
+- Owns:
+  - workspaces list page (`/app/workspaces`)
+
+#### Data Model / Entities
+
+- `workspaces`, `workspace_memberships`
+
+#### Depends On
+
+- `Workspace`
+- `Auth`
+
+---
+
+### 21. Admin — Color Templates
+
+#### Purpose
+
+Allow super-admins to define and manage the predefined color palette templates that workspaces can apply to their chart renders and exports.
+
+#### Scope
+
+- Backend: `yes`
+- Frontend: `yes`
+- Audience: `admin (Admin Panel)`
+
+#### Related Features
+
+- Admin — Color Templates → Create Color Template, List Color Templates, Update Color Template, Delete Color Template, Toggle Active Status
+
+#### Backend Module
+
+- Folder: `src/modules/color-templates/`
+- Owns:
+  - color template CRUD (name, primary, secondary, accent, chartColors[5], isActive)
+  - list active templates (used by workspace branding selection)
+  - admin CRUD (all templates incl. inactive)
+
+#### Frontend Module
+
+- Folder: `roya-ai-dynamo-frontend-admin/src/app/pages/admin/color-templates/`
+- Owns:
+  - color templates management page (`/app/color-templates`)
+
+#### Data Model / Entities
+
+- `color_templates`
+
+#### Depends On
+
+- `Auth`
+
+#### Notes
+
+- Color templates are defined by the super-admin.
+- Applied to chart widget renders + exports (chart color cycle).
+- System alert/warning/danger colors are never overridden.
+
+---
+
 
 ## Shared / Infrastructure Modules
 
@@ -1273,204 +1471,4 @@ These modules form the end-to-end customer journey:
 - `Admin — Payments` is a **manual ledger**, not a payment-gateway checkout.
 - Do not create a separate module per page or per API route — group by business capability.
 
----
-
-## Business Modules (change-006 additions)
-
-### 18. Workspace
-
-#### Purpose
-
-Own the multi-tenancy layer: every company/organization is a Workspace. Handle workspace creation (triggered automatically on registration), slug management, membership and roles, invitation flow, multi-workspace switching, workspace branding, and workspace deletion.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `authenticated users (Customer Portal) + admin (Admin Panel)`
-
-#### Related Features
-
-- Workspace → Create Workspace, Workspace Slug Management, Workspace Members + Roles, Workspace Invitation Flow, Multi-Workspace Switching, Workspace Branding (Logo + Color Template), Workspace Deletion
-
-#### Backend Module
-
-- Folder: `src/modules/workspace/`
-- Owns:
-  - workspace CRUD (create, get, update slug/name, delete)
-  - slug auto-generation (`{word}-{word}-{4digits}`) + availability check
-  - `WorkspaceMembership` — member list, add, remove, role change
-  - `WorkspaceInvitation` — invite by email, accept via token, resend
-  - `WorkspaceBranding` — logo upload (via R2), color template selection
-  - `OnboardingProgress` — create on registration, update per step, read for redirect logic
-  - multi-workspace switching (`POST /workspaces/switch` → re-issue JWT)
-  - workspace deletion (drop all workspace-prefixed collections + memberships + branding)
-
-#### Frontend Module
-
-- Customer Portal: `pages/workspace/` (settings), shared workspace switcher component in AppShell
-- Owns (customer-portal):
-  - workspace settings page (`/app/settings/workspace`)
-  - members & invitations page (`/app/settings/members`)
-  - branding page (`/app/settings/branding`)
-  - workspace switcher in the top navigation bar
-
-#### Data Model / Entities
-
-- `workspaces`
-- `workspace_memberships`
-- `workspace_invitations`
-- `workspace_brandings`
-- `onboarding_progress`
-
-#### Depends On
-
-- `Auth`
-- `Storage` (logo upload)
-- `Email` (invitation emails)
-- `Color Templates` (branding color template reference)
-
-#### Notes
-
-- Workspace creation is triggered by `AuthService.register()` — not by a separate create endpoint in the normal user flow.
-- JWT carries `{ currentWorkspaceId, workspaceSlug, workspaceRole }`.
-- All data service/repo methods for workspace-prefixed collections receive `workspaceSlug` from the JWT via `@CurrentUser()`.
-- Workspace deletion is owner-only with typed-name confirmation.
-
----
-
-### 19. Onboarding
-
-#### Purpose
-
-Guide new workspace owners through a 4-step wizard immediately after registration. Step 1 (workspace creation) is mandatory. Steps 2–4 (branding, invite, experiment) are skippable. Progress is tracked in the DB so the wizard resumes on browser reopen.
-
-#### Scope
-
-- Backend: `yes` (progress tracking API)
-- Frontend: `yes` (Customer Portal only)
-- Audience: `newly registered users (Customer Portal)`
-
-#### Related Features
-
-- Onboarding → 4-Step Wizard, Onboarding Progress Tracking, Sample CSV Experiment
-
-#### Backend Module
-
-- Handled within `src/modules/workspace/` (OnboardingProgress schema + controller)
-- Owns:
-  - `GET /onboarding/progress` — returns the current onboarding progress record
-  - `PATCH /onboarding/progress` — update step completion flags
-  - sample CSV seed data (`src/integrations/sample-data/sample-csv.seeder.ts`)
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend/src/app/pages/onboarding/`
-- Owns:
-  - onboarding wizard page (`/onboarding`) — 4 steps, two-column Cisco-style layout
-  - step 1: create workspace (mandatory)
-  - step 2: branding (skippable)
-  - step 3: invite team (skippable)
-  - step 4: try it out (tips + sample CSV link, skippable)
-
-#### Data Model / Entities
-
-- `onboarding_progress`
-
-#### Depends On
-
-- `Workspace`
-- `Auth`
-- `Data` (sample CSV feature in step 4)
-
-#### Notes
-
-- `onboardingGuard` redirects to `/onboarding` if step 1 not complete.
-- The wizard is one-time only; re-entry is blocked.
-- After step 1, all portal routes are accessible; steps 2–4 are optional.
-
----
-
-## Admin Modules (change-006 additions)
-
-### 18. Admin — Workspace Management
-
-#### Purpose
-
-Give super-admins visibility into all workspaces: list, inspect, suspend, and delete. Cross-workspace view — no automatic workspace scoping.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `admin (Admin Panel)`
-
-#### Related Features
-
-- Admin — Workspace Management → List All Workspaces, View Workspace Details, Suspend Workspace, Delete Workspace
-
-#### Backend Module
-
-- Folder: `src/modules/workspace/` (admin endpoints on the same module, admin-guarded)
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend-admin/src/app/pages/admin/workspaces/`
-- Owns:
-  - workspaces list page (`/app/workspaces`)
-
-#### Data Model / Entities
-
-- `workspaces`, `workspace_memberships`
-
-#### Depends On
-
-- `Workspace`
-- `Auth`
-
----
-
-### 19. Admin — Color Templates
-
-#### Purpose
-
-Allow super-admins to define and manage the predefined color palette templates that workspaces can apply to their chart renders and exports.
-
-#### Scope
-
-- Backend: `yes`
-- Frontend: `yes`
-- Audience: `admin (Admin Panel)`
-
-#### Related Features
-
-- Admin — Color Templates → Create Color Template, List Color Templates, Update Color Template, Delete Color Template, Toggle Active Status
-
-#### Backend Module
-
-- Folder: `src/modules/color-templates/`
-- Owns:
-  - color template CRUD (name, primary, secondary, accent, chartColors[5], isActive)
-  - list active templates (used by workspace branding selection)
-  - admin CRUD (all templates incl. inactive)
-
-#### Frontend Module
-
-- Folder: `roya-ai-dynamo-frontend-admin/src/app/pages/admin/color-templates/`
-- Owns:
-  - color templates management page (`/app/color-templates`)
-
-#### Data Model / Entities
-
-- `color_templates`
-
-#### Depends On
-
-- `Auth`
-
-#### Notes
-
-- Color templates are defined by the super-admin.
-- Applied to chart widget renders + exports (chart color cycle).
-- System alert/warning/danger colors are never overridden.
 

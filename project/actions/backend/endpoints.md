@@ -54,7 +54,8 @@ Validates email uniqueness, hashes the password, creates the user record, and re
 - Data:
   - `accessToken: string - JWT access token`
   - `refreshToken: string - refresh token`
-  - `user: UserProfileDto - id, name, email, role, languagePreference`
+  - `user: UserProfileDto - id, name, email, role, languagePreference, currentWorkspaceId, defaultWorkspaceId`
+  - `redirectTo: string - defaults to '/onboarding' for new registrations`
 
 #### Services Called
 
@@ -3116,15 +3117,7 @@ Validates the share token, enforces permissions/expiry, and returns the public d
 
 ---
 
-## change-006: New and Modified Endpoints
-
----
-
 ## Module: Workspace
-
-### Modified: POST /api/v1/auth/register
-
-**Change:** Response now includes `redirectTo: '/onboarding'` and workspace context in the JWT/user object.
 
 ### POST /api/v1/workspaces
 

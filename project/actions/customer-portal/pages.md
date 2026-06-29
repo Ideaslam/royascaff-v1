@@ -788,17 +788,21 @@ experience is the separate Admin Panel app.
 | 3 | Forgot Password | `/auth/forgot-password` | AuthLayout | guestGuard |
 | 4 | Reset Password | `/auth/reset-password` | AuthLayout | guestGuard |
 | 5 | Shared Dashboard Viewer | `/shared/:token` | none | none (token) |
-| 6 | Projects List | `/app/projects` | AppShell | authGuard |
-| 7 | Project Detail | `/app/projects/:id` | AppShell | authGuard |
-| 8 | Dashboard Generating | `/app/dashboards/:id/generating` | AppShell | authGuard |
-| 9 | Dashboard Viewer | `/app/dashboards/:id` | AppShell | authGuard |
-| 10 | Data Files List | `/app/data` | AppShell | authGuard |
-| 11 | Upload Wizard | `/app/data/upload` | AppShell | authGuard |
-| 12 | Notifications | `/app/notifications` | AppShell | authGuard |
-| 13 | Subscriptions | `/app/subscriptions` | AppShell | authGuard |
-| 14 | Profile Settings | `/app/settings/profile` | AppShell | authGuard |
-| 15 | Admin Users | `/app/admin/users` | AppShell | authGuard + adminGuard |
-| 16 | Admin Settings | `/app/admin/settings` | AppShell | authGuard + adminGuard |
+| 6 | Onboarding Wizard | `/onboarding` | none | authGuard |
+| 7 | Projects List | `/app/projects` | AppShell | authGuard + onboardingGuard |
+| 8 | Project Detail | `/app/projects/:id` | AppShell | authGuard + onboardingGuard |
+| 9 | Dashboard Generating | `/app/dashboards/:id/generating` | AppShell | authGuard + onboardingGuard |
+| 10 | Dashboard Viewer | `/app/dashboards/:id` | AppShell | authGuard + onboardingGuard |
+| 11 | Data Files List | `/app/data` | AppShell | authGuard + onboardingGuard |
+| 12 | Upload Wizard | `/app/data/upload` | AppShell | authGuard + onboardingGuard |
+| 13 | Notifications | `/app/notifications` | AppShell | authGuard + onboardingGuard |
+| 14 | Subscriptions | `/app/subscriptions` | AppShell | authGuard + onboardingGuard |
+| 15 | Profile Settings | `/app/settings/profile` | AppShell | authGuard + onboardingGuard |
+| 16 | Workspace Settings | `/app/settings/workspace` | AppShell | authGuard + onboardingGuard |
+| 17 | Members & Invitations | `/app/settings/members` | AppShell | authGuard + onboardingGuard |
+| 18 | Workspace Branding | `/app/settings/branding` | AppShell | authGuard + onboardingGuard |
+| 19 | Admin Users | `/app/admin/users` | AppShell | authGuard + adminGuard |
+| 20 | Admin Settings | `/app/admin/settings` | AppShell | authGuard + adminGuard |
 
 ---
 
@@ -810,9 +814,7 @@ experience is the separate Admin Panel app.
 
 ---
 
-## change-006: New Customer Portal Pages and Route Changes
-
----
+## Module: Workspace & Onboarding
 
 ### New Page: Onboarding Wizard
 

@@ -397,18 +397,20 @@ Conventions:
 
 | # | Page | Route | Layout | Guard |
 |---|------|-------|--------|-------|
-| 17 | Login | `/auth/login` | AuthLayout | guestGuard |
-| 18 | Forgot Password | `/auth/forgot-password` | AuthLayout | guestGuard |
-| 19 | Reset Password | `/auth/reset-password` | AuthLayout | guestGuard |
-| 20 | Overview | `/app/overview` | AppShell | authGuard + adminGuard |
-| 21 | Clients | `/app/clients` | AppShell | authGuard + adminGuard |
-| 22 | Subscriptions & Plans | `/app/subscriptions` | AppShell | authGuard + adminGuard |
-| 23 | Payments | `/app/payments` | AppShell | authGuard + adminGuard |
-| 24 | Audit Log | `/app/audit` | AppShell | authGuard + adminGuard |
-| 25 | AI Logs | `/app/ai-logs` | AppShell | authGuard + adminGuard |
-| 26 | Profile | `/app/settings/profile` | AppShell | authGuard + adminGuard |
+| 21 | Login | `/auth/login` | AuthLayout | guestGuard |
+| 22 | Forgot Password | `/auth/forgot-password` | AuthLayout | guestGuard |
+| 23 | Reset Password | `/auth/reset-password` | AuthLayout | guestGuard |
+| 24 | Overview | `/app/overview` | AppShell | authGuard + adminGuard |
+| 25 | Clients | `/app/clients` | AppShell | authGuard + adminGuard |
+| 26 | Subscriptions & Plans | `/app/subscriptions` | AppShell | authGuard + adminGuard |
+| 27 | Payments | `/app/payments` | AppShell | authGuard + adminGuard |
+| 28 | Audit Log | `/app/audit` | AppShell | authGuard + adminGuard |
+| 29 | AI Logs | `/app/ai-logs` | AppShell | authGuard + adminGuard |
+| 30 | Profile | `/app/settings/profile` | AppShell | authGuard + adminGuard |
+| 31 | Workspaces | `/app/workspaces` | AppShell | authGuard + adminGuard |
+| 32 | Color Templates | `/app/color-templates` | AppShell | authGuard + adminGuard |
 
-> Page numbers continue from the Customer Portal map (1–16) so cross-app references stay unique.
+> Page numbers continue from the Customer Portal map (1–20) so cross-app references stay unique.
 
 ---
 
@@ -418,9 +420,7 @@ Conventions:
 
 ---
 
-## change-006: New Admin Panel Pages and Route Changes
-
----
+## Module: Admin Workspaces & Color Templates
 
 ### New Page: Workspaces
 

@@ -694,10 +694,14 @@ This step translates the **New App Definition** section of `change-request.md` i
 
 Update only the sections of planning docs identified in Step 5.1. Do not rewrite entire files.
 
+> [!IMPORTANT]
+> **No Appended Change Sections**: Never create or append separate `change-<NNN>` sections at the end of planning/action files (such as `modules.md`, `features.md`, `data-model.md`, `endpoints.md`, `services.md`, `pages.md`/`views.md`). All edits, modifications, and new definitions must be applied **directly in-place** to their original/intended location in the file. Existing tables, schemas, endpoint definitions, and lists must be updated directly so that these files remain a consolidated, up-to-date **single source of truth** representing the *current* state of the application. The record of what changed for a specific task is tracked exclusively in the `project/changes/` folder.
+
 Honor the `recon.md` verdict:
 - **Partial implementation found** — update the existing plan entry to *complete* it; do not add a duplicate entry for something the code already started.
 - **Ripple items** — also update the plan entries for every endpoint/service/page the recon impact map flagged as affected.
 - **Plan-vs-code drift** — bring drifted plan entries back in line with the code as part of this change.
+
 
 #### Rules for each document
 
