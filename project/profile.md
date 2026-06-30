@@ -4,15 +4,15 @@
 
 - **Name**: PayUp
 - **Type**: SaaS — embeddable multi-gateway payment platform
-- **Users**: merchant (user), platform admin (admin), end-customer (checkout, no login)
+- **Users**: user (personal identity), merchant (workspace/organization), platform admin (AdminUser), end-customer (checkout, no login)
 
 ## Applications
 
 | Key | App | Type | Repo | Framework | UI lib | Auth |
 |-----|-----|------|------|-----------|--------|------|
-| `backend` | PayUp API | api | `payup-api-typescript` | Express 4 + TypeScript 5.9 | — | JWT (merchant), API keys (`pk_`/`sk_`), client tokens (`tk_*`), SDK JWT, pay verification token |
+| `backend` | PayUp API | api | `payup-api-typescript` | Express 4 + TypeScript 5.9 | — | JWT (user), X-Merchant-Id (context), API keys (`pk_`/`sk_`), client tokens (`tk_*`), SDK JWT, pay verification token, AdminUser JWT |
 | `customer-portal` | Customer Portal | web | `payup-frontend-customer-control` | Angular 21 (standalone) | PrimeNG 21, ngx-translate | Bearer JWT (`localStorage.token`) |
-| `admin-panel` | Admin Panel | web | `payup-frontend-admin` | Angular 21 (standalone) | PrimeNG 21, ngx-translate (copy from customer-control shell) | Bearer JWT + `role: admin` |
+| `admin-panel` | Admin Panel | web | `payup-frontend-admin` | Angular 21 (standalone) | PrimeNG 21, ngx-translate (copy from customer-control shell) | AdminUser JWT (separate collection) |
 | `checkout` | Checkout Page | web | `payup-frontend-checkout` | Angular 18 (standalone) | PrimeNG 18 | SDK JWT (query param / localStorage) |
 | `landing-page` | Landing Page | web | `payup-landing-page` | Static HTML/CSS/JS | Custom CSS, Font Awesome | — |
 | `web-sdk` | Web SDK | shared | `payup-web-sdk` | TypeScript 5 + Webpack 5 | — | Client token → SDK JWT |

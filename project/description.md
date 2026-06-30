@@ -10,14 +10,16 @@ PayUp lets businesses accept payments through multiple gateways (Stripe, PayPal,
 
 ## 2. Core Workflow
 
-1. Merchant registers and creates an **App** in the customer portal
-2. Merchant configures **gateways**, **products**, and generates **client token** (`tk_*`) with verified domains
-3. Merchant embeds **Web SDK** on their site → customer clicks pay
-4. SDK tokenizes → creates payment session → redirects to **checkout page**
-5. Customer completes OTP verification (if enabled), selects payment method, pays via selected gateway
-6. API syncs status → **notification events** fire → merchant webhooks/email delivered
-7. Merchant monitors sessions, customers, and deliveries in the portal
-8. Platform **admin** reviews gateway onboarding, manages merchants, and monitors platform health in the admin panel
+1. User registers and completes **onboarding** (creates a Merchant workspace with name + slug)
+2. User (now owner) creates an **App** in the customer portal
+3. User configures **gateways**, **products**, and generates **client token** (`tk_*`) with verified domains
+4. User embeds **Web SDK** on their site → customer clicks pay
+5. SDK tokenizes → creates payment session → redirects to **checkout page**
+6. Customer completes OTP verification (if enabled), selects payment method, pays via selected gateway
+7. API syncs status → **notification events** fire → merchant webhooks/email delivered
+8. User monitors sessions, customers, and deliveries in the portal
+9. Owner invites **team members** (admin, member, developer roles) to collaborate on the merchant workspace
+10. Platform **AdminUser** reviews gateway onboarding, manages merchants, and monitors platform health in the admin panel
 
 **Backend integration path:** Server uses `pk_`/`sk_` keys to create sessions without browser SDK.
 
@@ -25,17 +27,22 @@ PayUp lets businesses accept payments through multiple gateways (Stripe, PayPal,
 
 ## 3. Core Features
 
+- **Merchant Workspaces**: Multi-user organizations with role-based access (owner/admin/member/developer)
+- **Team Collaboration**: Invite system, role management, multi-merchant membership
 - **Multi-Gateway Payments**: Stripe, PayPal, Moyasar, MyFatoorah, Test gateway with rule-based routing
 - **Embeddable Web SDK**: One-line integration with domain-verified client tokens
 - **Hosted Checkout**: Multi-step checkout with branding, OTP, Apple Pay, cards
-- **Merchant Portal**: Apps, products, customers, tokens, gateways, rules, onboarding, notifications
+- **Customer Portal**: Apps, products, customers, tokens, gateways, rules, onboarding, notifications, team management
 - **Admin Panel**: Platform operations — merchants, gateway onboarding review, audit logs, currencies, libraries, cross-merchant payments, notification health, gateway catalog
 - **Notification System**: Event-driven webhooks, email, push-ready architecture with delivery log
 - **Security**: JWT, 2FA, passkeys, encrypted credentials, rate limiting, audit log
 
 ## 4. Key Entities
 
-- **User**: Merchant account with role, settings, 2FA
+- **User**: Personal identity with auth, settings, 2FA
+- **Merchant**: Workspace/organization — all business resources belong here
+- **MerchantMember**: Links users to merchants with roles (owner/admin/member/developer)
+- **AdminUser**: Platform administrator (isolated collection)
 - **App**: Merchant application with branding and checkout/payment settings
 - **Product**: Catalog item with storeCode for SDK purchases
 - **Token**: Client SDK token with scopes and domain allowlist
@@ -43,11 +50,18 @@ PayUp lets businesses accept payments through multiple gateways (Stripe, PayPal,
 - **Gateway**: Per-app gateway credentials and configuration
 - **Customer**: End-customer linked to app
 - **WebhookEndpoint / Delivery**: Notification infrastructure
+- **Company**: Business entity for KYC (merchant-owned, one merchant → many companies)
 
 ## 5. User Roles
 
-- **user (merchant)**: Manages own apps, products, payments, gateways, notifications; cannot access admin-only platform endpoints
-- **admin**: Platform operations via dedicated admin panel — merchant management, gateway onboarding review, currency/library CRUD, full audit logs, cross-merchant payment search, notification health, available gateway catalog
+### Platform Level
+- **AdminUser**: Platform operations via dedicated admin panel — merchant management, gateway onboarding review, currency/library CRUD, full audit logs
+
+### Workspace Level (within a Merchant)
+- **owner**: Full control + team management + delete merchant (creator)
+- **admin**: Manage all modules + invite/remove members (can't delete merchant)
+- **member**: Operate modules (apps, payments, products) but can't manage team
+- **developer**: API keys, tokens, webhooks, SDK config, sandbox payments only
 - **end-customer**: No login — interacts via checkout page only
 
 ## 6. Integrations

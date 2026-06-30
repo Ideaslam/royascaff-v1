@@ -2,13 +2,13 @@
 
 MongoDB via Mongoose. PK: `_id: ObjectId`. Timestamps: `createdAt`, `updatedAt` (unless noted).
 
-**Hub entities:** `User` (merchant account) and `App` (merchant application) anchor most app-scoped resources.
+**Hub entities:** `Merchant` (workspace/organization) and `App` (merchant application) anchor most app-scoped resources. `User` is a personal identity that gains access to merchants via `MerchantMember`.
 
 ---
 
 ## 1. User
 
-Purpose: Merchant account — authentication, settings, 2FA, OAuth.
+Purpose: Personal identity — authentication, settings, 2FA, OAuth. Users access merchants via MerchantMember.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
@@ -17,28 +17,110 @@ Purpose: Merchant account — authentication, settings, 2FA, OAuth.
 | `password` | String | optional (OAuth users) | — |
 | `name` | String | required | — |
 | `photo` | String | optional | — |
-| `company` | String | optional | — |
 | `isActive` | Boolean | default: true | — |
-| `role` | Enum | default: user | `user`, `admin` |
 | `settings` | Object | embedded | security, notifications, display, privacy groups |
 | `twoFactor` | Object | embedded | enabled, secret, backupCodes |
 | `oauthAccounts[]` | Array | embedded | provider, providerUserId, email |
 | `passwordResetTokenHash` | String | optional | — |
 | `passwordResetExpires` | Date | optional | — |
 
-Relations: one User → many App, Company, PasskeyCredential, AuditLog (as actor).
+Relations: one User → many MerchantMember, PasskeyCredential, AuditLog (as actor).
+Indexes: unique `email`.
+
+---
+
+## 1b. Merchant
+
+Purpose: Workspace/organization representing a business. All business resources (Apps, Products, Payments, etc.) belong to a Merchant.
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `name` | String | required | — |
+| `slug` | String | required, unique, lowercase, URL-safe | — |
+| `logo` | String | optional | — |
+| `status` | Enum | default: active | `active`, `suspended`, `deleted` |
+| `website` | String | optional | — |
+| `description` | String | optional | — |
+| `industry` | String | optional | — |
+| `address` | Object | optional | street, city, state, country, postalCode |
+| `phone` | String | optional | — |
+| `timezone` | String | optional | — |
+| `contactName` | String | optional | — |
+| `contactEmail` | String | optional | — |
+| `contactPhone` | String | optional | — |
+| `onboardingCompleted` | Boolean | default: false | — |
+
+Relations: one Merchant → many App, Company, MerchantMember, and all business resources.
+Indexes: unique `slug`; `{ status: 1, createdAt: -1 }`.
+
+---
+
+## 1c. MerchantMember
+
+Purpose: Links users to merchants with workspace roles. A user can belong to multiple merchants.
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `userId` | ObjectId | required | → User |
+| `merchantId` | ObjectId | required | → Merchant |
+| `role` | Enum | required | `owner`, `admin`, `member`, `developer` |
+| `joinedAt` | Date | default: now | — |
+| `invitedBy` | ObjectId | optional | → User |
+
+Relations: belongs to User and Merchant.
+Indexes: unique `{ userId, merchantId }`; `{ merchantId: 1, role: 1 }`.
+
+---
+
+## 1d. MerchantInvite
+
+Purpose: Pending email invitations to join a merchant workspace.
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `merchantId` | ObjectId | required | → Merchant |
+| `email` | String | required | — |
+| `role` | Enum | required | `admin`, `member`, `developer` |
+| `token` | String | required, unique | — |
+| `expiresAt` | Date | required | 3 days from creation |
+| `invitedBy` | ObjectId | required | → User |
+| `status` | Enum | default: pending | `pending`, `accepted`, `expired`, `revoked` |
+
+Indexes: unique `token`; `{ merchantId: 1, status: 1 }`; TTL index on `expiresAt` for expired cleanup.
+
+---
+
+## 1e. AdminUser
+
+Purpose: Platform administrator — completely isolated from merchant users. Manages merchants, platform config, gateway onboarding.
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `email` | String | required, unique | — |
+| `password` | String | required | — |
+| `name` | String | required | — |
+| `photo` | String | optional | — |
+| `isActive` | Boolean | default: true | — |
+| `twoFactor` | Object | embedded | enabled, secret, backupCodes |
+| `lastLoginAt` | Date | optional | — |
+
 Indexes: unique `email`.
 
 ---
 
 ## 2. Company
 
-Purpose: Merchant business entity for KYC / gateway onboarding.
+Purpose: Merchant business entity for KYC / gateway onboarding. One merchant can have many companies.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | `_id` | ObjectId | PK | — |
-| `userId` | ObjectId | required | → User |
+| `merchantId` | ObjectId | required | → Merchant |
+| `createdBy` | ObjectId | required | → User |
 | `name` | String | required | — |
 | `crNumber` | String | required | — |
 | `vatNumber` | String | optional | — |
@@ -46,7 +128,7 @@ Purpose: Merchant business entity for KYC / gateway onboarding.
 | `companyLogoMediaId` | String | optional | — |
 | `documents[]` | Array | embedded | docType, name, url, key, mimeType, size |
 
-Collection: `companies`. Indexes: `{ userId: 1 }`, `{ userId: 1, createdAt: -1 }`.
+Collection: `companies`. Indexes: `{ merchantId: 1 }`, `{ merchantId: 1, createdAt: -1 }`.
 
 ---
 
@@ -57,7 +139,8 @@ Purpose: Merchant application — multi-app tenancy, branding, checkout/payment 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | `_id` | ObjectId | PK | — |
-| `userId` | ObjectId | required | → User |
+| `merchantId` | ObjectId | required | → Merchant |
+| `createdBy` | ObjectId | required | → User |
 | `name` | String | required | — |
 | `description` | String | optional | — |
 | `isActive` | Boolean | default: true | — |
@@ -75,7 +158,8 @@ Purpose: Backend SDK key pairs (`pk_` / `sk_`) per app and environment.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
-| `userId` | ObjectId | required | → User |
+| `merchantId` | ObjectId | required | → Merchant |
+| `createdBy` | ObjectId | required | → User |
 | `appId` | ObjectId | required | → App |
 | `environment` | Enum | required | `sandbox`, `live` |
 | `publicKey` | String | required, unique | — |
@@ -94,7 +178,8 @@ Purpose: Frontend client tokens (`tk_*`) for Web SDK with scopes and domain allo
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
-| `userId` | ObjectId | required | → User |
+| `merchantId` | ObjectId | required | → Merchant |
+| `createdBy` | ObjectId | required | → User |
 | `appId` | ObjectId | required | → App |
 | `libraryIds` | ObjectId[] | optional | → Library |
 | `token` | String | required, unique | — |
@@ -115,7 +200,8 @@ Purpose: Product catalog per app.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
-| `userId`, `appId` | ObjectId | required | → User, App |
+| `merchantId`, `appId` | ObjectId | required | → Merchant, App |
+| `createdBy` | ObjectId | required | → User |
 | `storeCode` | String | required, unique | — |
 | `title` | String | required | — |
 | `sku`, `description`, `category` | String | optional | — |
@@ -135,7 +221,8 @@ Purpose: End-customer records per app.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
-| `userId`, `appId` | ObjectId | required | → User, App |
+| `merchantId`, `appId` | ObjectId | required | → Merchant, App |
+| `createdBy` | ObjectId | optional | → User |
 | `firstName`, `lastName`, `email`, `mobile` | String | optional | — |
 | `language` | String | default: en | — |
 | `defaultAddress` | Object | optional | street, city, state, country, zipCode |
@@ -143,7 +230,7 @@ Purpose: End-customer records per app.
 | `notes`, `tags` | String / String[] | optional | — |
 | `sessionIds` | String[] | optional | links to Payment.sessionId |
 
-Indexes: unique sparse `{ email, appId }`, `{ mobile, appId }`; `{ userId, appId }`.
+Indexes: unique sparse `{ email, appId }`, `{ mobile, appId }`; `{ merchantId, appId }`.
 
 ---
 
@@ -153,7 +240,8 @@ Purpose: Payment sessions AND payment records (single collection).
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
-| `userId`, `appId` | ObjectId | required | → User, App |
+| `merchantId`, `appId` | ObjectId | required | → Merchant, App |
+| `createdBy` | ObjectId | optional | → User |
 | `sessionId`, `sessionToken` | String | required, unique | — |
 | `amount`, `currency`, `description` | Number/String | required | — |
 | `customerEmail`, `customerPhone`, `customerName` | String | optional | — |
@@ -183,7 +271,8 @@ Purpose: App-scoped payment gateway configuration (encrypted credentials).
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
-| `userId`, `appId` | ObjectId | required | → User, App |
+| `merchantId`, `appId` | ObjectId | required | → Merchant, App |
+| `createdBy` | ObjectId | required | → User |
 | `name` | Enum | required | paypal, stripe, moyasar, myfatoorah |
 | `config` | Object | embedded | clientId, clientSecret, secretKey, publishableKey, apiKey, environment |
 | `defaultCurrency` | String | optional | — |
@@ -215,7 +304,8 @@ Purpose: Routing rules to select preferred gateway by conditions.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
-| `userId`, `appId` | ObjectId | required | → User, App |
+| `merchantId`, `appId` | ObjectId | required | → Merchant, App |
+| `createdBy` | ObjectId | required | → User |
 | `name`, `description` | String | required/optional | — |
 | `ruleType` | Enum | required | amount, domain, currency, product, custom |
 | `conditions[]` | Array | embedded | field, operator, value, value2 |
@@ -238,7 +328,7 @@ Purpose: Merchant gateway onboarding workflow (KYC → gateway approval).
 | `status` | Enum | default: Draft | Draft → Live (10 states) |
 | `history[]` | Array | embedded | status transitions |
 | `corrections` | Object | optional | required, message, fields |
-| `clientId` | ObjectId | required | → User |
+| `clientId` | ObjectId | required | → Merchant |
 | `publicKeySent` | Boolean | default: false | — |
 | `gatewayExternalId` | String | optional | — |
 
@@ -250,7 +340,8 @@ Purpose: Domain ownership verification for SDK tokenization.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
-| `userId`, `appId` | ObjectId | required | → User, App |
+| `merchantId`, `appId` | ObjectId | required | → Merchant, App |
+| `createdBy` | ObjectId | required | → User |
 | `domain` | String | required | — |
 | `isVerified` | Boolean | default: false | — |
 | `verifiedAt`, `lastVerifiedAt` | Date | optional | — |
@@ -285,7 +376,8 @@ Purpose: Uploaded files (S3/R2) per app.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
-| `userId`, `appId` | ObjectId | required | → User, App |
+| `merchantId`, `appId` | ObjectId | required | → Merchant, App |
+| `createdBy` | ObjectId | required | → User |
 | `type` | Enum | required | image, video, 3d, file |
 | `url`, `name` | String | required | — |
 | `extension`, `size`, `mimeType` | String/Number | optional | — |
@@ -347,36 +439,38 @@ Maps event → channel → recipient per app. Fields: `appId`, `eventType`, `cha
 Channel-specific templates. Fields: `appId` (null = platform default), `channel`, `eventType`, `recipient`, `locale`, `subject`, `body`.
 
 ### WebhookEndpoint
-Merchant webhook URLs with encrypted secrets. Fields: `userId`, `appId`, `url`, `secretEnc`, `isActive`, `consecutiveFailures`, `disabledReason`.
+Merchant webhook URLs with encrypted secrets. Fields: `merchantId`, `appId`, `createdBy`, `url`, `secretEnc`, `isActive`, `consecutiveFailures`, `disabledReason`.
 
 ### Delivery
 Unified delivery log. Fields: `appId`, `ruleId`, `channel`, `eventType`, `status` (pending→disabled), `attempts`, `payloadSnapshot`, retry fields.
 
 ### Notification
-In-app merchant inbox. Fields: `userId`, `appId`, `title`, `body`, `eventType`, `viewed`, `metadata`.
+In-app merchant inbox. Fields: `merchantId`, `appId`, `title`, `body`, `eventType`, `viewed`, `metadata`.
 
 ---
 
 ## Encryption Entities
 
 ### EncryptionKey
-Per-purpose encryption keys. Fields: `userId`, `appId`, `name`, `purpose` (customer-data, gateway-communication, jwt-secret, general, gateway_request), `keyType`, encrypted key material.
+Per-purpose encryption keys. Fields: `merchantId`, `appId`, `name`, `purpose` (customer-data, gateway-communication, jwt-secret, general, gateway_request), `keyType`, encrypted key material.
 
 ### EncryptionConfig
 System encryption config KV store. Fields: `key` (unique), `value`, `isEncrypted`, `isActive`.
 
 ---
 
-## Admin Panel — Entity Usage (no new collections)
+## Admin Panel — Entity Usage
 
-Admin panel V1 uses existing entities only. No schema migrations required.
+Admin panel uses `AdminUser` for authentication (separate collection). Manages `Merchant` entities and platform config.
 
 | Entity | Admin operations | Notes |
 |--------|------------------|-------|
-| `User` | List, detail, `isActive` toggle, `role` toggle | Merchants = `role: user`; admins = `role: admin` |
+| `AdminUser` | Login, profile, 2FA | Isolated admin identity collection |
+| `Merchant` | List, detail, suspend/activate (`status` toggle) | Platform-scoped workspace management |
+| `MerchantMember` | Read (via merchant detail) | View team composition |
 | `App` | Read (via merchant detail), counts on dashboard | Cross-merchant aggregation |
 | `Payment` | Read-only list/detail across all merchants | Support/search; no refund from admin V1 |
-| `GatewayRequest` | List all, status/corrections/forward | Platform-scoped; `clientId` → User |
+| `GatewayRequest` | List all, status/corrections/forward | Platform-scoped; `clientId` → Merchant |
 | `AuditLog` | Query all with filters | Admin-only read |
 | `Currency` | Create, update | Platform reference data |
 | `Library` | Create, update, delete | Platform SDK libraries |
@@ -384,8 +478,8 @@ Admin panel V1 uses existing entities only. No schema migrations required.
 | `Delivery` | Read across apps, redeliver | Notifications health module |
 | `WebhookEndpoint` | Read across apps (disabled/failing) | Notifications health module |
 
-**Indexes used by admin queries (existing or to add in build phase):**
-- `User`: `{ role: 1, isActive: 1, createdAt: -1 }` — merchant list
+**Indexes used by admin queries:**
+- `Merchant`: `{ status: 1, createdAt: -1 }` — merchant list
 - `Payment`: `{ status: 1, createdAt: -1 }`, `{ sessionId: 1 }` — cross-merchant search
 - `GatewayRequest`: `{ status: 1, createdAt: -1 }` — onboarding board
 - `Delivery`: `{ status: 1, createdAt: -1 }` — failed delivery health
@@ -395,15 +489,18 @@ Admin panel V1 uses existing entities only. No schema migrations required.
 ## Entity Relationship Summary
 
 ```
-User ─┬─ Company
-      ├─ App ─┬─ Product, Customer, Payment, Gateway, GatewayRule
-      │       ├─ Token, ApiKey, DomainVerification, Media
-      │       └─ WebhookEndpoint, NotificationRule, Delivery
-      ├─ PasskeyCredential
-      └─ AuditLog (actor)
+User ─── MerchantMember ─── Merchant ─┬─ Company
+    │                                  ├─ App ─┬─ Product, Customer, Payment, Gateway, GatewayRule
+    │                                  │       ├─ Token, ApiKey, DomainVerification, Media
+    │                                  │       └─ WebhookEndpoint, NotificationRule, Delivery
+    │                                  └─ MerchantInvite
+    ├─ PasskeyCredential
+    └─ AuditLog (actor)
+
+AdminUser (isolated — platform admin identity)
 
 Payment ── embeds Product snapshots; refs Customer, Gateway (by name)
 NotificationRule ── Delivery
 Library ── Token (libraryIds)
-GatewayRequest ── User (clientId); media refs by string ID
+GatewayRequest ── Merchant (clientId); media refs by string ID
 ```

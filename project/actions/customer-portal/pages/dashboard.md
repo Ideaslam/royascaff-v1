@@ -1,6 +1,7 @@
 # Pages — Customer Portal (condensed)
 
 All app-scoped pages require `AppContextService.selectedApp$` (app switcher in header).
+All authenticated pages require `MerchantContextService.selectedMerchant$` (merchant switcher in sidebar).
 
 ## Module: Dashboard
 
@@ -86,9 +87,38 @@ All app-scoped pages require `AppContextService.selectedApp$` (app switcher in h
 
 ## Module: Auth (no guard)
 
-- Login `/auth/login` → EP-AU02, EP-AU10, EP-AU15/16
-- Register `/auth/register` → EP-AU01
+- Login `/auth/login` → EP-AU02, EP-AU10, EP-AU15/16; post-login loads merchants (EP-MT03)
+- Register `/auth/register` → EP-AU01; redirects to `/onboarding`
+- Register with invite `/auth/register?invite=TOKEN` → EP-MT23 (validate) → EP-AU01 → EP-MT24 (accept)
 - Access `/auth/access`, Error `/auth/error` — static
+
+## Module: Merchant & Team
+
+### Onboarding Stepper — `/onboarding`
+- Guard: `authGuard` (no merchantGuard — user has no merchant yet)
+- Components: `OnboardingStepperComponent` (host), `CreateMerchantStepComponent`, `BrandingStepComponent`, `InviteStepComponent`
+- Each step is a standalone component, injectable elsewhere
+- Service: `MerchantService` → EP-MT01 (create), EP-MT02 (check slug)
+- Service: `MerchantInviteService` → EP-MT20 (invite)
+- UI: Full-page stepper with progress indicator; step 1 mandatory, steps 2-3 skippable; random name suggestion; real-time slug availability check
+- On complete: sets `onboardingCompleted` (EP-MT06), navigates to `/`
+
+### Merchant Switcher (sidebar component)
+- Component: `MerchantSwitcherComponent` — embedded in sidebar
+- Service: `MerchantContextService` → EP-MT03 (list user merchants)
+- UI: Dropdown/list showing merchant name + logo; selected state; on switch: updates localStorage, reloads app list, resets app context
+- Guard: `merchantGuard` on layout routes — if no merchant selected, redirect to `/onboarding` or prompt
+
+### Merchant Settings — Members `/settings/members`
+- Guard: `authGuard` + `merchantGuard` + `merchantRoleGuard(['owner', 'admin'])`
+- Service: `MerchantMemberService` → EP-MT10, EP-MT11, EP-MT12
+- Service: `MerchantInviteService` → EP-MT20, EP-MT21, EP-MT22
+- UI: Members table (name, email, role, joined date, actions); invite form (side panel); pending invites list; role change dropdown; remove confirmation dialog
+- States: loading, empty (just owner), invite sent toast, role changed toast
+
+### No-Merchant State
+- If user has no merchants (EP-MT03 returns empty): redirect to `/onboarding`
+- If user's merchant is suspended: show suspended overlay with message, block all navigation except profile/settings
 
 ## Module: Redirects (legacy placeholder routes)
 

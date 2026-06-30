@@ -2,7 +2,7 @@
 
 Prefix: **`/api/admin/v1`** · Mount: `src/routes/company-admin/admin.routes.ts` → `router.use('/admin/v1', adminV1Routes)`
 
-**Auth default:** `authMiddleware` + `requireAdmin` unless marked **public**.
+**Auth default:** `adminAuthMiddleware` unless marked **public**.
 
 Rate limit: `MERCHANT_SENSITIVE` on auth login/2FA; `MERCHANT_GENERAL` on other routes.
 
@@ -12,8 +12,8 @@ Rate limit: `MERCHANT_SENSITIVE` on auth login/2FA; `MERCHANT_GENERAL` on other 
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-AD01 | POST | /login | **public**; rate limit | email, password | 200 JWT or 2FA challenge | `AdminAuthService.login` | Rejects non-admin/inactive with 401 |
-| EP-AD02 | POST | /2fa/verify | **public**; rate limit | challengeToken, code, method? | 200 JWT | `AdminAuthService.verify2fa` | Same body as merchant EP-AU10 |
+| EP-AD01 | POST | /login | **public**; rate limit | email, password | 200 JWT or 2FA challenge | `AdminAuthService.login` | Authenticates against AdminUser collection |
+| EP-AD02 | POST | /2fa/verify | **public**; rate limit | challengeToken, code, method? | 200 JWT | `AdminAuthService.verify2fa` | — |
 | EP-AD03 | GET | /profile | admin | — | 200 profile | `AdminAuthService.getProfile` | For topbar + adminGuard |
 | EP-AD04 | POST | /refresh | admin | — | 200 JWT | `AdminAuthService.refreshToken` | — |
 
@@ -41,10 +41,9 @@ Rate limit: `MERCHANT_SENSITIVE` on auth login/2FA; `MERCHANT_GENERAL` on other 
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-AD06 | GET | / | admin | query: page, limit, search, role, isActive, sortBy, sortOrder | 200 paginated | `AdminMerchantService.listMerchants` | — |
-| EP-AD07 | GET | /:userId | admin | — | 200 detail | `AdminMerchantService.getMerchant` | 404 if not found |
-| EP-AD08 | PATCH | /:userId/status | admin | `{ isActive: boolean }` | 200 user | `AdminMerchantService.updateStatus` | Audit logged |
-| EP-AD09 | PATCH | /:userId/role | admin | `{ role: 'user' \| 'admin' }` | 200 user | `AdminMerchantService.updateRole` | Cannot change own role |
+| EP-AD06 | GET | / | admin | query: page, limit, search, status, sortBy, sortOrder | 200 paginated | `AdminMerchantService.listMerchants` | Lists Merchant entities |
+| EP-AD07 | GET | /:merchantId | admin | — | 200 detail (merchant + members + stats) | `AdminMerchantService.getMerchant` | 404 if not found |
+| EP-AD08 | PATCH | /:merchantId/status | admin | `{ status: 'active' \| 'suspended' }` | 200 merchant | `AdminMerchantService.updateStatus` | Audit logged; blocks all member access when suspended |
 
 ---
 

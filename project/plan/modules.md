@@ -7,26 +7,27 @@ PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for ap
 ## 1. Auth
 
 - Scope: BE `services/auth/` + FE `customer-portal/pages/auth`, `settings/security`
-- Audience: public (login/register) + authenticated merchants
+- Audience: public (login/register) + authenticated users
 - Entities: `User`, `PasskeyCredential`
-- Depends on: Email, Encryption
+- Depends on: Email, Encryption, Merchant (post-login context)
 
 ### Features
-1. **Merchant Registration & Login** [both] — email/password, JWT issuance
+1. **User Registration & Login** [both] — email/password, JWT issuance
 2. **TOTP Two-Factor Authentication** [both] — setup, enable, verify, backup codes
 3. **WebAuthn Passkeys** [both] — register and login without password
 4. **Google OAuth** [both] — social login (env-configured)
 5. **Password Reset** [both] — forgot/reset via email
 6. **Account Settings** [both] — security, notifications, display, privacy groups
+7. **Invite Registration** [both] — register via invite token, auto-join merchant
 
 ---
 
 ## 2. Apps & Multi-Tenancy
 
 - Scope: BE `services/core/app-*`, `api-key-*` + FE `apps`
-- Audience: authenticated merchants
+- Audience: authenticated members (role: owner, admin, member)
 - Entities: `App`, `ApiKey`
-- Depends on: Auth
+- Depends on: Auth, Merchant (merchantId context)
 
 ### Features
 1. **App Management** [both] — CRUD, switcher, paginated list
@@ -145,11 +146,11 @@ PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for ap
 
 - Scope: BE `company-*`, auth profile + FE `profile`
 - Entities: `Company`
-- Depends on: Auth, Media
+- Depends on: Auth, Media, Merchant (companies belong to merchant)
 
 ### Features
-1. **Merchant Profile** [both] — name, photo, company string
-2. **Company Entities** [both] — KYC company CRUD with document upload
+1. **User Profile** [both] — name, photo (personal identity)
+2. **Company Entities** [both] — KYC company CRUD with document upload (merchant-scoped)
 
 ---
 
@@ -184,28 +185,48 @@ PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for ap
 
 ---
 
-## 14. Admin Panel
+## 14. Merchant & Team
 
-- Scope: BE `routes/company-admin/` + `services/admin/` + FE `payup-frontend-admin`
-- Audience: platform admin (`role: admin`) only
-- Entities: `User`, `Payment`, `GatewayRequest`, `AuditLog`, `Currency`, `Library`, `AvailableGateway`, `Delivery`, `WebhookEndpoint`, `App`
-- Depends on: Auth, Gateways, Payments, Notifications, Core Platform
-- API prefix: `/api/admin/v1/*` — all routes require `authMiddleware` + `requireAdmin`
+- Scope: BE `services/merchant/` + FE `customer-portal/onboarding`, `settings/members`, sidebar switcher
+- Audience: authenticated users (all roles interact with merchant context)
+- Entities: `Merchant`, `MerchantMember`, `MerchantInvite`
+- Depends on: Auth, Email
 
 ### Features
-0. **Admin Auth** [both] — dedicated `POST /api/admin/v1/auth/login` (+ 2FA verify); `AdminAuthService` wraps `AuthService` and rejects non-admin / inactive users; admin frontend never calls merchant API
+1. **Merchant CRUD** [both] — create (onboarding), update profile, delete (owner only)
+2. **Slug Availability** [both] — check unique slug for merchant handle
+3. **Onboarding Stepper** [frontend] — 3-step: create merchant (mandatory), branding (skip), invite (skip); each step is reusable component
+4. **Merchant Switcher** [frontend] — sidebar switcher for multi-membership users
+5. **Merchant Context Middleware** [backend-only] — resolves `X-Merchant-Id` header, validates membership, enforces workspace role
+6. **Team Membership** [both] — list members, change roles, remove members
+7. **Invite System** [both] — email invite with 3-day expiry, accept via registration
+8. **Merchant Suspend/Activate** [backend-only] — platform admin action (blocks all API access)
+9. **No-Merchant State** [frontend] — limited access (profile only) until user creates/joins a merchant
+
+---
+
+## 15. Admin Panel
+
+- Scope: BE `routes/company-admin/` + `services/admin/` + FE `payup-frontend-admin`
+- Audience: platform admin (`AdminUser` collection) only
+- Entities: `AdminUser`, `Merchant`, `MerchantMember`, `Payment`, `GatewayRequest`, `AuditLog`, `Currency`, `Library`, `AvailableGateway`, `Delivery`, `WebhookEndpoint`, `App`
+- Depends on: Merchant & Team, Gateways, Payments, Notifications, Core Platform
+- API prefix: `/api/admin/v1/*` — all routes require `adminAuthMiddleware`
+
+### Features
+0. **Admin Auth** [both] — dedicated `POST /api/admin/v1/auth/login` (+ 2FA verify); authenticates against `AdminUser` collection; admin frontend never calls merchant API
 1. **Platform Dashboard** [both] — cross-platform KPIs: merchants, apps, payments volume, pending gateway requests, recent activity
-2. **Gateway Onboarding (Admin)** [both] — Kanban board, status transitions, corrections, forward to gateway; migrated from customer portal
+2. **Gateway Onboarding (Admin)** [both] — Kanban board, status transitions, corrections, forward to gateway
 3. **Audit Logs** [both] — platform-wide audit query with filters (actor, action, date range)
 4. **Platform Config — Currencies** [both] — admin CRUD on `Currency` reference data
 5. **Platform Config — SDK Libraries** [both] — admin CRUD on `Library` capability packages
-6. **Merchants Management** [both] — list/search merchants, detail view, suspend/activate (`User.isActive`), promote/demote role
+6. **Merchants Management** [both] — list/search merchants (Merchant entity), detail view with team members, suspend/activate (`Merchant.status`)
 7. **Payments Overview** [both] — cross-merchant read-only payment session search and detail (support use)
 8. **Notifications Health** [both] — platform-wide failed deliveries, disabled webhook endpoints, redeliver action
 9. **Available Gateways Catalog** [both] — admin CRUD on `AvailableGateway` (enable/disable, currencies, payment methods)
 
 ### Notes
 - Admin panel is a **separate Angular app** (`payup-frontend-admin`), shell copied from customer-control with merchant modules removed
-- Login via dedicated **`POST /api/admin/v1/auth/login`** (`AdminAuthService` wraps `AuthService`; rejects non-admin); admin app uses **only** `/api/admin/v1` — no merchant API calls
-- Gateway admin board **removed** from customer portal after admin app ships
-- Merchant-scoped admin endpoints on `/api/merchant/v1/*` will migrate to `/api/admin/v1/*`
+- Login authenticates against `AdminUser` collection (fully isolated from merchant users)
+- Admin app uses **only** `/api/admin/v1` — no merchant API calls
+- Merchants Management operates on `Merchant` entity (not `User`); suspend sets `Merchant.status = suspended`

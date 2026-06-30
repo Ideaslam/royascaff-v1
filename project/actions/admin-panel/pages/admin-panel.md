@@ -6,7 +6,9 @@ App key: `admin-panel` · Repo: `payup-frontend-admin` · Port: **4401**
 
 **Guards:** `authGuard` on all routes except `/auth/*`; `adminGuard` on all authenticated routes.
 
-**Layout:** Copy `AppLayout` shell from customer-control — admin sidebar menu (no app switcher).
+**Layout:** Copy `AppLayout` shell from customer-control — admin sidebar menu (no app switcher, no merchant switcher).
+
+**Auth:** Authenticates against `AdminUser` collection (completely isolated from merchant users).
 
 **i18n:** ngx-translate en/ar (copy from customer-control).
 
@@ -18,9 +20,9 @@ App key: `admin-panel` · Repo: `payup-frontend-admin` · Port: **4401**
 - Route: `/auth/login`
 - Components: `LoginComponent` (copy/adapt from customer-control)
 - Service: `AdminAuthService`
-- Endpoints: EP-AD01 (login), EP-AD02 (2FA verify if challenge returned)
+- Endpoints: EP-AD01 (login against AdminUser), EP-AD02 (2FA verify if challenge returned)
 - UI states: loading on submit; invalid credentials error; 2FA step inline; redirect to `/` on success
-- Rules: on success store JWT in `localStorage.token`; reject if profile role !== admin after login
+- Rules: on success store JWT in `localStorage.token`; AdminUser JWT (separate from merchant user JWT)
 
 ### Access Denied Page
 - Route: `/auth/access`
@@ -51,16 +53,18 @@ App key: `admin-panel` · Repo: `payup-frontend-admin` · Port: **4401**
 
 ### Merchants List
 - Route: `/merchants`
-- Components: paginated table, search, filters (role, active/suspended)
+- Components: paginated table, search, filters (status: active/suspended)
 - Service: `AdminMerchantsService` → EP-AD06
 - Guards: `authGuard`, `adminGuard`
-- UI: loading, empty, error, row actions (view, suspend)
+- UI: loading, empty, error, row actions (view, suspend/activate)
+- Data: Merchant entities (name, slug, status, member count, app count, created date)
 
 ### Merchant Detail
-- Route: `/merchants/:userId`
-- Components: profile summary, app count, suspend toggle, role selector, recent payments link
-- Service: `AdminMerchantsService` → EP-AD07, EP-AD08, EP-AD09
-- UI: loading, 404, confirm dialog on suspend/role change, success toasts
+- Route: `/merchants/:merchantId`
+- Components: merchant profile summary, team members list, app count, payment stats, suspend/activate toggle
+- Service: `AdminMerchantsService` → EP-AD07, EP-AD08
+- UI: loading, 404, confirm dialog on suspend/activate, success toasts
+- Sections: profile info, team (read-only member list with roles), apps summary, recent payments link
 
 ---
 

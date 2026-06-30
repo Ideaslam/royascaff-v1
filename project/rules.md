@@ -98,8 +98,8 @@ Auth rules: see `plan/roles-and-authorization.md`.
 
 - Type: Business Logic
 - Module: Apps (Module 2)
-- Must: Portal pages scope data to `AppContextService.selectedAppId`
-- Must not: Assume single-app without switcher selection
+- Must: Portal pages scope data to `AppContextService.selectedAppId` within the active merchant context
+- Must not: Assume single-app without switcher selection; access apps outside current merchant
 
 ## RULE-014 · SDK Scope Permissions
 
@@ -118,9 +118,39 @@ Auth rules: see `plan/roles-and-authorization.md`.
 ## RULE-016 · Admin API Isolation
 
 - Type: Security, Architecture
-- Module: Admin Panel (Module 14)
-- Must: All platform-admin operations exposed under `/api/admin/v1/*` with `authMiddleware` + `requireAdmin`; admin panel frontend calls **only** `/api/admin/v1` (including auth — no merchant API)
-- Must: Admin login at `POST /api/admin/v1/auth/login` delegates to `AuthService` but rejects users where `role !== 'admin'` or `isActive === false` (same generic error as invalid credentials)
-- Must: Cross-merchant reads (payments, deliveries, merchants) go through dedicated admin services with explicit platform scope — never bypass ownership checks on merchant routes
-- Must not: Expose admin-only operations without `requireAdmin`; allow non-admin users into admin panel routes; keep duplicate admin endpoints on merchant API after migration
-- Must: Audit merchant suspend/role change and gateway request admin actions via `AuditService` (RULE-010)
+- Module: Admin Panel (Module 15)
+- Must: All platform-admin operations exposed under `/api/admin/v1/*` with `adminAuthMiddleware`; admin panel frontend calls **only** `/api/admin/v1` (including auth — no merchant API)
+- Must: Admin login at `POST /api/admin/v1/auth/login` authenticates against `AdminUser` collection (fully isolated from merchant users)
+- Must: Cross-merchant reads (payments, deliveries, merchants) go through dedicated admin services with explicit platform scope
+- Must not: Expose admin-only operations without `adminAuthMiddleware`; allow User accounts into admin panel routes
+
+## RULE-017 · Merchant Ownership Scoping
+
+- Type: Security, Architecture
+- Module: Merchant & Team (Module 14)
+- Must: All business resources (Apps, Products, Payments, Gateways, Tokens, etc.) scoped by `merchantId`; `merchantContext` middleware resolves `X-Merchant-Id` header and validates membership on every `/api/merchant/v1/*` request (except auth routes)
+- Must: Track `createdBy` (userId) on resource creation for attribution; does NOT affect access control
+- Must not: Use `userId` for resource ownership; allow access without valid merchant membership; skip merchant status check (suspended merchants must be blocked)
+
+## RULE-018 · Workspace Role Enforcement
+
+- Type: Security
+- Module: Merchant & Team (Module 14)
+- Must: Enforce role-based access via `requireMerchantRole(...roles)` middleware on sensitive routes (team management = owner/admin only; SDK/webhook routes = owner/admin/developer; live payments = not developer)
+- Must: Owner cannot leave or be removed from merchant
+- Must not: Allow role escalation without owner/admin action; allow developer role access to live payment data or business modules
+
+## RULE-019 · Merchant Suspension
+
+- Type: Business Logic, Security
+- Module: Merchant & Team (Module 14), Admin Panel (Module 15)
+- Must: When `Merchant.status = 'suspended'` by platform admin, ALL API access blocked for merchant members (merchantContext middleware returns 403 with suspension reason); members can still authenticate (login) but portal shows suspended state
+- Must: Audit suspension/activation actions via `AuditService`
+- Must not: Allow any CRUD operations on a suspended merchant's resources; silently fail without informing the user
+
+## RULE-020 · Invite System
+
+- Type: Business Logic
+- Module: Merchant & Team (Module 14)
+- Must: Invites expire after 3 days; invite registration creates new User account and auto-joins merchant; only owner/admin can invite; email must not already be a member of the target merchant
+- Must not: Allow invite to existing member; allow invite with owner role (owner is creator only); bypass expiry check

@@ -10,6 +10,7 @@ App key: `backend` · Base: `/api`
 | auth | [auth.md](./auth.md) | 28 | `/api/merchant/v1/auth` |
 | apps | [apps.md](./apps.md) | 26 | apps, keys, products, tokens, customers |
 | gateways | [gateways.md](./gateways.md) | 87 | gateways, transactions, notifications, core, profile, audit, dashboard, health |
+| merchant-team | [merchant-team.md](./merchant-team.md) | 17 | `/api/merchant/v1/merchants`, `/team`, `/invites` |
 | admin | [admin.md](./admin.md) | 32 | `/api/admin/v1` — platform admin (auth, merchants, onboarding, audit, config, payments, notifications health) |
 
-**Total:** ~178 active endpoints · Stubs: `/api/v1/webhooks` (partial), `/api/v1/payment-methods`, `/api/v1/checkout/ui` · **Admin stub replaced** by admin.md spec
+**Total:** ~195 active endpoints
