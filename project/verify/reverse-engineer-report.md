@@ -2,7 +2,7 @@
 
 ## Generated: 2026-06-30
 ## Codebase: PayUp
-## Overall Status: DRIFT DETECTED
+## Overall Status: DRIFT DETECTED → **PARTIALLY REMEDIATED** (see `blueprint-review.md`)
 
 ---
 

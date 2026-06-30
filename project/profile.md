@@ -116,18 +116,15 @@ CORS `ALLOWED_ORIGINS`: `dash.payupconnect.com`, `checkout.payupconnect.com`, `c
 
 Observability (prod): OTEL → `http://10.10.0.12:4318/v1/traces` · Loki → `http://10.10.0.12:3100/`.
 
-### Frontend env drift (needs alignment with `.env.prod`)
+### Frontend env drift (resolved 2026-06-30)
 
-Angular production/stage builds still reference legacy domains — update when deploying to `payupconnect.com`:
+Production builds now target `payupconnect.com`:
 
-| App | File | Current `apiUrl` |
-|-----|------|------------------|
-| Customer portal | `environment.prod.ts` | `https://payup-api.iilm.io/api/merchant` |
-| Customer portal | `environment.stage.ts` | `https://payup-api.iilm.io/api/merchant` |
-| Checkout | `environment.prod.ts` | `https://payup-api.e2community.org` |
-| Web SDK | `config.ts` production | `https://api.payup.com/api` |
-
-Target after alignment: API `https://api.payupconnect.com`, checkout `https://checkout.payupconnect.com`, portal `https://control.payupconnect.com`.
+| App | File | `apiUrl` |
+|-----|------|----------|
+| Customer portal | `environment.prod.ts` | `https://api.payupconnect.com/api/merchant` |
+| Checkout | `environment.prod.ts` | `https://api.payupconnect.com` |
+| Web SDK | `config.ts` production | `https://api.payupconnect.com/api` |
 
 ### Backend env var reference (names only — values in `.env*` files, never in blueprint)
 

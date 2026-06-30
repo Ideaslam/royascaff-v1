@@ -61,10 +61,8 @@ Everything `user` can plus:
 | Role | Pages |
 |------|-------|
 | Unauthenticated | `/auth/login`, `/auth/register`, `/auth/access`, `/auth/error`, checkout flow |
-| Authenticated (`user`) | All portal pages under `authGuard` including `/gateway-requests/admin` |
-| `admin` | Same as user — **no frontend AdminGuard**; admin enforcement is API-only |
-
-**Gap:** `/gateway-requests/admin` reachable by any authenticated user in UI; API enforces admin on mutating endpoints.
+| Authenticated (`user`) | All portal pages under `authGuard` except admin board |
+| `admin` | Admin board at `/gateway-requests/admin` — protected by **`adminGuard`** (checks `ProfileService` role) |
 
 ---
 
@@ -84,6 +82,7 @@ Everything `user` can plus:
 | Middleware | Purpose |
 |------------|---------|
 | `authMiddleware` | Validates merchant JWT, attaches `userId` |
+| `adminGuard` (FE) | Portal route guard; requires profile `role === 'admin'` |
 | `requireAdmin` | Loads User.role, rejects non-admin |
 | `verifySdkToken(scopes?)` | Validates frontend/backend SDK JWT + optional scope check |
 | `verifyPayToken` | Validates payment verification token for process/confirm |

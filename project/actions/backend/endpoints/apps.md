@@ -68,3 +68,9 @@
 | EP-CU05 | PUT | /:customerId | `CustomerService.updateCustomer` | — |
 | EP-CU06 | DELETE | /:customerId | `CustomerService.deleteCustomer` | — |
 | EP-CU07 | GET | /:customerId/payments | `CustomerService.getCustomerPaymentHistory` | paginated |
+
+## Module: Merchant Payments — `/api/merchant/v1/payments`
+
+| ID | Method | Route | Auth | Service | Notes |
+|----|--------|-------|------|---------|-------|
+| EP-PY01 | POST | /:paymentId/refund | authenticated | `PaymentService.refundPayment` | Portal refund action |

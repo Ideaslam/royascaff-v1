@@ -90,7 +90,7 @@ All app-scoped pages require `AppContextService.selectedApp$` (app switcher in h
 - Register `/auth/register` → EP-AU01
 - Access `/auth/access`, Error `/auth/error` — static
 
-## Module: Placeholders
+## Module: Redirects (legacy placeholder routes)
 
-- Domains `/domains` — dummy data, no API
-- Reports `/reports` — dummy charts, no API
+- `/domains` → redirects to `/tokens` (domain management on Tokens page)
+- `/reports` → redirects to `/` dashboard (dedicated reports API TBD)
