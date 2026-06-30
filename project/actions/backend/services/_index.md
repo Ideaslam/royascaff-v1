@@ -6,9 +6,9 @@ App key: `backend` · Repo: `payup-api-typescript`
 |--------|------|----------|---------|
 | auth | [auth.md](./auth.md) | 6 | Register, login, 2FA, passkeys, OAuth, password reset |
 | apps | [apps.md](./apps.md) | 4 | Apps, settings, API keys, account settings |
-| payments | [payments.md](./payments.md) | 6 | Sessions, processing, status sync, SDK tokens |
+| payments | [payments.md](./payments.md) | 7 | Sessions, merchant session queries, processing, status sync, SDK tokens |
 | gateways | [gateways.md](./gateways.md) | 9 | Gateway adapters, rules, selection, onboarding |
-| notifications | [notifications.md](./notifications.md) | 9 | Event bus, channels, webhook endpoints, workers |
-| core | [core.md](./core.md) | 16 | Products, tokens, customers, profile, verification, currency, audit, email, storage, encryption, domain, media, libraries, rate limit |
+| notifications | [notifications.md](./notifications.md) | 14 | Event bus, channels, webhook endpoints, merchant CRUD, inbox, workers |
+| core | [core.md](./core.md) | 17 | Dashboard, products, tokens, customers, profile, verification, currency, audit, email, storage, encryption, domain, media, libraries, rate limit |
 
-**Total:** 6 module files · ~50 service classes
+**Total:** 6 module files · ~57 service classes

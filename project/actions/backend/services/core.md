@@ -36,6 +36,14 @@
 ### SVC-V03 · MobileOTPStrategy [integration, external, Verification]
 - Deps: SMS provider
 
+## Module: Dashboard
+
+### SVC-DB01 · DashboardService [domain, internal, Dashboard]
+- Methods: `getDashboard`, `listTokens`
+- Deps: `AppRepository`, `GatewayRepository`, `ProductRepository`, `TokenRepository`, `PaymentRepository`
+- Used by: merchant panel `/reports/dashboard` routes
+- Side effects: read-only aggregations for merchant dashboard stats and chart data
+
 ## Module: Core
 
 ### SVC-CO01 · DomainVerificationService [integration, external, Core]

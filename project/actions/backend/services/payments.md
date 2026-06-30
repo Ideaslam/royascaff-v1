@@ -20,7 +20,7 @@
 ### SVC-P04 · WebhookService [integration, external, Payments]
 - Methods: `handleStripeEvent`, `handlePaypalEvent`, `handleMoyasarCallback`, `handleMyFatoorahCallback`
 - Deps: gateway repos, gateway APIs
-- Note: handlers exist but public webhook routes are **not mounted**
+- Note: mounted at `/api/v1/webhooks/*` (Stripe, PayPal, Moyasar, MyFatoorah)
 
 ### SVC-P05 · PaymentProcessorFactory [domain, internal, Payments]
 - Methods: `getProcessor`, `registerProcessor`
@@ -30,3 +30,9 @@
 - Methods: `signFrontendSdkToken`, `signBackendSdkToken`, `signCheckoutToken`, `signVerificationToken`, `verify`
 - Deps: jwt, scope constants
 - Rules: scope-based permissions on SDK JWT
+
+### SVC-P07 · TransactionSessionService [domain, internal, Payments]
+- Methods: `getStats`, `listSessions`, `listSessionsPaginated`, `getSessionDetails`
+- Deps: `PaymentRepository`, `ProductRepository`, `TokenRepository`
+- Used by: merchant panel `/transactions/sessions` routes
+- Side effects: read-only aggregations and DTO mapping for payment sessions

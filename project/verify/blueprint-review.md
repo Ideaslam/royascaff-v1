@@ -46,7 +46,7 @@
 
 | Item | Severity | Status |
 |------|----------|--------|
-| Service layer for transactions/notifications CRUD | MEDIUM | Deferred — Phase 5 refactor |
+| Service layer for transactions/notifications CRUD | MEDIUM | ✓ Done — `TransactionSessionService`, `DashboardService`, notification CRUD services |
 | Gateway request edit form | LOW | Deferred |
 | Delivery redeliver stub | LOW | Deferred |
 | `/api/admin` stub | LOW | TBD |
@@ -66,6 +66,7 @@
 6. ✓ Placeholder Domains/Reports removed from nav; routes redirect
 7. ✓ `CheckoutGuard` validates session token param
 8. ✓ Client example SDK bundle rebuilt from `payup-web-sdk`
+9. ✓ Service layer extracted for merchant sessions, dashboard, and notification CRUD
 
 ---
 

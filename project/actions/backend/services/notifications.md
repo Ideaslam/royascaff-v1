@@ -33,4 +33,24 @@
 ### SVC-N09 · initializeNotifications [domain, internal, Notifications]
 - Bootstraps registries, channels, workers on app start
 
+### SVC-N10 · NotificationCatalogService [domain, internal, Notifications]
+- Methods: `listActiveEventTypes`, `listAvailableChannels`
+- Deps: `EventTypeRepository`, `ChannelRegistry`
+
+### SVC-N11 · NotificationRuleService [domain, internal, Notifications]
+- Methods: `createRule`, `listRulesByApp`, `getRuleById`, `updateRule`, `deleteRule`
+- Deps: `NotificationRuleRepository`
+
+### SVC-N12 · NotificationTemplateService [domain, internal, Notifications]
+- Methods: `createTemplate`, `listTemplatesByApp`, `getTemplateById`, `updateTemplate`, `deleteTemplate`
+- Deps: `NotificationTemplateRepository`
+
+### SVC-N13 · NotificationDeliveryService [domain, internal, Notifications]
+- Methods: `listDeliveries`, `getDeliveryById`, `redeliver` (stub)
+- Deps: `DeliveryRepository`
+
+### SVC-N14 · NotificationInboxService [domain, internal, Notifications]
+- Methods: `listInbox`, `getUnreadCount`, `markAsViewed`, `markAllAsViewed`
+- Deps: `NotificationRepository`
+
 **Workers:** `notif-dispatch.worker` (fan-out rules → deliveries), `notif-delivery.worker` (send + retry + auto-disable)
