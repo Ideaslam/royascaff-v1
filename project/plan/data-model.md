@@ -201,7 +201,7 @@ Purpose: Platform catalog of supported gateway types.
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | `name` | Enum | required, unique | paypal, stripe, moyasar, myfatoorah |
-| `enabled` | Boolean | default: true | — |
+| `enabled` | Boolean | default: true | `false` = hidden from merchants & blocked in payments |
 | `displayName`, `description` | String | optional | — |
 | `logo` | String | optional | Public URL to gateway logo |
 | `availableCurrencies`, `supportedPaymentMethods` | String[] | optional | — |
