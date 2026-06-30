@@ -1,0 +1,183 @@
+# Modules & Features
+
+PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for apps and stack.
+
+---
+
+## 1. Auth
+
+- Scope: BE `services/auth/` + FE `customer-portal/pages/auth`, `settings/security`
+- Audience: public (login/register) + authenticated merchants
+- Entities: `User`, `PasskeyCredential`
+- Depends on: Email, Encryption
+
+### Features
+1. **Merchant Registration & Login** [both] — email/password, JWT issuance
+2. **TOTP Two-Factor Authentication** [both] — setup, enable, verify, backup codes
+3. **WebAuthn Passkeys** [both] — register and login without password
+4. **Google OAuth** [both] — social login (env-configured)
+5. **Password Reset** [both] — forgot/reset via email
+6. **Account Settings** [both] — security, notifications, display, privacy groups
+
+---
+
+## 2. Apps & Multi-Tenancy
+
+- Scope: BE `services/core/app-*`, `api-key-*` + FE `apps`
+- Audience: authenticated merchants
+- Entities: `App`, `ApiKey`
+- Depends on: Auth
+
+### Features
+1. **App Management** [both] — CRUD, switcher, paginated list
+2. **App Settings** [both] — branding, checkout, payment, notifications, security, integration groups
+3. **API Key Pairs** [both] — `pk_`/`sk_` per environment, rotate
+4. **Per-App Branding** [both] — brandName, brandLogo, checkout UI toggles
+
+---
+
+## 3. Products
+
+- Scope: BE `services/core/product-*` + FE `products`
+- Entities: `Product`
+- Depends on: Apps
+
+### Features
+1. **Product Catalog** [both] — CRUD with storeCode, pricing, inventory, variants
+2. **Ad-Hoc Products** [backend-only] — inline product creation during session (SDK)
+
+---
+
+## 4. Tokens & SDK Integration
+
+- Scope: BE `token-*`, `sdk-token-*`, `domain-verification-*` + FE `tokens` + shared `web-sdk`
+- Entities: `Token`, `Library`, `DomainVerification`
+- Depends on: Apps
+
+### Features
+1. **Client Tokens (`tk_*`)** [both] — create, revoke, scopes, domain allowlist
+2. **SDK Libraries** [both] — capability packages linked to tokens
+3. **Domain Verification** [both] — well-known file generation, DNS/file verify
+4. **Frontend SDK Flow** [both] — tokenize → SDK JWT → web session → checkout redirect
+5. **Backend SDK Flow** [backend-only] — pk/sk auth → backend session
+
+---
+
+## 5. Customers
+
+- Scope: BE `customer-*` + FE `customers`
+- Entities: `Customer`
+- Depends on: Apps
+
+### Features
+1. **Customer Records** [both] — CRUD, address, marketing prefs
+2. **Payment History** [both] — per-customer session list
+3. **Auto-Link on Checkout** [backend-only] — findOrCreate during payment process
+
+---
+
+## 6. Payments & Checkout
+
+- Scope: BE `payment-*`, `verification-*` + FE `checkout`, `payments`
+- Entities: `Payment`, `Verification`, `VerificationOTP`
+- Depends on: Products, Gateways, Tokens, Customers
+
+### Features
+1. **Payment Session Creation** [both] — web (SDK) and backend paths
+2. **Checkout Page** [frontend] — multi-step: products, currency, customer OTP, address, shipping, tax, payment
+3. **Payment Processing** [both] — card, Apple Pay, PayPal via gateway adapters
+4. **Payment Callback** [backend-only] — gateway redirect handler
+5. **Status Sync** [backend-only] — poll gateway, emit notification events
+6. **Customer OTP Verification** [both] — email/mobile OTP at checkout
+7. **Session Management (Portal)** [both] — list, stats, detail, refund
+8. **Thank You Page** [frontend] — post-payment confirmation
+
+---
+
+## 7. Gateways
+
+- Scope: BE `gateway-*` + FE `gateways`, `gateway-rules`, `gateway-requests`
+- Entities: `Gateway`, `AvailableGateway`, `GatewayRule`, `GatewayRequest`
+- Depends on: Apps, Encryption, Currency
+
+### Features
+1. **Gateway Configuration** [both] — per-app Stripe/PayPal/Moyasar/MyFatoorah credentials
+2. **Gateway Selection Rules** [both] — condition-based routing with scoring
+3. **Gateway Onboarding** [both] — KYC workflow, admin board, status transitions
+4. **Gateway Request Webhooks** [backend-only] — HMAC webhooks from gateway partners
+5. **Platform Gateway Catalog** [both] — available gateways and currencies
+
+---
+
+## 8. Notifications
+
+- Scope: BE `notifications/*` + FE `notifications`
+- Entities: `EventType`, `NotificationRule`, `NotificationTemplate`, `WebhookEndpoint`, `Delivery`, `Notification`
+- Depends on: Apps, BullMQ
+
+### Features
+1. **Event-Driven Dispatch** [backend-only] — payment.completed/failed/cancelled/expired/refunded
+2. **Webhook Endpoints** [both] — CRUD, roll secret, test ping
+3. **Notification Rules** [both] — event → channel → recipient mapping
+4. **Templates** [both] — email/push template CRUD
+5. **Delivery Log** [both] — unified log with filters, detail, redeliver (stub)
+6. **In-App Inbox** [both] — merchant notification inbox
+7. **Channels** [backend-only] — webhook (HMAC), email (Mailjet), push (stub)
+
+---
+
+## 9. Core Platform
+
+- Scope: BE `currency-*`, `media-*`, `library-*`, `domain-*`, `audit-*` + FE partial
+- Entities: `Currency`, `Media`, `Library`, `AuditLog`, `EncryptionKey`, `EncryptionConfig`
+- Depends on: Storage, Encryption
+
+### Features
+1. **Currency Management** [both] — list, convert, validate; admin CRUD
+2. **Media Upload** [both] — S3/R2 upload for app assets and documents
+3. **SDK Libraries (admin)** [backend-only] — platform library CRUD (admin)
+4. **Audit Logging** [both] — admin query all; merchant query own
+5. **Field Encryption** [backend-only] — gateway credentials, webhook secrets, TOTP secrets
+
+---
+
+## 10. Profile & Companies
+
+- Scope: BE `company-*`, auth profile + FE `profile`
+- Entities: `Company`
+- Depends on: Auth, Media
+
+### Features
+1. **Merchant Profile** [both] — name, photo, company string
+2. **Company Entities** [both] — KYC company CRUD with document upload
+
+---
+
+## 11. Dashboard & Reports
+
+- Scope: BE `reports/dashboard` + FE `dashboard`, `reports` (placeholder)
+- Depends on: Payments, Apps, Gateways
+
+### Features
+1. **Dashboard Stats** [both] — aggregate counts, recent sessions
+2. **Reports Page** [frontend] — **placeholder** — static dummy data, no API
+
+---
+
+## 12. Infrastructure (cross-cutting)
+
+- Scope: observability, queues, rate limiting
+- Type: infrastructure
+
+### Features
+1. **BullMQ Workers** [backend-only] — notif-events, notif-deliveries
+2. **Observability** [backend-only] — Pino, OpenTelemetry, Prometheus `/metrics`
+3. **Rate Limiting** [backend-only] — Redis-backed tiers per route class
+
+---
+
+## 13. Marketing & Docs (out of core API)
+
+- `landing-page` — static marketing site
+- `api-docs` — Docusaurus + OpenAPI
+- `client-example` — Firebase-hosted SDK demo
