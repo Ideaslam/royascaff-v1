@@ -365,6 +365,31 @@ System encryption config KV store. Fields: `key` (unique), `value`, `isEncrypted
 
 ---
 
+## Admin Panel — Entity Usage (no new collections)
+
+Admin panel V1 uses existing entities only. No schema migrations required.
+
+| Entity | Admin operations | Notes |
+|--------|------------------|-------|
+| `User` | List, detail, `isActive` toggle, `role` toggle | Merchants = `role: user`; admins = `role: admin` |
+| `App` | Read (via merchant detail), counts on dashboard | Cross-merchant aggregation |
+| `Payment` | Read-only list/detail across all merchants | Support/search; no refund from admin V1 |
+| `GatewayRequest` | List all, status/corrections/forward | Platform-scoped; `clientId` → User |
+| `AuditLog` | Query all with filters | Admin-only read |
+| `Currency` | Create, update | Platform reference data |
+| `Library` | Create, update, delete | Platform SDK libraries |
+| `AvailableGateway` | Create, update (enable/disable, methods, currencies) | Platform catalog |
+| `Delivery` | Read across apps, redeliver | Notifications health module |
+| `WebhookEndpoint` | Read across apps (disabled/failing) | Notifications health module |
+
+**Indexes used by admin queries (existing or to add in build phase):**
+- `User`: `{ role: 1, isActive: 1, createdAt: -1 }` — merchant list
+- `Payment`: `{ status: 1, createdAt: -1 }`, `{ sessionId: 1 }` — cross-merchant search
+- `GatewayRequest`: `{ status: 1, createdAt: -1 }` — onboarding board
+- `Delivery`: `{ status: 1, createdAt: -1 }` — failed delivery health
+
+---
+
 ## Entity Relationship Summary
 
 ```

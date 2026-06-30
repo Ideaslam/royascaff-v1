@@ -181,3 +181,31 @@ PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for ap
 - `landing-page` — static marketing site
 - `api-docs` — Docusaurus + OpenAPI
 - `client-example` — Firebase-hosted SDK demo
+
+---
+
+## 14. Admin Panel
+
+- Scope: BE `routes/company-admin/` + `services/admin/` + FE `payup-frontend-admin`
+- Audience: platform admin (`role: admin`) only
+- Entities: `User`, `Payment`, `GatewayRequest`, `AuditLog`, `Currency`, `Library`, `AvailableGateway`, `Delivery`, `WebhookEndpoint`, `App`
+- Depends on: Auth, Gateways, Payments, Notifications, Core Platform
+- API prefix: `/api/admin/v1/*` — all routes require `authMiddleware` + `requireAdmin`
+
+### Features
+0. **Admin Auth** [both] — dedicated `POST /api/admin/v1/auth/login` (+ 2FA verify); `AdminAuthService` wraps `AuthService` and rejects non-admin / inactive users; admin frontend never calls merchant API
+1. **Platform Dashboard** [both] — cross-platform KPIs: merchants, apps, payments volume, pending gateway requests, recent activity
+2. **Gateway Onboarding (Admin)** [both] — Kanban board, status transitions, corrections, forward to gateway; migrated from customer portal
+3. **Audit Logs** [both] — platform-wide audit query with filters (actor, action, date range)
+4. **Platform Config — Currencies** [both] — admin CRUD on `Currency` reference data
+5. **Platform Config — SDK Libraries** [both] — admin CRUD on `Library` capability packages
+6. **Merchants Management** [both] — list/search merchants, detail view, suspend/activate (`User.isActive`), promote/demote role
+7. **Payments Overview** [both] — cross-merchant read-only payment session search and detail (support use)
+8. **Notifications Health** [both] — platform-wide failed deliveries, disabled webhook endpoints, redeliver action
+9. **Available Gateways Catalog** [both] — admin CRUD on `AvailableGateway` (enable/disable, currencies, payment methods)
+
+### Notes
+- Admin panel is a **separate Angular app** (`payup-frontend-admin`), shell copied from customer-control with merchant modules removed
+- Login via dedicated **`POST /api/admin/v1/auth/login`** (`AdminAuthService` wraps `AuthService`; rejects non-admin); admin app uses **only** `/api/admin/v1` — no merchant API calls
+- Gateway admin board **removed** from customer portal after admin app ships
+- Merchant-scoped admin endpoints on `/api/merchant/v1/*` will migrate to `/api/admin/v1/*`

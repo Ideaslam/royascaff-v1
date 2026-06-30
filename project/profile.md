@@ -12,6 +12,7 @@
 |-----|-----|------|------|-----------|--------|------|
 | `backend` | PayUp API | api | `payup-api-typescript` | Express 4 + TypeScript 5.9 | — | JWT (merchant), API keys (`pk_`/`sk_`), client tokens (`tk_*`), SDK JWT, pay verification token |
 | `customer-portal` | Customer Portal | web | `payup-frontend-customer-control` | Angular 21 (standalone) | PrimeNG 21, ngx-translate | Bearer JWT (`localStorage.token`) |
+| `admin-panel` | Admin Panel | web | `payup-frontend-admin` | Angular 21 (standalone) | PrimeNG 21, ngx-translate (copy from customer-control shell) | Bearer JWT + `role: admin` |
 | `checkout` | Checkout Page | web | `payup-frontend-checkout` | Angular 18 (standalone) | PrimeNG 18 | SDK JWT (query param / localStorage) |
 | `landing-page` | Landing Page | web | `payup-landing-page` | Static HTML/CSS/JS | Custom CSS, Font Awesome | — |
 | `web-sdk` | Web SDK | shared | `payup-web-sdk` | TypeScript 5 + Webpack 5 | — | Client token → SDK JWT |
@@ -22,7 +23,7 @@
 
 | Repo | Role | Location | Branch |
 |------|------|----------|--------|
-| `payup-stack` | Multi-repo workspace (7 apps) | `/payup-stack/` | ❓ not detected |
+| `payup-stack` | Multi-repo workspace (8 apps) | `/payup-stack/` | ❓ not detected |
 
 Architecture: **multi-repo folder layout** inside a single workspace root — not an npm/yarn monorepo (no root `package.json` workspaces).
 
@@ -57,10 +58,11 @@ Per-app branding: merchants configure `brandName` / `brandLogo` per App via cust
 |-----|--------------|
 | Backend | `payup-api-typescript/.env` (local), `.env.dev` (local dev — same as `.env`), `.env.prod` (production) |
 | Customer portal | `payup-frontend-customer-control/src/environments/environment.{ts,local,dev,stage,prod}.ts` |
+| Admin panel | `payup-frontend-admin/src/environments/environment.{ts,local,dev,stage,prod}.ts` |
 | Checkout | `payup-frontend-checkout/src/environments/environment.{ts,local,dev,stage,prod}.ts` |
 | Web SDK | `payup-web-sdk/src/config.ts` (`data-env` / `data-api-url` on script tag) |
 
-Backend port: **3301** (all envs). Route prefixes: `/api/v1` (public/SDK), `/api/merchant/v1` (merchant panel), `/api/admin` (stub).
+Backend port: **3301** (all envs). Route prefixes: `/api/v1` (public/SDK), `/api/merchant/v1` (merchant panel), `/api/admin/v1` (platform admin).
 
 ### Environment matrix
 
@@ -70,7 +72,9 @@ Backend port: **3301** (all envs). Route prefixes: `/api/v1` (public/SDK), `/api
 |---------|-----|
 | API (`API_PUBLIC_URL`) | `http://localhost:3301` |
 | Merchant API (portal) | `http://localhost:3301/api/merchant` |
+| Admin API | `http://localhost:3301/api/admin/v1` |
 | Customer portal | `http://localhost:4301` |
+| Admin panel | `http://localhost:4401` |
 | Checkout | `http://localhost:5600` |
 | Media CDN | `https://media-payup.iilm.io` |
 | MongoDB | Atlas — database `payup` |
@@ -78,7 +82,7 @@ Backend port: **3301** (all envs). Route prefixes: `/api/v1` (public/SDK), `/api
 | JWT expiry | 7d |
 | WebAuthn RP | `localhost` · origin `http://localhost:4301` |
 
-CORS `ALLOWED_ORIGINS`: `localhost:4200/4301/5500`, `payup-panel.iilm.io`, `payup-admin-dev.iilm.io`, `payup-checkout-dev.iilm.io`, internal IPs `10.10.0.10/0.1`.
+CORS `ALLOWED_ORIGINS`: `localhost:4200/4301/4401/5500`, `payup-panel.iilm.io`, `payup-admin-dev.iilm.io`, `payup-checkout-dev.iilm.io`, internal IPs `10.10.0.10/0.1`.
 
 #### Dev hosted (frontend `environment.dev.ts` — backend `.env` not separate)
 
@@ -87,6 +91,8 @@ CORS `ALLOWED_ORIGINS`: `localhost:4200/4301/5500`, `payup-panel.iilm.io`, `payu
 | API | `https://payup-api-dev.iilm.io` |
 | Merchant API (portal) | `https://payup-api-dev.iilm.io/api/merchant` |
 | Checkout domain | `payup-checkout-dev.iilm.io` |
+| Admin API (dev) | `https://payup-api-dev.iilm.io/api/admin/v1` |
+| Admin panel (dev) | `https://payup-admin-dev.iilm.io` |
 | Web SDK default | `https://payup-api-dev.iilm.io/api` |
 
 #### Stage (frontend `environment.stage.ts`)
@@ -95,6 +101,7 @@ CORS `ALLOWED_ORIGINS`: `localhost:4200/4301/5500`, `payup-panel.iilm.io`, `payu
 |---------|-----|
 | API | `https://payup-api.iilm.io` |
 | Merchant API (portal) | `https://payup-api.iilm.io/api/merchant` |
+| Admin API | `https://payup-api.iilm.io/api/admin/v1` |
 | Checkout domain | `payup-checkout-dev.iilm.io` (same as dev in checkout env) |
 
 #### Production (`.env.prod`)
@@ -104,6 +111,7 @@ CORS `ALLOWED_ORIGINS`: `localhost:4200/4301/5500`, `payup-panel.iilm.io`, `payu
 | API (`API_PUBLIC_URL`) | `https://api.payupconnect.com` |
 | App base (`BASE_URL`, `APP_BASE_URL`) | `https://dash.payupconnect.com` |
 | Customer portal (CORS) | `https://control.payupconnect.com` |
+| Admin panel (CORS) | `https://admin.payupconnect.com` |
 | Checkout (`CHECKOUT_FRONTEND_URL`) | `https://checkout.payupconnect.com` |
 | Media CDN | `https://media.payupconnect.com` |
 | MongoDB | Self-hosted replica set — database `payup_production` |
@@ -112,7 +120,7 @@ CORS `ALLOWED_ORIGINS`: `localhost:4200/4301/5500`, `payup-panel.iilm.io`, `payu
 | WebAuthn RP | `payupconnect.com` · origin `https://dash.payupconnect.com` |
 | Mailjet sender | `noreply@payupconnect.com` (PayUp Connect) |
 
-CORS `ALLOWED_ORIGINS`: `dash.payupconnect.com`, `checkout.payupconnect.com`, `control.payupconnect.com`.
+CORS `ALLOWED_ORIGINS`: `dash.payupconnect.com`, `checkout.payupconnect.com`, `control.payupconnect.com`, `admin.payupconnect.com`.
 
 Observability (prod): OTEL → `http://10.10.0.12:4318/v1/traces` · Loki → `http://10.10.0.12:3100/`.
 
@@ -123,6 +131,7 @@ Production builds now target `payupconnect.com`:
 | App | File | `apiUrl` |
 |-----|------|----------|
 | Customer portal | `environment.prod.ts` | `https://api.payupconnect.com/api/merchant` |
+| Admin panel | `environment.prod.ts` | `https://api.payupconnect.com/api/admin/v1` |
 | Checkout | `environment.prod.ts` | `https://api.payupconnect.com` |
 | Web SDK | `config.ts` production | `https://api.payupconnect.com/api` |
 

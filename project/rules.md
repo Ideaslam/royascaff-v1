@@ -114,3 +114,13 @@ Auth rules: see `plan/roles-and-authorization.md`.
 - Module: Payments, Notifications
 - Must: `PaymentStatusSyncService.persist()` emits notification events only on valid status transitions
 - Events: payment.completed, payment.failed, payment.cancelled, payment.expired, payment.refunded
+
+## RULE-016 · Admin API Isolation
+
+- Type: Security, Architecture
+- Module: Admin Panel (Module 14)
+- Must: All platform-admin operations exposed under `/api/admin/v1/*` with `authMiddleware` + `requireAdmin`; admin panel frontend calls **only** `/api/admin/v1` (including auth — no merchant API)
+- Must: Admin login at `POST /api/admin/v1/auth/login` delegates to `AuthService` but rejects users where `role !== 'admin'` or `isActive === false` (same generic error as invalid credentials)
+- Must: Cross-merchant reads (payments, deliveries, merchants) go through dedicated admin services with explicit platform scope — never bypass ownership checks on merchant routes
+- Must not: Expose admin-only operations without `requireAdmin`; allow non-admin users into admin panel routes; keep duplicate admin endpoints on merchant API after migration
+- Must: Audit merchant suspend/role change and gateway request admin actions via `AuditService` (RULE-010)

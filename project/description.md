@@ -17,8 +17,11 @@ PayUp lets businesses accept payments through multiple gateways (Stripe, PayPal,
 5. Customer completes OTP verification (if enabled), selects payment method, pays via selected gateway
 6. API syncs status → **notification events** fire → merchant webhooks/email delivered
 7. Merchant monitors sessions, customers, and deliveries in the portal
+8. Platform **admin** reviews gateway onboarding, manages merchants, and monitors platform health in the admin panel
 
 **Backend integration path:** Server uses `pk_`/`sk_` keys to create sessions without browser SDK.
+
+**Admin workflow:** Admin logs into admin panel via **`POST /api/admin/v1/auth/login`** → reviews gateway requests, audit logs, failed deliveries → manages platform currencies/libraries and merchant accounts.
 
 ## 3. Core Features
 
@@ -26,6 +29,7 @@ PayUp lets businesses accept payments through multiple gateways (Stripe, PayPal,
 - **Embeddable Web SDK**: One-line integration with domain-verified client tokens
 - **Hosted Checkout**: Multi-step checkout with branding, OTP, Apple Pay, cards
 - **Merchant Portal**: Apps, products, customers, tokens, gateways, rules, onboarding, notifications
+- **Admin Panel**: Platform operations — merchants, gateway onboarding review, audit logs, currencies, libraries, cross-merchant payments, notification health, gateway catalog
 - **Notification System**: Event-driven webhooks, email, push-ready architecture with delivery log
 - **Security**: JWT, 2FA, passkeys, encrypted credentials, rate limiting, audit log
 
@@ -43,7 +47,7 @@ PayUp lets businesses accept payments through multiple gateways (Stripe, PayPal,
 ## 5. User Roles
 
 - **user (merchant)**: Manages own apps, products, payments, gateways, notifications; cannot access admin-only platform endpoints
-- **admin**: Platform operations — currency/library admin, full audit logs, gateway request workflow management
+- **admin**: Platform operations via dedicated admin panel — merchant management, gateway onboarding review, currency/library CRUD, full audit logs, cross-merchant payment search, notification health, available gateway catalog
 - **end-customer**: No login — interacts via checkout page only
 
 ## 6. Integrations
@@ -75,10 +79,9 @@ PayUp lets businesses accept payments through multiple gateways (Stripe, PayPal,
 
 ## 9. Out of Scope
 
-- Platform admin panel (`/api/admin` stub)
 - Mobile native apps
 - Built-in subscription/billing for PayUp itself
-- Reports and Domains portal pages (placeholders)
+- Disputes, settlements, risk scoring (future admin modules — stubbed in legacy `admin.routes` comments)
 
 ## 10. Success Criteria
 
@@ -86,3 +89,4 @@ PayUp lets businesses accept payments through multiple gateways (Stripe, PayPal,
 2. Multiple gateways routable via rules per app
 3. Payment status changes trigger merchant webhooks reliably
 4. Portal provides full session and customer visibility per app
+5. Admin can manage gateway onboarding, merchants, and platform config from dedicated admin panel
