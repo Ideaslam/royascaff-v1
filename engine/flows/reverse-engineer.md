@@ -1,38 +1,48 @@
-# AI-Control Engine — Reverse-Engineer Flow
+# AI-Control Engine — Reverse-Engineer Flow (Phase R)
 
 ## Overview
 
 This flow **reverse-engineers an existing or legacy codebase** and auto-generates the full set of
-`project/` blueprint documents. It is the onboarding counterpart to `flow.md`: where Phases 0–2 of
-`flow.md` assume you are *describing* a new application, this flow *reads* the code that already exists
-and produces the same artifacts.
+`project/` blueprint documents. It is the onboarding counterpart to `engine/flows/initial-build.md`:
+where Phases 0–4 assume you are *describing* a new application, this flow *reads* the code that already
+exists and produces the same artifacts.
 
 **When to use this flow**:
-- An existing codebase exists but no `project/` blueprint has been created yet.
+- An existing codebase has no `project/` blueprint yet.
 - A legacy system is being onboarded into the AI-Control framework.
 - A team inherits a codebase and needs full documentation before making changes.
 
-**Relationship to `flow.md`**:
-- This flow produces the same `project/` artifacts that Phases 0–2 of `flow.md` would produce:
-  `profile.md`, `description.md`, `plan/modules.md`, `plan/features.md`, `plan/data-model.md`,
-  `actions/<app-key>/services.md`, `actions/<app-key>/endpoints.md`,
-  `actions/<app-key>/pages.md` or `views.md`, and `rules.md`.
-- After completion, the team uses **Phase 5 (Change Mode)** or **Phase 6 (Bug Fix)** from `flow.md`
-  for all future work — no need to re-run this flow.
-- This flow does **not** generate code (Phase 3) or run the standard verification (Phase 4) — those
-  phases apply to greenfield builds. Instead, Phase R.3 runs a **drift analysis** that validates
-  the generated blueprint against the actual code.
+**Relationship to other flows**:
+- This flow produces the same `project/` artifacts that Phases 0–4 of `engine/flows/initial-build.md`
+  would produce, **plus** `plan/roles-and-authorization.md` (which initial-build does not generate
+  separately — reverse-engineering adds it because auth patterns can be extracted from existing code):
+  `profile.md`, `description.md`, `plan/modules.md` (includes features), `plan/data-model.md`,
+  `plan/roles-and-authorization.md`,
+  `actions/<api-app>/services/<module>.md` + `_index.md`,
+  `actions/<api-app>/endpoints/<module>.md` + `_index.md`,
+  `actions/<web-app>/pages/<module>.md`, and `rules.md`.
+- After completion, use **Phase 5** (`engine/flows/change-mode.md`) or **Phase 6**
+  (`engine/flows/bug-fix.md`) for all future work. No need to re-run this flow.
+- This flow does **not** generate code or run the standard verification (those apply to greenfield
+  builds). Instead, Phase R.3 runs a **drift analysis** that validates the generated blueprint against
+  the actual code.
+
+**Key references** (load on every step that generates specs):
+- **`engine/conventions.md`** — global defaults for all specs. A spec only documents a value when it
+  **deviates** from conventions. Generated endpoint/service/page specs must inherit these defaults.
+- **`engine/rules/backend-rule.md`** — architectural layering standard. Used during scanning to
+  identify architecture violations for the drift report.
+- **`engine/rules/frontend-rule.md`** — frontend isolation and layering standard. Same purpose.
 
 **Two zones still apply**:
-- **`engine/`** — this guide (`reverse-engineer-flow.md`), the generic templates (`engine/templates/`),
-  and the generic backend/frontend rules (`engine/rules/`). Reusable across any product.
+- **`engine/`** — this flow (`flows/reverse-engineer.md`), generic templates (`engine/templates/`),
+  and generic rules (`engine/rules/`). Reusable across any product.
 - **`project/`** — the living blueprint and single source of truth for the current system:
   `profile.md`, `description.md`, `plan/`, `actions/`, `rules.md`, `verify/`.
 
 The engine never hardcodes a specific system's data. All concrete facts about *this* system —
 applications, repositories, tech stack, brand tokens, environments, integrations — live in
-**`project/profile.md`**. Wherever this guide says "the repo / app / stack / brand defined in
-`project/profile.md`", resolve it against that file.
+**`project/profile.md`**.
 
 Follow each phase in order. Each step declares its **Input**, **Template** (optional), **Output**,
 **Actions**, and **Done-when** criteria.
@@ -66,59 +76,40 @@ system profile in `project/profile.md` that the rest of the flow will reference.
      - **Mobile** — mobile application (React Native, Flutter, Ionic, etc.)
      - **Worker** — background job processor, cron service
      - **Shared** — shared library or package (monorepo)
-  4. For each application, extract:
-     - **Framework**: detect from dependencies (e.g. `@nestjs/core` → NestJS, `react` → React)
-     - **Language**: TypeScript, JavaScript, Python, etc.
-     - **Database**: detect from dependencies and env vars (e.g. `mongoose` → MongoDB, `typeorm` → SQL, `@prisma/client` → Prisma)
-     - **Auth strategy**: detect from dependencies and middleware (e.g. `passport`, `@nestjs/jwt`, `firebase-admin`)
-     - **UI library**: detect from dependencies (e.g. `@angular/material`, `antd`, `@mui/material`, `primeng`)
-     - **Build tool**: detect from config files and scripts (e.g. `webpack`, `vite`, `esbuild`, `nx`)
+  4. For each application, extract framework, language, database, auth strategy, UI library, and
+     build tool using the detection heuristics in **Appendix A**.
   5. Identify integrations from dependencies and env vars:
-     - Payment: Stripe, PayPal, Tap, etc.
-     - Email: SendGrid, Mailgun, Resend, etc.
-     - Storage: AWS S3, Google Cloud Storage, Cloudinary, etc.
-     - AI: OpenAI, Anthropic, Google AI, etc.
-     - Messaging: Twilio, Firebase Cloud Messaging, etc.
-     - Other: any third-party SDK detected
+     - Payment, email, storage, AI, messaging, and any other third-party SDK detected.
   6. Populate `project/profile.md` from `engine/templates/profile-template.md`:
      - Fill the **Applications** table — each row defines an app **Key** (this key becomes the
        `project/actions/<key>/` folder name), name, type, framework, and repo path.
-     - Fill the **Repositories** table with paths and descriptions.
-     - Fill the **Tech Stack** section with all detected technologies.
-     - Fill the **Integrations** section with all detected third-party providers.
-     - Fill the **Environments** section from discovered env files.
-     - Fill the **Brand Tokens** section from any theme/style config found (colors, fonts, logos).
-  7. Handle monorepo vs multi-repo:
-     - **Monorepo**: list each package/app as a separate Application entry; set the Repository to the
-       monorepo root with a `packages/<name>` or `apps/<name>` subpath.
-     - **Multi-repo**: list each repository separately in the Repositories table.
+     - Fill the **Repositories**, **Tech Stack**, **Integrations**, **Environments**, and
+       **Brand Tokens** sections.
+  7. Handle monorepo vs multi-repo (see **Appendix B**).
 
 - **Done when**:
   - `project/profile.md` exists and the template's **Completion Checklist** is satisfied
   - All applications are listed with correct types, frameworks, and repo paths
   - All integrations are documented
   - Database(s) and auth strategy are identified
-  - The **Applications** table has stable **Key** values that will be used for `project/actions/<key>/` folders
+  - The **Applications** table has stable **Key** values for `project/actions/<key>/` folders
 
 ### ⛔ Confirmation Gate — Profile Review (MANDATORY)
 
-Before continuing to Phase R.1, the AI **must** stop and present the discovered profile to the user
-for explicit approval.
+Before continuing to Phase R.1, **stop** and present the discovered profile for explicit approval.
 
 **What to present**:
-1. **Discovered applications** — the Applications table showing each app's key, type, framework, and path
+1. **Discovered applications** — the Applications table (key, type, framework, path)
 2. **Tech stack summary** — languages, frameworks, databases, UI libraries, build tools
 3. **Integrations** — all detected third-party providers
 4. **Architecture type** — monorepo vs multi-repo, shared libraries
-5. **Any unknowns** — items that could not be auto-detected and need user input
+5. **Any unknowns** — items that could not be auto-detected (mark with ❓)
 
 **How to present**:
-- Format the summary as a concise, readable list (not prose).
-- Highlight anything uncertain with a ❓ marker.
-- End with a single clear question: **"Does this profile look correct? Please confirm or correct before I scan the codebase."**
-- Wait for an explicit **"yes" / "confirmed" / "go ahead"** (or equivalent) before continuing.
-- If the user requests corrections, update `project/profile.md` and re-present the summary.
-- **Do not interpret silence, ambiguous replies, or follow-up questions as confirmation.**
+- Format as a concise, readable list (not prose).
+- End with: **"Does this profile look correct? Please confirm or correct before I scan the codebase."**
+- Wait for explicit confirmation. Do not interpret silence or ambiguous replies as confirmation.
+- If corrections requested: update `project/profile.md` and re-present.
 
 ---
 
@@ -131,9 +122,18 @@ endpoints, and frontend pages/views into their respective blueprint documents.
 **Important**: This phase reads code — it does not generate or modify code. All outputs are
 documentation files in `project/`.
 
-**Scan order**: Process each application in dependency order — API apps first (schemas → services →
-endpoints), then frontend apps (pages/views). This ensures that when scanning frontend apps, the
-backend endpoints are already documented and can be cross-referenced.
+**Scan order** (follows the traceability chain from `flow.md`):
+```
+Data Model → Services → Endpoints → Pages/Views
+```
+Process API apps first (schemas → services → endpoints), then frontend apps (pages/views). This
+ensures that when scanning frontend apps, the backend endpoints are already documented.
+
+**Scope discipline**: Resolve modules from the code's folder structure. Create **one file per module**
+in the relevant subdirectory. Register every file in the subdirectory's `_index.md` registry.
+
+**Spec defaults**: All generated spec files inherit defaults from `engine/conventions.md`. Only
+document values that **deviate** from conventions.
 
 ---
 
@@ -143,383 +143,255 @@ backend endpoints are already documented and can be cross-referenced.
 - **Template**: `engine/templates/data-model-template.md`
 - **Output**: `project/plan/data-model.md`
 - **Actions**:
-  1. Identify the schema/model directory pattern from the project's folder structure (e.g.
-     `src/modules/*/schemas/`, `src/entities/`, `src/models/`, `prisma/schema.prisma`).
-  2. Scan every schema/model file and extract entities. Use the framework detection patterns
-     (see **Framework Detection Patterns** appendix) to identify entity definitions:
-     - **Mongoose**: `@Schema()` decorator, `SchemaFactory.createForClass()`, `new Schema({})`,
-       `Schema.define()`, `model()` calls
-     - **TypeORM**: `@Entity()` decorator, `@Column()`, `@PrimaryGeneratedColumn()`,
-       `@ManyToOne()`, `@OneToMany()`, `@ManyToMany()`, `@JoinTable()`
-     - **Prisma**: `model` blocks in `schema.prisma`, `enum` blocks
-     - **Sequelize**: `Model.init()`, `define()`, `@Table` decorator
-     - **Raw SQL migrations**: `CREATE TABLE` statements, `ALTER TABLE` for schema evolution
-  3. For each entity, extract:
-     - **Entity name** and collection/table name
-     - **Fields**: name, type, required/optional flag, default value
-     - **Relationships**: references (foreign keys, ObjectId refs), embedded documents, join tables
-     - **Indexes**: single-field, compound, unique, text, geo
-     - **Enums**: inline or referenced enum types
-     - **Validators**: built-in validators (min, max, match, enum), custom validators
-     - **Timestamps**: `createdAt`, `updatedAt`, soft-delete flags
-     - **Discriminators / inheritance**: single-table inheritance, discriminator keys
-  4. For DTOs (Data Transfer Objects), scan for:
-     - Input DTOs: `Create*Dto`, `Update*Dto`, request body classes
-     - Output DTOs: response classes, serialization groups
-     - Validation decorators: `class-validator` decorators, Joi schemas, Zod schemas
-  5. Populate `project/plan/data-model.md` using the template format:
-     - One section per entity with schema shape, field table, index table
-     - Enum definitions section
-     - DTO definitions section (or note that DTOs derive from entities)
-     - Relationship diagram (textual) showing entity connections
+  1. Identify the schema/model directory pattern (e.g. `src/modules/*/schemas/`, `src/entities/`,
+     `src/models/`, `prisma/schema.prisma`).
+  2. Scan every schema/model file. Use the framework detection patterns in **Appendix A** to
+     identify entity definitions.
+  3. For each entity, extract: entity name, collection/table name, fields (name, type, required,
+     default), relationships (refs vs embedded), indexes, enums, validators, timestamps,
+     discriminators.
+  4. For DTOs, scan for: input DTOs (`Create*Dto`, `Update*Dto`), output DTOs, validation
+     decorators (`class-validator`, Joi, Zod).
+  5. Populate `project/plan/data-model.md` using the template format.
 
 - **Done when**:
   - Every schema/model file in the codebase has a corresponding entity in `data-model.md`
   - Field types, required flags, and constraints are documented
   - Relationships (references vs embedded) are explicit
   - Index recommendations are provided
-  - Enum types are declared
-  - Validation rules are stated
+  - Enum types are declared; validation rules are stated
   - No schema file was skipped
 
 ---
 
 ### Step R.1.2 — Service Discovery
 
-- **Input**: Backend app source code, `project/plan/data-model.md`
+- **Input**: Backend app source code, `project/plan/data-model.md`, `engine/rules/backend-rule.md` (as architectural reference), `engine/conventions.md` (for spec defaults)
 - **Template**: `engine/templates/services-template.md`
-- **Output**: `project/actions/<api-app>/services.md` (one per API app)
+- **Output**: One file per module at `project/actions/<api-app>/services/<module>.md` + `project/actions/<api-app>/services/_index.md`
 - **Actions**:
-  1. Identify the service directory pattern (e.g. `src/modules/*/services/`,
-     `src/services/`, `src/*/service.ts`).
-  2. Scan every service file and extract service definitions. Use framework detection patterns:
-     - **NestJS**: `@Injectable()` decorator, constructor injection, `@Inject()` token injection
-     - **Express**: service classes/modules imported by controllers, middleware
-     - **Plain modules**: exported classes or functions acting as business logic layer
-  3. For each service, determine its **type**:
-     - **Internal service**: contains business logic, uses repositories/models, orchestrates operations.
-       Signals: injects a Model/Repository, contains CRUD or domain logic methods.
-     - **External service** (integration wrapper): wraps a third-party API or SDK.
-       Signals: injects an external SDK client, uses `HttpService`/`axios`/`fetch` to call external
-       URLs, references env vars for API keys.
-  4. For each service, extract:
-     - **Class name** and module it belongs to
-     - **Type**: `internal` or `external`
-     - **Public methods**: name, parameters (with types), return type, brief purpose
-     - **Dependencies**: injected services, repositories, models, config values
-     - **Repositories used**: which entities/models this service reads/writes
-     - **External APIs called**: for external services, which provider and endpoints
-  5. Populate `project/actions/<api-app>/services.md` using the template format:
-     - Services grouped by module
-     - Each service entry: type, public methods table, dependencies list
-     - Internal services first, then external services
-     - Cross-reference entities from `data-model.md`
+  1. Identify the service directory pattern (e.g. `src/modules/*/services/`).
+  2. Scan every service file. Use detection patterns in **Appendix A**.
+  3. For each service, determine **type**: `internal` (business logic, uses repositories) or
+     `external` (wraps third-party API/SDK).
+  4. For each service, extract: class name, module, type, public methods (name, params, return
+     type, purpose), dependencies (injected services, repositories, models, config), repositories
+     used, external APIs called.
+  5. Group services by module. Create one file per module following the template format.
+     Inherit `engine/conventions.md` defaults — only document deviations.
+  6. Create the registry: `project/actions/<api-app>/services/_index.md` — one row per module
+     (module name, file link, service count, brief purpose).
+  7. Note any layering violations found (e.g. business logic in controllers, services calling
+     vendor SDKs directly without adapter pattern) — these feed into R.3 drift analysis.
 
 - **Done when**:
-  - Every service file in the codebase has a corresponding entry in `services.md`
+  - Every service file has a corresponding entry in the correct module file
   - Services are correctly classified as internal or external
   - Public methods, dependencies, and repositories are documented
-  - No service file was skipped
-  - All referenced entities exist in `data-model.md`
+  - `_index.md` lists all module files
+  - No service file was skipped; all referenced entities exist in `data-model.md`
 
 ---
 
 ### Step R.1.3 — Endpoint Extraction
 
-- **Input**: Backend app source code, `project/actions/<api-app>/services.md`
+- **Input**: Backend app source code, `project/actions/<api-app>/services/_index.md`, `engine/rules/backend-rule.md` (as architectural reference), `engine/conventions.md` (for spec defaults)
 - **Template**: `engine/templates/endpoints-template.md`
-- **Output**: `project/actions/<api-app>/endpoints.md` (one per API app)
+- **Output**: One file per module at `project/actions/<api-app>/endpoints/<module>.md` + `project/actions/<api-app>/endpoints/_index.md`
 - **Actions**:
-  1. Identify the controller/route directory pattern (e.g. `src/modules/*/controllers/`,
-     `src/controllers/`, `src/routes/`).
-  2. Scan every controller/route file and extract endpoint definitions. Use framework detection patterns:
-     - **NestJS**: `@Controller('path')`, `@Get()`, `@Post()`, `@Put()`, `@Patch()`, `@Delete()`,
-       `@UseGuards()`, `@Body()`, `@Param()`, `@Query()`, `@Req()`, `@Res()`
-     - **Express**: `router.get()`, `router.post()`, `router.put()`, `router.patch()`,
-       `router.delete()`, `app.use()` middleware registration
-     - **Fastify**: `fastify.get()`, `fastify.post()`, route schema definitions
-  3. For each endpoint, extract:
-     - **HTTP method**: GET, POST, PUT, PATCH, DELETE
-     - **Route path**: full path including controller prefix and route params (e.g. `/api/v1/users/:id`)
-     - **Auth requirements**: guards, decorators, middleware (e.g. `@UseGuards(JwtAuthGuard)`,
-       `@Roles('admin')`, `passport.authenticate()`)
-     - **Input**: body DTO, query params, route params, file uploads
-     - **Output**: response DTO, status codes, response shape
-     - **Services called**: which services from `services.md` this endpoint invokes
-     - **Business rules**: validation, authorization checks, special logic noted in comments or code
-     - **Middleware**: rate limiting, CORS, logging, caching
-  4. Identify route groups and API versioning:
-     - Global prefixes (e.g. `app.setGlobalPrefix('api/v1')`)
-     - Controller-level prefixes
-     - Versioning strategy (URL path, header, query param)
-  5. Populate `project/actions/<api-app>/endpoints.md` using the template format:
-     - Endpoints grouped by module
-     - Each endpoint entry: method, route, auth, input DTO, output DTO, services called,
-       business rules
-     - Cross-reference services from `services.md`
+  1. Identify the controller/route directory pattern (e.g. `src/modules/*/controllers/`).
+  2. Scan every controller/route file. Use detection patterns in **Appendix A**.
+  3. For each endpoint, extract: HTTP method, route path (full, including controller prefix and
+     params), auth requirements (guards, decorators, `@Public()`), input (body DTO, query, params,
+     uploads), output (response DTO, status codes, shape), services called, business rules,
+     middleware (rate limiting, etc.).
+  4. Identify global prefixes (e.g. `app.setGlobalPrefix('api/v1')`) and versioning strategy.
+  5. Group endpoints by module. Create one file per module following the template format.
+     Inherit `engine/conventions.md` defaults — only document deviations (e.g. if auth matches
+     the global default `JwtAuthGuard + RolesGuard`, don't repeat it; only note `@Public()` or
+     custom guards).
+  6. Create the registry: `project/actions/<api-app>/endpoints/_index.md` — one row per module
+     (module name, file link, endpoint count, route prefix).
 
 - **Done when**:
-  - Every controller/route file in the codebase has corresponding endpoint entries in `endpoints.md`
+  - Every controller/route file has corresponding entries in the correct module file
   - HTTP methods and route paths are accurate
-  - Auth requirements are documented for every endpoint
-  - Input/output DTOs are specified
-  - Every endpoint declares which services it calls
-  - Services referenced exist in `services.md`
-  - No controller/route file was skipped
+  - Auth requirements documented for every endpoint
+  - Input/output DTOs specified
+  - Every endpoint declares which services it calls; services exist in `services/`
+  - `_index.md` lists all module files; no controller/route file was skipped
 
 ---
 
 ### Step R.1.4 — Frontend Page Discovery (per web/mobile app)
 
 Repeat this step for **each frontend application** discovered in Phase R.0. Web apps produce
-`pages.md`; mobile apps produce `views.md`.
+`pages/<module>.md` files; mobile apps produce `views/<module>.md` files.
 
-- **Input**: Frontend app source code, `project/actions/<api-app>/endpoints.md`
+- **Input**: Frontend app source code, `project/actions/<api-app>/endpoints/_index.md`, `engine/rules/frontend-rule.md` (as architectural reference), `engine/conventions.md` (for spec defaults)
 - **Template**: `engine/templates/pages-template.md` (web) or `engine/templates/views-template.md` (mobile)
-- **Output**: `project/actions/<web-app>/pages.md` or `project/actions/<mobile-app>/views.md` — one per app
+- **Output**: One file per module at `project/actions/<app-key>/pages/<module>.md`
 - **Actions**:
-  1. Identify the routing and page/component structure. Use framework detection patterns:
-     - **Angular**: `RouterModule.forRoot()` / `forChild()`, route definitions in `*-routing.module.ts`,
-       `@Component()` decorator, `@NgModule()`, lazy-loaded modules (`loadChildren`),
-       standalone components with `routes` array
-     - **React**: `react-router-dom` route definitions, `<Route>` components, `pages/` or `app/`
-       directory (Next.js), `createBrowserRouter()`, file-based routing
-     - **Vue**: `vue-router` route definitions, `router.js` / `router/index.ts`, `.vue` files,
-       `pages/` directory (Nuxt.js), Vuex/Pinia stores
-     - **React Native**: `react-navigation` navigators, `Stack.Screen`, `Tab.Screen`,
-       `Drawer.Screen`, screen components
-  2. For each page/view, extract:
-     - **Route path** (web) or **navigation target** (mobile)
-     - **Components used**: child components rendered on this page
-     - **Frontend services**: Angular services, React hooks/context, Vue composables that this
-       page injects or calls
-     - **API calls made**: which backend endpoints this page calls (match against `endpoints.md`)
-     - **UI states**: loading, empty, error, success — look for conditional rendering, spinners,
-       error boundaries, empty state components
-     - **Auth guard**: route guards, protected route wrappers, auth checks
-     - **Forms**: form fields, validation rules, submit handlers
-  3. Identify shared/layout components:
-     - Navigation bars, sidebars, headers, footers
-     - Layout wrappers (authenticated layout, public layout)
-     - Shared UI components (modals, tables, forms)
-  4. Identify frontend state management:
-     - Angular: services with `BehaviorSubject`, NgRx store
-     - React: Context, Redux, Zustand, Recoil
-     - Vue: Vuex, Pinia
-  5. Populate `project/actions/<app-key>/pages.md` or `views.md` using the template format:
-     - Pages/views grouped by module (matching backend module grouping where applicable)
-     - Each page entry: route, components, frontend services, models, backend endpoints used,
-       UI states
-     - Cross-reference endpoints from `endpoints.md`
+  1. Identify routing and page/component structure. Use detection patterns in **Appendix A**.
+  2. For each page/view, extract: route path (or navigation target), components used, frontend
+     services called, API calls made (match against `endpoints/`), UI states (loading, empty,
+     error, success), auth guard, forms (fields, validation, submit handler).
+  3. Identify shared/layout components (nav, sidebar, headers, footers, layout wrappers, shared
+     modals/tables/forms) and frontend state management.
+  4. Group pages by module. Create one file per module following the template format.
+     Inherit `engine/conventions.md` frontend defaults — only document deviations.
+  5. Note any frontend isolation violations (direct HTTP calls bypassing services, direct
+     external API calls, hardcoded URLs) — these feed into R.3 drift analysis.
 
 - **Done when**:
-  - Every page/view in the frontend app has a corresponding entry in `pages.md` or `views.md`
+  - Every page/view has a corresponding entry in the correct module file
   - Route paths match the actual routing configuration
   - Components, services, and API calls are documented
   - UI states (loading/empty/error/success) are captured
   - Auth guards are documented
-  - All referenced endpoints exist in the API app's `endpoints.md`
-  - No page/view was skipped
-  - Step is repeated for every frontend app in the Applications table
+  - All referenced endpoints exist in the API app's `endpoints/`
+  - No page/view was skipped; step repeated for every frontend app
 
 ---
 
 ## Phase R.2 — Plan Synthesis
 
 ### Goal
-Synthesize the raw extraction results from Phase R.1 into higher-level planning documents: modules,
-features, rules, and a product description. These documents complete the `project/` blueprint to the
-same standard as Phases 0–2 of `flow.md`.
+Synthesize the raw extraction results from Phase R.1 into higher-level planning documents: modules
+(with features), roles and authorization, rules, and a product description. These complete the
+`project/` blueprint to the same standard as Phases 0–4 of `initial-build.md`.
 
 ---
 
-### Step R.2.1 — Module Grouping
+### Step R.2.1 — Module & Feature Mapping
 
-- **Input**: `project/plan/data-model.md`, `project/actions/<api-app>/services.md`,
-  `project/actions/<api-app>/endpoints.md`, `project/actions/<web-app>/pages.md` (all apps)
+- **Input**: `project/plan/data-model.md`, `project/actions/<api-app>/services/_index.md`,
+  `project/actions/<api-app>/endpoints/_index.md`, all `project/actions/<web-app>/pages/`
 - **Template**: `engine/templates/modules-template.md`
-- **Output**: `project/plan/modules.md`
+- **Output**: `project/plan/modules.md` (includes features — no separate `features.md`)
 - **Actions**:
   1. Use the **folder structure** as the primary signal for module boundaries:
-     - Backend: each folder under `src/modules/` (NestJS) or `src/` top-level grouping (Express)
-       is typically one module.
-     - Frontend: each feature module, lazy-loaded route, or `pages/` subdirectory is typically
-       one module.
-  2. Cross-reference with service dependencies:
-     - Services that share a module folder belong to the same module.
-     - Services with heavy cross-module dependencies may indicate a module boundary issue
-       (note this for the drift report).
-  3. For each module, document:
-     - **Module name**: derived from the folder name, normalized to a consistent casing
-     - **Purpose**: inferred from the entities, services, and endpoints it contains
-     - **Backend scope**: does it have schemas, services, endpoints?
-     - **Frontend scope**: does it have pages/views in any frontend app?
-     - **Dependencies**: which other modules does it depend on? (inferred from service imports)
-  4. Handle special modules:
-     - **Auth / Core / Shared**: modules that provide cross-cutting concerns (auth guards,
-       interceptors, base classes, shared utilities). Mark these as `infrastructure` modules.
-     - **Integration modules**: modules that wrap external providers (payments, email, etc.).
-       Mark these as `integration` modules.
-  5. Populate `project/plan/modules.md` using the template format.
+     - Backend: each folder under `src/modules/` (NestJS) or `src/` top-level grouping.
+     - Frontend: each feature module, lazy-loaded route, or `pages/` subdirectory.
+  2. Cross-reference service dependencies to validate module boundaries.
+  3. For each module, document: name, purpose, backend scope, frontend scope, dependencies.
+  4. Mark special modules: `infrastructure` (auth, core, shared) or `integration` (external providers).
+  5. For each module, group endpoints and pages into logical **features** (inline in `modules.md`):
+     - A feature is a user-facing capability. Use endpoint groupings as primary signal.
+  6. For each feature: name, visibility (`frontend` / `backend-only` / `both`), subfeatures
+     (if code reveals distinct sub-capabilities), endpoints/pages/services involved.
+  7. Cross-cutting features: document under the primary module with cross-references.
 
 - **Done when**:
-  - All business capabilities are grouped into named modules
-  - Each module declares backend/frontend scope
-  - Module dependencies are documented
-  - No orphaned services, endpoints, or pages exist outside a defined module
-  - Infrastructure and integration modules are identified separately
+  - All business capabilities grouped into named modules in `modules.md`
+  - Each module declares backend/frontend scope and its features inline
+  - Module dependencies documented
+  - No orphaned services, endpoints, or pages outside a defined module
+  - Infrastructure and integration modules identified separately
+  - All features have visibility declared
 
 ---
 
-### Step R.2.2 — Feature Mapping
+### Step R.2.2 — Roles & Authorization
 
-- **Input**: `project/plan/modules.md`, `project/actions/<api-app>/endpoints.md`,
-  `project/actions/<web-app>/pages.md` (all apps), `project/actions/<api-app>/services.md`
-- **Template**: `engine/templates/features-template.md`
-- **Output**: `project/plan/features.md`
+- **Input**: All source code (guards, decorators, role checks, middleware), `project/plan/modules.md`
+- **Output**: `project/plan/roles-and-authorization.md`
 - **Actions**:
-  1. For each module, group its endpoints and pages into logical **features**:
-     - A feature is a user-facing capability (e.g. "User Registration", "Invoice Generation",
-       "Dashboard Analytics").
-     - Use endpoint groupings (CRUD sets on the same entity, related business operations) as
-       the primary signal.
-     - Cross-reference with frontend pages that call those endpoints.
-  2. For each feature, determine:
-     - **Feature name**: a stable, descriptive name
-     - **Visibility**: `frontend` (has pages), `backend-only` (API only, no UI), or `both`
-     - **Subfeatures**: break down complex features into subfeatures if the code reveals distinct
-       sub-capabilities (e.g. "Payments" → "Charge Card", "Refund", "Payment History")
-     - **Endpoints involved**: list from `endpoints.md`
-     - **Pages involved**: list from `pages.md` / `views.md`
-     - **Services involved**: list from `services.md`
-  3. Identify features that span multiple modules (cross-cutting features) and document them
-     under the primary module with cross-references.
-  4. Populate `project/plan/features.md` using the template format:
-     - Features grouped by module
-     - Each feature: name, visibility, subfeatures, related endpoints/pages/services
+  1. **Detect roles**: scan for role enums, constants, decorator arguments (e.g. `@Roles('admin')`,
+     `WorkspaceRole`, `UserRole`).
+  2. **Detect auth strategy**: JWT, session, OAuth2, API keys. Document token flow (issuance,
+     refresh, expiry, storage in frontend).
+  3. **Map role-to-endpoint access**: for each role, list accessible endpoint groups/modules.
+  4. **Map role-to-page access**: for each role, list reachable frontend pages (route guards).
+  5. **Detect ownership rules**: `ownerId === userId`, workspace-scoped resources, tenant isolation.
+  6. **Detect special guards**: `@Public()`, workspace role guards, admin-only guards.
+  7. Populate `project/plan/roles-and-authorization.md`: roles table, auth flow description,
+     endpoint access matrix, page access matrix, ownership and scoping rules.
 
 - **Done when**:
-  - Every module from `modules.md` has a corresponding section in `features.md`
-  - All product features are listed under the correct module
-  - Each feature declares visibility (frontend/backend-only/both)
-  - Feature names are stable and reusable
-  - No orphaned endpoints or pages exist outside a defined feature
+  - All system roles documented
+  - Auth flow described
+  - Role-to-endpoint and role-to-page access mapped
+  - Ownership and scoping rules explicit
+  - Special guards noted
 
 ---
 
 ### Step R.2.3 — Rules Detection
 
 - **Input**: All source code, `project/profile.md`, `project/plan/modules.md`,
-  `project/plan/features.md`
+  `project/plan/roles-and-authorization.md` (auth rules already captured — skip auth here)
 - **Template**: `engine/templates/custom-feature-rules-template.md`
 - **Output**: `project/rules.md`
 - **Actions**:
-  1. **Detect integration providers** — scan for third-party SDK usage and API calls:
-     - Payment gateways: Stripe, PayPal, Tap, etc. (SDK imports, webhook handlers)
-     - Email/SMS providers: SendGrid, Twilio, Mailgun, etc.
-     - Object storage: S3, GCS, Cloudinary, etc.
-     - AI/ML: OpenAI, Anthropic, Google AI, etc.
-     - Push notifications: FCM, APNs, OneSignal, etc.
-     - For each: document the provider, which module/service uses it, and the isolation pattern
-  2. **Detect auth patterns**:
-     - Auth strategy: JWT, session, OAuth2, API keys
-     - Auth guards/middleware: which endpoints are protected, role-based access
-     - Token management: refresh tokens, token expiry, blacklisting
-     - Multi-tenancy: tenant isolation, tenant-scoped queries
-  3. **Detect async jobs, cron, queues**:
-     - Bull/BullMQ queues, Redis pub/sub, RabbitMQ
-     - Cron jobs: `@Cron()` decorators, `node-cron`, `agenda`
-     - Webhooks: incoming webhook endpoints, outgoing webhook dispatchers
-     - Event emitters: `EventEmitter2`, domain events
-  4. **Detect security patterns**:
-     - Rate limiting: `@nestjs/throttler`, `express-rate-limit`
-     - CORS configuration: allowed origins, methods, headers
-     - Input validation: `class-validator`, Joi, Zod, express-validator
-     - Helmet / security headers
-     - CSRF protection
-     - File upload restrictions (size limits, allowed types)
-  5. **Detect logging and observability**:
-     - Logging framework: Winston, Pino, Morgan
-     - Monitoring: Sentry, DataDog, New Relic
-     - Health checks: `/health`, `/readiness` endpoints
-  6. **Detect caching**:
-     - Redis cache, in-memory cache, `@nestjs/cache-manager`
-     - Cache invalidation patterns
-  7. Populate `project/rules.md` using the template format:
-     - Rules grouped by category: integrations, auth, async, security, observability
-     - Each rule: rule ID, module/feature reference, constraint, rationale
-     - Generic rules remain in `engine/rules/backend-rule.md` / `engine/rules/frontend-rule.md` only
+  1. **Detect integration providers** — payment, email/SMS, storage, AI/ML, push notifications.
+     For each: document provider, module/service, isolation pattern.
+  2. **Detect async jobs, cron, queues** — Bull/BullMQ, Redis pub/sub, cron decorators, webhooks,
+     event emitters.
+  3. **Detect security patterns** — rate limiting, CORS, input validation, Helmet, CSRF, upload
+     restrictions.
+  4. **Detect logging and observability** — logging framework, monitoring, health checks.
+  5. **Detect caching** — Redis, in-memory, cache invalidation patterns.
+  6. Populate `project/rules.md`: rules grouped by category (integrations, async, security,
+     observability, caching). Each rule: rule ID, module/feature reference, constraint, rationale.
+     Auth rules: reference `plan/roles-and-authorization.md` — do not duplicate.
+     Generic rules remain in `engine/rules/` only.
 
 - **Done when**:
-  - All integration providers are documented with their module/feature references
-  - Auth patterns and guard requirements are explicit
-  - Async jobs, queues, and webhooks are captured
-  - Security patterns are documented
+  - All integration providers documented with module/feature references
+  - Async jobs, queues, and webhooks captured
+  - Security patterns documented
   - Each rule references a specific module and feature
+  - Auth rules deferred to `roles-and-authorization.md` — no duplication
   - Generic rules remain in `engine/rules/` only
 
 ---
 
 ### Step R.2.4 — Description Generation
 
-- **Input**: `project/plan/modules.md`, `project/plan/features.md`, `project/plan/data-model.md`,
-  `project/rules.md`, `project/profile.md`, README file(s) if available
+- **Input**: `project/plan/modules.md`, `project/plan/data-model.md`,
+  `project/plan/roles-and-authorization.md`, `project/rules.md`, `project/profile.md`,
+  README file(s) if available
 - **Template**: `engine/templates/description-template.md`
 - **Output**: `project/description.md`
 - **Actions**:
-  1. Read the project's `README.md` (or equivalent) as a starting point. Extract:
-     - Product name and purpose
-     - Target audience / users
-     - High-level feature list
-     - Architecture overview (if described)
-  2. Synthesize the discovered modules, features, entities, and integrations into a cohesive
-     product description:
-     - **Product Summary**: one-paragraph description of what the system does
-     - **Primary Users**: who uses the system (extracted from auth roles, frontend apps)
-     - **Core Workflow**: the main user journey (inferred from page flow and endpoint chains)
-     - **Core Features**: organized by module, derived from `features.md`
-     - **Key Entities**: derived from `data-model.md`
-     - **Integrations**: derived from `rules.md` and `profile.md`
-     - **Constraints and Requirements**: derived from `rules.md` (security, performance, compliance)
-  3. If no README exists or it is minimal, construct the description entirely from the code analysis.
-  4. Populate `project/description.md` using the template format.
-  5. Mark any sections where the code provided insufficient context with `[INFERRED]` — these
-     should be reviewed by the team.
+  1. Read `README.md` (or equivalent) as starting point: product name, purpose, audience,
+     features, architecture.
+  2. Synthesize into a cohesive description: **Product Summary**, **Primary Users** (from roles
+     in `roles-and-authorization.md`), **Core Workflow** (from page flow + endpoint chains),
+     **Core Features** (from `modules.md`), **Key Entities** (from `data-model.md`),
+     **Integrations** (from `rules.md` + `profile.md`), **Constraints** (from `rules.md`).
+  3. If no README: construct entirely from code analysis.
+  4. Mark uncertain sections with `[INFERRED]`.
 
 - **Done when**:
-  - `project/description.md` exists and covers all template sections
-  - Product purpose is clear
-  - Primary users and workflow are described
-  - Core features are listed and match `features.md`
-  - Key entities match `data-model.md`
-  - Integrations and constraints are documented
-  - Any inferred or uncertain sections are clearly marked
+  - `project/description.md` covers all template sections
+  - Product purpose, users, workflow, features, entities, integrations documented
+  - Inferred sections clearly marked
 
 ---
 
 ### ⛔ Confirmation Gate — Full Blueprint Review (MANDATORY)
 
-Before continuing to Phase R.3, the AI **must** stop and present the full synthesized blueprint to the
-user for review.
+Before continuing to Phase R.3, **stop** and present the full synthesized blueprint for review.
 
 **What to present**:
-1. **Product summary** — the generated description overview
-2. **Modules discovered** — list of modules with their scope (backend/frontend)
-3. **Features per module** — feature names and visibility
-4. **Data model** — entity count, key entities and their relationships
-5. **Services** — count of internal vs external services per API app
-6. **Endpoints** — count of endpoints per module per API app
-7. **Pages/views** — count of pages per frontend app
-8. **Rules** — integration providers, auth patterns, async jobs detected
-9. **Gaps and uncertainties** — anything marked `[INFERRED]` or uncertain
+1. **Product summary** — description overview
+2. **Modules** — list with scope (backend/frontend)
+3. **Features per module** — names and visibility
+4. **Data model** — entity count, key entities, relationships
+5. **Roles & auth** — roles detected, auth strategy
+6. **Services** — count per module (internal vs external)
+7. **Endpoints** — count per module
+8. **Pages/views** — count per module per app
+9. **Rules** — integration providers, async jobs
+10. **Gaps** — anything marked `[INFERRED]` or uncertain (❓)
 
 **How to present**:
-- Format as a concise summary table or list (not the full document contents).
-- Highlight any items that seem incomplete or uncertain with a ❓ marker.
+- Format as a concise summary table or list.
 - End with: **"This is the synthesized blueprint from your codebase. Please review and confirm before I run the drift analysis, or tell me what to correct."**
-- Wait for an explicit **"yes" / "confirmed" / "go ahead"** (or equivalent).
-- If the user requests corrections, update the relevant `project/` documents and re-present.
-- **Do not interpret silence, ambiguous replies, or follow-up questions as confirmation.**
+- Wait for explicit confirmation. Do not interpret silence or ambiguous replies as confirmation.
+- If corrections requested: update, re-present.
 
 ---
 
@@ -536,74 +408,47 @@ produce a reconciliation report with actionable recommendations.
 - **Input**: All generated `project/` documents
 - **Output**: Internal consistency findings (fed into the drift report)
 - **Actions**:
-  Run the same consistency checks as Phase 4 of `flow.md` (checks 1–14), adapted for a
-  reverse-engineered codebase. The focus is: **does the generated plan accurately reflect the code?**
+  Run these checks (matching Phase 4 of `initial-build.md`), adapted for reverse-engineering.
+  Focus: **does the generated plan accurately reflect the code?**
 
-  1. **Module-to-Feature Coverage** — every module in `modules.md` has features in `features.md`;
-     no features exist outside defined modules.
-  2. **Feature-to-Service Coverage** — every backend-relevant feature is covered by at least one
-     internal service in `services.md`; every integration has an external service.
-  3. **Feature-to-Endpoint Coverage** — every backend-relevant feature has at least one endpoint
-     in `endpoints.md`.
-  4. **Endpoint-to-Service Linking** — every endpoint declares which services it calls; every
-     service reference exists in `services.md`.
-  5. **Feature-to-Page Coverage** — every frontend-visible feature has at least one page in
-     the relevant app's `pages.md`.
-  6. **Entity Consistency** — all entities referenced in services, endpoints, and pages are
-     defined in `data-model.md`.
-  7. **Endpoint-to-Page Linking** — every endpoint listed in a page's "Backend Endpoints Used"
-     exists in `endpoints.md` with matching route and method.
-  8. **Auth Coverage** — every protected endpoint declares auth requirements; every protected
-     page declares route guard requirements.
-  9. **Custom Rules Compliance** — constraints in `rules.md` are reflected in services/endpoints/pages.
-  10. **UI State Coverage** — every data-driven page documents loading/empty/error/success states.
-  11. **Path and Naming Consistency** — file/folder names match references in all documents;
-      module/feature/entity/service names are consistent.
-  12. **Code Layering Compliance** — backend follows controller → service → repository; frontend
-      follows page → frontend service → endpoint.
-  13. **Frontend Third-Party Isolation** — no direct external API calls from frontend code.
-  14. **Self-Contained Blueprint** — `project/` docs reference only other `project/` docs and
-      `engine/rules/`; no system-specific data in `engine/` files.
+  1. **Module-to-Feature Coverage** — every module in `modules.md` has features; no features outside modules
+  2. **Feature-to-Service Coverage** — every backend-relevant feature has ≥1 internal service; every integration has an external service; no orphaned services
+  3. **Feature-to-Endpoint Coverage** — every backend-relevant feature has ≥1 endpoint; no orphaned endpoints
+  4. **Endpoint-to-Service Linking** — every endpoint declares called services; those services exist; no direct repository/provider references
+  5. **Feature-to-Page Coverage** — every frontend-visible feature has ≥1 page; no orphaned pages
+  6. **Entity Consistency** — all entities in services/endpoints/pages are defined in `data-model.md`; all DTOs exist or are derivable
+  7. **Endpoint-to-Page Linking** — every endpoint in a page's "Backend Endpoints Used" exists in `endpoints/`; routes and methods match
+  8. **Auth Coverage** — every protected endpoint declares auth; every protected page declares route guard; consistent with `roles-and-authorization.md`
+  9. **Custom Rules Compliance** — `project/rules.md` constraints reflected in services/endpoints/pages
+  10. **UI State Coverage** — every data-driven page documents loading/empty/error/success; forms have validation; lists have pagination + empty states
+  11. **Path and Naming Consistency** — no dead/stale paths; names consistent across all files and `_index.md` registries
+  12. **Code Layering Compliance** — BE: controller → service → repository; FE: page → frontend service → endpoint; no business logic in controllers/components; integration providers isolated
+  13. **Frontend Third-Party Isolation** — every HTTP call targets configured `apiUrl`; no hardcoded external URLs; no direct third-party calls from frontend — zero tolerance
+  14. **Self-Contained Blueprint** — no `engine/` file contains system-specific data; `project/` docs reference only other `project/` docs and `engine/rules/`; copying `project/` alone is enough to rebuild
 
-- **Done when**: All 14 checks are evaluated and findings are recorded.
+- **Done when**: All 14 checks evaluated and findings recorded.
 
 ---
 
 ### Step R.3.2 — Drift Report
 
-- **Input**: Cross-document consistency findings (Step R.3.1), all source code, all `project/` documents
+- **Input**: Cross-document consistency findings (R.3.1), all source code, all `project/` documents
 - **Output**: `project/verify/reverse-engineer-report.md`
 - **Actions**:
-  1. **Scan for undocumented code** — compare the actual source files against the generated
-     blueprint. Look for:
-     - Controllers/routes not captured in `endpoints.md`
-     - Services not captured in `services.md`
-     - Schemas/models not captured in `data-model.md`
-     - Pages/views not captured in `pages.md` / `views.md`
-     - Utility files, helpers, middleware, pipes, interceptors, guards not accounted for
-  2. **Identify incomplete features** — code that is partially implemented:
-     - Endpoints with `// TODO` or `throw new NotImplementedException()`
-     - Empty service methods or placeholder logic
-     - Frontend pages with commented-out sections or "coming soon" placeholders
-     - Unused imports or dead code paths
-  3. **Detect architecture violations** — patterns that break the expected layering:
-     - Controllers calling repositories directly (bypassing services)
-     - Frontend pages making direct HTTP calls (bypassing frontend services)
-     - Frontend code calling external APIs directly (bypassing the backend)
-     - Business logic in controllers, middleware, or components
-     - Circular dependencies
-  4. **Find stale/dead code**:
-     - Exported functions/classes never imported elsewhere
-     - Route definitions that point to non-existent handlers
-     - Schema fields never read or written by any service
-     - Commented-out code blocks
-     - Deprecated API endpoints (marked or detected)
-  5. **Check configuration drift**:
-     - Environment variables referenced in code but missing from `.env` files
-     - Environment variables in `.env` files but never referenced in code
-     - Hardcoded values that should be env vars (API keys, URLs, secrets)
-     - Configuration differences between `.env.development`, `.env.production`, etc.
-  6. Produce the report using the **Drift Report Template** (inline below):
+  1. **Scan for undocumented code** — controllers/routes not in `endpoints/`, services not in
+     `services/`, schemas not in `data-model.md`, pages not in `pages/`, utilities/middleware/
+     guards/pipes/interceptors not accounted for.
+  2. **Identify incomplete features** — `// TODO`, `NotImplementedException`, empty service
+     methods, placeholder pages, unused imports, dead code paths.
+  3. **Detect architecture violations** (compare against `engine/rules/backend-rule.md` and
+     `engine/rules/frontend-rule.md`) — controllers calling repos directly, frontend pages
+     making direct HTTP calls, frontend calling external APIs, business logic in controllers,
+     circular dependencies.
+  4. **Find stale/dead code** — unused exports, dead routes, stale schema fields, commented-out
+     blocks, deprecated endpoints.
+  5. **Check configuration drift** — env vars referenced but missing, defined but unused,
+     hardcoded secrets, env mismatches across environments.
+  6. Produce the report using this template:
 
 ```markdown
 # Reverse-Engineer Report
@@ -617,49 +462,24 @@ produce a reconciliation report with actionable recommendations.
 ## 1. Cross-Document Consistency
 
 ### Module Coverage: [✓ | ✗]
-- [Details if issues found]
-
 ### Feature Coverage: [✓ | ✗]
-- [Details if issues found]
-
 ### Service Coverage: [✓ | ✗]
-- [Details if issues found]
-
 ### Endpoint-Service Linking: [✓ | ✗]
-- [Details if issues found]
-
 ### Entity Consistency: [✓ | ✗]
-- [Details if issues found]
-
 ### Endpoint-Page Linking: [✓ | ✗]
-- [Details if issues found]
-
 ### Auth Coverage: [✓ | ✗]
-- [Details if issues found]
-
 ### Custom Rules Compliance: [✓ | ✗]
-- [Details if issues found]
-
 ### UI State Coverage: [✓ | ✗]
-- [Details if issues found]
-
-### Path Consistency: [✓ | ✗]
-- [Details if issues found]
-
+### Path and Naming Consistency: [✓ | ✗]
 ### Code Layering: [✓ | ✗]
-- [Details if issues found]
-
 ### Frontend Third-Party Isolation: [✓ | ✗]
-- [Details if issues found]
-
 ### Self-Contained Blueprint: [✓ | ✗]
-- [Details if issues found]
+
+(Details only for ✗ items)
 
 ---
 
 ## 2. Documented & Implemented (✓)
-
-Summary of what was successfully captured:
 
 | Category | Count | Notes |
 |----------|-------|-------|
@@ -676,54 +496,44 @@ Summary of what was successfully captured:
 
 ## 3. Undocumented Code
 
-Code that exists in the codebase but was not captured in the blueprint:
-
 | File / Path | Type | Description | Recommendation |
 |-------------|------|-------------|----------------|
-| <file> | <controller/service/schema/page/utility/middleware> | <what it does> | Add to plan / Ignore / Mark as tech debt |
+| | controller/service/schema/page/utility/middleware | | Add to plan / Ignore / Mark as tech debt |
 
 ---
 
 ## 4. Incomplete Features
 
-Partially implemented features detected in the code:
-
 | Feature | Module | What Exists | What's Missing | Recommendation |
 |---------|--------|-------------|----------------|----------------|
-| <name> | <module> | <implemented parts> | <missing parts> | Complete / Remove / Mark as TBD |
+| | | | | Complete / Remove / Mark as TBD |
 
 ---
 
 ## 5. Architecture Violations
 
-Patterns that break the expected layering or isolation rules:
-
 | Violation | File | Line(s) | Severity | Recommendation |
 |-----------|------|---------|----------|----------------|
-| <description> | <file> | <lines> | CRITICAL / HIGH / MEDIUM / LOW | Fix in code / Refactor / Accept with justification |
+| | | | CRITICAL/HIGH/MEDIUM/LOW | Fix / Refactor / Accept |
 
 ---
 
 ## 6. Stale/Dead Code
 
-Code that appears unused or outdated:
-
 | File / Symbol | Type | Evidence | Recommendation |
 |---------------|------|----------|----------------|
-| <file or symbol> | <unused export/dead route/stale schema field/commented code> | <why it's considered dead> | Remove / Investigate / Keep |
+| | unused export/dead route/stale field/commented code | | Remove / Investigate / Keep |
 
 ---
 
 ## 7. Configuration Drift
 
-Environment variable and configuration mismatches:
-
 | Issue | Details | Recommendation |
 |-------|---------|----------------|
-| Referenced but missing | <var name> used in <file> but not in .env | Add to .env |
-| Defined but unused | <var name> in .env but never referenced | Remove from .env |
-| Hardcoded secret | <description> in <file> | Move to .env |
-| Env mismatch | <var name> differs between .env.dev and .env.prod | Reconcile |
+| Referenced but missing | | Add to .env |
+| Defined but unused | | Remove from .env |
+| Hardcoded secret | | Move to .env |
+| Env mismatch | | Reconcile |
 
 ---
 
@@ -743,11 +553,7 @@ Environment variable and configuration mismatches:
 2. ...
 ```
 
-- **Done when**:
-  - `project/verify/reverse-engineer-report.md` is complete
-  - Every drift category is evaluated
-  - Counts and summaries are accurate
-  - Recommendations are actionable
+- **Done when**: Report is complete, every drift category evaluated, recommendations actionable.
 
 ---
 
@@ -755,26 +561,25 @@ Environment variable and configuration mismatches:
 
 - **Input**: `project/verify/reverse-engineer-report.md`
 - **Output**: Updated `project/` documents (if user approves), finalized report
+- **Scope rule**: When updating `project/` docs, follow the per-module approach — look up
+  `_index.md` registries for exact files, update only affected module files.
 - **Actions**:
-  1. For each drift item in the report, recommend one of these actions:
-     - **Add to plan** — the code is valid and should be documented in the blueprint.
-       Update the relevant `project/` document.
-     - **Fix in code** — the code violates architectural rules and should be refactored.
-       Create a change request (Phase 5) for the fix.
-     - **Remove from code** — the code is dead/stale and should be cleaned up.
-       Create a change request (Phase 5) for the removal.
-     - **Mark as tech debt** — the issue is known but not urgent. Document it in the report
-       and optionally create a backlog item.
-  2. Present the reconciliation recommendations to the user.
-  3. Apply "Add to plan" recommendations immediately (update `project/` docs).
-  4. For "Fix in code" and "Remove from code", note these as future Phase 5 change requests.
-  5. Update the drift report with the final disposition of each item.
+  1. For each drift item, recommend one action:
+     - **Add to plan** — code is valid, should be in the blueprint. Update immediately.
+     - **Fix in code** — violates `engine/rules/`. Create a Phase 5 change request
+       (`engine/flows/change-mode.md`).
+     - **Remove from code** — dead/stale. Create a Phase 5 change request.
+     - **Mark as tech debt** — known but not urgent. Document in report.
+  2. Present recommendations to the user.
+  3. Apply "Add to plan" items immediately (update `project/` docs, `_index.md` registries).
+  4. Note "Fix in code" and "Remove from code" as future Phase 5 change requests.
+  5. Update the drift report with final disposition of each item.
 
 - **Done when**:
   - Every drift item has a recommended action
-  - "Add to plan" items are applied to `project/` documents
-  - "Fix in code" and "Remove from code" items are noted as future work
-  - The drift report reflects final dispositions
+  - "Add to plan" items applied; `_index.md` registries updated
+  - "Fix" and "Remove" items noted as future work
+  - Report reflects final dispositions
 
 ---
 
@@ -786,37 +591,33 @@ When all phases complete, the reverse-engineer flow has produced:
 
 | Document | Path | Source |
 |----------|------|--------|
-| System profile | `project/profile.md` | Phase R.0 — auto-detected from configs, packages, env files |
-| Product description | `project/description.md` | Phase R.2.4 — synthesized from README + code analysis |
-| Modules map | `project/plan/modules.md` | Phase R.2.1 — grouped from folder structure and dependencies |
-| Features map | `project/plan/features.md` | Phase R.2.2 — mapped from endpoints, pages, services |
-| Data model | `project/plan/data-model.md` | Phase R.1.1 — parsed from schema/model files |
-| Services (per API app) | `project/actions/<api-app>/services.md` | Phase R.1.2 — read from service files |
-| Endpoints (per API app) | `project/actions/<api-app>/endpoints.md` | Phase R.1.3 — read from controller/route files |
-| Pages (per web app) | `project/actions/<web-app>/pages.md` | Phase R.1.4 — read from page/component files |
-| Views (per mobile app) | `project/actions/<mobile-app>/views.md` | Phase R.1.4 — read from screen/component files |
-| Custom rules | `project/rules.md` | Phase R.2.3 — detected from code patterns |
-| Drift report | `project/verify/reverse-engineer-report.md` | Phase R.3 — code vs blueprint comparison |
+| System profile | `project/profile.md` | R.0 — auto-detected from configs, packages, env files |
+| Product description | `project/description.md` | R.2.4 — synthesized from README + code analysis |
+| Modules & features | `project/plan/modules.md` | R.2.1 — modules from folder structure; features inline |
+| Data model | `project/plan/data-model.md` | R.1.1 — parsed from schema/model files |
+| Roles & authorization | `project/plan/roles-and-authorization.md` | R.2.2 — detected from guards, decorators, role checks |
+| Custom rules | `project/rules.md` | R.2.3 — detected from code patterns |
+| Services (per module) | `project/actions/<api-app>/services/<module>.md` + `_index.md` | R.1.2 — read from service files |
+| Endpoints (per module) | `project/actions/<api-app>/endpoints/<module>.md` + `_index.md` | R.1.3 — read from controller/route files |
+| Pages (per module) | `project/actions/<web-app>/pages/<module>.md` | R.1.4 — read from page/component files |
+| Views (per module) | `project/actions/<mobile-app>/views/<module>.md` | R.1.4 — read from screen/component files |
+| Drift report | `project/verify/reverse-engineer-report.md` | R.3 — code vs blueprint comparison |
 
-### Handoff to `flow.md`
+### Handoff to other flows
 
-The `project/` blueprint is now complete and equivalent to what Phases 0–2 of `flow.md` would produce.
-From this point forward:
+The `project/` blueprint is now complete. From this point forward:
 
-- **To add a feature or make a change** → use **Phase 5 (Change Mode)** from `flow.md`
-- **To fix a bug** → use **Phase 6 (Bug Fix)** from `flow.md`
-- **To rebuild or regenerate code** → use **Phase 3 (Build)** from `flow.md` (if starting fresh)
-- **To verify consistency** → use **Phase 4 (Verify)** from `flow.md`
+- **To add a feature or make a change** → use **Phase 5** (`engine/flows/change-mode.md`)
+- **To fix a bug** → use **Phase 6** (`engine/flows/bug-fix.md`)
+- **To rebuild or regenerate code** → use **Phase 3 (Build)** from `engine/flows/initial-build.md`
 
 ### TBDs and Open Items
-
-List any items that could not be fully resolved during the reverse-engineering process:
 
 - Sections marked `[INFERRED]` in `description.md` that need team confirmation
 - Drift items marked as "Investigate" in the report
 - Undocumented code items where the recommendation is unclear
-- Any missing documentation that the code alone could not reveal (business rules,
-  product decisions, user personas, brand guidelines)
+- Missing documentation that code alone could not reveal (business rules, product decisions,
+  user personas, brand guidelines)
 
 ---
 
@@ -970,102 +771,62 @@ A monorepo is detected when:
 
 ### Monorepo Handling
 
-When a monorepo is detected:
-1. **Scan each package/app separately** — treat each workspace package as a separate application
-   entry in `project/profile.md`.
-2. **Shared packages** — packages under `packages/` or `libs/` that are imported by multiple apps
-   should be listed as `Shared` type applications. Their exports (services, utilities, types) should
-   be documented in the consuming app's service/page entries.
-3. **Dependency graph** — document which apps depend on which shared packages. This helps identify
-   module boundaries and shared code.
-4. **Single profile, multiple apps** — all apps share one `project/profile.md` with one row per app
-   in the Applications table. Each app gets its own `project/actions/<app-key>/` folder.
+1. **Scan each package/app separately** — treat each workspace package as a separate Application entry in `project/profile.md`.
+2. **Shared packages** — packages under `packages/` or `libs/` imported by multiple apps: list as `Shared` type. Exports documented in consuming app's files.
+3. **Dependency graph** — document which apps depend on which shared packages.
+4. **Single profile, multiple apps** — all apps share one `project/profile.md`. Each gets its own `project/actions/<app-key>/` folder.
 
 ### Multi-Repo Handling
 
-When separate repositories are detected:
-1. **Scan each repo independently** — each repository maps to one or more Application entries.
-2. **Cross-repo dependencies** — document API contracts between repos (e.g. frontend repo calls
-   backend repo's endpoints). These are captured in `endpoints.md` and `pages.md` cross-references.
-3. **Shared types/contracts** — if repos share type definitions (e.g. shared DTO package, API
-   contract files), document these as a shared library in `profile.md`.
+1. **Scan each repo independently** — each maps to one or more Application entries.
+2. **Cross-repo dependencies** — document API contracts. Captured in `endpoints/` and `pages/` cross-references.
+3. **Shared types/contracts** — document as a shared library in `profile.md`.
 
 ---
 
 ## Appendix C — Low-Quality Code Guidance
 
-Legacy and existing codebases often have inconsistencies, missing types, or mixed patterns.
-Follow these guidelines when the code quality is low.
+Legacy codebases often have inconsistencies. Follow these guidelines:
 
-### Missing Types / Any Types
-- If TypeScript files use `any` extensively or JavaScript has no JSDoc types:
-  - Infer types from usage patterns (what fields are accessed, what methods are called).
-  - Document inferred types in `data-model.md` with an `[INFERRED]` marker.
-  - Note the lack of type safety in the drift report as a tech debt item.
-
-### No Comments / Poor Naming
-- If functions have non-descriptive names or no documentation:
-  - Read the function body to understand purpose.
-  - Use the calling context (who calls this function and with what arguments) to infer purpose.
-  - Document the inferred purpose in the blueprint with an `[INFERRED]` marker.
-
-### Mixed Patterns
-- If the codebase mixes patterns (e.g. some controllers call services, others call repositories
-  directly; some pages use services, others use raw HTTP calls):
-  - Document **what the code actually does**, not what it should do.
-  - Flag pattern violations in the drift report's "Architecture Violations" section.
-  - Recommend a target pattern in the reconciliation recommendations.
-
-### Scattered Business Logic
-- If business logic is spread across controllers, middleware, and utilities instead of services:
-  - Still document it under the closest service in `services.md`, noting where the logic
-    actually lives.
-  - Flag this as an architecture violation in the drift report.
-
-### Undocumented Env Vars
-- If env vars are used but not documented in `.env.example` or similar:
-  - Scan all source files for `process.env.VARIABLE_NAME`, `ConfigService.get()`, or equivalent.
-  - Document discovered env vars in `profile.md` environments section.
-  - Flag missing `.env.example` in the drift report.
-
-### Legacy Database Patterns
-- If raw SQL queries or inline schema definitions are used instead of an ORM:
-  - Extract entity shapes from the query patterns (SELECT columns, INSERT columns).
-  - Document these as entities in `data-model.md` with a note about the access pattern.
-  - Flag the lack of ORM usage in the drift report.
+- **Missing types / `any`**: infer from usage, document with `[INFERRED]`, note in drift report.
+- **Poor naming / no comments**: read function body + calling context, document with `[INFERRED]`.
+- **Mixed patterns**: document what the code does (not what it should do), flag violations in drift report.
+- **Scattered business logic**: document under closest service in `services/<module>.md`, flag as violation.
+- **Undocumented env vars**: scan all source for `process.env.*` / `ConfigService.get()`, add to `profile.md`, flag in drift report.
+- **Legacy database patterns (raw SQL)**: extract entity shapes from queries, document in `data-model.md`, flag in drift report.
 
 ---
 
 ## Appendix D — `project/actions/` Folder Structure
 
-The `project/actions/` folder has one subfolder per application, keyed by the **Key** column from the
-Applications table in `project/profile.md`.
+One subfolder per application, keyed by the **Key** column from `project/profile.md`. Specs split
+**per module** with registry indexes.
 
 ```
 project/actions/
   <api-app-key>/
-    services.md       # Internal + external service specifications
-    endpoints.md      # API endpoint specifications
+    endpoints/
+      _index.md             # Registry: module name, file link, endpoint count, route prefix
+      <module-name>.md
+    services/
+      _index.md             # Registry: module name, file link, service count, purpose
+      <module-name>.md
   <web-app-key>/
-    pages.md          # Web page specifications
+    pages/
+      <module-name>.md
   <mobile-app-key>/
-    views.md          # Mobile screen specifications
-  <second-api-key>/   # (if multiple API apps exist)
-    services.md
-    endpoints.md
-  README.md           # Explains the structure
+    views/
+      <module-name>.md
+  README.md
 ```
 
 **Rules**:
-- The folder name **must** match the app key exactly (lowercase, kebab-case).
-- API apps always get `services.md` + `endpoints.md`.
-- Web apps always get `pages.md`.
-- Mobile apps always get `views.md`.
-- If an app is both API and web (e.g. a Next.js full-stack app), it gets all three files
-  in the same folder, or split into separate app entries — use the pattern that best matches
-  the codebase's actual structure.
-- Shared libraries do **not** get an `actions/` folder — their exports are documented in the
-  consuming app's files.
+- Folder name **must** match app key (lowercase, kebab-case).
+- API apps: `services/` + `endpoints/` subdirectories, each with `_index.md`.
+- Web apps: `pages/` subdirectory.
+- Mobile apps: `views/` subdirectory.
+- Every module file registered in its subdirectory's `_index.md`.
+- Shared libraries: no `actions/` folder — exports documented in consuming app's files.
 
 ---
 
@@ -1074,9 +835,9 @@ project/actions/
 | Phase | Steps | What it does | Key output |
 |-------|-------|-------------|------------|
 | **R.0** | R.0.1 | Scan workspace, detect apps, frameworks, integrations | `project/profile.md` |
-| **R.1** | R.1.1 – R.1.4 | Deep-scan code: schemas, services, endpoints, pages | `data-model.md`, `services.md`, `endpoints.md`, `pages.md`/`views.md` |
-| **R.2** | R.2.1 – R.2.4 | Synthesize modules, features, rules, description | `modules.md`, `features.md`, `rules.md`, `description.md` |
+| **R.1** | R.1.1 – R.1.4 | Deep-scan code: schemas, services, endpoints, pages | `data-model.md`, `services/` + `_index.md`, `endpoints/` + `_index.md`, `pages/` |
+| **R.2** | R.2.1 – R.2.4 | Synthesize modules+features, roles, rules, description | `modules.md`, `roles-and-authorization.md`, `rules.md`, `description.md` |
 | **R.3** | R.3.1 – R.3.3 | Drift analysis, consistency checks, reconciliation | `reverse-engineer-report.md` |
-| **R.Done** | — | Handoff summary, TBDs, link to flow.md Phase 5/6 | — |
+| **R.Done** | — | Handoff summary, TBDs, link to change-mode / bug-fix | — |
 
 ---
