@@ -203,7 +203,9 @@ Purpose: Platform catalog of supported gateway types.
 | `name` | Enum | required, unique | paypal, stripe, moyasar, myfatoorah |
 | `enabled` | Boolean | default: true | — |
 | `displayName`, `description` | String | optional | — |
+| `logo` | String | optional | Public URL to gateway logo |
 | `availableCurrencies`, `supportedPaymentMethods` | String[] | optional | — |
+| `availableCountries` | String[] | optional | ISO 3166-1 alpha-2 country codes |
 
 ---
 

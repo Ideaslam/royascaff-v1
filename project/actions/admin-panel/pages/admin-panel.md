@@ -145,8 +145,9 @@ App key: `admin-panel` · Repo: `payup-frontend-admin` · Port: **4401**
 
 ### Gateway Catalog
 - Route: `/gateways/catalog`
-- Components: catalog table, enable/disable toggle, edit currencies/methods
-- Service: `AdminAvailableGatewaysService` → EP-AD29–32
+- Components: catalog table (logo thumbnail, countries, currencies), edit/create dialog
+- Service: `AdminAvailableGatewaysService` → EP-AD29–34; currencies from `AdminCurrenciesService`
+- Form controls: `p-select` (gateway name), `p-multiSelect` (countries, currencies, payment methods), logo URL + file upload
 - UI: loading, empty, edit dialog, save toasts
 
 ---

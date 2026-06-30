@@ -117,8 +117,10 @@ Public GET `/merchant/v1/core/currencies` unchanged for checkout/portal.
 |----|--------|-------|------|-------|--------|---------|-------|
 | EP-AD29 | GET | / | admin | — | 200 array | `AdminAvailableGatewayService.listAll` | Includes disabled |
 | EP-AD30 | GET | /:name | admin | — | 200 gateway | `AdminAvailableGatewayService.getByName` | — |
-| EP-AD31 | POST | / | admin | name, enabled, displayName, description, availableCurrencies, supportedPaymentMethods | 201 | `AdminAvailableGatewayService.createGateway` | — |
-| EP-AD32 | PUT | /:name | admin | partial fields | 200 | `AdminAvailableGatewayService.updateGateway` | Cache invalidation |
+| EP-AD31 | POST | / | admin | name, enabled, displayName, description, logo, availableCurrencies, availableCountries, supportedPaymentMethods | 201 | `AdminAvailableGatewayService.createGateway` | — |
+| EP-AD32 | PUT | /:name | admin | partial fields incl. logo, availableCountries | 200 | `AdminAvailableGatewayService.updateGateway` | Cache invalidation |
+| EP-AD33 | GET | /form-options | admin | — | 200 `{ paymentMethods, countries }` | `AdminAvailableGatewayService.getFormOptions` | For admin form selects |
+| EP-AD34 | POST | /logo-upload | admin | multipart file | 201 `{ url }` | `AdminAvailableGatewayService.uploadLogo` | S3 platform/gateways |
 
 ---
 
@@ -131,4 +133,4 @@ Public GET `/merchant/v1/core/currencies` unchanged for checkout/portal.
 | EP-CO15–17 | `POST/PUT/DELETE /merchant/v1/core/libraries` | EP-AD21–23 |
 | EP-GW24–26 | Gateway request admin on merchant | EP-AD12–14 |
 
-**Total:** 32 endpoints · **Stub replaced:** `/api/admin` empty router
+**Total:** 34 endpoints · **Stub replaced:** `/api/admin` empty router
