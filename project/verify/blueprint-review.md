@@ -48,7 +48,7 @@
 |------|----------|--------|
 | Service layer for transactions/notifications CRUD | MEDIUM | ✓ Done — `TransactionSessionService`, `DashboardService`, notification CRUD services |
 | Gateway request edit form | LOW | Deferred |
-| Delivery redeliver stub | LOW | Deferred |
+| Delivery redeliver stub | LOW | ✓ Fixed — `NotificationDeliveryService.redeliver` enqueues delivery worker job |
 | `/api/admin` stub | LOW | TBD |
 | Google OAuth empty env | LOW | Disabled until configured |
 | Moyasar/MyFatoorah direct from checkout | ACCEPTED | RULE-002 |

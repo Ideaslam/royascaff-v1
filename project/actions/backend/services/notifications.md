@@ -46,8 +46,9 @@
 - Deps: `NotificationTemplateRepository`
 
 ### SVC-N13 · NotificationDeliveryService [domain, internal, Notifications]
-- Methods: `listDeliveries`, `getDeliveryById`, `redeliver` (stub)
-- Deps: `DeliveryRepository`
+- Methods: `listDeliveries`, `getDeliveryById`, `redeliver`
+- Deps: `DeliveryRepository`, `NotificationRuleRepository`, `AppService`, `ChannelRegistry`, `RecipientResolver`, `notifDeliveriesQueue`
+- Side effects: manual redelivery enqueues BullMQ job on `notif-deliveries`
 
 ### SVC-N14 · NotificationInboxService [domain, internal, Notifications]
 - Methods: `listInbox`, `getUnreadCount`, `markAsViewed`, `markAllAsViewed`

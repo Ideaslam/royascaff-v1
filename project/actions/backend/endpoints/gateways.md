@@ -67,7 +67,7 @@
 | EP-N02 | GET | /channels | `ChannelRegistry.keys()` | — |
 | EP-N03–N10 | CRUD | /webhook-endpoints/* | `WebhookEndpointService` | incl. roll-secret, test |
 | EP-N11–N15 | CRUD | /rules/* | `NotificationRuleRepository` | **direct repo** |
-| EP-N16–N18 | GET/POST | /deliveries/* | `DeliveryRepository` | redeliver stub |
+| EP-N16–N18 | GET/POST | /deliveries/* | `NotificationDeliveryService` | redeliver queues BullMQ job |
 | EP-N19–N23 | CRUD | /templates/* | `NotificationTemplateRepository` | **direct repo** |
 | EP-N24–N27 | GET/PATCH | /inbox/* | `NotificationRepository` | in-app inbox |
 
