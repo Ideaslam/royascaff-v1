@@ -5,6 +5,7 @@
 ### GitHub Settings Page
 
 - Route: `/settings/github`
+- Status: partial
 - Components: `GithubConnectionCardComponent`, `ConnectGithubButtonComponent`
 - Service: `GithubApiService` → EP-100, EP-101, EP-102, EP-103
 - Guard: `AuthGuard`

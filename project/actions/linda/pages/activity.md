@@ -5,6 +5,7 @@
 ### Activity Feed Page
 
 - Route: `/activity`
+- Status: partial
 - Components: `ActivityFeedComponent`, `ActivityFiltersComponent`
 - Service: `ActivityApiService` → EP-098
 - Guard: `AuthGuard`
@@ -13,7 +14,8 @@
 
 ### Project Activity Tab
 
-- Route: `/projects/:id/activity` (tab on project detail)
+- Route: `/projects/:id/activity`
+- Status: partial (tab on project detail)
 - Components: `ProjectActivityFeedComponent`
 - Service: `ActivityApiService` → EP-099
 - Guard: `AuthGuard`

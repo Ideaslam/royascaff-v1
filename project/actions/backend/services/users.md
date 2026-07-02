@@ -4,6 +4,8 @@
 
 ### SVC-011 · UsersService [domain, internal, Users]
 
+- Status: done
+
 - Methods:
   - `findById(id): UserDto` — public profile projection
   - `updateProfile(userId, dto): UserDto` — name, bio, avatar, skills
@@ -16,6 +18,8 @@
 
 ### SVC-012 · UsersRepository [domain, internal, Users]
 
+- Status: planned
+
 - Methods:
   - `findByEmail`, `findById`, `create`, `update`, `findByGoogleId`, `findByGithubId`
 - Deps: MongoDB `users` collection
@@ -23,6 +27,8 @@
 - Rules: unique email index
 
 ### SVC-013 · AvatarService [application, internal, Users]
+
+- Status: planned
 
 - Methods:
   - `updateAvatar(userId, fileMeta): string` — store via AttachmentsService/R2; return URL

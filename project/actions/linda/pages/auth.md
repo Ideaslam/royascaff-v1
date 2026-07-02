@@ -7,6 +7,7 @@ App key: `linda` · Layout: **auth layout** (no app shell)
 ### Login Page
 
 - Route: `/auth/login`
+- Status: partial
 - Components: `LoginFormComponent`, `SocialLoginButtonsComponent`
 - Service: `AuthApiService` → EP-001 (POST /auth/login), EP-008/EP-010 (OAuth redirects)
 - Guard: `GuestGuard`
@@ -16,6 +17,7 @@ App key: `linda` · Layout: **auth layout** (no app shell)
 ### Register Page
 
 - Route: `/auth/register`
+- Status: partial
 - Components: `RegisterFormComponent`, `InviteTokenBannerComponent`
 - Service: `AuthApiService` → EP-002 (POST /auth/register), EP-007 (GET /auth/invite/:token)
 - Guard: `GuestGuard`
@@ -26,6 +28,7 @@ App key: `linda` · Layout: **auth layout** (no app shell)
 ### Password Reset Request Page
 
 - Route: `/auth/password-reset`
+- Status: planned
 - Components: `PasswordResetRequestFormComponent`
 - Service: `AuthApiService` → EP-005
 - Guard: `GuestGuard`
@@ -34,6 +37,7 @@ App key: `linda` · Layout: **auth layout** (no app shell)
 ### Password Reset Confirm Page
 
 - Route: `/auth/password-reset/confirm`
+- Status: planned
 - Components: `PasswordResetConfirmFormComponent`
 - Service: `AuthApiService` → EP-006
 - Guard: `GuestGuard`
@@ -43,6 +47,7 @@ App key: `linda` · Layout: **auth layout** (no app shell)
 ### OAuth Callback Page
 
 - Route: `/auth/callback`
+- Status: planned
 - Components: `OAuthCallbackHandlerComponent`
 - Service: `AuthApiService` → EP-009, EP-011
 - Guard: `GuestGuard`

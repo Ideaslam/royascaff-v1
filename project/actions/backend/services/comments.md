@@ -4,6 +4,8 @@
 
 ### SVC-032 · CommentsService [domain, internal, Comments]
 
+- Status: done
+
 - Methods:
   - `list(userId, targetType, targetId, query): PaginatedResponse`
   - `create(userId, dto): CommentDto`

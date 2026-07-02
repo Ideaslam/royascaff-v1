@@ -5,6 +5,7 @@
 ### Project Board Page
 
 - Route: `/projects/:id/board`
+- Status: partial
 - Components: `KanbanBoardComponent`, `BoardColumnComponent`, `TaskCardComponent`, `BoardFiltersComponent`
 - Service: `BoardApiService` → EP-068, EP-069; `TasksApiService` → EP-052
 - Guard: `AuthGuard`

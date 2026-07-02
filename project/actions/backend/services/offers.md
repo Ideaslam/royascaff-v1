@@ -4,6 +4,8 @@
 
 ### SVC-024 · TaskOffersService [domain, internal, Offers & Negotiation]
 
+- Status: planned
+
 - Methods:
   - `createOffer(userId, taskId, dto): TaskOfferDto` — offeredTo must be in Sphere
   - `listForTask(userId, taskId): TaskOfferDto[]`
@@ -16,6 +18,8 @@
 
 ### SVC-025 · NegotiationService [domain, internal, Offers & Negotiation]
 
+- Status: planned
+
 - Methods:
   - `counterOffer(userId, offerId, dto): NegotiationHistoryDto` — update offer terms, task status `negotiating`
   - `listHistory(userId, offerId): NegotiationHistoryDto[]`
@@ -24,6 +28,8 @@
 - Rules: RULE-004 no live chat; append-only history
 
 ### SVC-026 · TaskOffersRepository [domain, internal, Offers & Negotiation]
+
+- Status: planned
 
 - Methods: CRUD, find pending by task
 - Deps: MongoDB `taskOffers`, `negotiationHistories`

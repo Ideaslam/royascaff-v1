@@ -4,6 +4,8 @@
 
 ### SVC-042 · WebhooksService [domain, internal, Webhooks]
 
+- Status: partial
+
 - Methods:
   - `createEndpoint(adminId, dto): WebhookEndpointDto`
   - `listEndpoints(adminId): WebhookEndpointDto[]`
@@ -15,6 +17,8 @@
 - Rules: RULE-013 admin-configured; async BullMQ
 
 ### SVC-043 · WebhookDeliveryService [application, internal, Webhooks]
+
+- Status: planned
 
 - Methods:
   - `enqueue(delivery): void`

@@ -5,6 +5,7 @@
 ### Task Detail Page
 
 - Route: `/tasks/:id`
+- Status: partial
 - Components: `TaskDetailComponent`, `TaskStatusBadgeComponent`, `OffersPanelComponent`, `NegotiationHistoryComponent`, `CommentThreadComponent`, `AttachmentListComponent`, `GitHubRefsBadgeComponent`
 - Service: `TasksApiService` → EP-052, EP-054; `OffersApiService` → EP-059–EP-064; `CommentsApiService` → EP-083–EP-086; `AttachmentsApiService` → EP-095–EP-097
 - Guard: `AuthGuard`
@@ -14,6 +15,7 @@
 ### Create Task Page (optional dialog)
 
 - Route: `/projects/:projectId/tasks/new`
+- Status: partial
 - Components: `TaskFormComponent`
 - Service: `TasksApiService` → EP-051
 - Guard: `AuthGuard`

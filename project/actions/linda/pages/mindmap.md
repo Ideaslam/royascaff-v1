@@ -5,6 +5,7 @@
 ### Mind Map Page
 
 - Route: `/mindmap`
+- Status: partial
 - Components: `MindMapComponent` (Cytoscape), `MindMapModeToggleComponent`, `MindMapNodePanelComponent`, `ProjectSelectorComponent`
 - Service: `MindMapApiService` → EP-071, EP-072; `ProjectsApiService` → EP-039 (project picker)
 - Guard: `AuthGuard`

@@ -5,6 +5,7 @@
 ### Projects List Page
 
 - Route: `/projects`
+- Status: partial
 - Components: `ProjectsTableComponent`, `ProjectsFilterBarComponent`, `CreateProjectDialogComponent`
 - Service: `ProjectsApiService` → EP-039 (GET), EP-040 (POST)
 - Guard: `AuthGuard`
@@ -14,6 +15,7 @@
 ### Project Detail Page
 
 - Route: `/projects/:id`
+- Status: partial
 - Components: `ProjectHeaderComponent`, `ProjectSummaryCardsComponent`, `CollaboratorsListComponent`, `ProjectTasksPreviewComponent`, `ProjectWalletCardComponent`, `GitHubLinksSummaryComponent`
 - Service: `ProjectsApiService` → EP-041, EP-044, EP-045, EP-046; `WalletsApiService` → EP-075
 - Guard: `AuthGuard`
@@ -23,6 +25,7 @@
 ### Edit Project Page
 
 - Route: `/projects/:id/edit`
+- Status: planned
 - Components: `ProjectFormComponent`
 - Service: `ProjectsApiService` → EP-042, EP-043
 - Guard: `AuthGuard` + project owner/PM check

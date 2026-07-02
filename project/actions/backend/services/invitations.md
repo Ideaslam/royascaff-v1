@@ -4,6 +4,8 @@
 
 ### SVC-006 · InvitationsService [domain, internal, Invitations]
 
+- Status: partial
+
 - Methods:
   - `requestInvitation(userId, dto): Invitation` — create `pending_approval` record
   - `listPending(query): PaginatedResponse` — admin queue
@@ -18,6 +20,8 @@
 
 ### SVC-007 · SphereConnectionService [domain, internal, Invitations]
 
+- Status: planned
+
 - Methods:
   - `createFromInvitation(invitation, inviteeUserId): SphereConnection`
   - `listForUser(userId): SphereConnection[]`
@@ -26,6 +30,8 @@
 - Rules: RULE-002 one connection per accepted invitation
 
 ### SVC-008 · InvitationDeliveryProvider [integration, external, Invitations]
+
+- Status: planned
 
 - Methods:
   - `sendApprovedInvite(invitation, inviteUrl): DeliveryResult`

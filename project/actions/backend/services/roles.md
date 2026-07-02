@@ -4,6 +4,8 @@
 
 ### SVC-016 · RolesService [domain, internal, Roles]
 
+- Status: partial
+
 - Methods:
   - `assignGlobalRole(adminId, userId, role): UserRoleAssignment` — `admin` | `sales`
   - `assignProjectManager(adminId, userId, projectId): UserRoleAssignment`
@@ -18,6 +20,8 @@
 - Rules: RULE-016 admin-only assignment; RULE-006 wallet permissions
 
 ### SVC-017 · RolesGuardHelper [application, internal, Roles]
+
+- Status: planned
 
 - Methods:
   - `canAccessProject(userId, projectId): ProjectAccessLevel` — owner | collaborator | pm | admin

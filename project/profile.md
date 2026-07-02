@@ -10,8 +10,8 @@
 
 | Key | App | Type | Repo | Framework | UI lib | Auth |
 |-----|-----|------|------|-----------|--------|------|
-| `backend` | Linda API | api | `linda-api` | NestJS 11 + TypeScript 5.7 | — | JWT + role guards (planned); Google/GitHub OAuth (planned) |
-| `linda` | Linda | web | `linda-web` | Angular 21.2 (standalone) | PrimeNG 21, ngx-translate (planned) | Bearer JWT via interceptor (planned) |
+| `backend` | Linda API | api | `linda-api` | NestJS 11 + TypeScript 5.7 | — | JWT + role guards (implemented); OAuth (deferred) |
+| `linda` | Linda | web | `linda-web` | Angular 21.2 (standalone) | CSS tokens (PrimeNG planned) | Bearer JWT via interceptor (implemented) |
 
 ## Repositories
 
@@ -24,19 +24,19 @@ Workspace root: `team-tracking/` — `.royascaff/` holds the AI-Control blueprin
 
 ## Tech Stack
 
-### Current scaffold (in repo today)
+### Current implementation (in repo today)
 
-**Backend** (`linda-api`): NestJS 11 default scaffold — `src/main.ts`, `src/app.module.ts`, `src/app.controller.ts`, Jest tests. No MongoDB, Redis, BullMQ, JWT, or global route prefix yet.
+**Backend** (`linda-api`): NestJS 11 + MongoDB (Mongoose). Global prefix `/api/v1`, JWT auth, role guards, 18 modules under `src/modules/` (auth, users, projects, tasks, wallets, sphere, board, mindmap, offers, comments, notifications, attachments, invitations, roles, admin, webhooks, github, activity-log). ~76/95 endpoints implemented — see `project/status.md`.
 
-**Frontend** (`linda-web`): Angular 21.2 default scaffold — `src/app/` (standalone), `src/styles.css`, Vitest unit tests. No PrimeNG, ngx-translate, environments, or feature folders yet.
+**Frontend** (`linda-web`): Angular 21.2 standalone app with auth layout + app shell, feature routes for projects, tasks, board, sphere, mindmap, wallet, admin, etc. Basic CSS tokens in `styles.css`. ~24/29 pages exist as routes but many are **partial** (minimal UI, missing OAuth/password-reset flows) — see `project/status.md`.
 
-### Target stack (from product spec — to add in Phase 2+)
+### Still planned / deferred
 
-**Backend**: MongoDB (Mongoose), Redis, BullMQ (email, webhooks, notifications) — target layout: `src/modules/`, `src/integrations/`, `src/common/`
+**Backend**: Redis, BullMQ (async email/webhooks), OAuth login endpoints, refresh/logout/password-reset, full integration adapters under `src/integrations/`
 
-**Frontend**: PrimeNG 21, ngx-translate — target layout: `src/app/core/`, `src/app/features/`, `src/app/shared/`
+**Frontend**: PrimeNG 21, ngx-translate, password-reset + OAuth callback pages, richer UI states per spec
 
-**Graph UI**: Cytoscape.js (Sphere mind-map and network graph); Kanban via PrimeNG or dedicated drag-drop board component
+**Graph UI**: Cytoscape.js (Sphere mind-map and network graph); Kanban polish
 
 ## Brand Tokens
 
@@ -49,9 +49,7 @@ Workspace root: `team-tracking/` — `.royascaff/` holds the AI-Control blueprin
 | `--linda-border` | `#E2E8F0` | Cards, dividers |
 | Product name | Linda | App title, emails, meta |
 
-**Current**: default Angular styles in `linda-web/src/styles.css` — token file not created yet.
-
-**Target**: `linda-web/src/styles/_tokens.scss`
+**Current**: CSS custom properties in `linda-web/src/styles.css` (`--linda-primary`, etc.)
 
 ## Environments
 
@@ -65,28 +63,28 @@ Workspace root: `team-tracking/` — `.royascaff/` holds the AI-Control blueprin
 
 | App | Config | Status |
 |-----|--------|--------|
-| Backend | `linda-api/.env` (local), `.env.dev`, `.env.prod` | Not created yet |
-| Web | `linda-web/src/environments/environment.{ts,dev,prod}.ts` | Not created yet |
+| Backend | `linda-api/.env` (local), `.env.example` | Created |
+| Web | `linda-web/src/environments/environment.ts` | Created |
 
 **Backend port**: `3000` (`process.env.PORT ?? 3000` in `linda-api/src/main.ts`).
 
-**Route prefix**: `/api/v1` — **planned** (scaffold serves `GET /` at root; global prefix not set yet).
+**Route prefix**: `/api/v1` — set in `linda-api/src/main.ts`.
 
-**Secrets** (backend `.env`, planned): `MONGODB_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `REDIS_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `MASTER_ENCRYPTION_KEY`, `R2_*`, `MAILJET_*`, `ALLOWED_ORIGINS`.
+**Build status dashboard**: `project/status.md` — re-sync after code changes with `node .royascaff/scripts/sync-build-status.mjs`.
 
 ## Integrations
 
 | Provider | Purpose | Notes |
 |----------|---------|-------|
-| Google OAuth | Social login + account linking | Planned — `src/integrations/oauth/google/` |
-| GitHub OAuth | Social login + repo/branch/commit linking | Planned — single OAuth app — `src/integrations/oauth/github/` |
-| Cloudflare R2 | Attachment storage | Planned — presigned URLs via API — `src/integrations/storage/` |
-| Mailjet | Transactional email (invites, password reset) | Planned — `src/integrations/mail/` |
-| Payment Gateway | Future wallet top-ups | Planned — `PaymentProvider` interface; v1 = manual top-up only |
-| Invitation Delivery (MCP) | Send/manage invite links | Planned — `InvitationDeliveryProvider` interface |
-| Webhooks | Outbound event notifications | Planned — admin-configured endpoints |
+| Google OAuth | Social login + account linking | **Deferred** — endpoints not wired |
+| GitHub OAuth | Social login + repo linking | **Partial** — settings/project link API exists; spec route drift |
+| Cloudflare R2 | Attachment storage | **Partial** — local upload fallback in attachments module |
+| Mailjet | Transactional email (invites, password reset) | **Planned** — not integrated |
+| Payment Gateway | Future wallet top-ups | **Planned** — v1 = manual top-up only |
+| Invitation Delivery (MCP) | Send/manage invite links | **Partial** — invite flow in API; delivery logged in dev |
+| Webhooks | Outbound event notifications | **Partial** — admin CRUD; async delivery planned |
 
-All providers isolated behind interfaces; frontend calls Linda API only. None implemented in scaffold yet.
+All providers isolated behind interfaces where implemented; frontend calls Linda API only.
 
 ## System Conventions
 
@@ -94,6 +92,6 @@ All providers isolated behind interfaces; frontend calls Linda API only. None im
 - **i18n**: EN primary UI; ngx-translate (planned); AR + RTL planned post-v1
 - **Auth**: invite-only registration; admin must approve invitation before one-time link is sent
 - **Roles**: global (`admin`, `sales`, `member`) and project-scoped (`project_manager` via `UserRoleAssignment`)
-- **Source of truth**: `project/` blueprint; code follows specs in `project/actions/<key>/`
+- **Source of truth**: `project/` blueprint; **build state** in `project/status.md` + per-artifact status in `project/actions/**`
 - **Third-party isolation**: no direct client calls to R2, Mailjet, GitHub API, or payment providers — all via backend
 - **GitHub**: one OAuth application for both authentication and project board repo linking

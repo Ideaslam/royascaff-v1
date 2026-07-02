@@ -4,6 +4,8 @@
 
 ### SVC-035 · AttachmentsService [domain, internal, Attachments]
 
+- Status: partial
+
 - Methods:
   - `requestUploadUrl(userId, dto): PresignedUploadDto` — validate target access; return key + presigned PUT
   - `confirmUpload(userId, dto): AttachmentDto` — persist metadata after client upload
@@ -15,6 +17,8 @@
 - Rules: RULE-008 presigned via API only
 
 ### SVC-036 · R2StorageProvider [integration, external, Attachments]
+
+- Status: planned
 
 - Methods:
   - `getPresignedUploadUrl(key, contentType): PresignedUrl`

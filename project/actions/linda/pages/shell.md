@@ -4,7 +4,8 @@
 
 ### App Shell Layout
 
-- Route: `/` (layout wrapper for child routes)
+- Route: `/`
+- Status: partial (layout wrapper for child routes)
 - Components: `AppShellComponent`, `SidebarNavComponent`, `HeaderComponent`, `NotificationBellComponent`
 - Service: `AuthApiService` → EP-012 (GET /auth/me); `NotificationsApiService` → EP-088 (unread count)
 - Guard: `AuthGuard`
@@ -13,6 +14,7 @@
 ### Home Dashboard Page
 
 - Route: `/`
+- Status: partial
 - Components: `HomeDashboardComponent`, `QuickStatsCardsComponent`, `RecentNotificationsComponent`, `MyProjectsListComponent`
 - Service: `ProjectsApiService` → EP-039; `NotificationsApiService` → EP-088; `WalletsApiService` → EP-074
 - Guard: `AuthGuard`

@@ -5,6 +5,7 @@
 ### Notifications Page
 
 - Route: `/notifications`
+- Status: partial
 - Components: `NotificationsListComponent`, `NotificationItemComponent`
 - Service: `NotificationsApiService` → EP-088, EP-089, EP-090
 - Guard: `AuthGuard`

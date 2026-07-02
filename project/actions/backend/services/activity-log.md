@@ -4,6 +4,8 @@
 
 ### SVC-037 · ActivityLogService [domain, internal, Activity Log]
 
+- Status: done
+
 - Methods:
   - `record(actorId, action, entityType, entityId, metadata?): ActivityLog`
   - `list(userId, query): PaginatedResponse` — filter by project, user, entity type; admin sees all

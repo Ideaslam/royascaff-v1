@@ -4,6 +4,8 @@
 
 ### SVC-033 · NotificationsService [domain, internal, Notifications]
 
+- Status: partial
+
 - Methods:
   - `list(userId, query): PaginatedResponse`
   - `markRead(userId, id): NotificationDto`
@@ -15,6 +17,8 @@
 - Rules: RULE-009 in-app primary
 
 ### SVC-034 · MailjetEmailProvider [integration, external, Notifications]
+
+- Status: planned
 
 - Methods:
   - `sendTemplate(to, templateId, vars): void`

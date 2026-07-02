@@ -4,6 +4,8 @@
 
 ### SVC-038 · GithubConnectionService [domain, internal, GitHub]
 
+- Status: planned
+
 - Methods:
   - `connect(userId, tokens, profile): GithubConnection`
   - `disconnect(userId): void`
@@ -15,6 +17,8 @@
 
 ### SVC-039 · ProjectGitHubLinkService [domain, internal, GitHub]
 
+- Status: planned
+
 - Methods:
   - `list(userId, projectId): ProjectGitHubLinkDto[]`
   - `upsert(userId, projectId, dto): ProjectGitHubLinkDto`
@@ -25,6 +29,8 @@
 - Rules: RULE-011 read-focused v1; PM or owner configure
 
 ### SVC-040 · GitHubApiClient [integration, external, GitHub]
+
+- Status: planned
 
 - Methods:
   - `listBranches(token, repo): BranchDto[]`

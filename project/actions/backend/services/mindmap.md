@@ -4,6 +4,8 @@
 
 ### SVC-028 · MindMapService [application, internal, Mind Map]
 
+- Status: done
+
 - Methods:
   - `getSphereMode(userId, rootUserId?): MindMapGraphDto` — delegate to SphereGraphService with layout hints
   - `getProjectMode(userId, projectId): MindMapGraphDto` — project node + task nodes + relationships

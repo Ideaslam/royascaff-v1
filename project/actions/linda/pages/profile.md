@@ -5,6 +5,7 @@
 ### My Profile Page
 
 - Route: `/profile`
+- Status: partial
 - Components: `ProfileFormComponent`, `AvailabilitySelectorComponent`, `SkillsTagsComponent`, `WalletSummaryCardComponent`
 - Service: `UsersApiService` → EP-023, EP-024, EP-025, EP-026, EP-027; `WalletsApiService` → EP-074
 - Guard: `AuthGuard`
@@ -14,6 +15,7 @@
 ### Public Profile Page
 
 - Route: `/users/:id`
+- Status: planned
 - Components: `PublicProfileComponent`, `UserSphereMiniComponent`
 - Service: `UsersApiService` → EP-028; `SphereApiService` → EP-031
 - Guard: `AuthGuard`

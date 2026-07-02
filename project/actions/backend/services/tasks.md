@@ -4,6 +4,8 @@
 
 ### SVC-021 · TasksService [domain, internal, Tasks]
 
+- Status: done
+
 - Methods:
   - `create(userId, projectId, dto): TaskDto`
   - `listByProject(userId, projectId, query): PaginatedResponse`
@@ -17,10 +19,14 @@
 
 ### SVC-022 · TasksRepository [domain, internal, Tasks]
 
+- Status: planned
+
 - Methods: CRUD, list by project/assignee, update board position
 - Deps: MongoDB `tasks`
 
 ### SVC-023 · TaskLifecycleService [domain, internal, Tasks]
+
+- Status: planned
 
 - Methods:
   - `assertTransition(from, to): void`

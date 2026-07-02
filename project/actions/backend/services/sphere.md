@@ -4,6 +4,8 @@
 
 ### SVC-014 · SphereGraphService [domain, internal, Sphere]
 
+- Status: planned
+
 - Methods:
   - `getGraphForUser(userId, depth?): SphereGraphDto` — nodes (users) + edges (connections) visible to user
   - `getNodeDetail(userId, targetUserId): SphereNodeDto` — flags: availability, roles hint, project/task counts
@@ -13,6 +15,8 @@
 - Rules: respect `sphereVisible`; only show connected/network-visible members
 
 ### SVC-015 · SphereNavigationService [application, internal, Sphere]
+
+- Status: planned
 
 - Methods:
   - `resolveLinks(userId, nodeId): NavigationLinksDto` — profile, projects, open tasks URLs/ids

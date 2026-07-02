@@ -4,6 +4,8 @@
 
 ### SVC-041 · AdminService [application, internal, Admin]
 
+- Status: done
+
 - Methods:
   - `getDashboard(adminId): AdminDashboardDto` — pending invites count, recent activity, system stats
   - `updateSystemSettings(adminId, dto): SystemSettingsDto`

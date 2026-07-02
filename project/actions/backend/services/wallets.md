@@ -4,6 +4,8 @@
 
 ### SVC-029 · WalletsService [domain, internal, Wallets]
 
+- Status: done
+
 - Methods:
   - `createUserWallet(userId): Wallet`
   - `createProjectWallet(projectId): Wallet`
@@ -19,6 +21,8 @@
 
 ### SVC-030 · WalletLedgerService [domain, internal, Wallets]
 
+- Status: done
+
 - Methods:
   - `executeTransfer(tx): WalletTransaction` — Mongo transaction session; prevent negative balance
 - Deps: `WalletsRepository`, `WalletTransactionsRepository`
@@ -26,6 +30,8 @@
 - Rules: append-only transactions
 
 ### SVC-031 · PaymentProvider [integration, external, Wallets]
+
+- Status: planned
 
 - Methods:
   - `initiateDeposit(dto): DepositIntent` — v1 stub / not implemented

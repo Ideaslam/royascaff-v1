@@ -5,6 +5,7 @@
 ### Sphere Graph Page
 
 - Route: `/sphere`
+- Status: partial
 - Components: `SphereGraphComponent` (Cytoscape), `SphereNodePanelComponent`, `SphereFiltersComponent`
 - Service: `SphereApiService` → EP-030, EP-031, EP-033
 - Guard: `AuthGuard`

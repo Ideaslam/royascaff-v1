@@ -5,6 +5,7 @@
 ### Request Invitation Page
 
 - Route: `/invitations/request`
+- Status: partial
 - Components: `RequestInvitationFormComponent`, `MyInvitationsTableComponent`
 - Service: `InvitationsApiService` → EP-013 (POST), EP-014 (GET mine)
 - Guard: `AuthGuard`
@@ -14,6 +15,7 @@
 ### Admin Invitation Queue Page
 
 - Route: `/admin/invitations`
+- Status: partial
 - Components: `InvitationQueueTableComponent`, `ApproveRejectDialogComponent`
 - Service: `InvitationsApiService` → EP-015, EP-016, EP-017
 - Guard: `AdminGuard`

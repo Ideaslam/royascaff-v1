@@ -4,6 +4,8 @@
 
 ### SVC-001 · AuthService [domain, internal, Auth]
 
+- Status: partial
+
 - Methods:
   - `login(dto): AuthResponse` — validate credentials, issue JWT
   - `register(dto): AuthResponse` — validate invite token, create user, wallet, sphere connection, issue JWT
@@ -18,6 +20,8 @@
 
 ### SVC-002 · GoogleOAuthService [integration, external, Auth]
 
+- Status: planned
+
 - Methods:
   - `getAuthorizationUrl(state): string`
   - `handleCallback(code): OAuthProfile` — exchange code, return profile
@@ -26,6 +30,8 @@
 - Rules: server-side only; RULE-015
 
 ### SVC-003 · GitHubOAuthService [integration, external, Auth]
+
+- Status: planned
 
 - Methods:
   - `getAuthorizationUrl(state, scopes): string`
@@ -36,6 +42,8 @@
 
 ### SVC-004 · OAuthLinkService [application, internal, Auth]
 
+- Status: planned
+
 - Methods:
   - `loginOrRegisterWithGoogle(dto): AuthResponse` — link or create user; invite required for new users
   - `loginOrRegisterWithGitHub(dto): AuthResponse` — same; optionally persist GitHubConnection
@@ -44,6 +52,8 @@
 - Rules: RULE-001, RULE-010
 
 ### SVC-005 · JwtStrategy [domain, internal, Auth]
+
+- Status: done
 
 - Methods:
   - `validate(payload): AuthUser` — load user + effective roles for request context

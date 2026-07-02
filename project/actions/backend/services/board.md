@@ -4,6 +4,8 @@
 
 ### SVC-027 · BoardService [application, internal, Board]
 
+- Status: done
+
 - Methods:
   - `getBoard(userId, projectId): BoardDto` — columns from task statuses + tasks with order
   - `moveTask(userId, taskId, dto): TaskDto` — update `boardColumn`, `boardOrder`, optional status
