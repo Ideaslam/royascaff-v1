@@ -28,7 +28,7 @@ Step 5.6. Full detail for each change — the filled `change-request.md` and bot
 |---|------|------|-----------|-------|---------|--------|
 | 014 | 2026-07-02 | new-module | backend+admin | OLAP strategy (ClickHouse \| BigQuery), neutral query spec, canonical views, cache tiers, admin benchmark | ✅ PASS | [change-014-olap-foundation](change-014-olap-foundation/) |
 | 015 | 2026-07-02 | modify-data-model | backend | DataConnection / Dataset / SyncRun + dashboard M:N + filter-values | ✅ PASS | [change-015-data-source-model](change-015-data-source-model/) |
-| 016 | 2026-07-02 | refactor | backend | Pluggable AI-provider interface | Planned | [change-016-ai-provider-interface](change-016-ai-provider-interface/) |
+| 016 | 2026-07-02 | refactor | backend | Pluggable AI-provider interface | ✅ PASS | [change-016-ai-provider-interface](change-016-ai-provider-interface/) |
 | 017 | 2026-07-02 | new-feature | backend | File-based editable prompt templates + dialect partials | Planned | [change-017-prompt-templates](change-017-prompt-templates/) |
 | 018 | 2026-07-02 | new-module | backend | Connector interface + generic sync queue | Planned | [change-018-connector-and-sync-queue](change-018-connector-and-sync-queue/) |
 | 019 | 2026-07-02 | new-feature | backend | Generic pipeline engine + step/type registry | Planned | [change-019-pipeline-engine](change-019-pipeline-engine/) |
