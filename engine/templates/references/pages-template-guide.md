@@ -56,6 +56,7 @@ When a page needs more detail than the compact schema:
 ## Suggested Field Meanings
 
 - **Route** — frontend route path
+- **Status** — build state: `planned`, `partial`, `done`, `deferred` (see `engine/conventions.md`). Defaults to `planned` when specced before code; `deferred` states its reason in Notes.
 - **Components** — child components used on the page
 - **Service** — Angular/React service + which endpoint IDs it calls
 - **Guard** — route guard protecting this page (authGuard, adminGuard, none)

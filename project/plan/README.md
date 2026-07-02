@@ -23,3 +23,7 @@ These files are generated from:
 - Prior planning documents in the sequence
 
 Follow the orchestration steps in `engine/flow.md` to keep these documents consistent. In Change Mode (Phase 5) they are updated in place so the plan always equals the latest state of the code.
+
+## Build status
+
+Planning docs describe *what the system is*; **build state** (what is finished vs. pending) is tracked separately as a per-artifact **status** on services/endpoints/pages, rolled up in each `_index.md` and summarized in `project/status.md`. See `engine/conventions.md` → **Build Status**.

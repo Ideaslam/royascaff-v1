@@ -58,6 +58,42 @@ A spec only documents a value when it **deviates** from this file.
 | Frontend services | PascalCase + `Service` (`AuthService`, `ProjectApiService`) |
 | Frontend components | PascalCase + `Component` (`LoginFormComponent`) |
 
+## Build Status
+
+Every buildable artifact (service, endpoint, page/view) carries a **status** so any reader — human or AI — can tell at a glance what is built, what is half-built, what is only planned, and what was deliberately postponed. This is what lets a model resume work without re-discovering the whole codebase.
+
+### Status Values
+
+| Status | Meaning | When to use |
+|--------|---------|-------------|
+| `planned` | Specced in the blueprint, **no code yet** | Artifact was designed but implementation hasn't started |
+| `partial` | **Code exists but is incomplete** (missing methods, states, validation, or endpoints wired) | Work was started and paused, or only part of the spec is implemented |
+| `done` | **Implemented and verified** against its spec | Code exists, compiles, and matches the spec |
+| `deferred` | **Intentionally postponed** to a later time | A decision was made to skip this for now — **must include a reason** in Notes |
+
+Rules:
+- **Default on creation is `planned`.** A spec written before code always starts `planned`.
+- **`deferred` always needs a reason** (e.g. `deferred: post-MVP`, `deferred: waiting on payment provider`). Without a reason, use `planned`.
+- **Never delete a `deferred`/`planned` artifact silently** — it is the record of unfinished work. Only remove it via an explicit change or bug fix.
+- Status is **maintained in-place** next to the spec; it is never tracked only in a separate log.
+
+### Where status is recorded (single source of truth → summary)
+
+| Level | File | Granularity | Role |
+|-------|------|-------------|------|
+| Per artifact | `endpoints/<module>.md`, `services/<module>.md`, `pages/<module>.md`, `views/<module>.md` | one status per endpoint / service / page | **source of truth** |
+| Per module | each subdirectory's `_index.md` | rolled-up status + `Done/Total` count | fast scan map |
+| Whole system | `project/status.md` | per-app + roadmap (In Progress / Next Up / Deferred) | bird's-eye "where are we / what's next" |
+
+### Rollup rule (per-module status in `_index.md`)
+
+- All artifacts `done` → module is `done`
+- Any artifact `partial`, or a mix of `done` + `planned` → module is `partial`
+- No code started (all `planned`) → module is `planned`
+- All remaining work is `deferred` → module is `deferred`
+
+`project/status.md` and each `_index.md` are **summaries** — they must always agree with the per-artifact status in the spec files. History of *what changed* stays in `project/changes/change-log.md`; **status is the current state, not the history.**
+
 ## Brand
 
 | Token | Value |

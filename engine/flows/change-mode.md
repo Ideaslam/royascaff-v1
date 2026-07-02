@@ -4,6 +4,8 @@ Incrementally add new features/modules or modify existing ones, keeping all `pro
 
 Phase 5 is independent of Phases 0–4. Use it any time after the initial app exists.
 
+**Build status is a first-class output of every change.** As you add or modify artifacts, set/maintain their **status** (`planned` · `partial` · `done` · `deferred` — see `engine/conventions.md`): new specs start `planned`, implemented artifacts become `done`, half-finished ones `partial`, and anything intentionally postponed is marked `deferred` with a reason. Keep each `_index.md` rollup and `project/status.md` in sync so the next model knows exactly what is finished and what is still pending. **If you stop before finishing the change, the leftover artifacts must be left as `partial`/`planned`/`deferred` (never silently dropped), and `project/status.md` must reflect it.**
+
 ---
 
 ## Flow Selection
@@ -55,7 +57,8 @@ Wait for explicit confirmation.
 - **Actions**:
   1. Update only the affected sections of planning docs (in-place, no appended change sections).
   2. Implement code changes following `engine/rules/backend-rule.md` / `engine/rules/frontend-rule.md` + `project/rules.md`.
-- **Done when**: Plan docs updated, code changes implemented, app compiles.
+  3. Set the **status** of each touched artifact (`done` when implemented, `partial` if incomplete, `deferred` if postponed with a reason) and refresh its `_index.md` rollup.
+- **Done when**: Plan docs updated, code changes implemented, statuses set, app compiles.
 
 ### FT-5.3 — Verify + Archive
 
@@ -63,8 +66,10 @@ Wait for explicit confirmation.
 - **Output**: `project/changes/change-<NNN>-<slug>/verify-code.md`
 - **Actions**:
   1. Run post-build checks (scoped to changed areas): endpoints in code, pages in code, code layering, frontend isolation, auth, acceptance criteria.
-  2. Append row to `project/changes/change-log.md`.
-- **Done when**: `verify-code.md` shows PASS, `change-log.md` has the new row.
+  2. Confirm statuses match reality (built → `done`; leftover → `partial`/`deferred` with reason) and `_index.md` counts are correct.
+  3. Update `project/status.md` (Snapshot, In Progress, Next Up, Deferred) for the touched modules.
+  4. Append row to `project/changes/change-log.md`.
+- **Done when**: `verify-code.md` shows PASS, statuses + `project/status.md` are current, `change-log.md` has the new row.
 
 ---
 
@@ -163,8 +168,8 @@ Skip recon portion for `change-type: new-app` (no existing code to review).
 #### 5.1.1 — Code Reconnaissance
 
 1. Search affected module(s) in **actual code** across every layer — schema, repository, service, controller/endpoint, frontend service, page/component, route.
-2. Determine **feature state**: `none` (greenfield), `partial` (list implemented vs missing), `complete` (modification).
-3. Record **plan-vs-code drift**: code not in plan, plan entries with no code.
+2. Determine **feature state**: `none` (greenfield), `partial` (list implemented vs missing), `complete` (modification). This maps directly to artifact **status**: `none`→`planned`, `partial`→`partial`, `complete`→`done`.
+3. Record **plan-vs-code drift**: code not in plan, plan entries with no code, **and any artifact whose recorded status disagrees with the code** (e.g. spec says `done` but method is missing) — flag it to fix.
 4. Build **ripple/impact map**: every caller/callee that this change could affect, with action needed.
 5. Note **reuse opportunities**: existing services/endpoints/components to reuse.
 6. Capture **risks**: auth implications, async jobs/webhooks, data migration needed.
@@ -247,6 +252,8 @@ Honor the `impact.md` verdict:
 - **Partial implementation found** — update existing plan entry to complete it; no duplicate entries.
 - **Ripple items** — also update plan entries for every flagged endpoint/service/page.
 - **Plan-vs-code drift** — bring drifted entries in line with code.
+
+**Status when adding/updating specs**: new artifacts are added with status **`planned`** (code not written yet). Update the affected `_index.md` rows so their rollup status and `Done/Total` reflect the added `planned` items.
 
 #### Rules for each document
 
@@ -335,7 +342,11 @@ After frontend code is implemented, screenshots can be submitted for review. The
 
 Screenshots are optional. If not provided, UI check marked "skipped" and does not block verification.
 
-- **Done when**: All code changes implemented, apps compile, any submitted screenshots reviewed.
+#### Status update (after implementing)
+
+For every artifact touched, set its status: `done` (implemented & matches spec), `partial` (started, note what remains), or `deferred` (postponed — note the reason). Refresh each affected `_index.md` rollup + `Done/Total`. **If any part of this change is being left for later, mark it `partial`/`deferred` now — do not leave it looking `done`.**
+
+- **Done when**: All code changes implemented, apps compile, statuses + `_index.md` counts updated, any submitted screenshots reviewed.
 
 ---
 
@@ -361,9 +372,10 @@ Screenshots are optional. If not provided, UI check marked "skipped" and does no
 
 1. Open `project/changes/change-log.md`.
 2. Append one row: `# | Date | Type | Target app | Scope | Outcome | Folder` — `Folder` links to `change-<NNN>-<slug>/`.
-3. Change folder (`change-request.md`, `impact.md`, `verify-code.md`) is the permanent record.
+3. Update `project/status.md` — refresh Snapshot + per-module counts, move finished items out of **In Progress**, add any leftover/postponed work to **Next Up** / **Deferred**.
+4. Change folder (`change-request.md`, `impact.md`, `verify-code.md`) is the permanent record.
 
-- **Done when**: `change-log.md` has the new row, folder contains filled request and verification report.
+- **Done when**: `change-log.md` has the new row, `project/status.md` reflects the current state, folder contains filled request and verification report.
 
 ---
 
@@ -371,6 +383,7 @@ Screenshots are optional. If not provided, UI check marked "skipped" and does no
 
 When Step 5.6 (or FT-5.3) completes:
 - Planning docs are in sync with the code.
+- Every touched artifact carries an accurate status; `_index.md` rollups and `project/status.md` are current.
 - Change folder holds the filled request, impact analysis, and verification report.
 - `project/changes/change-log.md` has a new row.
 

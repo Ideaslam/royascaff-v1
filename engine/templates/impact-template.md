@@ -29,7 +29,12 @@ Feature state: none | partial | complete
 
 ## Recommendation
 - **Create**: [new items] — **Complete**: [partial] — **Modify**: [ripple]
+
+## Status target (per artifact after this change)
+- [ID/name] → planned | partial | done | deferred (reason if deferred)
 ```
+
+`State` (none/partial/complete) maps to the artifact **status** in the specs: `none`→`planned`, `partial`→`partial`, `complete`→`done`. Record the intended end status per artifact so nothing is left ambiguous — see `engine/conventions.md`.
 
 ## Example
 

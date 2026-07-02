@@ -4,6 +4,8 @@
 
 Read this file first on every task. It tells you which flow file to load based on the current phase.
 
+**Resuming work? Read `project/status.md` first.** It is the bird's-eye build state — what is `done`, what is `partial` (in progress), what is `planned` (next up), and what is `deferred` (postponed, with reasons). Per-artifact status also lives in every spec file and is rolled up in each `_index.md`. See `engine/conventions.md` → **Build Status** for the vocabulary and rules.
+
 ## Phase Routing
 
 | Phase | Purpose | Flow File |
@@ -22,10 +24,11 @@ See `engine/conventions.md` for all defaults (route prefix, auth model, envelope
 - **`engine/`** — this router, flows, generic templates (`engine/templates/`), and generic
   backend/frontend rules (`engine/rules/`). Reusable across any product.
 - **`project/`** — the living blueprint and single source of truth for the current system:
-  `profile.md`, `description.md`, `plan/`, `actions/`, `rules.md`, `verify/`, `changes/`.
+  `profile.md`, `description.md`, `plan/`, `actions/`, `rules.md`, `verify/`, `changes/`, `status.md`.
 
 ## Project Files Quick Reference
 
+- **Build state / roadmap**: `project/status.md` (read first when resuming)
 - **System identity**: `project/profile.md`, `project/description.md`
 - **Planning**:
   - `project/plan/modules.md` (includes features)

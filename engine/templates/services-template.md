@@ -12,6 +12,7 @@ All backend services for one API app. Lives at `project/actions/<api-app>/servic
 ## Module: {Name}
 
 ### SVC-001 · ClassName [category, type, Module]
+- Status: planned | partial | done | deferred
 - Methods:
   - `method(input): Return` — what it does
 - Deps: `Repo`, `OtherService`, `Provider`
@@ -20,6 +21,7 @@ All backend services for one API app. Lives at `project/actions/<api-app>/servic
 ```
 
 Type: `internal` (business logic) or `external` (third-party adapter).
+Status: `planned` · `partial` · `done` · `deferred` (see `engine/conventions.md`). New services default to `planned`; `deferred` states its reason (e.g. `deferred: waiting on provider`).
 
 ## Example
 
@@ -27,6 +29,7 @@ Type: `internal` (business logic) or `external` (third-party adapter).
 ## Module: Users
 
 ### SVC-001 · UsersService [domain, internal, Users]
+- Status: done
 - Methods:
   - `createUser(dto): User` — validate, hash password, persist
   - `listUsers(query): PaginatedResponse` — paginated admin list
@@ -38,6 +41,7 @@ Type: `internal` (business logic) or `external` (third-party adapter).
 ## Module: Files
 
 ### SVC-002 · S3StorageProvider [integration, external, Files]
+- Status: planned
 - Methods:
   - `getPresignedUploadUrl(key, type): PresignedUrl` — PUT URL
   - `deleteObject(key): void` — remove from bucket

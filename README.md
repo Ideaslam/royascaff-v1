@@ -34,6 +34,7 @@ understand and rebuild the current app — this is the **rebuild test**.
   - `<api-app>/services/` — per-module service specs with `SVC-` IDs + `_index.md` registry
   - `<web-app>/pages/` or `<mobile-app>/views/` — per-module client specs + `_index.md` registry
 - `project/rules.md` — system-specific feature rules with `RULE-` IDs.
+- `project/status.md` — **build-state dashboard**: the bird's-eye view of what is `done`, `partial`, `planned`, or `deferred` across every app, plus the roadmap (In Progress / Next Up / Deferred). Read it first when resuming work.
 - `project/verify/` — full-system verification reports (Phase 4).
 - `project/changes/` — `change-log.md` (append-only index) plus one folder per change
   (`change-<NNN>-<slug>/`) holding its `change-request.md`, `impact.md`, and `verify-code.md`.
@@ -44,6 +45,15 @@ understand and rebuild the current app — this is the **rebuild test**.
 In Change Mode (Phase 5) the `project/` docs are updated **in place** so the plan always equals the
 latest state of the code. `project/changes/` keeps the history. The plan never drifts from the code, so
 it stays a portable, self-contained blueprint.
+
+## Build status (knowing what's finished vs. pending)
+
+Every buildable artifact (service, endpoint, page/view) carries a **status** — `planned`, `partial`,
+`done`, or `deferred` — recorded **in-place** next to its spec, rolled up in each `_index.md`, and
+summarized system-wide in `project/status.md`. This means a model that picks up the project (or resumes
+after postponing work) can immediately see what is built, what is half-built, and what is still to do —
+without re-scanning the whole codebase. Status is the *current state*; `project/changes/change-log.md`
+is the *history*. Vocabulary and rules: `engine/conventions.md` → **Build Status**.
 
 ## How to use
 
