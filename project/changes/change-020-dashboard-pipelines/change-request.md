@@ -2,6 +2,7 @@
 
 ## Metadata
 - **date**: 2026-07-02
+- **status**: implemented
 - **change-type**: modify-feature
 - **target-app**: backend-only
 - **affected-repos**: backend

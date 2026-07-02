@@ -32,7 +32,7 @@ Step 5.6. Full detail for each change — the filled `change-request.md` and bot
 | 017 | 2026-07-02 | new-feature | backend | File-based editable prompt templates + dialect partials | ✅ PASS | [change-017-prompt-templates](change-017-prompt-templates/) |
 | 018 | 2026-07-02 | new-module | backend | Connector interface + generic sync queue | ✅ PASS | [change-018-connector-and-sync-queue](change-018-connector-and-sync-queue/) |
 | 019 | 2026-07-02 | new-feature | backend | Generic pipeline engine + step/type registry | ✅ PASS | [change-019-pipeline-engine](change-019-pipeline-engine/) |
-| 020 | 2026-07-02 | modify-feature | backend | Dashboard operations as pipelines + multi-datasource | Planned | [change-020-dashboard-pipelines](change-020-dashboard-pipelines/) |
+| 020 | 2026-07-02 | modify-feature | backend | Dashboard operations as pipelines + multi-datasource | Implemented | [change-020-dashboard-pipelines](change-020-dashboard-pipelines/) |
 | 021 | 2026-07-02 | new-feature | backend | Query-backed filter-values store | Planned | [change-021-filter-values-store](change-021-filter-values-store/) |
 | 022 | 2026-07-02 | modify-feature | backend+frontend | CSV source on new foundation | Planned | [change-022-source-csv](change-022-source-csv/) |
 | 023 | 2026-07-02 | new-feature | backend+frontend | Google Sheets source | Planned | [change-023-source-google-sheets](change-023-source-google-sheets/) |
