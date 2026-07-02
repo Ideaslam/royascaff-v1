@@ -37,7 +37,7 @@ Step 5.6. Full detail for each change — the filled `change-request.md` and bot
 | 022 | 2026-07-02 | modify-feature | backend+frontend | CSV source on new foundation | ✅ PASS | [change-022-source-csv](change-022-source-csv/) |
 | 023 | 2026-07-02 | new-feature | backend+frontend | Google Sheets source | ✅ PASS | [change-023-source-google-sheets](change-023-source-google-sheets/) |
 | 024 | 2026-07-02 | new-feature | backend+frontend | Shopify source | ✅ PASS | [change-024-source-shopify](change-024-source-shopify/) |
-| 025 | 2026-07-02 | new-feature | backend+frontend | Salla source | Planned | [change-025-source-salla](change-025-source-salla/) |
+| 025 | 2026-07-02 | new-feature | backend+frontend | Salla source | ✅ PASS | [change-025-source-salla](change-025-source-salla/) |
 | 026 | 2026-07-02 | new-feature | backend+frontend | Zid source | Planned | [change-026-source-zid](change-026-source-zid/) |
 | 027 | 2026-07-02 | new-feature | backend+frontend | SQL Server source | Planned | [change-027-source-sql-server](change-027-source-sql-server/) |
 | 028 | 2026-07-02 | new-feature | backend+frontend | MongoDB Atlas source | Planned | [change-028-source-mongodb-atlas](change-028-source-mongodb-atlas/) |

@@ -76,3 +76,19 @@
 - Service: `POST /api/v1/data/shopify/datasets`; `GET /api/v1/data/datasets/:id`; `POST /api/v1/data/datasets/:id/sync`
 - Guard: authGuard
 - Notes: OAuth callback from Shopify redirects directly to this page with `connectionId` in the URL.
+
+---
+
+### Salla — Connect Page *(change-025)*
+- Route: `/app/data/salla/connect`
+- Components: SallaConnectPage — explanation of what data is synced (orders, products, customers); "Connect with Salla" button calls `GET /api/v1/data/salla/auth-url` then redirects the browser to the returned `authUrl`; loading spinner during URL fetch
+- Service: `GET /api/v1/data/salla/auth-url` (EP-DATA-29)
+- Guard: authGuard
+- States: loading · error (API unreachable)
+
+### Salla — Setup Page *(change-025)*
+- Route: `/app/data/salla/setup/:connectionId`
+- Components: SallaSetupPage — confirmation screen shown after OAuth callback; lists the 3 provisioned Datasets (orders, products, customers) with their sync status tags; "Trigger Sync" per-entity button; "Go to Data Sources" + "Create Dashboard" CTAs
+- Service: `GET /api/v1/data/datasets` (filtered by connectionId); `POST /api/v1/data/datasets/:id/sync`
+- Guard: authGuard
+- Notes: OAuth callback from Salla redirects directly to this page with `connectionId` in the URL.

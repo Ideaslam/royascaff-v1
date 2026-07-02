@@ -63,6 +63,16 @@
 | EP-DATA-27 | GET | /api/v1/data/shopify/callback | Public | query: `code`, `shop`, `state`, `hmac` | 302 → `/app/data/shopify/setup/:connectionId` | ShopifyOAuthService.handleCallback() | Validates HMAC + state; exchanges code; stores DataConnection; registers webhooks; redirects |
 | EP-DATA-28 | POST | /api/v1/data/shopify/webhook | Public | body: Shopify event payload; header: `X-Shopify-Hmac-Sha256`, `X-Shopify-Topic` | 200 | ShopifyController.handleWebhook() | Validates HMAC; maps topic → entity → dataset; enqueues incremental sync |
 
+### Salla OAuth + Webhook Endpoints *(change-025)*
+
+`@Controller('data/salla')`
+
+| ID | Method | Route | Auth | Input | Return | Service | Notes |
+|----|--------|-------|------|-------|--------|---------|-------|
+| EP-DATA-29 | GET | /api/v1/data/salla/auth-url | JWT | — | 200 `{ authUrl: string }` | SallaOAuthService.buildAuthUrl() | Returns Salla OAuth consent URL; `state` encodes workspaceSlug+userId+nonce |
+| EP-DATA-30 | GET | /api/v1/data/salla/callback | Public | query: `code`, `state` | 302 → `/app/data/salla/setup/:connectionId` | SallaController.handleCallback() | Validates state nonce; exchanges code for tokens; encrypts + stores DataConnection; provisions 3 Datasets; redirects |
+| EP-DATA-31 | POST | /api/v1/data/salla/webhook | Public | body: Salla event payload; header: `X-Salla-Signature` | 200 | SallaController.handleWebhook() | Validates HMAC-SHA256; maps event topic → entity → Dataset; enqueues incremental sync |
+
 **Notes:**
 - [EP-DATA-01] Single-step upload: frontend sends file as multipart, backend streams to R2, creates `csvfiles` record, queues AI column analysis job.
 - [EP-DATA-02] Legacy presigned-URL flow: creates a `csvfiles` record and returns a presigned upload URL plus upload session id for direct client-to-R2 upload.
@@ -77,3 +87,6 @@
 - [EP-DATA-26] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (Redis TTL 10 min for CSRF validation in EP-DATA-27). `shopDomain` is normalised to `{shop}.myshopify.com`.
 - [EP-DATA-27] Public callback: validates Shopify-signed HMAC on query params + validates state nonce; exchanges `code` for permanent offline access token; stores DataConnection; calls `ShopifyOAuthService.registerWebhooks()`; redirects to `/app/data/shopify/setup/:connectionId`.
 - [EP-DATA-28] Public webhook receiver: validates `X-Shopify-Hmac-Sha256` using raw body + `shopify.webhookSecret`; maps `X-Shopify-Topic` (e.g. `orders/create`) to the corresponding Dataset for the store's DataConnection; enqueues `DATA_SYNC_QUEUE` with `mode=incremental`. Returns 200 immediately (async processing).
+- [EP-DATA-29] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (Redis TTL 10 min). Salla authorization URL: `https://accounts.salla.sa/oauth2/auth`.
+- [EP-DATA-30] Public callback: validates state nonce; `POST https://accounts.salla.sa/oauth2/token` with `grant_type=authorization_code`; encrypts `{ accessToken, refreshToken, expiresAt }` as `DataConnection.credentialsEncrypted(sourceType=salla)`; calls `SallaDatasetService.provisionFromOAuth()` to create 3 Datasets; redirects to `/app/data/salla/setup/:connectionId`.
+- [EP-DATA-31] Public webhook receiver: validates `X-Salla-Signature` HMAC-SHA256 using app secret; maps Salla event topic (e.g. `order.created`) to entity type → Dataset; enqueues `DATA_SYNC_QUEUE` with `mode=incremental`. Returns 200 immediately.

@@ -112,7 +112,57 @@ Creates one `Dataset` per selected Shopify entity from a single `DataConnection`
 
 ---
 
-### SVC-CONN-INTERFACE · ConnectorInterface [type, domain, Connectors]
+### SVC-CONN-SALLA · SallaConnector [internal, domain, Connectors] *(change-025)*
+`ConnectorInterface` implementation for `salla` source type. Reads e-commerce entities (orders, products, customers) from a Salla store via the Merchant API v2.
+
+**Constructor:** self-registers with `ConnectorRegistry` on `onModuleInit()`
+
+**Methods:**
+- `testConnection(conn: DataConnectionDocument)` — decrypts credentials → calls `GET /admin/v2/store` → returns `{ ok, message? }`; auto-refreshes access token if expired
+- `discoverSchema(conn, dataset)` — returns static `DiscoveredColumn[]` for `dataset.sourceRef` entity (field set known at design time)
+- `extract(conn, dataset, opts: ExtractOptions)` — paginates `GET /orders`, `/products`, or `/customers` using page-number pagination (`?page=N&per_page=60`); for incremental uses `updated_at_min` (orders) or falls back to full; yields batches; rate-limited via `SallaRateLimiter`; auto-refreshes token on 401
+- `normalize(rows, schema: DiscoveredColumn[])` — flattens Salla nested objects; casts types; drops unmapped fields
+
+**Salla DataConnection credentials shape:**
+```json
+{
+  "accessToken": "ory_at_...",
+  "refreshToken": "ory_rt_...",
+  "expiresAt": "ISO8601"
+}
+```
+
+**Deps:** ConnectorRegistry · SallaApiClient · SallaRateLimiter · DataConnectionRepository
+**Side effects:** Salla API reads only · token refresh writes updated credentials back to `DataConnection.credentialsEncrypted`
+**Rules:** Auto-refresh token when expired (TTL 14 days) · Rate limit: ≤8 req/s general, ≤1 req/s for `/customers` · Page-number pagination: iterate pages 1..`totalPages` · `sourceRef` on Dataset stores entity name (`orders` | `products` | `customers`)
+
+---
+
+### SVC-CONN-SALLA-OAUTH · SallaOAuthService [internal, domain, Connectors] *(change-025)*
+Salla Partner App OAuth 2.0 flow for data connections.
+
+**Methods:**
+- `buildAuthUrl(workspaceSlug: string, userId: string): string` — returns Salla OAuth authorization URL with `state` (encodes workspaceSlug+userId+nonce stored in Redis TTL 10 min)
+- `exchangeCode(code: string, stateStr: string): Promise<{ workspaceSlug, userId, tokens }>` — validates nonce; `POST https://accounts.salla.sa/oauth2/token` with `grant_type=authorization_code`; returns `{ accessToken, refreshToken, expiresAt }`
+- `refreshAccessToken(refreshToken: string): Promise<{ accessToken, expiresAt }>` — `POST https://accounts.salla.sa/oauth2/token` with `grant_type=refresh_token`
+- `validateWebhookHmac(rawBody: Buffer, signature: string): boolean` — HMAC-SHA256 using `SALLA_APP_SECRET`
+
+**Deps:** ConfigService (salla.appId, salla.appSecret, salla.callbackUrl) · ioredis
+**Rules:** Nonce validated before code exchange · Webhook HMAC checked on all incoming events · Token refresh called by `SallaApiClient` on 401
+
+---
+
+### SVC-CONN-SALLA-DS · SallaDatasetService [internal, application, Data] *(change-025)*
+Creates one `Dataset` per selected Salla entity from a single `DataConnection`.
+
+**Methods:**
+- `provisionFromOAuth(workspaceSlug, userId, tokens)` — creates `DataConnection(sourceType=salla)` with encrypted tokens; creates 3 Datasets (orders, products, customers) each with `sourceRef` set; runs `discoverSchemaWithAiProposal()` for each; enqueues initial full sync; returns `{ connectionId, datasetIds }`
+- `applyWebhookEvent(workspaceSlug, topic, payload)` — maps Salla event topic to entity type; finds matching Datasets; enqueues incremental sync
+
+**Deps:** DataConnectionService · DatasetRepository · DatasetService · SyncService
+**Rules:** Each entity → independent Dataset (separate OLAP table) · Canonical views include both Salla and Shopify entity tables
+
+---
 Contract every data source adapter must implement.
 
 ```typescript
