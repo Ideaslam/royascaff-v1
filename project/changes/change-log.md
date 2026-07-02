@@ -36,7 +36,7 @@ Step 5.6. Full detail for each change — the filled `change-request.md` and bot
 | 021 | 2026-07-02 | new-feature | backend | Query-backed filter-values store | Implemented | [change-021-filter-values-store](change-021-filter-values-store/) |
 | 022 | 2026-07-02 | modify-feature | backend+frontend | CSV source on new foundation | ✅ PASS | [change-022-source-csv](change-022-source-csv/) |
 | 023 | 2026-07-02 | new-feature | backend+frontend | Google Sheets source | ✅ PASS | [change-023-source-google-sheets](change-023-source-google-sheets/) |
-| 024 | 2026-07-02 | new-feature | backend+frontend | Shopify source | Planned | [change-024-source-shopify](change-024-source-shopify/) |
+| 024 | 2026-07-02 | new-feature | backend+frontend | Shopify source | ✅ PASS | [change-024-source-shopify](change-024-source-shopify/) |
 | 025 | 2026-07-02 | new-feature | backend+frontend | Salla source | Planned | [change-025-source-salla](change-025-source-salla/) |
 | 026 | 2026-07-02 | new-feature | backend+frontend | Zid source | Planned | [change-026-source-zid](change-026-source-zid/) |
 | 027 | 2026-07-02 | new-feature | backend+frontend | SQL Server source | Planned | [change-027-source-sql-server](change-027-source-sql-server/) |

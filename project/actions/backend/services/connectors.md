@@ -62,6 +62,56 @@ Registry that maps `DataSourceType` values to concrete `ConnectorInterface` impl
 
 ---
 
+### SVC-CONN-SHOPIFY · ShopifyConnector [internal, domain, Connectors] *(change-024)*
+`ConnectorInterface` implementation for `shopify` source type. Reads e-commerce entities (orders, products, customers) from a Shopify store via the Admin REST API v2024-01.
+
+**Constructor:** self-registers with `ConnectorRegistry` on `onModuleInit()`
+
+**Methods:**
+- `testConnection(conn: DataConnectionDocument)` — decrypts credentials → calls `GET /admin/api/.../shop.json` → returns `{ ok, message? }`
+- `discoverSchema(conn, dataset)` — fetches 1 sample record for `dataset.extractOptions.entity`; maps Shopify field names to `DiscoveredColumn[]`; returns static schema (Shopify field set is known at design time, not runtime-discovered)
+- `extract(conn, dataset, opts: ExtractOptions)` — paginates `GET /orders.json`, `/products.json`, or `/customers.json` using cursor-based `page_info`; for incremental uses `updated_at_min=watermark`; yields batches of 250 rows; rate-limited to ≤2 req/s via `ShopifyRateLimiter`
+- `normalize(rows, schema: DiscoveredColumn[])` — flattens nested Shopify objects (e.g. `line_items`, `customer.email`); casts types; drops unmapped fields
+
+**Shopify DataConnection credentials shape:**
+```json
+{
+  "shopDomain": "my-store.myshopify.com",
+  "accessToken": "shpua_...",
+  "webhookSecret": "..."
+}
+```
+
+**Deps:** ConnectorRegistry · ShopifyApiClient · ShopifyRateLimiter · DataConnectionRepository
+**Side effects:** Shopify REST API reads only (no writes) · webhook registration on first connect
+**Rules:** Never query Shopify at widget render time — all data in OLAP · Rate limit: ≤2 req/s leaky bucket · Incremental uses `updated_at_min` watermark · Full sync for `products` and `customers` uses cursor pagination; `orders` limited to last 60 days by default
+
+---
+
+### SVC-CONN-SHOPIFY-OAUTH · ShopifyOAuthService [internal, domain, Connectors] *(change-024)*
+Shopify Partner App OAuth 2.0 flow for data connections.
+
+**Methods:**
+- `buildInstallUrl(shopDomain: string, state: string): string` — returns Shopify OAuth install URL with HMAC signature, requested scopes, and `state` for CSRF
+- `exchangeCode(shopDomain: string, code: string, state: string, storedState: string): Promise<{ accessToken: string }>` — validates state, exchanges code for permanent offline access token; Shopify offline tokens never expire
+- `registerWebhooks(shopDomain: string, accessToken: string): Promise<void>` — subscribes to `orders/create`, `orders/updated`, `products/create`, `products/updated`, `customers/create`, `customers/updated` via `POST /webhooks.json`
+
+**Deps:** ConfigService (shopify.apiKey, shopify.apiSecret, shopify.scopes) · ShopifyApiClient
+**Rules:** HMAC validation on all incoming webhook requests · State nonce validated before code exchange · Webhook registration is idempotent
+
+---
+
+### SVC-CONN-SHOPIFY-DS · ShopifyDatasetService [internal, application, Data] *(change-024)*
+Creates one `Dataset` per selected Shopify entity from a single `DataConnection`.
+
+**Methods:**
+- `createEntityDatasets(workspaceSlug: string, connectionId: string, userId: string, entities: ('orders' | 'products' | 'customers')[])` — for each entity: creates a `Dataset` with `semanticFlag = entity`, runs `discoverSchemaWithAiProposal()`, returns array of created Dataset records
+
+**Deps:** DatasetService · DatasetRepository · DataConnectionService
+**Rules:** Each entity → independent Dataset (separate OLAP table) · Canonical views include all entity tables across connectors
+
+---
+
 ### SVC-CONN-INTERFACE · ConnectorInterface [type, domain, Connectors]
 Contract every data source adapter must implement.
 

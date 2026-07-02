@@ -53,6 +53,16 @@
 | EP-DATA-24 | GET | /api/v1/data/google/auth-url | JWT | query: `workspaceSlug` | 200 `{ authUrl: string }` | GoogleOAuthService.buildAuthUrl() | Returns Google OAuth consent URL; `state` param encodes workspaceSlug + userId + CSRF nonce |
 | EP-DATA-25 | GET | /api/v1/data/google/callback | Public | query: `code`, `state` | 302 → `/app/data/google-sheets/setup/:connectionId` | GoogleOAuthService.handleCallback() | Exchanges code for tokens; encrypts + stores as new `DataConnection(sourceType=google_sheets)`; redirects to frontend setup page |
 
+### Shopify OAuth + Webhook Endpoints *(change-024)*
+
+`@Controller('data/shopify')`
+
+| ID | Method | Route | Auth | Input | Return | Service | Notes |
+|----|--------|-------|------|-------|--------|---------|-------|
+| EP-DATA-26 | GET | /api/v1/data/shopify/install-url | JWT | query: `shopDomain` | 200 `{ installUrl: string }` | ShopifyOAuthService.buildInstallUrl() | Shopify OAuth install URL with HMAC; `state` encodes workspaceSlug+userId+nonce |
+| EP-DATA-27 | GET | /api/v1/data/shopify/callback | Public | query: `code`, `shop`, `state`, `hmac` | 302 → `/app/data/shopify/setup/:connectionId` | ShopifyOAuthService.handleCallback() | Validates HMAC + state; exchanges code; stores DataConnection; registers webhooks; redirects |
+| EP-DATA-28 | POST | /api/v1/data/shopify/webhook | Public | body: Shopify event payload; header: `X-Shopify-Hmac-Sha256`, `X-Shopify-Topic` | 200 | ShopifyController.handleWebhook() | Validates HMAC; maps topic → entity → dataset; enqueues incremental sync |
+
 **Notes:**
 - [EP-DATA-01] Single-step upload: frontend sends file as multipart, backend streams to R2, creates `csvfiles` record, queues AI column analysis job.
 - [EP-DATA-02] Legacy presigned-URL flow: creates a `csvfiles` record and returns a presigned upload URL plus upload session id for direct client-to-R2 upload.
@@ -64,3 +74,6 @@
 - [EP-DATA-23] User confirms (or edits) the AI-proposed mapping. Only after this call does the Dataset become eligible for dashboard generation.
 - [EP-DATA-24] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (stored in Redis with 10-minute TTL for CSRF validation in EP-DATA-25).
 - [EP-DATA-25] Public endpoint (callback from Google) — validates `state` nonce, exchanges `code` via `OAuth2Client`, encrypts `{ accessToken, refreshToken }` as `DataConnection.credentialsEncrypted`, then redirects frontend to spreadsheet picker page.
+- [EP-DATA-26] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (Redis TTL 10 min for CSRF validation in EP-DATA-27). `shopDomain` is normalised to `{shop}.myshopify.com`.
+- [EP-DATA-27] Public callback: validates Shopify-signed HMAC on query params + validates state nonce; exchanges `code` for permanent offline access token; stores DataConnection; calls `ShopifyOAuthService.registerWebhooks()`; redirects to `/app/data/shopify/setup/:connectionId`.
+- [EP-DATA-28] Public webhook receiver: validates `X-Shopify-Hmac-Sha256` using raw body + `shopify.webhookSecret`; maps `X-Shopify-Topic` (e.g. `orders/create`) to the corresponding Dataset for the store's DataConnection; enqueues `DATA_SYNC_QUEUE` with `mode=incremental`. Returns 200 immediately (async processing).

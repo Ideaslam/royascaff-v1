@@ -58,3 +58,21 @@
 - Service: `GET /api/v1/data/connections/:id`; `POST /api/v1/data/datasets`; `POST /api/v1/data/datasets/:id/discover-schema`; `POST /api/v1/data/datasets/:id/confirm-mapping`; `PATCH /api/v1/data/datasets/:id/mapping`; `POST /api/v1/data/datasets/:id/sync`
 - Guard: authGuard
 - Notes: OAuth callback from Google redirects directly to this page with `connectionId` in the URL — no user action needed to arrive here after Google consent.
+
+---
+
+### Shopify — Connect Page *(change-024)*
+- Route: `/app/data/shopify/connect`
+- Components: ShopifyConnectPage — brief description of what data is synced (orders, products, customers); a "My Shopify store URL" text input (`{shop}.myshopify.com`); "Install App" button calls `GET /api/v1/data/shopify/install-url?shopDomain=…` and redirects the browser to the returned `installUrl`; loading spinner during URL fetch
+- Service: `GET /api/v1/data/shopify/install-url` (EP-DATA-26)
+- Guard: authGuard
+- States: loading · error (invalid domain / unreachable)
+
+### Shopify — Setup Page *(change-024)*
+- Route: `/app/data/shopify/setup/:connectionId`
+- Components: ShopifySetupPage — 2-step wizard:
+  - **Step 1 — Select Entities:** three checkboxes (Orders, Products, Customers) with descriptions of what each syncs; "Create Datasets" button calls `POST /api/v1/data/shopify/datasets` (ShopifyDatasetService endpoint) to create one Dataset per entity; shows loading state while datasets + AI proposals are generated
+  - **Step 2 — Review & Sync:** cards per entity showing: name, semanticFlag badge, rowCount estimate, AI-proposed mapping summary; "Start sync for all" triggers EP-DATA-20 for each dataset; redirects to `/app/data` after queuing
+- Service: `POST /api/v1/data/shopify/datasets`; `GET /api/v1/data/datasets/:id`; `POST /api/v1/data/datasets/:id/sync`
+- Guard: authGuard
+- Notes: OAuth callback from Shopify redirects directly to this page with `connectionId` in the URL.
