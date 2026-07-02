@@ -6,6 +6,7 @@
 - **target-app**: backend-only
 - **affected-repos**: backend
 - **priority**: high
+- **status**: ✅ implemented — 2026-07-02
 
 ## Scope
 - Module(s): Data (generalize), Dashboards (datasource link)
