@@ -163,6 +163,57 @@ Creates one `Dataset` per selected Salla entity from a single `DataConnection`.
 **Rules:** Each entity → independent Dataset (separate OLAP table) · Canonical views include both Salla and Shopify entity tables
 
 ---
+
+### SVC-CONN-ZID · ZidConnector [internal, domain, Connectors] *(change-026)*
+`ConnectorInterface` implementation for `zid` source type. Reads e-commerce entities (orders, products, customers) from a Zid store via the Merchant API v1.
+
+**Constructor:** self-registers with `ConnectorRegistry` on `onModuleInit()`
+
+**Methods:**
+- `testConnection(conn: DataConnectionDocument)` — decrypts credentials → calls `GET /v1/managers/account/profile` with dual-header auth → returns `{ ok, message? }`
+- `discoverSchema(conn, dataset)` — returns static `DiscoveredColumn[]` for `dataset.sourceRef` entity (field set known at design time)
+- `extract(conn, dataset, opts: ExtractOptions)` — paginates `GET /managers/store/orders`, `/products`, or `/customers` using page-number pagination (`?page=N&per_page=100`); for incremental uses `updated_at_from` (orders only; others fall back to full); yields batches; rate-limited via `ZidRateLimiter` (1 req/s)
+- `normalize(rows, schema: DiscoveredColumn[])` — flattens Zid nested objects; casts types; drops unmapped fields
+
+**Zid DataConnection credentials shape:**
+```json
+{
+  "authorizationToken": "Bearer eyJ...",
+  "accessToken": "zid_mgr_...",
+  "expiresAt": "ISO8601"
+}
+```
+
+**Deps:** ConnectorRegistry · ZidApiClient · ZidRateLimiter
+**Side effects:** Zid API reads only · no token refresh needed (TTL 1 year)
+**Rules:** Both `Authorization` and `X-Manager-Token` headers required on every request · Rate limit: ≤1 req/s leaky bucket · `sourceRef` on Dataset stores entity name (`orders` | `products` | `customers`) · Incremental via `updated_at_from` for orders only
+
+---
+
+### SVC-CONN-ZID-OAUTH · ZidOAuthService [internal, domain, Connectors] *(change-026)*
+Zid Partner App OAuth 2.0 flow for data connections.
+
+**Methods:**
+- `buildAuthUrl(workspaceSlug: string, userId: string): string` — returns Zid OAuth authorization URL (`https://oauth.zid.sa`) with `state` (encodes workspaceSlug+userId+nonce stored in Redis TTL 10 min)
+- `exchangeCode(code: string, stateStr: string): Promise<{ workspaceSlug, userId, authorizationToken, accessToken, expiresAt }>` — validates nonce; `POST https://oauth.zid.sa/oauth/token` with `grant_type=authorization_code`; returns both tokens
+- `validateWebhookHmac(rawBody: Buffer, signature: string): boolean` — HMAC-SHA256 using `ZID_APP_SECRET`
+
+**Deps:** ConfigService (zid.appId, zid.appSecret, zid.callbackUrl) · ioredis
+**Rules:** Nonce validated before code exchange · Webhook HMAC checked on all incoming events
+
+---
+
+### SVC-CONN-ZID-DS · ZidDatasetService [internal, application, Data] *(change-026)*
+Creates one `Dataset` per Zid entity from a single `DataConnection`.
+
+**Methods:**
+- `provisionFromOAuth(workspaceSlug, userId, authorizationToken, accessToken, expiresAt)` — creates `DataConnection(sourceType=zid)` with encrypted dual-token credentials; creates 3 Datasets (orders, products, customers) each with `sourceRef` set; runs `discoverSchemaWithAiProposal()`; enqueues initial full sync; returns `{ connectionId, datasetIds }`
+- `applyWebhookEvent(workspaceSlug, topic)` — maps Zid event topic to entity type; finds matching Datasets; enqueues incremental sync
+
+**Deps:** DataConnectionService · DatasetRepository · DatasetService · SyncService
+**Rules:** Each entity → independent Dataset (separate OLAP table) · Canonical views include Zid, Salla, and Shopify entity tables
+
+---
 Contract every data source adapter must implement.
 
 ```typescript

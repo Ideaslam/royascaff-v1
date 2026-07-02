@@ -92,3 +92,18 @@
 - Service: `GET /api/v1/data/datasets` (filtered by connectionId); `POST /api/v1/data/datasets/:id/sync`
 - Guard: authGuard
 - Notes: OAuth callback from Salla redirects directly to this page with `connectionId` in the URL.
+---
+
+### Zid — Connect Page *(change-026)*
+- Route: `/app/data/zid/connect`
+- Components: ZidConnectPage — explanation of what data is synced (orders, products, customers); "Connect with Zid" button calls `GET /api/v1/data/zid/auth-url` then redirects the browser to the returned `authUrl`; loading spinner during URL fetch
+- Service: `GET /api/v1/data/zid/auth-url` (EP-DATA-32)
+- Guard: authGuard
+- States: loading · error (API unreachable)
+
+### Zid — Setup Page *(change-026)*
+- Route: `/app/data/zid/setup/:connectionId`
+- Components: ZidSetupPage — confirmation screen shown after OAuth callback; lists the 3 provisioned Datasets (orders, products, customers) with their sync status tags; "Trigger Sync" per-entity button; "Go to Data Sources" + "Create Dashboard" CTAs
+- Service: `GET /api/v1/data/datasets`; `POST /api/v1/data/datasets/:id/sync`
+- Guard: authGuard
+- Notes: OAuth callback from Zid redirects directly to this page with `connectionId` in the URL.

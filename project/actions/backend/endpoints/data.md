@@ -90,3 +90,16 @@
 - [EP-DATA-29] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (Redis TTL 10 min). Salla authorization URL: `https://accounts.salla.sa/oauth2/auth`.
 - [EP-DATA-30] Public callback: validates state nonce; `POST https://accounts.salla.sa/oauth2/token` with `grant_type=authorization_code`; encrypts `{ accessToken, refreshToken, expiresAt }` as `DataConnection.credentialsEncrypted(sourceType=salla)`; calls `SallaDatasetService.provisionFromOAuth()` to create 3 Datasets; redirects to `/app/data/salla/setup/:connectionId`.
 - [EP-DATA-31] Public webhook receiver: validates `X-Salla-Signature` HMAC-SHA256 using app secret; maps Salla event topic (e.g. `order.created`) to entity type → Dataset; enqueues `DATA_SYNC_QUEUE` with `mode=incremental`. Returns 200 immediately.
+
+### Zid OAuth + Webhook Endpoints *(change-026)*
+
+`@Controller('data/zid')`
+
+| ID | Method | Route | Auth | Input | Return | Service | Notes |
+|----|--------|-------|------|-------|--------|---------|-------|
+| EP-DATA-32 | GET | /api/v1/data/zid/auth-url | JWT | — | 200 `{ authUrl: string }` | ZidOAuthService.buildAuthUrl() | Returns Zid OAuth consent URL; `state` encodes workspaceSlug+userId+nonce |
+| EP-DATA-33 | GET | /api/v1/data/zid/callback | Public | query: `code`, `state` | 302 → `/app/data/zid/setup/:connectionId` | ZidController.handleCallback() | Validates state nonce; exchanges code for dual tokens; encrypts + stores DataConnection; provisions 3 Datasets; redirects |
+| EP-DATA-34 | POST | /api/v1/data/zid/webhook | Public | body: Zid event payload; header: `X-Zid-Signature` | 200 | ZidController.handleWebhook() | Validates HMAC-SHA256; maps event topic → entity → Dataset; enqueues incremental sync |
+- [EP-DATA-32] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (Redis TTL 10 min). Zid authorization URL: `https://oauth.zid.sa`.
+- [EP-DATA-33] Public callback: validates state nonce; `POST https://oauth.zid.sa/oauth/token` with `grant_type=authorization_code`; encrypts both tokens `{ authorizationToken, accessToken, expiresAt }` as `DataConnection.credentialsEncrypted(sourceType=zid)`; calls `ZidDatasetService.provisionFromOAuth()` to create 3 Datasets; redirects to `/app/data/zid/setup/:connectionId`.
+- [EP-DATA-34] Public webhook receiver: validates `X-Zid-Signature` HMAC-SHA256 using app secret; maps Zid event topic (e.g. `order.create`) to entity → Dataset; enqueues `DATA_SYNC_QUEUE` with `mode=incremental`. Returns 200 immediately.
