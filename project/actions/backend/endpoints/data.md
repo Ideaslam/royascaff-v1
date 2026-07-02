@@ -129,3 +129,17 @@
 
 - [EP-DATA-37] Requires `sourceType = mongodb_atlas`. Connects with `MongoClient`, calls `db.listCollections({ nameOnly: false }).toArray()`; excludes system collections. Validates workspaceSlug ownership.
 - [EP-DATA-38] `collection.find({}).limit(n)` with `flattenDocument()` applied; extracts union of all column names from returned docs. Max limit capped at 200.
+
+---
+
+### Cross-Cutting Sync Ops — Retry + Health Endpoints *(change-029)*
+
+`@Controller('data')` (sync retry) · `@Controller('admin')` (health)
+
+| ID | Method | Route | Auth | Input | Return | Service | Notes |
+|----|--------|-------|------|-------|--------|---------|-------|
+| EP-DATA-39 | POST | /api/v1/data/datasets/:id/sync-runs/:runId/retry | JWT | `:id`, `:runId` | 200 `{ syncRunId, queued: true }` | SyncService.retryRun() | Re-queues a FAILED sync run as a new full-sync job; validates run belongs to dataset and is in FAILED status |
+| EP-ADMIN-SH-1 | GET | /api/v1/admin/data/sync-health | JWT+admin | query: `?limit=50` | 200 `{ sources: SourceHealthDto[] }` | AdminSyncHealthController | Returns per-workspace per-sourceType last-run summary; status, lastSyncAt, rowsLoaded, errorMessage |
+
+- [EP-DATA-39] Loads the `SyncRun` by `runId`; validates `status === 'failed'`; calls `SyncService.retryRun(workspaceSlug, runId)` which creates a new `SyncRun` record and enqueues a fresh BullMQ job for the same dataset in `FULL` mode. Returns new `syncRunId`.
+- [EP-ADMIN-SH-1] Admin-only endpoint. Queries `SyncRun` across all workspaces for the most recent run per dataset; groups by `sourceType`; returns summary sorted by most-recent failure first.

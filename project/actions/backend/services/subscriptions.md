@@ -45,6 +45,32 @@ Extensible subscription quota enforcement via a limit registry.
 
 ---
 
+### SVC-SUB-LIMIT-SYNC — SubscriptionLimitService sync extensions *(change-029)*
+
+**New limit keys added to `SubscriptionLimitKey`:**
+- `MAX_SYNCED_ROWS_PER_MONTH` — total rows loaded across all syncs in the billing period (0 = unlimited)
+- `MAX_SYNCS_PER_DAY` — number of manual+scheduled sync triggers per calendar day (0 = unlimited)
+
+**New plan fields added to `SubscriptionPlan`:**
+- `maxSyncedRowsPerMonth: number` (0 = unlimited, default 0)
+- `maxSyncsPerDay: number` (0 = unlimited, default 0)
+
+**New user-subscription counters added to `UserSubscription`:**
+- `syncedRowsThisMonth: number` (reset on billing period rollover)
+- `syncsToday: number` (reset daily)
+- `syncsTodayResetAt: Date` (tracks when `syncsToday` was last reset)
+
+**New methods on `SubscriptionLimitService`:**
+- `incrementSyncedRows(userId, rowCount): Promise<void>` — $inc `syncedRowsThisMonth` after successful sync
+- `incrementSyncsToday(userId): Promise<void>` — $inc `syncsToday`; resets counter if `syncsTodayResetAt` < today
+- `checkSyncAllowed(userId): Promise<LimitCheckResult>` — checks both `MAX_SYNCED_ROWS_PER_MONTH` and `MAX_SYNCS_PER_DAY`; returns most restrictive result
+
+**Enforcement points:**
+- `SyncService.triggerSync()` calls `checkSyncAllowed()` before enqueuing; throws `ForbiddenException` with clear message if either limit exceeded
+- `DataSyncProcessor.process()` calls `incrementSyncedRows()` and `incrementSyncsToday()` after `markDone()`
+
+---
+
 ### SVC-SUB-ROLL · SubscriptionPeriodRolloverProcessor [internal, application, Subscriptions]
 BullMQ processor that resets monthly usage counters and marks expired subscriptions.
 

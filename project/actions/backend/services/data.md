@@ -66,6 +66,26 @@ BullMQ worker that executes a full or incremental dataset sync via the PipelineE
 
 ---
 
+### SVC-DATA-SCHEMA-DRIFT — SchemaDriftService [internal, application, Data] *(change-029)*
+`src/modules/data/services/schema-drift.service.ts`
+
+Compares the **stored** `Dataset.schema` (from last discovery) against a freshly discovered schema from the connector. Returns a structured drift report.
+
+**Methods:**
+- `detect(stored: DiscoveredColumn[], fresh: DiscoveredColumn[]): SchemaDriftReport`
+  - `added: string[]` — columns present in `fresh` but absent in `stored` → safe, auto-applied
+  - `removed: string[]` — columns in `stored` absent from `fresh` → breaking
+  - `retyped: { name, oldType, newType }[]` — columns present in both but different canonical type → breaking
+  - `hasBreaking: boolean` — true if `removed.length > 0 || retyped.length > 0`
+
+**Called by:** `DataSyncProcessor` before the ingest pipeline step. If `hasBreaking`, processor sets `Dataset.hasSchemaDrift = true`; embeds report in `SyncRun.schemaDrift`; triggers `SYNC_SCHEMA_DRIFT` notification. Safe additions are appended to `Dataset.schema` automatically.
+
+**New fields added to schemas:**
+- `SyncRun.schemaDrift: SchemaDriftReport | null` — embedded drift snapshot per run
+- `Dataset.hasSchemaDrift: boolean` — true when the stored schema has unresolved breaking drift
+
+---
+
 ### SVC-DATA-SCHED · ScheduledSyncService [internal, application, Data] *(change-023)*
 `@nestjs/schedule` cron service that enqueues periodic syncs for datasets with `syncPolicy = HOURLY | DAILY`.
 

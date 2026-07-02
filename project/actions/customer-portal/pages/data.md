@@ -135,3 +135,18 @@
 - Guard: authGuard
 - States: each step has loading/error/success states; Step 1 shows a static IP-allowlist warning panel; Step 3 has a collapsible preview panel per collection
 - Notes: All live DB calls (test, collection listing, preview) happen during setup only — no live queries at dashboard render time. Nested documents are flattened with dot-notation in preview and during sync.
+
+---
+
+### Dataset Detail — Sync History & Observability *(change-029)*
+- Route: `/app/data/datasets/:id` *(already registered — this page fills the existing route)*
+- Components: DatasetDetailPage — full observability panel for a single dataset:
+  - **Header:** dataset name, sourceType badge, semantic flag, "last synced X ago" (relative time from `dataset.lastSyncAt`)
+  - **Schema Drift Banner:** shown when `dataset.hasSchemaDrift === true`; lists added/removed/retyped columns from the most recent `SyncRun.schemaDrift`; "Dismiss" clears `hasSchemaDrift` via `PATCH /data/datasets/:id`
+  - **Sync History Table:** calls `EP in GET /data/datasets/:id/sync-runs`; columns: date, mode (FULL/INCR), status badge (queued/running/done/failed/cancelled), rows loaded, duration, error preview; sorted newest-first
+  - **Retry Button:** shown on rows with `status = failed`; calls `EP-DATA-39 POST .../sync-runs/:runId/retry`; re-fetches history on success
+  - **Manual Sync Button:** triggers a new full sync via `POST /data/datasets/:id/sync`; disabled when `syncStatus = syncing`
+  - **Subscription Limit Warning:** shown inline when retry/manual-sync returns 403 with sync limit code
+- Service: `GET /data/datasets/:id`; `GET /data/datasets/:id/sync-runs`; `POST /data/datasets/:id/sync`; `POST /data/datasets/:id/sync-runs/:runId/retry`; `PATCH /data/datasets/:id`
+- Guard: authGuard
+- States: history table has loading skeleton; running rows poll every 5s (or on-demand refresh); retry row spins during re-queue
