@@ -36,20 +36,21 @@ Manages named source connection credentials; encrypts/decrypts credentials; vali
 
 ---
 
-### SVC-DATA-DS · DatasetService [internal, application, Data] *(change-015)*
-Manages dataset definitions, column mapping, and schema discovery.
+### SVC-DATA-DS · DatasetService [internal, application, Data] *(change-015, updated change-022)*
+Manages dataset definitions, column mapping, schema discovery, and AI-assisted mapping proposals.
 
 **Methods:**
-- `create(dto: CreateDatasetDto, userId, workspaceSlug)` — links connection, sets semanticFlag, triggers `discoverSchema`
-- `list(workspaceSlug, filters)` — paginated; filterable by semanticFlag and status
-- `get(id, workspaceSlug)` — dataset with schema and last sync info
-- `update(id, dto, workspaceSlug)` — updates columnMapping, description, extractOptions; mapping changes do NOT re-trigger sync
-- `delete(id, workspaceSlug)` — drops OLAP table; deletes FilterValueMeta; hard-deletes record
-- `discoverSchema(id, workspaceSlug)` — resolves connector, decrypts creds, calls `connector.discoverSchema(creds, extractOptions)`, writes `Dataset.schema`
-- `enqueueSyncJob(id, workspaceSlug, mode: 'full' | 'incremental', triggeredBy)` — validates limits, creates SyncRun record, enqueues DATA_SYNC_QUEUE job
+- `create(dto: CreateDatasetDto, userId, workspaceSlug)` — links connection, sets semanticFlag; for CSV datasets calls `discoverSchemaWithAiProposal()` automatically after creation
+- `list(workspaceSlug, filters)` — paginated; filterable by connectionId, semanticFlag, syncStatus
+- `get(id, workspaceSlug)` — dataset with schema, last sync info, AI proposal fields
+- `update(id, dto, workspaceSlug)` — updates columnMapping, semanticFlag, description, extractOptions; mapping changes do NOT re-trigger sync
+- `delete(id, workspaceSlug)` — drops OLAP table via `AnalyticsStoreService`; deletes FilterValueMeta; hard-deletes record
+- `discoverSchemaWithAiProposal(id, workspaceSlug)` — *(change-022)* decrypts connection credentials; calls `connector.discoverSchema(conn, dataset)` → writes `Dataset.schema`; then calls AI with `column-mapping` prompt (column names + inferred types + available canonical fields) → writes `aiProposedMapping` + `aiProposedSemanticFlag` as draft fields for user review; never sends raw rows to AI
+- `confirmMapping(id, workspaceSlug, dto: ConfirmMappingDto)` — *(change-022)* writes user-edited (or AI-proposed) values into `columnMapping` + `semanticFlag`; clears `aiProposedMapping` + `aiProposedSemanticFlag`
+- `enqueueSyncJob(id, workspaceSlug, mode: 'full' | 'incremental', triggeredBy)` — validates `syncStatus != syncing`; creates SyncRun record; enqueues `DATA_SYNC_QUEUE` job
 
-**Deps:** DatasetRepository · DataConnectionRepository · SyncRunRepository · ConnectorRegistry · DataConnectionService · DATA_SYNC_QUEUE (BullMQ) · AuditLogService · AnalyticsStoreService
-**Rules:** `analyticsTable` derived automatically as `ds_{workspaceSlug}_{datasetId}` — never caller-supplied · Sync enqueue blocked if current SyncRun.status = `running` for same dataset
+**Deps:** DatasetRepository · DataConnectionRepository · DataConnectionService · ConnectorRegistry · AiProviderRegistry · PromptTemplateService · SyncRunRepository · DATA_SYNC_QUEUE (BullMQ) · AnalyticsStoreService · AuditLogService
+**Rules:** `analyticsTable` derived automatically as `ds_{workspaceSlug}_{datasetId}` — never caller-supplied · Sync enqueue blocked if `syncStatus = syncing` · `discoverSchemaWithAiProposal` never exposes raw rows to AI — only column names, inferred types, and sample values · `confirmMapping` is the only way to promote AI proposal fields into live `columnMapping`
 
 ---
 

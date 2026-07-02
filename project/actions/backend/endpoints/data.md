@@ -28,24 +28,28 @@
 | EP-DATA-13 | DELETE | /api/v1/data/connections/:id | JWT | `:id` | 204 | SVC-DATA-CONN.delete() | Blocked if active datasets reference it |
 | EP-DATA-14 | POST | /api/v1/data/connections/:id/test | JWT | `:id` | 200 `{ ok: boolean, error?: string, testedAt: Date }` | SVC-DATA-CONN.testConnection() | |
 
-### Dataset Endpoints *(change-015)*
+### Dataset Endpoints *(change-015, updated change-022)*
 
 `@Controller('data/datasets')`
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-DATA-15 | POST | /api/v1/data/datasets | JWT | `CreateDatasetDto` { connectionId, name, semanticFlag, columnMapping?, extractOptions? } | 201 `DatasetDto` | SVC-DATA-DS.create() | Triggers discoverSchema automatically |
-| EP-DATA-16 | GET | /api/v1/data/datasets | JWT | query: page, limit, connectionId, semanticFlag, status | 200 `Paginated<DatasetListItemDto>` | SVC-DATA-DS.list() | |
-| EP-DATA-17 | GET | /api/v1/data/datasets/:id | JWT | `:id` | 200 `DatasetDto` | SVC-DATA-DS.get() | Includes schema + last sync |
-| EP-DATA-18 | PATCH | /api/v1/data/datasets/:id | JWT | `:id` · `UpdateDatasetDto` | 200 `DatasetDto` | SVC-DATA-DS.update() | Mapping changes do not trigger sync |
+| EP-DATA-15 | POST | /api/v1/data/datasets | JWT | `CreateDatasetDto` { connectionId, name, semanticFlag?, extractOptions? } | 201 `DatasetDto` | SVC-DATA-DS.create() | For CSV: auto-triggers `discoverSchemaWithAiProposal` *(change-022)* |
+| EP-DATA-16 | GET | /api/v1/data/datasets | JWT | query: page, limit, connectionId, semanticFlag, syncStatus | 200 `Paginated<DatasetListItemDto>` | SVC-DATA-DS.list() | |
+| EP-DATA-17 | GET | /api/v1/data/datasets/:id | JWT | `:id` | 200 `DatasetDto` | SVC-DATA-DS.get() | Includes schema, aiProposedMapping, aiProposedSemanticFlag, last sync info |
+| EP-DATA-18 | PATCH | /api/v1/data/datasets/:id | JWT | `:id` · `UpdateDatasetDto` { name?, description?, extractOptions? } | 200 `DatasetDto` | SVC-DATA-DS.update() | Mapping changes via EP-DATA-23 (confirm); this endpoint does NOT update columnMapping directly |
 | EP-DATA-19 | DELETE | /api/v1/data/datasets/:id | JWT | `:id` | 204 | SVC-DATA-DS.delete() | Drops OLAP table + FilterValueMeta |
-| EP-DATA-20 | POST | /api/v1/data/datasets/:id/sync | JWT | `:id` · `SyncDatasetDto` { mode: 'full' \| 'incremental' }` | 202 `{ syncRunId, status }` | SVC-DATA-DS.enqueueSyncJob() | Async; blocked if already running |
+| EP-DATA-20 | POST | /api/v1/data/datasets/:id/sync | JWT | `:id` · `SyncDatasetDto` { mode: 'full' \| 'incremental' } | 202 `{ syncRunId, status }` | SVC-DATA-DS.enqueueSyncJob() | Async; blocked if already syncing |
 | EP-DATA-21 | GET | /api/v1/data/datasets/:id/sync-history | JWT | `:id` · query: page, limit | 200 `Paginated<SyncRunDto>` | SVC-DATA-DS.listSyncHistory() | |
-| EP-DATA-22 | POST | /api/v1/data/datasets/:id/discover-schema | JWT | `:id` | 200 `{ schema: ColumnSpec[] }` | SVC-DATA-DS.discoverSchema() | Overwrites existing schema |
+| EP-DATA-22 | POST | /api/v1/data/datasets/:id/discover-schema | JWT | `:id` | 200 `DatasetDto` | SVC-DATA-DS.discoverSchemaWithAiProposal() | Re-discovers schema + refreshes AI mapping proposal *(change-022)* |
+| EP-DATA-23 | POST | /api/v1/data/datasets/:id/confirm-mapping | JWT | `:id` · `ConfirmMappingDto` { columnMapping: Record<string,string>, semanticFlag: string } | 200 `DatasetDto` | SVC-DATA-DS.confirmMapping() | Promotes mapping into live fields; clears AI proposals *(change-022)* |
 
 **Notes:**
 - [EP-DATA-01] Single-step upload: frontend sends file as multipart, backend streams to R2, creates `csvfiles` record, queues AI column analysis job.
 - [EP-DATA-02] Legacy presigned-URL flow: creates a `csvfiles` record and returns a presigned upload URL plus upload session id for direct client-to-R2 upload.
 - [EP-DATA-06] Accepts array of column updates setting each column's `userDescription`. When all columns confirmed, file becomes eligible for dashboard generation.
 - [EP-DATA-09] Credentials are accepted in plain text over HTTPS, then immediately encrypted with AES-256-GCM before persisting. Never stored or returned in plaintext.
+- [EP-DATA-15] For CSV datasets, after creating the Dataset record the backend automatically triggers schema discovery + AI mapping proposal. The response includes `aiProposedMapping` and `aiProposedSemanticFlag` for user review.
 - [EP-DATA-20] Creates a `SyncRun` record immediately and returns `syncRunId`; actual sync runs asynchronously via BullMQ `DATA_SYNC_QUEUE`.
+- [EP-DATA-22] Can be called again at any time to refresh schema (e.g. after re-uploading a CSV). Re-runs connector `discoverSchema` + AI proposal. Clears previous proposal.
+- [EP-DATA-23] User confirms (or edits) the AI-proposed mapping. Only after this call does the Dataset become eligible for dashboard generation.

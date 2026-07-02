@@ -1,37 +1,31 @@
 ## Module: Data (Multi-Source Data Management)
 
-### Data Sources Home Page *(planned — change-022+)*
+### Data Sources Home Page *(change-022)*
 - Route: `/app/data`
-- Components: tabs — "Connections" | "Datasets" | "Legacy Files"
-- Service: DataConnectionService.list(), DatasetService.list()
+- Components: DataSourcesPage — datasets table with columns: name, sourceType badge, semanticFlag badge, syncStatus badge, lastSyncAt, rowCount, actions (detail, sync, delete); "Add CSV Dataset" button; empty state with illustration
+- Service: `GET /api/v1/data/datasets` (list); `DELETE /api/v1/data/datasets/:id`
 - Guard: authGuard + onboardingGuard
-- Notes: Landing page for the new multi-source data model; legacy CSV files accessible under the "Legacy Files" tab.
+- States: loading skeleton · empty state (no datasets yet) · error toast
 
-### Data Connections List Page *(planned — change-022+)*
-- Route: `/app/data/connections`
-- Components: ConnectionsListPage (table: name, sourceType, status, lastTestedAt, actions), "New Connection" button
-- Service: `GET /api/v1/data/connections`; `DELETE /api/v1/data/connections/:id`; `POST /api/v1/data/connections/:id/test`
-- Guard: authGuard
-- Notes: Credentials are never shown in the UI.
+### CSV Upload Page *(change-022)*
+- Route: `/app/data/csv-upload`
+- Components: CsvUploadPage — 3-step wizard:
+  - **Step 1 — Upload:** dropzone (CSV only, max 50 MB), file name preview, upload progress bar; on success → creates DataConnection + Dataset + triggers `discoverSchemaWithAiProposal`
+  - **Step 2 — Schema Review:** shows discovered columns (name, inferred type, sample) + AI-proposed `semanticFlag` (editable dropdown) + AI-proposed `columnMapping` table (canonical field → source column, each row editable); "Refresh AI Proposal" button calls EP-DATA-22; loading state while AI runs
+  - **Step 3 — Confirm & Sync:** summary of confirmed mapping; calls EP-DATA-23 then EP-DATA-20 (full sync); shows sync progress + "Done" redirect to `/app/data/datasets/:id`
+- Service: `POST /api/v1/data/upload/file` (upload CSV to R2); `POST /api/v1/data/connections` (create DataConnection); `POST /api/v1/data/datasets` (create Dataset + triggers AI proposal); `GET /api/v1/data/datasets/:id` (poll for aiProposedMapping); `POST /api/v1/data/datasets/:id/confirm-mapping` (EP-DATA-23); `POST /api/v1/data/datasets/:id/sync` (EP-DATA-20)
+- Guard: authGuard + onboardingGuard
+- Notes: CSV upload creates one `DataConnection` (credentials = `{ storageKey }`) + one `Dataset` atomically. The wizard abstracts this complexity from the user.
 
-### Create / Edit Connection Page *(planned — change-022+)*
-- Route: `/app/data/connections/new`, `/app/data/connections/:id/edit`
-- Components: ConnectionFormPage (sourceType selector, dynamic credential fields per source type, test-connection button with inline result)
-- Service: `POST /api/v1/data/connections`; `PATCH /api/v1/data/connections/:id`; `POST /api/v1/data/connections/:id/test`
-- Guard: authGuard
-
-### Datasets List Page *(planned — change-022+)*
-- Route: `/app/data/datasets`
-- Components: DatasetsListPage (table: name, sourceType, semanticFlag, status, lastSyncAt, rowCount, actions)
-- Service: `GET /api/v1/data/datasets`
-- Guard: authGuard
-
-### Dataset Detail + Sync History Page *(planned — change-022+)*
+### Dataset Detail Page *(change-022)*
 - Route: `/app/data/datasets/:id`
-- Components: DatasetDetailPage (schema preview, columnMapping editor, last sync info, "Sync Now" button, SyncRun history table)
-- Service: `GET /api/v1/data/datasets/:id`; `POST /api/v1/data/datasets/:id/sync`; `GET /api/v1/data/datasets/:id/sync-history`
+- Components: DatasetDetailPage — tabs:
+  - **Overview:** dataset name, sourceType, semanticFlag badge, syncStatus badge, rowCount, analyticsTable; "Re-sync" button (EP-DATA-20); last sync timestamp + error message
+  - **Schema:** discovered columns table (name, type, sample values); "Refresh Schema" button (EP-DATA-22)
+  - **Mapping:** columnMapping editor — table with canonical field → source column dropdown; "Confirm Changes" button (EP-DATA-23)
+  - **Sync History:** paginated sync runs table (mode, status, rowsIn, rowsLoaded, duration, error); (EP-DATA-21)
+- Service: `GET /api/v1/data/datasets/:id`; `POST /api/v1/data/datasets/:id/sync`; `POST /api/v1/data/datasets/:id/discover-schema`; `POST /api/v1/data/datasets/:id/confirm-mapping`; `GET /api/v1/data/datasets/:id/sync-history`
 - Guard: authGuard
-- Notes: columnMapping editor lets users map source columns to canonical fields without re-syncing; semanticFlag shown read-only.
 
 ### Legacy CSV — Data Files List Page *(kept for backward compat)*
 - Route: `/app/data/files`

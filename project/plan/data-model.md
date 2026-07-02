@@ -579,6 +579,8 @@ One collection per uploaded CSV file. `{fileId}` is the 24-char hex string of `c
 14. `datasets.analyticsTable` must follow the pattern `ds_{workspaceSlug}_{datasetId}` — never allow caller-supplied table names *(change-015)*
 15. `filtervaluemeta` rows must be refreshed (not created anew) after every successful sync run *(change-021)*
 16. `chartwidgets.querySpec` takes precedence over `queryDefinition` in the chart data API; both may coexist on the same document *(change-020)*
+17. `dashboards` may only be created from datasets where `analyticsTable != null && syncStatus != syncing`; legacy CsvFile path requires `status == confirmed` *(change-022)*
+18. `datasets.aiProposedMapping` and `aiProposedSemanticFlag` are display-only fields — they are replaced by `columnMapping` and `semanticFlag` upon user confirmation and never used in query execution *(change-022)*
 
 ## Mongoose Enum Reference
 ```
@@ -658,7 +660,7 @@ Collection: `ws_{workspaceSlug}_dataconnections`
 
 ---
 
-## Dataset *(change-015)*
+## Dataset *(change-015, updated change-022)*
 Purpose: describes a named view of data from a connection — what to extract, how to label it, and its semantic meaning.
 Collection: `ws_{workspaceSlug}_datasets`
 
@@ -667,22 +669,28 @@ Collection: `ws_{workspaceSlug}_datasets`
 | `_id` | ObjectId | PK | — |
 | `workspaceSlug` | String | required | — |
 | `connectionId` | ObjectId | required | → `DataConnection._id` |
+| `sourceType` | Enum | required | `csv \| google_sheets \| …` |
 | `name` | String | required; human-readable dataset name | — |
 | `description` | String | optional | — |
 | `semanticFlag` | Enum | required, default: `arbitrary` | `arbitrary \| orders \| products \| customers \| inventory \| marketing` |
-| `columnMapping` | Object | optional; `{ sourceColumn: canonicalField }` map; schema-on-read, never rewrites data | — |
-| `schema` | [Object] | optional; discovered columns `{ name, inferredType, description? }`; written by `discoverSchema()` | — |
+| `columnMapping` | Object | optional; `{ canonicalField: sourceColumn }` map; schema-on-read, never rewrites data; user-confirmed | — |
+| `aiProposedMapping` | Object | nullable; AI-suggested `columnMapping` from `column-mapping` prompt; shown in UI for user review; replaced by `columnMapping` on confirm *(change-022)* | — |
+| `aiProposedSemanticFlag` | String | nullable; AI-suggested `semanticFlag`; shown in UI for review *(change-022)* | — |
+| `schema` | [Object] | optional; discovered columns `{ name, type, sample?, nullable? }`; written by `discoverSchema()` | — |
 | `extractOptions` | Object | optional; connector-specific extraction config (e.g. sheet name, SQL query, table name) | — |
-| `analyticsTable` | String | optional; OLAP table name — computed as `ds_{workspaceSlug}_{_id}` on first sync | — |
-| `status` | Enum | required, default: `pending` | `pending \| syncing \| ready \| error` |
+| `analyticsTable` | String | nullable; OLAP table name — set after first successful sync as `ds_{workspaceSlug}_{_id}` | — |
+| `syncStatus` | Enum | required, default: `idle` | `idle \| syncing \| error` |
+| `syncPolicy` | Enum | required, default: `manual` | `manual \| hourly \| daily \| webhook` |
 | `lastSyncAt` | Date | nullable | — |
-| `rowCount` | Number | nullable; count after last successful sync | — |
+| `rowCount` | Number | default: 0; count after last successful sync | — |
+| `lastSyncErrorMessage` | String | nullable | — |
 | `createdBy` | ObjectId | required | → `users._id` |
 | `createdAt` | Date | auto | — |
 | `updatedAt` | Date | auto | — |
 
-**Indexes:** `{ workspaceSlug: 1, connectionId: 1 }` · `{ workspaceSlug: 1, semanticFlag: 1 }` · `{ workspaceSlug: 1, status: 1 }`
+**Indexes:** `{ connectionId: 1 }` · `{ semanticFlag: 1 }` · `{ syncStatus: 1 }` · `{ createdBy: 1, createdAt: -1 }`
 **Relations:** belongs-to DataConnection · has-many SyncRuns · referenced-by DashboardDatasource · referenced-by FilterValueMeta
+**Rules:** `analyticsTable` set by `DataSyncProcessor` after first successful sync; `null` = data not yet loaded; dashboards require `analyticsTable != null` before generation
 
 ---
 

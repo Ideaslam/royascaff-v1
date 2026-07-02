@@ -4,7 +4,7 @@
 Owns dashboard lifecycle, widget management, chart-data aggregation/caching, and generation/refresh orchestration.
 
 **Methods:**
-- `createDashboard(dto: CreateDashboardDto, userId, ip?)` — validates unique name + confirmed datasets (or legacy CsvFiles), creates DashboardDatasource records, enqueues dashboard-generation pipeline job, audits DASHBOARD_CREATE
+- `createDashboard(dto: CreateDashboardDto, userId, ip?)` — validates unique name; resolves `datasetIds` against **`DatasetRepository`** first (requires `analyticsTable != null && syncStatus != syncing`); falls back to `CsvFileRepository` for legacy `CsvFile` IDs (requires `status == CONFIRMED`); creates DashboardDatasource records; enqueues dashboard-generation pipeline job; audits DASHBOARD_CREATE *(updated change-022)*
 - `listDashboards(userId, userRole, filters): Promise<PaginatedResponseDto>` — paginated; non-admins scoped to ownerId
 - `getDashboard(id, userId, userRole)` — returns dashboard with widgets + datasources
 - `getDashboardStatus(id, userId, userRole)` — returns status, job status, and progress
@@ -22,7 +22,7 @@ Owns dashboard lifecycle, widget management, chart-data aggregation/caching, and
 
 **Deps:** DashboardRepository · ChartWidgetRepository · ChartDataCacheRepository · WidgetDefinitionRepository · DashboardDatasourceRepository · DatasetRepository · CsvFileRepository · BackgroundJobRepository · BackgroundJobsService · FilterValuesService · AnalyticsStoreService · WorkspaceRepository · AuditLogService · DASHBOARD_GENERATION_QUEUE (BullMQ) · CACHE_RECALCULATION_QUEUE (BullMQ) · Redis (ioredis, 1h TTL) · ConfigService · Mongo Connection (@InjectConnection)
 **Side effects:** queue enqueue · Redis read/write/delete · OLAP queries · Mongo aggregations · audit writes
-**Rules:** Dashboard name unique within project · All datasource Datasets (or legacy CsvFiles) must be confirmed before creation · Widgets added only when dashboard is READY · Filtered chart queries bypass persistent caches; unfiltered cached in Redis (1h) + DB · OLAP path taken when `widget.querySpec` is non-null · Owner-or-admin enforced on all operations · Retry only from ERROR state · Aggregation failures return []
+**Rules:** Dashboard name unique within project · Datasets must have `analyticsTable != null && syncStatus != syncing`; legacy CsvFiles must be `CONFIRMED` · Widgets added only when dashboard is READY · Filtered chart queries bypass persistent caches; unfiltered cached in Redis (1h) + DB · OLAP path taken when `widget.querySpec` is non-null · Owner-or-admin enforced on all operations · Retry only from ERROR state · Aggregation failures return []
 
 ---
 
