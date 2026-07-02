@@ -19,3 +19,4 @@
 
 - Admin Panel `RegisterPage` component exists but is not routed.
 - Global system settings not yet wired to a dedicated admin settings page.
+- Admin UI for managing DataConnections, Datasets, and SyncRun history (planned for customer portal — not admin panel).

@@ -13,14 +13,14 @@ BullMQ worker that parses an uploaded CSV, infers columns, calls the AI provider
 ---
 
 ### SVC-AI-DASH · DashboardGenerationProcessor [internal, application, AI Processing]
-BullMQ worker that AI-generates dashboard widgets from confirmed datasources and the widget catalog.
+BullMQ worker that triggers the `dashboard-generate` pipeline for AI-powered dashboard creation. *(Refactored in change-020 — no longer directly calls AI)*
 
 **Methods:**
-- `process(job: Job<{ dashboardId; jobId; fileIds; purpose }>): Promise<void>` — builds datasource context, loads widget catalog, calls AI, persists valid widgets, marks READY/COMPLETED (or ERROR/FAILED)
+- `process(job: Job<{ dashboardId; jobId; workspaceSlug; purpose }>): Promise<void>` — resolves workspace, calls `PipelineEngine.run('dashboard-generate', { metadata: { dashboardId, purpose } })`, updates BackgroundJob status/progress to COMPLETED (or FAILED on error)
 
-**Deps:** BackgroundJobRepository · CsvFileRepository · ColumnMetadataRepository · DashboardRepository · ChartWidgetRepository · WidgetDefinitionRepository · AI_PROVIDER
-**Side effects:** AI call · widget inserts · dashboard status update · progress reports (5/20/30/80/100)
-**Rules:** Only widget types in catalog are persisted (unknown dropped) · Column descriptions prefer userDescription → aiDescription → fallback · Default layout 12 columns unless AI specifies otherwise
+**Deps:** BackgroundJobRepository · PipelineEngine · WorkspaceRepository
+**Side effects:** pipeline step side effects (AI calls, widget inserts, filter computation, cache invalidation) · background job status update
+**Rules:** Processor is a thin orchestration shell — all business logic lives in pipeline steps · On error: job (FAILED) + dashboard ERROR captured
 
 ---
 

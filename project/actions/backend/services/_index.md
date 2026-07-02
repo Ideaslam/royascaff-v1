@@ -5,9 +5,9 @@
 | Auth | auth.md | SVC-AUTH, SVC-AUTH-JWT | 2 |
 | Users | users.md | SVC-USR | 1 |
 | Projects | projects.md | SVC-PROJ | 1 |
-| Data (CSV Management) | data.md | SVC-DATA | 1 |
+| Data (Multi-Source) | data.md | SVC-DATA, SVC-DATA-CONN, SVC-DATA-DS, SVC-DATA-SYNC | 4 |
 | AI Processing | ai-processing.md | SVC-AI-CSV, SVC-AI-DASH, SVC-AI-DGC | 3 |
-| Dashboards | dashboards.md | SVC-DASH, SVC-DASH-SEED | 2 |
+| Dashboards | dashboards.md | SVC-DASH, SVC-DASH-FILTER, SVC-DASH-SEED | 3 |
 | Sharing | sharing.md | SVC-SHARE | 1 |
 | Export | export.md | SVC-EXPORT | 1 |
 | Notifications | notifications.md | SVC-NOTIF | 1 |
@@ -22,4 +22,6 @@
 | Workspace | workspace.md | SVC-WS, SVC-WS-MEMBER, SVC-WS-INVITE, SVC-WS-BRAND, SVC-WS-ONBOARD | 5 |
 | Color Templates | color-templates.md | SVC-COLTPL | 1 |
 | Analytics Store (OLAP Engine) | analytics-store.md | SVC-OLAP-ENGINE, SVC-OLAP-STORE, SVC-OLAP-BENCH | 3 |
-| **Total** | | | **40** |
+| Connectors | connectors.md | SVC-CONN-REG, SVC-CONN-CSV, SVC-CONN-INTERFACE | 3 |
+| Pipelines | pipelines.md | SVC-PIPE-ENGINE, SVC-PIPE-STEP-REG, SVC-PIPE-TYPE-REG, SVC-PIPE-STEPS-INGEST, SVC-PIPE-STEPS-DASH, SVC-PIPE-RUN-REPO | 6 |
+| **Total** | | | **52** |

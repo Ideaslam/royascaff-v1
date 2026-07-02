@@ -32,18 +32,19 @@
 4. **Edit Project** [both] — update name and description; owner-or-admin only.
 5. **Delete Project** [both] — cascade deletes all dashboards (widgets, share links, cache entries, data source links); irreversible.
 
-## 4. Data (CSV Management)
+## 4. Data (Multi-Source Data Management)
 - Scope: BE (`src/modules/data/`) + FE (`pages/data/` in CP)
 - Audience: authenticated editors and admins (CP)
+- Entities: `DataConnection`, `Dataset`, `SyncRun`, `CsvFile` (legacy — kept for backward compat)
 
 ### Features
-1. **Upload CSV File** [both] — direct multipart upload (streamed to R2) or presigned upload (legacy); CSV only, max 50 MB; parses rows into per-file collection `csvdata_{fileId}`; creates `columnmetadata` per column; auto-queues AI analysis; AI never receives raw rows.
-2. **List My CSV Files** [both] — paginated, search by filename, filter by status (analyzing/ready/error); shows name, size, upload date, row count, status.
-3. **View CSV File Details** [both] — file metadata + columnmetadata with inferred type, samples, and AI descriptions.
-4. **AI Column Analysis (Background)** [backend-only] — owned by AI Processing worker; infers columns, computes sample stats, sends column names/types/stats to AI provider, writes descriptions to `columnmetadata`; never passes raw rows to AI.
-5. **Review and Edit Column Descriptions** [both] — display AI-generated descriptions, edit `userDescription` per column, save to `columnmetadata`; confirmed descriptions form semantic context for dashboard generation.
-6. **Retry Column Analysis** [both] — re-queue analysis job (returns 202), reset job status.
-7. **Delete CSV File** [both] — drops `columnmetadata` + `csvdata_{fileId}` collection + `csvfiles` record; reports affected dashboards in result; destructive and irreversible.
+1. **Manage Data Connections** [both] — create/list/update/delete named source connections (`csv | google_sheets | shopify | salla | zid | sql_server | mongodb_atlas`); credentials stored AES-256-GCM encrypted; test connection before saving.
+2. **Manage Datasets** [both] — create/list/update/delete a Dataset bound to a connection; assign a `semanticFlag` (`arbitrary | orders | products | customers | …`) and editable `columnMapping` (source-column → canonical field); editing mapping never triggers a sync (schema-on-read).
+3. **Sync Dataset (Manual/Scheduled)** [both] — enqueue a `DATA_SYNC_QUEUE` job; `SyncRun` record tracks mode (full/incremental), status, rows-in/loaded, error; subscription limits enforced before enqueue.
+4. **Sync History** [backend-only] — list `SyncRun` records per dataset with status, timings, row counts.
+5. **Schema Discovery** [backend-only] — connector's `discoverSchema()` called on connection-test or on-demand; writes `Dataset.schema` with inferred column types; used by AI to generate dashboards.
+6. **Legacy CSV Upload (Backward Compat)** [both] — direct multipart upload → `CsvFile` record + per-file `csvdata_{fileId}` collection + AI column analysis; will migrate to Dataset model in change-022.
+7. **Review and Edit Column Descriptions (Legacy)** [both] — `columnmetadata` per `CsvFile` column; edit `userDescription`; confirms file eligible for dashboard generation.
 
 ## 5. AI Processing
 - Scope: BE only (`src/modules/ai-processing/`) — no frontend pages
@@ -51,24 +52,27 @@
 
 ### Features
 1. **CSV Column Analysis Job** [backend-only] — consumes `csv-analysis` queue; loads rows, infers columns, computes sample stats, calls AI for per-column descriptions, writes to `columnmetadata`, updates `backgroundjobs` record; never passes raw rows to AI.
-2. **AI Dashboard Generation Job** [backend-only] — consumes `dashboard-generation` queue; loads dashboard purpose + confirmed `columnmetadata`, selects widgets from `WidgetDefinition` catalog, defines aggregation queries, writes `chartwidgets`, sets dashboard status `ready`, updates `backgroundjobs`. **Gap**: `pdf-export` and `cache-recalculation` queues are declared/enqueued but have no worker yet.
+2. **Dashboard Generation Job (Pipeline)** [backend-only] — consumes `dashboard-generation` queue; delegates entirely to `PipelineEngine.run('dashboard-generate', …)` with dashboard metadata; pipeline steps handle schema gathering, AI widget generation, filter computation, widget persistence, and cache invalidation. **Gap**: `pdf-export` and `cache-recalculation` queues are declared/enqueued but have no worker yet.
 
 ## 6. Dashboards
 - Scope: BE (`src/modules/dashboards/`) + FE (`pages/dashboards/` in CP)
 - Audience: authenticated editors (create/edit), viewers (read via share link)
+- Entities: `Dashboard`, `ChartWidget` (`queryDefinition` legacy + `querySpec` OLAP), `DashboardDatasource` (M:N, keyed by `datasetId`), `ChartDataCache`, `WidgetDefinition`, `FilterValueMeta`
 
 ### Features
-1. **Create Dashboard** [both] — name + purpose description (min 10 chars, used as AI context), select one or more confirmed CSV sources, save with status `generating`, queue AI generation job (returns 202).
-2. **Dashboard Generation Status** [both] — poll status endpoint (status/job/progress/error); progress indicator; redirect to viewer on completion, retry on failure.
-3. **List Dashboards** [both] — paginated, filterable by project and status (generating/ready/error), search by name, quick actions (open/duplicate/delete).
-4. **View Dashboard (Dynamic Viewer)** [both] — loads layout/widgets/data sources, parallel chart data calls per widget, per-widget loading/error states, responsive language-aware (EN/AR) layout; shared public viewer at `/shared/:token`.
-5. **Chart Data API (Cache-First, Filterable)** [backend-only] — Redis cache → MongoDB aggregation on miss; optional JSON-encoded filters; JWT or share-token access; skip throttling (parallel widget loads); returns empty result structure not 404 on no rows.
-6. **Manual Data Refresh** [both] — invalidate cache entries, enqueue recalculation job (returns 202); **partial**: `cache-recalculation` queue has no worker yet, recalculation does not complete async.
-7. **Dashboard Customization (Widget CRUD)** [both] — add/edit/delete widgets (type, title, position, query definition, display config); invalidates cache on edit/delete.
-8. **Edit Dashboard Details** [both] — update name and purpose description.
-9. **Duplicate Dashboard** [both] — clones dashboard + widgets + data source links; ready immediately (no regeneration).
-10. **Delete Dashboard** [both] — cascade deletes widgets, cache entries, share links; active share links immediately invalidated.
-11. **Retry Dashboard Generation** [both] — re-queue generation job (returns 202), reset dashboard/job status.
+1. **Create Dashboard** [both] — name + purpose description, select one or more confirmed datasets (or legacy CSV files), save with status `generating`, queue pipeline-based generation job (returns 202).
+2. **Dashboard Generation Status** [both] — poll status endpoint; progress indicator; redirect to viewer on completion, retry on failure.
+3. **List Dashboards** [both] — paginated, filterable by project and status, search by name.
+4. **View Dashboard (Dynamic Viewer)** [both] — loads layout/widgets/datasources, parallel chart data calls per widget; shared public viewer at `/shared/:token`.
+5. **Chart Data API (Cache-First, OLAP-Aware, Filterable)** [backend-only] — Redis cache → OLAP query (when `widget.querySpec` present) or MongoDB aggregation (legacy); filters injected into `QuerySpec` for OLAP path; JWT or share-token access; skip throttling; returns empty result structure (not 404) on no rows.
+6. **Dashboard Filter Options** [backend-only] — `GET /dashboards/:id/filter-options` returns AI-selected filter columns with their precomputed distinct values (list mode) or search-mode indicator; no recompute on open *(change-021)*.
+7. **Filter Value Search (Typeahead)** [backend-only] — `GET /dashboards/datasets/:datasetId/filter-values/:column/search?q=` LIKE-based typeahead via OLAP engine for high-cardinality columns *(change-021)*.
+8. **Manual Data Refresh** [both] — invalidate cache entries, enqueue recalculation job (returns 202); `cache-recalculation` queue has no worker yet.
+9. **Dashboard Customization (Widget CRUD)** [both] — add/edit/delete widgets; add-widget and edit-widget run as pipeline types (`add-widget`, `edit-widget`); invalidates cache on change.
+10. **Edit Dashboard Details** [both] — update name and purpose description.
+11. **Duplicate Dashboard** [both] — clones dashboard + widgets + data source links; ready immediately (no regeneration).
+12. **Delete Dashboard** [both] — cascade deletes widgets, cache entries, share links.
+13. **Retry Dashboard Generation** [both] — re-queue generation pipeline job, reset status.
 
 ## 7. Sharing
 - Scope: BE (`src/modules/sharing/`) + FE (share panel in `pages/dashboards/` + `shared-viewer/` in CP)
@@ -266,7 +270,10 @@ Infrastructure modules are called by business module services; they do not expos
 - Audience: system
 
 ### Features
-1. **AI Provider Client** [backend] — Anthropic (Claude) API client, prompt sending + response parsing; provider-agnostic interface (`AI_PROVIDER` env var); AI usage logging (`ailogs`, `aimodels`); AI Logs read API lives here alongside provider client; API key server-side only, never exposed to frontend or logs.
+1. **Pluggable AI Provider Interface** [backend] — `AiProviderInterface` defines `generate(request)`, `stream(request)`, and cost/usage reporting; `AiProviderRegistry` resolves providers by id; default provider is config-driven; callers can override per call; adding a new provider requires only implementing the interface + one registry entry *(change-016)*.
+2. **Anthropic (Claude) Provider** [backend] — implements `AiProviderInterface`; self-registers in `AiProviderRegistry` on module init; sends messages, streams responses, computes token cost; AI usage logged to `ailogs` + `aimodels`; API key server-side only *(change-016)*.
+3. **File-Based Prompt Templates** [backend] — `PromptTemplateService` renders `.md` prompt files with `{{var}}` interpolation, front-matter parsing (name, version, description, model hints), and per-engine dialect partial injection (`{{> dialect}}`); source is behind a `PromptTemplateLoader` interface (file now, db/admin later); all AI calls use a prompt key, never inline strings *(change-017)*.
+4. **AI Logs Read API** [backend] — admin-facing AI log query and cost summary (unchanged from prior implementation).
 
 ## S7. Email
 - Scope: BE only (`src/integrations/mail/`)
@@ -293,3 +300,37 @@ Infrastructure modules are called by business module services; they do not expos
 3. **Analytics Store Operations** [backend-only] — `AnalyticsStoreService` provides engine-neutral ops: create/drop per-dataset table (`ds_{workspaceSlug}_{datasetId}`), batch insert rows, create canonical union views per semantic flag, run a `QuerySpec`, define pre-aggregation rollup (`AggregatingMergeTree` / BQ materialized view), compute distinct/search values for filters *(change-014)*
 4. **Redis Result Cache Helper** [backend-only] — reusable cache keyed by `widget + filters-hash`; store/read/invalidate; engine-agnostic; TTL configurable; used by all widget data paths *(change-014)*
 5. **Admin OLAP Benchmark** [both] — admin-only screen + service; loads sample data into both engines, runs a standard query workload, records latency (p50/p95), rows scanned, estimated cost per engine; persists `OlapBenchmarkRun`; admin panel shows side-by-side comparison + recommended engine badge; sample/temp tables cleaned up after run *(change-014)*
+
+---
+
+## S10. Connectors
+- Scope: BE only — `src/integrations/connectors/`
+- Audience: system (consumed by DataSyncProcessor and PipelineEngine)
+
+### Features
+1. **Connector Interface** [backend-only] — `ConnectorInterface` defines `testConnection(creds)`, `discoverSchema(creds)`, `extract(creds, opts)`, `normalize(rows, mapping)` methods; standardized contract for every data source adapter *(change-018)*
+2. **Connector Registry** [backend-only] — `ConnectorRegistry` maps `DataSourceType` enum values to concrete implementations; resolving an unknown type throws a typed error; adding a new connector requires only implementing the interface + one registry line *(change-018)*
+3. **CSV Connector** [backend-only] — implements `ConnectorInterface` for `csv` source type; reads from uploaded R2 objects; normalizes rows against `columnMapping`; will be the first production connector *(change-022)*
+
+## S11. Pipelines
+- Scope: BE only — `src/modules/pipelines/`
+- Audience: system (executed by AI Processing workers and Dashboards operations)
+- Entities: `PipelineRun`
+
+### Features
+1. **Pipeline Engine** [backend-only] — `PipelineEngine.run(type, opts)` resolves a `PipelineTypeDefinition` (ordered steps), executes them in order against a shared `PipelineContext`, records a `PipelineRun` document (start/end/status/step-errors), surfaces errors cleanly; aborts on first fatal step error *(change-019)*
+2. **Step Registry** [backend-only] — `StepRegistry` maps step type strings to `PipelineStepInterface` implementations; any step can be injected as a NestJS provider and registered with a one-line entry; steps receive `PipelineContext` and return an updated context *(change-019)*
+3. **Pipeline Type Registry** [backend-only] — `PipelineTypeRegistry` maps pipeline type names (`ingest`, `dashboard-generate`, `add-widget`, `edit-widget`) to ordered `PipelineStepConfig[]`; new pipeline types added here without touching the engine *(change-019, change-020)*
+4. **Built-in Data Ingestion Steps** [backend-only] — `ExtractStep`, `CleanDataStep`, `TransformStep` (AI-assisted), `ApplyMappingStep`, `LoadStep`, `SyncRunCompleteStep`; used by the `ingest` pipeline type *(change-019)*
+5. **Built-in Dashboard Steps** [backend-only] — `GatherDatasetSchemasStep`, `LoadWidgetCatalogStep`, `GenerateWidgetsAiStep`, `BuildFiltersStep`, `SaveWidgetsStep`, `AddWidgetAiStep`, `SaveSingleWidgetStep`, `EditWidgetAiStep`, `SaveUpdatedWidgetStep`, `InvalidateWidgetCacheStep`; used by dashboard pipeline types *(change-020, change-021)*
+
+## S12. Filters
+- Scope: BE only — `src/modules/filters/`
+- Audience: system (consumed by Dashboards, Data sync, Pipelines)
+- Entities: `FilterValueMeta`
+
+### Features
+1. **Filter Value Computation (Cardinality Guard)** [backend-only] — `FilterValuesService.computeAndStore()` queries OLAP `distinctValues` for each AI-selected filter column; if `distinctCount ≤ 1000` → stores full value list (`mode: list`); otherwise stores only metadata (`mode: search`); result persisted to `FilterValueMeta` per column, Redis cache invalidated *(change-021)*
+2. **Get Filter Options** [backend-only] — returns cached `FilterValueMeta` for all filter columns of a dashboard; Redis-first; no OLAP query on dashboard open *(change-021)*
+3. **Typeahead Search** [backend-only] — for `mode: search` columns calls `AnalyticsStoreService.searchValues(engineId, table, column, query)` via OLAP LIKE query; for `mode: list` columns does in-memory prefix filter *(change-021)*
+4. **Post-Sync Filter Refresh** [backend-only] — `DataSyncProcessor` calls `FilterValuesService.computeAndStore()` after each successful sync, refreshing only the columns already tracked in `FilterValueMeta` *(change-021)*
