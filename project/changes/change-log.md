@@ -30,7 +30,7 @@ Step 5.6. Full detail for each change — the filled `change-request.md` and bot
 | 015 | 2026-07-02 | modify-data-model | backend | DataConnection / Dataset / SyncRun + dashboard M:N + filter-values | ✅ PASS | [change-015-data-source-model](change-015-data-source-model/) |
 | 016 | 2026-07-02 | refactor | backend | Pluggable AI-provider interface | ✅ PASS | [change-016-ai-provider-interface](change-016-ai-provider-interface/) |
 | 017 | 2026-07-02 | new-feature | backend | File-based editable prompt templates + dialect partials | ✅ PASS | [change-017-prompt-templates](change-017-prompt-templates/) |
-| 018 | 2026-07-02 | new-module | backend | Connector interface + generic sync queue | Planned | [change-018-connector-and-sync-queue](change-018-connector-and-sync-queue/) |
+| 018 | 2026-07-02 | new-module | backend | Connector interface + generic sync queue | ✅ PASS | [change-018-connector-and-sync-queue](change-018-connector-and-sync-queue/) |
 | 019 | 2026-07-02 | new-feature | backend | Generic pipeline engine + step/type registry | Planned | [change-019-pipeline-engine](change-019-pipeline-engine/) |
 | 020 | 2026-07-02 | modify-feature | backend | Dashboard operations as pipelines + multi-datasource | Planned | [change-020-dashboard-pipelines](change-020-dashboard-pipelines/) |
 | 021 | 2026-07-02 | new-feature | backend | Query-backed filter-values store | Planned | [change-021-filter-values-store](change-021-filter-values-store/) |
