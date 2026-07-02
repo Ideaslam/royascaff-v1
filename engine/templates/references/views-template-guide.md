@@ -52,6 +52,7 @@ When a screen needs more detail than the compact schema:
 ## Suggested Field Meanings
 
 - **Route/Navigation** — route name, deep link, and navigation pattern (stack, tab, modal, drawer)
+- **Status** — build state: `planned`, `partial`, `done`, `deferred` (see `engine/conventions.md`). Defaults to `planned` when specced before code; `deferred` states its reason in Notes.
 - **Components** — child components used on the screen
 - **Service** — data hook/service + which endpoint IDs it calls
 - **Guard** — auth requirement for this screen

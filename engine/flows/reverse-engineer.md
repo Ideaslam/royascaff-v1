@@ -135,6 +135,12 @@ in the relevant subdirectory. Register every file in the subdirectory's `_index.
 **Spec defaults**: All generated spec files inherit defaults from `engine/conventions.md`. Only
 document values that **deviate** from conventions.
 
+**Status from code**: Because this flow reads code that already exists, every extracted artifact is
+recorded with a **status** (`engine/conventions.md`): `done` when it is fully implemented, `partial`
+when the code is incomplete (`// TODO`, `NotImplementedException`, empty method bodies, missing UI
+states). Never use `planned` here — if there is no code, there is no artifact to extract. Each
+`_index.md` records the rolled-up status + `Done/Total` (see `engine/templates/index-template.md`).
+
 ---
 
 ### Step R.1.1 — Schema/Model Extraction
@@ -180,14 +186,17 @@ document values that **deviate** from conventions.
   5. Group services by module. Create one file per module following the template format.
      Inherit `engine/conventions.md` defaults — only document deviations.
   6. Create the registry: `project/actions/<api-app>/services/_index.md` — one row per module
-     (module name, file link, service count, brief purpose).
-  7. Note any layering violations found (e.g. business logic in controllers, services calling
+     (module name, file link, service count, **status**, **Done/Total**, brief purpose).
+  7. Set each service's **status**: `done` if fully implemented, `partial` if incomplete (TODO,
+     empty methods, not wired). Roll up per-module status in `_index.md`.
+  8. Note any layering violations found (e.g. business logic in controllers, services calling
      vendor SDKs directly without adapter pattern) — these feed into R.3 drift analysis.
 
 - **Done when**:
   - Every service file has a corresponding entry in the correct module file
   - Services are correctly classified as internal or external
   - Public methods, dependencies, and repositories are documented
+  - Each service carries a status (`done`/`partial`); `_index.md` rollup + `Done/Total` match
   - `_index.md` lists all module files
   - No service file was skipped; all referenced entities exist in `data-model.md`
 
@@ -211,7 +220,9 @@ document values that **deviate** from conventions.
      the global default `JwtAuthGuard + RolesGuard`, don't repeat it; only note `@Public()` or
      custom guards).
   6. Create the registry: `project/actions/<api-app>/endpoints/_index.md` — one row per module
-     (module name, file link, endpoint count, route prefix).
+     (module name, file link, endpoint count, route prefix, **status**, **Done/Total**).
+  7. Set each endpoint's **status**: `done` if implemented, `partial` if incomplete. Roll up
+     per-module status in `_index.md`.
 
 - **Done when**:
   - Every controller/route file has corresponding entries in the correct module file
@@ -219,6 +230,7 @@ document values that **deviate** from conventions.
   - Auth requirements documented for every endpoint
   - Input/output DTOs specified
   - Every endpoint declares which services it calls; services exist in `services/`
+  - Each endpoint carries a status (`done`/`partial`); `_index.md` rollup + `Done/Total` match
   - `_index.md` lists all module files; no controller/route file was skipped
 
 ---
@@ -249,6 +261,7 @@ Repeat this step for **each frontend application** discovered in Phase R.0. Web 
   - Components, services, and API calls are documented
   - UI states (loading/empty/error/success) are captured
   - Auth guards are documented
+  - Each page/view carries a status (`done`/`partial`); the app's `pages/_index.md` (or `views/_index.md`) rollup + `Done/Total` match
   - All referenced endpoints exist in the API app's `endpoints/`
   - No page/view was skipped; step repeated for every frontend app
 
@@ -585,6 +598,17 @@ produce a reconciliation report with actionable recommendations.
 
 ## Phase R.Done — Handoff
 
+### Step R.Done.1 — Generate the Status Dashboard
+
+- **Template**: `engine/templates/status-template.md`
+- **Output**: `project/status.md`
+- **Actions**: Roll up the per-artifact statuses recorded in R.1 (and the incomplete-feature findings
+  from R.3) into the system dashboard: per-app snapshot, per-module table, **In Progress** (`partial`
+  artifacts), **Next Up** (unfinished work in build order), and **Deferred** (with reasons). This gives
+  the team — and any future model — a single view of what is built vs. still pending in the inherited
+  codebase.
+- **Done when**: `project/status.md` exists and its counts match every `_index.md`.
+
 ### Summary
 
 When all phases complete, the reverse-engineer flow has produced:
@@ -601,6 +625,7 @@ When all phases complete, the reverse-engineer flow has produced:
 | Endpoints (per module) | `project/actions/<api-app>/endpoints/<module>.md` + `_index.md` | R.1.3 — read from controller/route files |
 | Pages (per module) | `project/actions/<web-app>/pages/<module>.md` | R.1.4 — read from page/component files |
 | Views (per module) | `project/actions/<mobile-app>/views/<module>.md` | R.1.4 — read from screen/component files |
+| Status dashboard | `project/status.md` | R.Done.1 — rolled up from per-artifact statuses |
 | Drift report | `project/verify/reverse-engineer-report.md` | R.3 — code vs blueprint comparison |
 
 ### Handoff to other flows
@@ -838,6 +863,6 @@ project/actions/
 | **R.1** | R.1.1 – R.1.4 | Deep-scan code: schemas, services, endpoints, pages | `data-model.md`, `services/` + `_index.md`, `endpoints/` + `_index.md`, `pages/` |
 | **R.2** | R.2.1 – R.2.4 | Synthesize modules+features, roles, rules, description | `modules.md`, `roles-and-authorization.md`, `rules.md`, `description.md` |
 | **R.3** | R.3.1 – R.3.3 | Drift analysis, consistency checks, reconciliation | `reverse-engineer-report.md` |
-| **R.Done** | — | Handoff summary, TBDs, link to change-mode / bug-fix | — |
+| **R.Done** | R.Done.1 | Status dashboard, handoff summary, TBDs, link to change-mode / bug-fix | `status.md` |
 
 ---

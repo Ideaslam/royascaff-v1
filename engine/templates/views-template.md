@@ -14,12 +14,15 @@ Lists all screens for one mobile app. Lives at `project/actions/<app-key>/views.
 ### ScreenName
 
 - Route/Navigation: `ScreenName` (stack | bottom-tab | modal | drawer)
+- Status: planned | partial | done | deferred
 - Components: `WidgetCard`, `FilterChip`
 - Service: `ResourceApi` → EP-001 (GET /resource)
 - Guard: `authenticated` | `role:admin` | `none`
 - Platform: pull-to-refresh, offline cache, push notifications
 - Notes: read-only on mobile; native chart library
 ```
+
+Status: `planned` · `partial` · `done` · `deferred` (see `engine/conventions.md`). New screens default to `planned`; `deferred` states its reason in Notes.
 
 ## Example
 
@@ -31,6 +34,7 @@ Lists all screens for one mobile app. Lives at `project/actions/<app-key>/views.
 ### Dashboard Viewer
 
 - Route/Navigation: `DashboardViewer` (stack, pushed from Projects tab)
+- Status: done
 - Components: `WidgetCard`
 - Service: `DashboardsApi` → EP-020 (GET /dashboards/:id), EP-021 (GET /dashboards/:id/widgets/:wid/data)
 - Guard: `authenticated`
@@ -40,6 +44,7 @@ Lists all screens for one mobile app. Lives at `project/actions/<app-key>/views.
 ### Notifications List
 
 - Route/Navigation: `Notifications` (bottom-tab)
+- Status: planned
 - Components: `NotificationItem`, `EmptyState`
 - Service: `NotificationsApi` → EP-030 (GET /notifications), EP-031 (PATCH /notifications/read)
 - Guard: `authenticated`

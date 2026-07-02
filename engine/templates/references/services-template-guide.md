@@ -68,6 +68,7 @@ When a service needs detailed documentation beyond the compact format:
 
 ## Suggested Field Meanings
 
+- **Status** — build state: `planned`, `partial`, `done`, `deferred` (see `engine/conventions.md`). Defaults to `planned` when specced before code; `deferred` states its reason.
 - **Methods** — public methods endpoints or other services will call
 - **Deps** — repositories, internal services, and external providers used
 - **Side effects** — email, file operations, webhooks, async jobs, audit logs

@@ -148,8 +148,9 @@ Ask: **"The fix is applied. Can you confirm this resolves the issue so I can mar
 
 1. Update bug log: Status → `DONE`, add `**Confirmed**: <YYYY-MM-DD>`, check all verification boxes.
 2. Append row to `project/bugs/bug-log.md`: `# | Date | Severity | Area | Summary | Status | File` (File links to `bug-<NNN>-<slug>.md`).
+3. If the fix changed the build state of an artifact (e.g. completed a `partial` endpoint/page), update that artifact's **status** in its spec + `_index.md` and refresh `project/status.md`. Most isolated bug fixes leave status unchanged.
 
-- **Done when**: Bug status DONE, checklist complete, `bug-log.md` has new row.
+- **Done when**: Bug status DONE, checklist complete, `bug-log.md` has new row, any affected artifact status is current.
 
 ---
 

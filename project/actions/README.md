@@ -41,6 +41,11 @@ App folders are created in Phase 2 from `project/profile.md` (Applications table
 1. Read `_index.md` first to find which file(s) contain the module you need
 2. Load only those files — never scan the whole directory
 3. The registry maps module → file → ID range (e.g., Auth → `auth.md` → `EP-AUTH-01..08`)
+4. It also carries the module's **build status** and `Done/Total` count, so you can see what is finished vs. pending without opening every file (see `engine/templates/index-template.md`)
+
+## Build status
+
+Every service, endpoint, page, and view carries a **status** (`planned` · `partial` · `done` · `deferred`) recorded next to its spec and rolled up in each `_index.md`. The system-wide summary lives in `project/status.md`. This is how anyone — human or AI — tells what is built vs. still to do. Vocabulary and rules: `engine/conventions.md` → **Build Status**.
 
 ## The call chain
 

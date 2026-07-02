@@ -111,6 +111,8 @@ Proceed to **Phase 1**.
 
 Create services before endpoints, endpoints before client specs.
 
+**Status at spec time**: Every artifact created in Phase 2 starts with **status `planned`** (no code exists yet — see `engine/conventions.md`). Each `_index.md` registry (`engine/templates/index-template.md`) records the per-module rolled-up status and `Done/Total` count — at this phase every module is `planned` with `0/N` done.
+
 ### Step 2.1 — Create Services Map
 
 - **Input**: `project/description.md`, `project/plan/modules.md`, `project/plan/data-model.md`, `engine/rules/backend-rule.md`, `project/rules.md`
@@ -163,6 +165,14 @@ Create one client spec per frontend app. Web → `pages/`, Mobile → `views/`. 
 
 **Goal**: Generate backend and frontend code into the repositories defined in `project/profile.md`.
 
+**Status maintenance (applies to every build step)**: As each artifact is implemented, update its **status** in the spec file and the module's `_index.md`:
+- fully implemented & matches spec → `done`
+- started but incomplete → `partial` (note what remains)
+- intentionally skipped for now → `deferred` (note the reason)
+- not started → leave `planned`
+
+This is how a later model knows exactly what is left. Keep each `_index.md` `Done/Total` count in sync.
+
 ### ⛔ Pre-Build Confirmation Gate (MANDATORY — do not skip)
 
 Before writing **any** code, present the following for explicit user approval:
@@ -189,6 +199,7 @@ Wait for explicit confirmation. Do not interpret silence, ambiguous replies, or 
   - Auth guards, validation DTOs, error handling in place
   - Integration providers isolated per `engine/rules/backend-rule.md`
   - Custom feature rules implemented
+  - **Status updated**: every built service/endpoint set to `done` (or `partial`/`deferred` with a note); `services/_index.md` and `endpoints/_index.md` `Done/Total` counts refreshed
 
 ### Step 3.2 — Generate Frontend Code (per app)
 
@@ -202,6 +213,7 @@ Wait for explicit confirmation. Do not interpret silence, ambiguous replies, or 
   - All pages handle loading/empty/error/success states
   - API calls use services, not direct HTTP in components
   - Custom feature rules respected
+  - **Status updated**: every built page/view set to `done` (or `partial`/`deferred` with a note); the app's `pages/_index.md` or `views/_index.md` `Done/Total` counts refreshed
 
 ---
 
@@ -227,6 +239,14 @@ Run these checks and fix any gaps:
 12. **Code Layering Compliance** — BE: controller → service → repository; FE: page → frontend service → endpoint; no business logic in controllers/components; integration providers isolated
 13. **Frontend Third-Party Isolation** — every HTTP call targets configured `apiUrl`; no hardcoded external URLs; no direct third-party calls from frontend — zero tolerance
 14. **Self-Contained Blueprint** — no `engine/` file contains system-specific data; `project/` docs reference only other `project/` docs and `engine/rules/`; copying `project/` alone is enough to rebuild
+15. **Build Status Coverage** — every service/endpoint/page/view carries a status; each `_index.md` rollup + `Done/Total` matches the per-artifact statuses; anything not `done` is either `planned`, `partial`, or `deferred` (with a reason). Code that exists but is spec'd as `planned` is a drift — fix the status.
+
+### Step 4.1 — Generate the Status Dashboard
+
+- **Template**: `engine/templates/status-template.md`
+- **Output**: `project/status.md`
+- **Actions**: Roll up the per-artifact statuses and `_index.md` counts into the system dashboard: per-app snapshot, per-module table, **In Progress** (`partial`), **Next Up** (ordered roadmap of `planned` work in build order), and **Deferred** (with reasons). This is the file a future model reads first to know where the build stands.
+- **Done when**: `project/status.md` exists and its counts match every `_index.md`.
 
 ### Verification Report
 
@@ -250,6 +270,7 @@ Save to `project/verify/verification-report.md`:
 ## Code Layering: [✓ | ✗]
 ## Frontend Third-Party Isolation: [✓ | ✗]
 ## Self-Contained Blueprint: [✓ | ✗]
+## Build Status Coverage: [✓ | ✗]
 
 ## Summary
 [Overall assessment and recommended fixes]
@@ -268,5 +289,6 @@ When all phases complete and verification passes, the framework has produced:
 - Backend code following all specifications
 - Frontend code following all specifications
 - Verification report in `project/verify/`
+- Build-status dashboard in `project/status.md` (per-artifact status in specs + `_index.md`, rolled up system-wide)
 
 The system is ready for testing and iteration. Use `engine/flows/change-mode.md` for all subsequent changes.

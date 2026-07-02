@@ -25,7 +25,8 @@
 | `Input` | Params, query, and body fields (compact) |
 | `Return` | HTTP status + DTO/shape name |
 | `Service` | `ServiceName.methodName()` — must exist in the same app's `services.md` |
-| `Notes` | Pagination, async, soft-delete, snapshot, or other constraints |
+| `Status` | Build state: `planned`, `partial`, `done`, `deferred` (see `engine/conventions.md`). Defaults to `planned` when the endpoint is specced before code. |
+| `Notes` | Pagination, async, soft-delete, snapshot; **for `deferred`, the reason** (e.g. `deferred: post-MVP`) |
 
 ## Auth Values
 
