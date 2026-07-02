@@ -107,3 +107,17 @@
 - Service: `GET /api/v1/data/datasets`; `POST /api/v1/data/datasets/:id/sync`
 - Guard: authGuard
 - Notes: OAuth callback from Zid redirects directly to this page with `connectionId` in the URL.
+
+---
+
+### SQL Server — Connect Wizard *(change-027)*
+- Route: `/app/data/sql-server/connect`
+- Components: SqlServerConnectPage — 4-step wizard:
+  - **Step 1 — Credentials:** form fields for host, port (default 1433), database, username, password, encrypt toggle, trust-certificate toggle; "Test Connection" button calls `POST /api/v1/data/connections` + `EP-DATA-12`; shows success/error badge
+  - **Step 2 — Pick Tables:** calls `EP-DATA-35` to list all tables/views; multi-select checklist with table name + type (TABLE / VIEW) + column count; each checked table becomes one Dataset
+  - **Step 3 — Configure Tables:** for each selected table: name field (editable), watermark column picker (columns from `EP-DATA-22` schema, filtered to date/number types), optional preview button (calls `EP-DATA-36`); shows top-N preview in a mini table
+  - **Step 4 — Schedule & Sync:** syncPolicy selector (manual / hourly / daily) applied to all datasets; "Create Datasets & Start Sync" button creates `POST /api/v1/data/datasets` for each table then enqueues sync via EP-DATA-20; redirects to `/app/data`
+- Service: `POST /api/v1/data/connections`; EP-DATA-12; EP-DATA-35; EP-DATA-36; EP-DATA-22; `POST /api/v1/data/datasets`; EP-DATA-20
+- Guard: authGuard
+- States: each step has loading/error/success states; Step 1 has an inline connection test badge; Step 3 has a collapsible preview panel per table
+- Notes: All live DB calls (test, table listing, preview) happen during setup only — no live queries at dashboard render time.

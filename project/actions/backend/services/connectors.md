@@ -214,6 +214,49 @@ Creates one `Dataset` per Zid entity from a single `DataConnection`.
 **Rules:** Each entity → independent Dataset (separate OLAP table) · Canonical views include Zid, Salla, and Shopify entity tables
 
 ---
+
+### SVC-CONN-SQLSERVER · SqlServerConnector [internal, domain, Connectors] *(change-027)*
+`ConnectorInterface` implementation for `sql_server` source type. Reads any user-selected table or view from a Microsoft SQL Server database using a read-only connection.
+
+**Constructor:** self-registers with `ConnectorRegistry` on `onModuleInit()`
+
+**Methods:**
+- `testConnection(conn: DataConnectionDocument)` — decrypts credentials → opens a `mssql.ConnectionPool` → executes `SELECT 1` → closes pool; returns `{ ok, message? }`
+- `discoverSchema(conn, dataset)` — queries `INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @table`; returns `DiscoveredColumn[]` with SQL type mapped to canonical type
+- `extract(conn, dataset, opts: ExtractOptions)` — paginated `SELECT` with `OFFSET N ROWS FETCH NEXT 2000 ROWS ONLY`; for incremental uses `WHERE [watermarkCol] > @lastSync ORDER BY [watermarkCol]`; yields `Record<string, unknown>[]` batches; pool opened/closed per run
+- `normalize(rows, schema: DiscoveredColumn[])` — casts SQL numeric/date types; returns normalized rows
+
+**SQL Server DataConnection credentials shape:**
+```json
+{
+  "host": "db.example.com",
+  "port": 1433,
+  "database": "sales_db",
+  "username": "roya_readonly",
+  "password": "...",
+  "encrypt": true,
+  "trustServerCertificate": false
+}
+```
+
+**Deps:** ConnectorRegistry · SqlServerQueryBuilder
+**Side effects:** DB reads only (no writes) · Connection pool opened and closed per sync run
+**Rules:** All table/column identifiers quoted with `[brackets]` · Parameterized queries only — no string concatenation · Read-only credentials required · `trustServerCertificate` toggle exposed for dev/self-signed certs · Pagination via `OFFSET FETCH` (SQL Server 2012+)
+
+---
+
+### SVC-CONN-SQLSERVER-QB · SqlServerQueryBuilder [internal, utility, Connectors] *(change-027)*
+Builds safe, parameterized SQL strings for SQL Server operations.
+
+**Methods:**
+- `buildSelectPage(table: string, watermarkCol?: string, page: number, pageSize: number): string` — returns paginated SELECT with optional WHERE watermark clause
+- `buildSchemaQuery(table: string): string` — returns INFORMATION_SCHEMA columns query
+- `buildTablesQuery(): string` — returns INFORMATION_SCHEMA tables/views listing query
+- `buildPreviewQuery(table: string, topN = 50): string` — returns `SELECT TOP @n * FROM [table]`
+
+**Rules:** All identifiers sanitized against schema whitelist before insertion into query strings · Never concatenates raw user input
+
+---
 Contract every data source adapter must implement.
 
 ```typescript

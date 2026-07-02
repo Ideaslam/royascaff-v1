@@ -103,3 +103,15 @@
 - [EP-DATA-32] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (Redis TTL 10 min). Zid authorization URL: `https://oauth.zid.sa`.
 - [EP-DATA-33] Public callback: validates state nonce; `POST https://oauth.zid.sa/oauth/token` with `grant_type=authorization_code`; encrypts both tokens `{ authorizationToken, accessToken, expiresAt }` as `DataConnection.credentialsEncrypted(sourceType=zid)`; calls `ZidDatasetService.provisionFromOAuth()` to create 3 Datasets; redirects to `/app/data/zid/setup/:connectionId`.
 - [EP-DATA-34] Public webhook receiver: validates `X-Zid-Signature` HMAC-SHA256 using app secret; maps Zid event topic (e.g. `order.create`) to entity → Dataset; enqueues `DATA_SYNC_QUEUE` with `mode=incremental`. Returns 200 immediately.
+
+### SQL Server — Table Discovery + Preview Endpoints *(change-027)*
+
+`@Controller('data/connections')`
+
+| ID | Method | Route | Auth | Input | Return | Service | Notes |
+|----|--------|-------|------|-------|--------|---------|-------|
+| EP-DATA-35 | POST | /api/v1/data/connections/:id/sql-server/tables | JWT | body: `{}` | 200 `{ tables: { name, type, columnCount }[] }` | SqlServerController.listTables() | Decrypts credentials; queries INFORMATION_SCHEMA.TABLES; returns table/view list for wizard table picker |
+| EP-DATA-36 | POST | /api/v1/data/connections/:id/sql-server/preview | JWT | body: `{ table: string; limit?: number }` | 200 `{ columns: string[]; rows: unknown[][] }` | SqlServerController.previewTable() | Returns top-N rows (default 50) for a specified table; used only during setup wizard; never called at dashboard render time |
+
+- [EP-DATA-35] Requires the DataConnection to have `sourceType = sql_server`. Opens a pool, queries `INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE IN ('BASE TABLE','VIEW')`, returns sorted list. Validates that the requesting user owns the DataConnection (workspaceSlug check).
+- [EP-DATA-36] Opens pool, runs `SELECT TOP @n * FROM [table]`; table name validated against INFORMATION_SCHEMA whitelist before use. Max limit capped at 200.
