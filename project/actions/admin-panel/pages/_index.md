@@ -11,6 +11,7 @@
 | AI Logs | ai-logs.md | AI Logs | `/app/ai-logs` |
 | System Settings | settings.md | Admin Profile | `/app/settings/profile` |
 | Workspaces & Color Templates | workspaces.md | Workspaces, Color Templates | `/app/workspaces`, `/app/color-templates` |
+| Analytics Store | analytics-store.md | OLAP Benchmark | `/app/olap-benchmark` |
 
 ---
 

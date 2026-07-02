@@ -281,3 +281,15 @@ Infrastructure modules are called by business module services; they do not expos
 
 ### Features
 1. **Payment Provider Interface** [backend] — provider-agnostic interface (`PAYMENT_PROVIDER` env var); PayUp provider implemented for subscription checkout *(change-003)*: auth → create session, confirm/cancel return endpoints, durable `subscription-activation` event; API base URL auto-selected by environment (sandbox/prod), overridable by env var.
+## S9. OLAP Engine (Analytics Store)
+- Scope: BE only — `src/integrations/olap/` (engine providers) + `src/modules/analytics-store/`
+- Audience: system (internal — consumed by pipelines, dashboards, connectors)
+- Entities: `OlapBenchmarkRun`
+- Depends on: `Workspace` (reads `olapEngine` field — added in change-015)
+
+### Features
+1. **OLAP Engine Strategy** [backend-only] — pluggable `OlapEngine` interface; concrete `ClickHouseEngine` + `BigQueryEngine` self-register in `OlapEngineRegistry` keyed by id (`clickhouse | bigquery`); active engine resolved per workspace via `olapEngine` field; switching routes all analytics ops to the new engine with no caller changes *(change-014)*
+2. **Dialect-Neutral Query Spec + QueryCompiler** [backend-only] — callers build a structured `QuerySpec` (source, aggregations, filters, group-by, order, limit, dateRange); each engine's `QueryCompiler` translates to its own SQL dialect; raw dialect SQL confined to engine implementations — never exposed to callers or prompts *(change-014)*
+3. **Analytics Store Operations** [backend-only] — `AnalyticsStoreService` provides engine-neutral ops: create/drop per-dataset table (`ds_{workspaceSlug}_{datasetId}`), batch insert rows, create canonical union views per semantic flag, run a `QuerySpec`, define pre-aggregation rollup (`AggregatingMergeTree` / BQ materialized view), compute distinct/search values for filters *(change-014)*
+4. **Redis Result Cache Helper** [backend-only] — reusable cache keyed by `widget + filters-hash`; store/read/invalidate; engine-agnostic; TTL configurable; used by all widget data paths *(change-014)*
+5. **Admin OLAP Benchmark** [both] — admin-only screen + service; loads sample data into both engines, runs a standard query workload, records latency (p50/p95), rows scanned, estimated cost per engine; persists `OlapBenchmarkRun`; admin panel shows side-by-side comparison + recommended engine badge; sample/temp tables cleaned up after run *(change-014)*

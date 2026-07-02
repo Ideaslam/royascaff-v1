@@ -6,6 +6,7 @@
 - **target-app**: admin-panel
 - **affected-repos**: backend+admin
 - **priority**: high
+- **status**: ✅ implemented — 2026-07-02
 
 ## Scope
 - Module(s): new `analytics-store` module + `integrations/olap/*` providers (`clickhouse`, `bigquery`) + admin `olap-benchmark`

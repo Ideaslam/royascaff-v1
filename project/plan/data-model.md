@@ -599,3 +599,37 @@ PaymentStatus = [paid, pending, refunded, failed]
 AiLogStatus = [pending, success, failed]
 // Subscription plans are NOT a fixed enum — they are documents in the subscriptionplans collection.
 ```
+## OlapBenchmarkRun
+Purpose: persists results of a single admin-triggered benchmark run comparing ClickHouse vs BigQuery on sample data.
+Collection: `olap_benchmark_runs` (global — admin use only, not workspace-scoped)
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `triggeredBy` | ObjectId | required | → `users._id` |
+| `status` | Enum | required | `pending \| running \| done \| failed` |
+| `sampleRowCount` | Number | required | — |
+| `workloadDescription` | String | optional | — |
+| `clickhouse.p50Ms` | Number | nullable | — |
+| `clickhouse.p95Ms` | Number | nullable | — |
+| `clickhouse.rowsScanned` | Number | nullable | — |
+| `clickhouse.estimatedCostUsd` | Number | nullable | — |
+| `clickhouse.error` | String | nullable | — |
+| `bigquery.p50Ms` | Number | nullable | — |
+| `bigquery.p95Ms` | Number | nullable | — |
+| `bigquery.rowsScanned` | Number | nullable | — |
+| `bigquery.estimatedCostUsd` | Number | nullable | — |
+| `bigquery.error` | String | nullable | — |
+| `recommendation` | Enum | nullable | `clickhouse \| bigquery \| inconclusive` |
+| `recommendationReason` | String | nullable | — |
+| `createdAt` | Date | auto | — |
+| `updatedAt` | Date | auto | — |
+
+Relations: one admin triggers many benchmark runs
+Indexes: index `status`; index `createdAt` desc; index `triggeredBy`
+
+---
+// New enums (change-014)
+OlapEngineId = [clickhouse, bigquery]
+OlapBenchmarkStatus = [pending, running, done, failed]
+OlapBenchmarkRecommendation = [clickhouse, bigquery, inconclusive]

@@ -21,4 +21,5 @@
 | Integration Providers | integration-providers.md | SVC-EXT-AI, SVC-EXT-MAIL, SVC-EXT-STOR, SVC-EXT-PAY, SVC-EXT-OAUTH | 5 |
 | Workspace | workspace.md | SVC-WS, SVC-WS-MEMBER, SVC-WS-INVITE, SVC-WS-BRAND, SVC-WS-ONBOARD | 5 |
 | Color Templates | color-templates.md | SVC-COLTPL | 1 |
-| **Total** | | | **37** |
+| Analytics Store (OLAP Engine) | analytics-store.md | SVC-OLAP-ENGINE, SVC-OLAP-STORE, SVC-OLAP-BENCH | 3 |
+| **Total** | | | **40** |

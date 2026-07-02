@@ -18,7 +18,8 @@
 | AI Logs | ai-logs.md | EP-AILOG-01..03 | 3 |
 | Workspace | workspace.md | EP-WS-01..21 | 21 |
 | Color Templates | color-templates.md | EP-CTPL-01..05 | 5 |
-| **Total** | | | **118** |
+| Analytics Store (Admin Benchmark) | analytics-store.md | EP-AS-01..02 | 2 |
+| **Total** | | | **120** |
 
 ---
 
