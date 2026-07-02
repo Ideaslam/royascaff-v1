@@ -34,6 +34,34 @@ Registry that maps `DataSourceType` values to concrete `ConnectorInterface` impl
 
 ---
 
+### SVC-CONN-GOOGLE · GoogleSheetsConnector [internal, domain, Connectors] *(change-023)*
+`ConnectorInterface` implementation for `google_sheets` source type. Reads tabular data from a Google Sheets spreadsheet via the Sheets API v4.
+
+**Constructor:** self-registers with `ConnectorRegistry` on `onModuleInit()`
+
+**Methods:**
+- `testConnection(conn: DataConnectionDocument)` — decrypts credentials → creates `OAuth2Client` → calls `sheets.spreadsheets.get(spreadsheetId)` → returns `{ ok, message? }`; auto-refreshes access token if expired and persists updated token
+- `discoverSchema(conn, dataset)` — reads header row (row 1) + up to 500 sample rows from the configured sheet/range; infers column types from samples; returns `DiscoveredColumn[]`
+- `extract(conn, dataset, opts: ExtractOptions)` — pages through sheet rows in 10 000-row batches using `sheets.spreadsheets.values.get` with `ROWS` major dimension; yields `Record<string, unknown>[]` batches; incremental not supported (full re-read each sync); detects column-set change vs stored schema and surfaces drift in context
+- `normalize(rows, schema: DiscoveredColumn[])` — casts each cell to its inferred type; drops columns absent from schema; returns normalized rows
+
+**Google Sheets DataConnection credentials shape:**
+```json
+{
+  "accessToken": "ya29...",
+  "refreshToken": "1//0g...",
+  "spreadsheetId": "1BxiMVs0X...",
+  "sheetTitle": "Sheet1",
+  "range": "A:Z"
+}
+```
+
+**Deps:** ConnectorRegistry · GoogleOAuthService · DataConnectionRepository (token refresh write-back)
+**Side effects:** Sheets API reads only (no writes) · token refresh writes updated `accessToken` back to `DataConnection.credentialsEncrypted`
+**Rules:** Always refresh token before each API call (use `OAuth2Client.getAccessToken()`) · Detect column-set drift on every extract; surface as SyncRun warning (not a hard failure) · Incremental mode logs a warning and falls back to full sync
+
+---
+
 ### SVC-CONN-INTERFACE · ConnectorInterface [type, domain, Connectors]
 Contract every data source adapter must implement.
 

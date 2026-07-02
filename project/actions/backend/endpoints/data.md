@@ -44,6 +44,15 @@
 | EP-DATA-22 | POST | /api/v1/data/datasets/:id/discover-schema | JWT | `:id` | 200 `DatasetDto` | SVC-DATA-DS.discoverSchemaWithAiProposal() | Re-discovers schema + refreshes AI mapping proposal *(change-022)* |
 | EP-DATA-23 | POST | /api/v1/data/datasets/:id/confirm-mapping | JWT | `:id` · `ConfirmMappingDto` { columnMapping: Record<string,string>, semanticFlag: string } | 200 `DatasetDto` | SVC-DATA-DS.confirmMapping() | Promotes mapping into live fields; clears AI proposals *(change-022)* |
 
+### Google Sheets OAuth Endpoints *(change-023)*
+
+`@Controller('data/google')`
+
+| ID | Method | Route | Auth | Input | Return | Service | Notes |
+|----|--------|-------|------|-------|--------|---------|-------|
+| EP-DATA-24 | GET | /api/v1/data/google/auth-url | JWT | query: `workspaceSlug` | 200 `{ authUrl: string }` | GoogleOAuthService.buildAuthUrl() | Returns Google OAuth consent URL; `state` param encodes workspaceSlug + userId + CSRF nonce |
+| EP-DATA-25 | GET | /api/v1/data/google/callback | Public | query: `code`, `state` | 302 → `/app/data/google-sheets/setup/:connectionId` | GoogleOAuthService.handleCallback() | Exchanges code for tokens; encrypts + stores as new `DataConnection(sourceType=google_sheets)`; redirects to frontend setup page |
+
 **Notes:**
 - [EP-DATA-01] Single-step upload: frontend sends file as multipart, backend streams to R2, creates `csvfiles` record, queues AI column analysis job.
 - [EP-DATA-02] Legacy presigned-URL flow: creates a `csvfiles` record and returns a presigned upload URL plus upload session id for direct client-to-R2 upload.
@@ -53,3 +62,5 @@
 - [EP-DATA-20] Creates a `SyncRun` record immediately and returns `syncRunId`; actual sync runs asynchronously via BullMQ `DATA_SYNC_QUEUE`.
 - [EP-DATA-22] Can be called again at any time to refresh schema (e.g. after re-uploading a CSV). Re-runs connector `discoverSchema` + AI proposal. Clears previous proposal.
 - [EP-DATA-23] User confirms (or edits) the AI-proposed mapping. Only after this call does the Dataset become eligible for dashboard generation.
+- [EP-DATA-24] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (stored in Redis with 10-minute TTL for CSRF validation in EP-DATA-25).
+- [EP-DATA-25] Public endpoint (callback from Google) — validates `state` nonce, exchanges `code` via `OAuth2Client`, encrypts `{ accessToken, refreshToken }` as `DataConnection.credentialsEncrypted`, then redirects frontend to spreadsheet picker page.

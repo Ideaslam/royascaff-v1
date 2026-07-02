@@ -63,3 +63,16 @@ BullMQ worker that executes a full or incremental dataset sync via the PipelineE
 **Deps:** DatasetRepository · DataConnectionRepository · SyncRunRepository · FilterValueMetaRepository · FilterValuesService · PipelineEngine · WorkspaceRepository
 **Side effects:** OLAP inserts · FilterValueMeta refresh · SyncRun status updates
 **Rules:** On pipeline error: SyncRun.status = `failed` + errorMessage captured · Filter refresh only after successful sync · Never re-runs a running SyncRun
+
+---
+
+### SVC-DATA-SCHED · ScheduledSyncService [internal, application, Data] *(change-023)*
+`@nestjs/schedule` cron service that enqueues periodic syncs for datasets with `syncPolicy = HOURLY | DAILY`.
+
+**Methods:**
+- `runHourlySyncs()` — `@Cron(CronExpression.EVERY_HOUR)` — queries all workspace datasets with `syncPolicy = hourly`; skips any where `syncStatus = syncing`; enqueues `DATA_SYNC_QUEUE` job for each via `SyncService.triggerSync()`
+- `runDailySyncs()` — `@Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)` — same logic for `syncPolicy = daily`
+
+**Deps:** DatasetRepository (multi-workspace fan-out query) · WorkspaceRepository (enumerate workspace slugs) · SyncService
+**Side effects:** BullMQ job enqueue
+**Rules:** Guard against duplicate enqueue: skip dataset if `syncStatus = syncing` · Each enqueue uses `mode = full` (incremental not supported for Google Sheets) · On app restart all eligible datasets are naturally re-evaluated at next cron tick — no catch-up backfill
