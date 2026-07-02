@@ -115,3 +115,17 @@
 
 - [EP-DATA-35] Requires the DataConnection to have `sourceType = sql_server`. Opens a pool, queries `INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE IN ('BASE TABLE','VIEW')`, returns sorted list. Validates that the requesting user owns the DataConnection (workspaceSlug check).
 - [EP-DATA-36] Opens pool, runs `SELECT TOP @n * FROM [table]`; table name validated against INFORMATION_SCHEMA whitelist before use. Max limit capped at 200.
+
+---
+
+### MongoDB Atlas — Collection Discovery + Preview Endpoints *(change-028)*
+
+`@Controller('data/connections')`
+
+| ID | Method | Route | Auth | Input | Return | Service | Notes |
+|----|--------|-------|------|-------|--------|---------|-------|
+| EP-DATA-37 | POST | /api/v1/data/connections/:id/mongodb/collections | JWT | body: `{}` | 200 `{ collections: { name, type }[] }` | MongoDbAtlasController.listCollections() | Decrypts URI; calls `db.listCollections()`; returns all user-defined collections+views for wizard picker |
+| EP-DATA-38 | POST | /api/v1/data/connections/:id/mongodb/preview | JWT | body: `{ collection: string; limit?: number }` | 200 `{ columns: string[]; rows: unknown[][] }` | MongoDbAtlasController.previewCollection() | Returns top-N flattened documents (default 50, max 200); used only during setup wizard |
+
+- [EP-DATA-37] Requires `sourceType = mongodb_atlas`. Connects with `MongoClient`, calls `db.listCollections({ nameOnly: false }).toArray()`; excludes system collections. Validates workspaceSlug ownership.
+- [EP-DATA-38] `collection.find({}).limit(n)` with `flattenDocument()` applied; extracts union of all column names from returned docs. Max limit capped at 200.

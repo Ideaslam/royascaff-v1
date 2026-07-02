@@ -267,3 +267,43 @@ interface ConnectorInterface {
   normalize(rows: Record<string, unknown>[], mapping: Record<string, string>): Record<string, unknown>[];
 }
 ```
+
+---
+
+### SVC-CONN-MONGOATLAS — MongoDbAtlasConnector *(change-028)*
+
+**File:** `src/integrations/connectors/mongodb-atlas/mongodb-atlas.connector.ts`
+**sourceType:** `mongodb_atlas`
+**Driver:** `mongodb` (already installed as peer dep of `mongoose`; no new package needed)
+
+**Utilities:**
+- `mongo-flatten.util.ts` — recursive document flattener; dot-notation for nested objects (`address.city`), JSON-stringified arrays; depth cap = 5.
+- `mongo-schema-sampler.ts` — samples up to 200 documents via `$sample` aggregate; walks all keys to build a union of fields → inferred `DiscoveredColumn[]`.
+
+**Connection pattern:** `MongoClient` created per-operation (`new MongoClient(uri).connect()`), closed in `finally` block — same pool-per-call pattern as SQL Server. URI stored encrypted in `DataConnection.credentialsEncrypted`.
+
+**testConnection:** connects and calls `db.command({ ping: 1 })`; catches `MongoServerSelectionError` to surface IP-allowlist guidance.
+
+**discoverSchema:** reads collection name from `dataset.sourceRef`; runs `$sample` aggregate → `MongoSchemaSampler.infer()`; returns `DiscoveredColumn[]` with canonical types.
+
+**extract (full):** `collection.find({}).batchSize(PAGE_SIZE)` — async cursor iteration; yields `PAGE_SIZE = 500` documents per batch as `Record<string,unknown>[]`.
+
+**extract (incremental):** if `dataset.watermarkColumn` is set, uses `{ [watermarkCol]: { $gt: lastSync } }` filter sorted ascending; otherwise falls back to `_id > lastObjectId` ordering.
+
+**normalize:** applies `flattenDocument()` to every raw doc; casts `ObjectId` → hex string; applies canonical type coercions using schema.
+
+**listCollections (setup helper):** `db.listCollections().toArray()` — returns `{ name: string; type: 'collection' | 'view' }[]` for the wizard; used by `MongoDbAtlasController`.
+
+**previewCollection (setup helper):** `collection.find().limit(n)` with `flattenDocument()` applied — returns `{ columns: string[]; rows: unknown[][] }`.
+
+---
+
+### SVC-CONN-MONGOATLAS-SAMPLER — MongoSchemaSampler *(change-028)*
+
+**File:** `src/integrations/connectors/mongodb-atlas/mongo-schema-sampler.ts`
+
+**infer(docs: Record<string,unknown>[], maxDepth = 5): DiscoveredColumn[]**
+- Iterates all sampled docs; union-merges all keys (dot-notation paths).
+- For each path, tallies JS type frequency across samples; most common wins.
+- Maps JS types → canonical: `number` → `number`; `boolean` → `boolean`; `Date` / ISO string → `datetime`; `ObjectId` → `string`; everything else → `string`.
+- `nullable = true` if the key is absent in any sample.

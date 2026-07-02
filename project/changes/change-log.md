@@ -40,6 +40,5 @@ Step 5.6. Full detail for each change — the filled `change-request.md` and bot
 | 025 | 2026-07-02 | new-feature | backend+frontend | Salla source | ✅ PASS | [change-025-source-salla](change-025-source-salla/) |
 | 026 | 2026-07-02 | new-feature | backend+frontend | Zid source | ✅ PASS | [change-026-source-zid](change-026-source-zid/) |
 | 027 | 2026-07-02 | new-feature | backend+frontend | SQL Server source | ✅ PASS | [change-027-source-sql-server](change-027-source-sql-server/) |
-| 027 | 2026-07-02 | new-feature | backend+frontend | SQL Server source | Planned | [change-027-source-sql-server](change-027-source-sql-server/) |
-| 028 | 2026-07-02 | new-feature | backend+frontend | MongoDB Atlas source | Planned | [change-028-source-mongodb-atlas](change-028-source-mongodb-atlas/) |
+| 028 | 2026-07-02 | new-feature | backend+frontend | MongoDB Atlas source | ✅ PASS | [change-028-source-mongodb-atlas](change-028-source-mongodb-atlas/) |
 | 029 | 2026-07-02 | new-feature | all-apps | Cross-cutting sync ops (drift, incremental, observability, limits) | Planned | [change-029-cross-cutting-sync-ops](change-029-cross-cutting-sync-ops/) |

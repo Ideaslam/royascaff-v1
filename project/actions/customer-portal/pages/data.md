@@ -121,3 +121,17 @@
 - Guard: authGuard
 - States: each step has loading/error/success states; Step 1 has an inline connection test badge; Step 3 has a collapsible preview panel per table
 - Notes: All live DB calls (test, table listing, preview) happen during setup only — no live queries at dashboard render time.
+
+---
+
+### MongoDB Atlas — Connect Wizard *(change-028)*
+- Route: `/app/data/mongodb-atlas/connect`
+- Components: MongoDbAtlasConnectPage — 4-step wizard:
+  - **Step 1 — Connection URI:** textarea for Atlas connection string (SRV or standard); optional database name override; "Connect & Test" button calls `POST /api/v1/data/connections` + `EP-DATA-12`; shows IP allowlist warning with guidance text
+  - **Step 2 — Pick Collections:** calls `EP-DATA-37` to list all collections/views; multi-select checklist with collection name + type badge; each checked collection becomes one Dataset
+  - **Step 3 — Configure Collections:** for each selected collection: dataset name field (editable), watermark column input (optional, e.g. `updatedAt`), preview button (calls `EP-DATA-38`); shows top-N preview in a mini table with flattened dot-notation columns
+  - **Step 4 — Done:** confirmation screen; "Go to Data Sources" CTA
+- Service: `POST /api/v1/data/connections`; EP-DATA-12; EP-DATA-37; EP-DATA-38; `POST /api/v1/data/datasets`
+- Guard: authGuard
+- States: each step has loading/error/success states; Step 1 shows a static IP-allowlist warning panel; Step 3 has a collapsible preview panel per collection
+- Notes: All live DB calls (test, collection listing, preview) happen during setup only — no live queries at dashboard render time. Nested documents are flattened with dot-notation in preview and during sync.
