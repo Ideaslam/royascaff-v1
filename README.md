@@ -29,11 +29,10 @@ understand and rebuild the current app — this is the **rebuild test**.
 - `project/profile.md` — apps, repos, tech stack, brand tokens, environments, integrations.
 - `project/description.md` — the product specification.
 - `project/plan/` — modules (with features), data model, roles & authorization.
-- `project/actions/` — action specs organized **per app**, split into **per-module files**:
-  - `backend/endpoints/` — per-module endpoint tables with `EP-` IDs + `_index.md` registry
-  - `backend/services/` — per-module service specs with `SVC-` IDs + `_index.md` registry
-  - `customer-portal/pages/` — per-module page specs + `_index.md` registry
-  - `admin-panel/pages/` — per-module page specs + `_index.md` registry
+- `project/actions/` — action specs organized **per app** (from `profile.md`), split into **per-module files**:
+  - `<api-app>/endpoints/` — per-module endpoint tables with `EP-` IDs + `_index.md` registry
+  - `<api-app>/services/` — per-module service specs with `SVC-` IDs + `_index.md` registry
+  - `<web-app>/pages/` or `<mobile-app>/views/` — per-module client specs + `_index.md` registry
 - `project/rules.md` — system-specific feature rules with `RULE-` IDs.
 - `project/verify/` — full-system verification reports (Phase 4).
 - `project/changes/` — `change-log.md` (append-only index) plus one folder per change
@@ -49,6 +48,6 @@ it stays a portable, self-contained blueprint.
 ## How to use
 
 - **New build**: open `engine/flow.md` and follow Phase 0 → Phase 4.
-- **Onboard an existing / legacy codebase**: open `engine/reverse-engineer-flow.md` and follow Phase R.0 → R.Done. This reads the code and populates `project/` automatically, then hands off to Phase 5/6 of `flow.md`.
+- **Onboard an existing / legacy codebase**: open `engine/flows/reverse-engineer.md` and follow Phase R.0 → R.Done. This reads the code and populates `project/` automatically, then hands off to Phase 5/6 of `flow.md`.
 - **Change an existing app**: create `project/changes/change-<NNN>-<slug>/` from `engine/templates/change-request-template.md`, fill it, then run Phase 5.
 - **Fix a bug**: open `engine/flow.md`, route to Phase 6.

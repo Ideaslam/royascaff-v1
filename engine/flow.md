@@ -32,12 +32,11 @@ See `engine/conventions.md` for all defaults (route prefix, auth model, envelope
   - `project/plan/data-model.md`
   - `project/plan/roles-and-authorization.md`
 - **Business rules**: `project/rules.md`
-- **Backend specs**:
-  - `project/actions/backend/endpoints/` (per-module files + `_index.md` registry)
-  - `project/actions/backend/services/` (per-module files + `_index.md` registry)
-- **Frontend specs**:
-  - `project/actions/customer-portal/pages/` (per-module files)
-  - `project/actions/admin-panel/pages/` (per-module files)
+- **Backend specs** (per API app from `profile.md`):
+  - `project/actions/<api-app>/endpoints/` (per-module files + `_index.md` registry)
+  - `project/actions/<api-app>/services/` (per-module files + `_index.md` registry)
+- **Client specs** (per web/mobile app from `profile.md`):
+  - `project/actions/<web-app>/pages/` or `project/actions/<mobile-app>/views/` (per-module files)
 - **Engine rules**: `engine/rules/backend-rule.md`, `engine/rules/frontend-rule.md`
 - **Templates**: `engine/templates/`
 

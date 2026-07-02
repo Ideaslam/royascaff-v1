@@ -34,13 +34,7 @@ project/actions/
 | Web SPA | `<web-app-key>/` | `pages/_index.md` + per-group |
 | Mobile app | `<mobile-app-key>/` | `views/_index.md` + per-group |
 
-### Current apps in this system
-
-| App key | App | Type | Spec location |
-|---------|-----|------|--------------|
-| `backend` | API (`roya-ai-dynamo-api`) | Backend / API | `backend/endpoints/`, `backend/services/` |
-| `customer-portal` | Customer Portal (`roya-ai-dynamo-frontend`) | Web SPA | `customer-portal/pages/` |
-| `admin-panel` | Admin Panel (`roya-ai-dynamo-frontend-admin`) | Web SPA | `admin-panel/pages/` |
+App folders are created in Phase 2 from `project/profile.md` (Applications table). Until then this directory contains only this README.
 
 ## How to use the registries
 
