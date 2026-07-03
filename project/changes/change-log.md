@@ -42,3 +42,4 @@ Step 5.6. Full detail for each change — the filled `change-request.md` and bot
 | 027 | 2026-07-02 | new-feature | backend+frontend | SQL Server source | ✅ PASS | [change-027-source-sql-server](change-027-source-sql-server/) |
 | 028 | 2026-07-02 | new-feature | backend+frontend | MongoDB Atlas source | ✅ PASS | [change-028-source-mongodb-atlas](change-028-source-mongodb-atlas/) |
 | 029 | 2026-07-03 | new-feature | all-apps | Cross-cutting sync ops (drift, incremental, observability, limits) | ✅ PASS | [change-029-cross-cutting-sync-ops](change-029-cross-cutting-sync-ops/) |
+| 030 | 2026-07-03 | new-feature + refactor | backend | MongoDB OLAP engine (MONGODB_OLAP_URI) + type-coercion encapsulated in each engine | ✅ PASS | [change-030-mongodb-olap-engine](change-030-mongodb-olap-engine/) |
