@@ -39,6 +39,10 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 ---
 
+|| 011 | 2026-07-03 | high | customer-portal/dashboards | Dashboard wizard shows only legacy CSV files, not Datasets | PENDING | [bug-011-dashboard-wizard-shows-csv-only.md](./bug-011-dashboard-wizard-shows-csv-only.md) |
+
+---
+
 ## Next Bug Number
 
-**Next**: 011
+**Next**: 012
