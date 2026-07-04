@@ -4,21 +4,25 @@
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-DASH-01 | POST | /api/v1/dashboards | JWT | `CreateDashboardDto` { projectId, name, purposeDescription (min 10), fileIds[] } | 202 `{ dashboardId, jobId, status }` | SVC-DASH.createDashboard() | Async |
+| EP-DASH-01 | POST | /api/v1/dashboards | JWT | `CreateDashboardDto` { projectId, name, purposeDescription (min 10), datasetIds[] } | 202 `{ dashboardId, jobId, status }` | SVC-DASH.createDashboard() | Async; `datasetIds` replaces legacy `fileIds` |
 | EP-DASH-02 | GET | /api/v1/dashboards | JWT | query: projectId, page, limit, search, status | 200 `Paginated<DashboardListItemDto>` | SVC-DASH.listDashboards() | |
 | EP-DASH-03 | GET | /api/v1/dashboards/:id | JWT | `:id` param | 200 `DashboardDetailsDto` | SVC-DASH.getDashboard() | Includes widgets + dataSources |
 | EP-DASH-04 | GET | /api/v1/dashboards/:id/status | JWT | `:id` param | 200 `DashboardStatusDto` | SVC-DASH.getDashboardStatus() | Frontend polling |
 | EP-DASH-05 | PATCH | /api/v1/dashboards/:id | JWT | `:id` · `UpdateDashboardDto` { name?, purposeDescription? } | 200 `DashboardDetailsDto` | SVC-DASH.updateDashboard() | |
 | EP-DASH-06 | DELETE | /api/v1/dashboards/:id | JWT | `:id` param | 204 | SVC-DASH.deleteDashboard() | Cascades widgets, cache, share links |
 | EP-DASH-07 | POST | /api/v1/dashboards/:id/duplicate | JWT | `:id` param | 201 `DashboardDetailsDto` | SVC-DASH.duplicateDashboard() | Clones dashboard + widgets |
-| EP-DASH-08 | GET | /api/v1/dashboards/:id/widgets/:widgetId/data | JWT ǀ token | `:id`, `:widgetId` · query: shareToken?, filters? | 200 aggregation result (varies) | SVC-DASH.getChartData() | @SkipThrottle |
+| EP-DASH-08 | GET | /api/v1/dashboards/:id/widgets/:widgetId/data | JWT ǀ token | `:id`, `:widgetId` · query: shareToken?, filters? | 200 aggregation result (varies) | SVC-DASH.getChartData() | @SkipThrottle; OLAP path when querySpec present |
 | EP-DASH-09 | POST | /api/v1/dashboards/:id/refresh | JWT | `:id` param | 202 `{ jobId, message }` | SVC-DASH.refreshDashboard() | Async; invalidates cache |
-| EP-DASH-10 | POST | /api/v1/dashboards/:id/widgets | JWT | `:id` · `CreateWidgetDto` { widgetType, title, position, queryDefinition, displayConfig? } | 201 `ChartWidgetDto` | SVC-DASH.addWidget() | |
-| EP-DASH-11 | PUT | /api/v1/dashboards/:id/widgets/:widgetId | JWT | `:id`, `:widgetId` · `UpdateWidgetDto` { widgetType?, title?, position?, queryDefinition?, displayConfig? } | 200 `ChartWidgetDto` | SVC-DASH.updateWidget() | Invalidates affected cache |
+| EP-DASH-10 | POST | /api/v1/dashboards/:id/widgets | JWT | `:id` · `CreateWidgetDto` { widgetType, title, position, queryDefinition, displayConfig? } | 201 `ChartWidgetDto` | SVC-DASH.addWidget() | Dispatches add-widget pipeline |
+| EP-DASH-11 | PUT | /api/v1/dashboards/:id/widgets/:widgetId | JWT | `:id`, `:widgetId` · `UpdateWidgetDto` { widgetType?, title?, position?, queryDefinition?, displayConfig? } | 200 `ChartWidgetDto` | SVC-DASH.updateWidget() | Dispatches edit-widget pipeline; invalidates cache |
 | EP-DASH-12 | DELETE | /api/v1/dashboards/:id/widgets/:widgetId | JWT | `:id`, `:widgetId` params | 204 | SVC-DASH.deleteWidget() | Clears widget cache |
 | EP-DASH-13 | POST | /api/v1/dashboards/:id/generate/retry | JWT | `:id` param | 202 `{ jobId, status }` | SVC-DASH.retryGeneration() | Async |
+| EP-DASH-14 | GET | /api/v1/dashboards/:id/filter-options | JWT ǀ token | `:id` · query: shareToken? | 200 `FilterValueMeta[]` | SVC-DASH.getFilterOptions() | No OLAP query; served from cache/store *(change-021)* |
+| EP-DASH-15 | GET | /api/v1/dashboards/datasets/:datasetId/filter-values/:column/search | JWT ǀ token | `:datasetId`, `:column` · query: q (search string), shareToken? | 200 `{ value: unknown; count: number }[]` | SVC-DASH.searchFilterValues() | Typeahead; OLAP LIKE query for search-mode cols *(change-021)* |
 
 **Notes:**
-- [EP-DASH-01] Creates dashboard, links it to confirmed CSV files, queues AI generation job. `purposeDescription` used as AI context. `fileIds` must reference confirmed csvfiles.
+- [EP-DASH-01] Creates dashboard, links it to confirmed Datasets (or legacy CsvFiles), queues AI generation pipeline job. `purposeDescription` used as AI context. `datasetIds` must reference confirmed datasets. *(Renamed from `fileIds` in change-015)*
 - [EP-DASH-04] Returns `{ dashboardId, status, jobStatus, progress (0–100), errorMessage }`. Designed for frontend polling during generation.
-- [EP-DASH-08] Resolves cached chart data or executes the widget's aggregation pipeline. Supports access via JWT or share token (via `shareToken` query param). `filters` is JSON-encoded. Returns empty result structure (not 404) when aggregation yields zero rows.
+- [EP-DASH-08] Resolves cached chart data or executes the widget's query. When `widget.querySpec` is non-null, routes to OLAP via `AnalyticsStoreService.runQuery`; otherwise falls back to MongoDB aggregation. Supports access via JWT or share token. `filters` is JSON-encoded. Returns empty result structure (not 404) on no rows.
+- [EP-DASH-14] Returns all AI-selected filter columns for the dashboard's linked datasets, including precomputed `values[]` (list mode) or empty values (search mode). Safe for high-traffic page opens — no OLAP query.
+- [EP-DASH-15] Route is under `/dashboards/datasets/…` to avoid ambiguity with `/:id` parameter. Used for typeahead input on search-mode filter columns.

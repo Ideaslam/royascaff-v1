@@ -1,15 +1,21 @@
 ## Module: Integration Providers
 
-### SVC-EXT-AI · AnthropicProvider [external, Anthropic Claude, ai]
-AI adapter (bound to AI_PROVIDER) for column analysis and dashboard generation, with full call logging and cost tracking.
+### SVC-EXT-AI · AiProviderRegistry + AnthropicProvider [external, Anthropic Claude, ai] *(updated change-016)*
+Pluggable AI provider system. `AiProviderRegistry` holds named `AiProviderInterface` implementations; callers request by provider id or use the workspace default.
 
-**Methods:**
-- `analyzeColumns(input: AiColumnAnalysisInput, jobId?): Promise<AiColumnAnalysisResult>` — prompts model for per-column descriptions, parses JSON
-- `generateDashboard(input: AiDashboardGenerationInput, jobId?): Promise<AiDashboardGenerationResult>` — prompts model to assemble widgets from catalog, parses JSON
+**AiProviderRegistry methods:**
+- `register(id: string, provider: AiProviderInterface): void` — called by each provider's `onModuleInit()`
+- `resolve(id?: string): AiProviderInterface` — returns named provider or default (from `AI_PROVIDER` env)
 
-**Deps:** AiLogRepository · AiModelPricingRepository · Anthropic SDK · ConfigService (ANTHROPIC_API_KEY, AI_MODEL, AI_MAX_TOKENS)
+**AnthropicProvider methods (implements AiProviderInterface):**
+- `generate(request: AiGenerateRequest, jobId?): Promise<AiGenerateResult>` — generic completion; renders via `PromptTemplateService`, calls Claude, returns `{ text, usage, cost }`
+- `stream(request: AiGenerateRequest, jobId?): AsyncGenerator<string>` — streaming variant
+- `analyzeColumns(input: AiColumnAnalysisInput, jobId?): Promise<AiColumnAnalysisResult>` — column description generation
+- `generateDashboard(input: AiDashboardGenerationInput, jobId?): Promise<AiDashboardGenerationResult>` — widget assembly from catalog
+
+**Deps:** AiProviderRegistry · PromptTemplateService · AiLogRepository · AiModelPricingRepository · Anthropic SDK · ConfigService
 **Side effects:** outbound AI API calls · AI-log writes
-**Rules:** Prompts forbid raw data rows — only column metadata and samples · Responses must be valid JSON (non-JSON throws, logged FAILED) · Cost computed from token usage × resolved pricing (0 if missing) · Provider-agnostic interface (swappable behind AI_PROVIDER token)
+**Rules:** Prompts always go through `PromptTemplateService` (no inline strings) · Raw data rows never sent to AI · Responses must be valid JSON for structured outputs · Cost computed from token usage × pricing
 
 ---
 

@@ -1,7 +1,7 @@
-## Module: Data (CSV Management)
+## Module: Data (Multi-Source Data Management)
 
 ### SVC-DATA · DataService [internal, application, Data]
-Manages CSV file uploads (direct and presigned), AI-analysis kickoff, column metadata, and file lifecycle.
+Manages CSV file uploads (direct and presigned), AI-analysis kickoff, column metadata, and file lifecycle. *(Legacy CSV path — kept for backward compat)*
 
 **Methods:**
 - `uploadFile(file: Express.Multer.File, userId: string, ip?)` — validates size, uploads buffer to R2, marks ANALYZING, creates job + enqueues csv-analysis, audits CSVFILE_UPLOAD_COMPLETE
@@ -16,3 +16,83 @@ Manages CSV file uploads (direct and presigned), AI-analysis kickoff, column met
 **Deps:** CsvFileRepository · ColumnMetadataRepository · BackgroundJobRepository (via BackgroundJobsService) · BackgroundJobsService · AuditLogService · CSV_ANALYSIS_QUEUE (BullMQ) · STORAGE_PROVIDER · Mongo Connection (@InjectConnection)
 **Side effects:** R2 upload/delete/presign · queue enqueue · dynamic collection drop/clear · audit writes
 **Rules:** Max file size 50 MB · Status flow: UPLOADING → ANALYZING → ANALYZED → CONFIRMED (or ERROR); dashboards require CONFIRMED files · Owner-or-admin enforced on read/update/delete/retry · Delete removes storage object, metadata, and dynamic row collection
+
+---
+
+### SVC-DATA-CONN · DataConnectionService [internal, application, Data] *(change-015)*
+Manages named source connection credentials; encrypts/decrypts credentials; validates test results.
+
+**Methods:**
+- `create(dto: CreateDataConnectionDto, userId, workspaceSlug)` — validates sourceType, encrypts credentials, creates record, optionally calls testConnection
+- `list(workspaceSlug, filters)` — paginated list; credentials never returned
+- `get(id, workspaceSlug)` — returns connection metadata (no credentials)
+- `update(id, dto, workspaceSlug)` — re-encrypts credentials if changed
+- `delete(id, workspaceSlug)` — soft-checks linked Datasets; hard-deletes record
+- `testConnection(id, workspaceSlug)` — resolves connector, decrypts credentials, calls `connector.testConnection(creds)`, writes lastTestedAt + lastTestResult
+- `decryptCredentials(id, workspaceSlug): Promise<Record<string, unknown>>` — internal only; used by connectors; never called from controllers
+
+**Deps:** DataConnectionRepository · ConnectorRegistry · AES encryption utility · AuditLogService · WorkspaceRepository
+**Rules:** Credentials always AES-256-GCM encrypted at rest · `decryptCredentials` never called from a controller · Delete blocked if datasets with `status != pending` reference this connection
+
+---
+
+### SVC-DATA-DS · DatasetService [internal, application, Data] *(change-015, updated change-022)*
+Manages dataset definitions, column mapping, schema discovery, and AI-assisted mapping proposals.
+
+**Methods:**
+- `create(dto: CreateDatasetDto, userId, workspaceSlug)` — links connection, sets semanticFlag; for CSV datasets calls `discoverSchemaWithAiProposal()` automatically after creation
+- `list(workspaceSlug, filters)` — paginated; filterable by connectionId, semanticFlag, syncStatus
+- `get(id, workspaceSlug)` — dataset with schema, last sync info, AI proposal fields
+- `update(id, dto, workspaceSlug)` — updates columnMapping, semanticFlag, description, extractOptions; mapping changes do NOT re-trigger sync
+- `delete(id, workspaceSlug)` — drops OLAP table via `AnalyticsStoreService`; deletes FilterValueMeta; hard-deletes record
+- `discoverSchemaWithAiProposal(id, workspaceSlug)` — *(change-022)* decrypts connection credentials; calls `connector.discoverSchema(conn, dataset)` → writes `Dataset.schema`; then calls AI with `column-mapping` prompt (column names + inferred types + available canonical fields) → writes `aiProposedMapping` + `aiProposedSemanticFlag` as draft fields for user review; never sends raw rows to AI
+- `confirmMapping(id, workspaceSlug, dto: ConfirmMappingDto)` — *(change-022)* writes user-edited (or AI-proposed) values into `columnMapping` + `semanticFlag`; clears `aiProposedMapping` + `aiProposedSemanticFlag`
+- `enqueueSyncJob(id, workspaceSlug, mode: 'full' | 'incremental', triggeredBy)` — validates `syncStatus != syncing`; creates SyncRun record; enqueues `DATA_SYNC_QUEUE` job
+
+**Deps:** DatasetRepository · DataConnectionRepository · DataConnectionService · ConnectorRegistry · AiProviderRegistry · PromptTemplateService · SyncRunRepository · DATA_SYNC_QUEUE (BullMQ) · AnalyticsStoreService · AuditLogService
+**Rules:** `analyticsTable` derived automatically as `ds_{workspaceSlug}_{datasetId}` — never caller-supplied · Sync enqueue blocked if `syncStatus = syncing` · `discoverSchemaWithAiProposal` never exposes raw rows to AI — only column names, inferred types, and sample values · `confirmMapping` is the only way to promote AI proposal fields into live `columnMapping`
+
+---
+
+### SVC-DATA-SYNC · SyncService (DataSyncProcessor) [internal, application, Data] *(change-018)*
+BullMQ worker that executes a full or incremental dataset sync via the PipelineEngine.
+
+**Methods:**
+- `process(job: Job<{ datasetId, syncRunId, workspaceSlug, pipelineRunId?, mode }>): Promise<void>` — resolves Dataset + DataConnection, runs `PipelineEngine.run('ingest', { dataset, connection, … })`, marks SyncRun completed/failed, calls `FilterValuesService.computeAndStore` after success
+
+**Deps:** DatasetRepository · DataConnectionRepository · SyncRunRepository · FilterValueMetaRepository · FilterValuesService · PipelineEngine · WorkspaceRepository
+**Side effects:** OLAP inserts · FilterValueMeta refresh · SyncRun status updates
+**Rules:** On pipeline error: SyncRun.status = `failed` + errorMessage captured · Filter refresh only after successful sync · Never re-runs a running SyncRun
+
+---
+
+### SVC-DATA-SCHEMA-DRIFT — SchemaDriftService [internal, application, Data] *(change-029)*
+`src/modules/data/services/schema-drift.service.ts`
+
+Compares the **stored** `Dataset.schema` (from last discovery) against a freshly discovered schema from the connector. Returns a structured drift report.
+
+**Methods:**
+- `detect(stored: DiscoveredColumn[], fresh: DiscoveredColumn[]): SchemaDriftReport`
+  - `added: string[]` — columns present in `fresh` but absent in `stored` → safe, auto-applied
+  - `removed: string[]` — columns in `stored` absent from `fresh` → breaking
+  - `retyped: { name, oldType, newType }[]` — columns present in both but different canonical type → breaking
+  - `hasBreaking: boolean` — true if `removed.length > 0 || retyped.length > 0`
+
+**Called by:** `DataSyncProcessor` before the ingest pipeline step. If `hasBreaking`, processor sets `Dataset.hasSchemaDrift = true`; embeds report in `SyncRun.schemaDrift`; triggers `SYNC_SCHEMA_DRIFT` notification. Safe additions are appended to `Dataset.schema` automatically.
+
+**New fields added to schemas:**
+- `SyncRun.schemaDrift: SchemaDriftReport | null` — embedded drift snapshot per run
+- `Dataset.hasSchemaDrift: boolean` — true when the stored schema has unresolved breaking drift
+
+---
+
+### SVC-DATA-SCHED · ScheduledSyncService [internal, application, Data] *(change-023)*
+`@nestjs/schedule` cron service that enqueues periodic syncs for datasets with `syncPolicy = HOURLY | DAILY`.
+
+**Methods:**
+- `runHourlySyncs()` — `@Cron(CronExpression.EVERY_HOUR)` — queries all workspace datasets with `syncPolicy = hourly`; skips any where `syncStatus = syncing`; enqueues `DATA_SYNC_QUEUE` job for each via `SyncService.triggerSync()`
+- `runDailySyncs()` — `@Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)` — same logic for `syncPolicy = daily`
+
+**Deps:** DatasetRepository (multi-workspace fan-out query) · WorkspaceRepository (enumerate workspace slugs) · SyncService
+**Side effects:** BullMQ job enqueue
+**Rules:** Guard against duplicate enqueue: skip dataset if `syncStatus = syncing` · Each enqueue uses `mode = full` (incremental not supported for Google Sheets) · On app restart all eligible datasets are naturally re-evaluated at next cron tick — no catch-up backfill

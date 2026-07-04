@@ -143,7 +143,7 @@ Collection: `ws_{workspaceSlug}_chartwidgets`. One doc per widget in a dashboard
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | dashboardId | ObjectId | required | → Dashboard |
-| dataSourceFileId | ObjectId | required; data source for this widget | → CsvFile |
+| dataSourceFileId | ObjectId | **deprecated** — kept for backward compat with legacy CSV widgets; prefer `datasetId` | → CsvFile |
 | widgetType | String | required; open string, must match a `widgetdefinitions` catalog entry (NOT a fixed Mongoose enum) | — |
 | title | String | required; widget display title | — |
 | position.x | Number | required; column start position in grid | — |
@@ -157,6 +157,7 @@ Collection: `ws_{workspaceSlug}_chartwidgets`. One doc per widget in a dashboard
 | queryDefinition.filters | [Object] | nullable; array of `{ column: String, operator: String, value: Mixed }` | — |
 | queryDefinition.sortBy | String | nullable; column name to sort by | — |
 | queryDefinition.sortOrder | String | required; enum: `asc`, `desc`; default: `desc` | — |
+| querySpec | Object | nullable, default: null; dialect-neutral `QuerySpec` for OLAP widgets (source, aggregations, filters, groupBy, orderBy, limit, dateRange); when present takes precedence over `queryDefinition` *(change-020)* | — |
 | displayConfig.colors | [String] | nullable; hex color overrides | — |
 | displayConfig.showLegend | Boolean | required, default: true | — |
 | displayConfig.xAxisLabel | String | nullable; override x-axis label | — |
@@ -166,22 +167,22 @@ Collection: `ws_{workspaceSlug}_chartwidgets`. One doc per widget in a dashboard
 Subdocuments `position`, `queryDefinition`, `displayConfig` are embedded — always read/written together as a unit.
 
 **Indexes:** `{ dashboardId: 1 }` (load all widgets for a dashboard) · `{ dashboardId: 1, dataSourceFileId: 1 }` compound
-**Relations:** belongs-to Dashboard (via dashboardId) · references CsvFile as data source (via dataSourceFileId)
+**Relations:** belongs-to Dashboard (via dashboardId) · references CsvFile as data source (via dataSourceFileId, legacy)
 
 ---
 
 ## 7. dashboarddatasources
-Collection: `ws_{workspaceSlug}_dashboarddatasources`. Junction linking dashboards to CSV files (many-to-many).
+Collection: `ws_{workspaceSlug}_dashboarddatasources`. Junction linking dashboards to Datasets (and legacy CSV files).
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | dashboardId | ObjectId | required | → Dashboard |
-| fileId | ObjectId | required | → CsvFile |
+| datasetId | ObjectId | required; references a `Dataset` (or legacy `CsvFile` for backward compat) *(renamed from `fileId` in change-015)* | → Dataset |
 | isPrimary | Boolean | required; true for the first/main data source | — |
 | addedAt | Date | required; when this data source was linked | — |
 
-**Indexes:** `{ dashboardId: 1, fileId: 1 }` unique compound (prevents duplicate links) · `{ dashboardId: 1 }` · `{ fileId: 1 }` (find all dashboards using a CSV)
-**Relations:** belongs-to Dashboard (via dashboardId) · references CsvFile (via fileId)
+**Indexes:** `{ dashboardId: 1, datasetId: 1 }` unique compound · `{ dashboardId: 1 }` · `{ datasetId: 1 }`
+**Relations:** belongs-to Dashboard (via dashboardId) · references Dataset (via datasetId)
 
 ---
 
@@ -459,6 +460,7 @@ AI model pricing table. Seeded at startup; used to compute `ailogs.costUsd` from
 | name | String | required; human display name | — |
 | ownerId | ObjectId | required; user who created the workspace | → User |
 | status | String | required; enum: `active`, `suspended`, `deleted`; default: `active` | — |
+| olapEngine | String | optional; enum: `clickhouse \| bigquery`; default: `clickhouse`; overrides which OLAP engine is used for all analytics tables in this workspace *(change-015)* | — |
 
 **Indexes:** `{ slug: 1 }` unique · `{ ownerId: 1 }` · `{ status: 1 }`
 **Relations:** belongs-to User (via ownerId) · has-many WorkspaceMemberships, WorkspaceInvitations · has-one WorkspaceBranding
@@ -573,6 +575,12 @@ One collection per uploaded CSV file. `{fileId}` is the 24-char hex string of `c
 10. `backgroundjobs.status` must always be updated to `failed` with `errorMessage` on failure — no silent failures
 11. `chartdatacache` entries must be invalidated (deleted or set `stale`) before a refresh response is returned
 12. `csvdata_{fileId}` collections must be dropped entirely when the parent `csvfile` record is deleted
+13. `dataconnections.credentialsEncrypted` must always be AES-256-GCM encrypted before persisting; decryption only inside connector-facing service methods — never exposed in API responses *(change-015)*
+14. `datasets.analyticsTable` must follow the pattern `ds_{workspaceSlug}_{datasetId}` — never allow caller-supplied table names *(change-015)*
+15. `filtervaluemeta` rows must be refreshed (not created anew) after every successful sync run *(change-021)*
+16. `chartwidgets.querySpec` takes precedence over `queryDefinition` in the chart data API; both may coexist on the same document *(change-020)*
+17. `dashboards` may only be created from datasets where `analyticsTable != null && syncStatus != syncing`; legacy CsvFile path requires `status == confirmed` *(change-022)*
+18. `datasets.aiProposedMapping` and `aiProposedSemanticFlag` are display-only fields — they are replaced by `columnMapping` and `semanticFlag` upon user confirmation and never used in query execution *(change-022)*
 
 ## Mongoose Enum Reference
 ```
@@ -599,3 +607,178 @@ PaymentStatus = [paid, pending, refunded, failed]
 AiLogStatus = [pending, success, failed]
 // Subscription plans are NOT a fixed enum — they are documents in the subscriptionplans collection.
 ```
+## OlapBenchmarkRun
+Purpose: persists results of a single admin-triggered benchmark run comparing ClickHouse vs BigQuery on sample data.
+Collection: `olap_benchmark_runs` (global — admin use only, not workspace-scoped)
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `triggeredBy` | ObjectId | required | → `users._id` |
+| `status` | Enum | required | `pending \| running \| done \| failed` |
+| `sampleRowCount` | Number | required | — |
+| `workloadDescription` | String | optional | — |
+| `clickhouse.p50Ms` | Number | nullable | — |
+| `clickhouse.p95Ms` | Number | nullable | — |
+| `clickhouse.rowsScanned` | Number | nullable | — |
+| `clickhouse.estimatedCostUsd` | Number | nullable | — |
+| `clickhouse.error` | String | nullable | — |
+| `bigquery.p50Ms` | Number | nullable | — |
+| `bigquery.p95Ms` | Number | nullable | — |
+| `bigquery.rowsScanned` | Number | nullable | — |
+| `bigquery.estimatedCostUsd` | Number | nullable | — |
+| `bigquery.error` | String | nullable | — |
+| `recommendation` | Enum | nullable | `clickhouse \| bigquery \| inconclusive` |
+| `recommendationReason` | String | nullable | — |
+| `createdAt` | Date | auto | — |
+| `updatedAt` | Date | auto | — |
+
+Relations: one admin triggers many benchmark runs
+Indexes: index `status`; index `createdAt` desc; index `triggeredBy`
+
+---
+
+## DataConnection *(change-015)*
+Purpose: stores named connection credentials for an external data source. Credentials are encrypted.
+Collection: `ws_{workspaceSlug}_dataconnections`
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `workspaceSlug` | String | required; workspace scope | — |
+| `name` | String | required; human-readable connection name | — |
+| `sourceType` | Enum | required | `csv \| google_sheets \| shopify \| salla \| zid \| sql_server \| mongodb_atlas` |
+| `credentialsEncrypted` | String | required; AES-256-GCM encrypted JSON blob of credentials | — |
+| `status` | Enum | required; default: `active` | `active \| disabled` |
+| `lastTestedAt` | Date | nullable; when connection was last tested | — |
+| `lastTestResult` | String | nullable; `ok \| error: <message>` | — |
+| `createdBy` | ObjectId | required | → `users._id` |
+| `createdAt` | Date | auto | — |
+| `updatedAt` | Date | auto | — |
+
+**Indexes:** `{ workspaceSlug: 1, sourceType: 1 }` · `{ workspaceSlug: 1, name: 1 }` unique
+
+---
+
+## Dataset *(change-015, updated change-022)*
+Purpose: describes a named view of data from a connection — what to extract, how to label it, and its semantic meaning.
+Collection: `ws_{workspaceSlug}_datasets`
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `workspaceSlug` | String | required | — |
+| `connectionId` | ObjectId | required | → `DataConnection._id` |
+| `sourceType` | Enum | required | `csv \| google_sheets \| …` |
+| `name` | String | required; human-readable dataset name | — |
+| `description` | String | optional | — |
+| `semanticFlag` | Enum | required, default: `arbitrary` | `arbitrary \| orders \| products \| customers \| inventory \| marketing` |
+| `columnMapping` | Object | optional; `{ canonicalField: sourceColumn }` map; schema-on-read, never rewrites data; user-confirmed | — |
+| `aiProposedMapping` | Object | nullable; AI-suggested `columnMapping` from `column-mapping` prompt; shown in UI for user review; replaced by `columnMapping` on confirm *(change-022)* | — |
+| `aiProposedSemanticFlag` | String | nullable; AI-suggested `semanticFlag`; shown in UI for review *(change-022)* | — |
+| `schema` | [Object] | optional; discovered columns `{ name, type, sample?, nullable? }`; written by `discoverSchema()` | — |
+| `extractOptions` | Object | optional; connector-specific extraction config (e.g. sheet name, SQL query, table name) | — |
+| `analyticsTable` | String | nullable; OLAP table name — set after first successful sync as `ds_{workspaceSlug}_{_id}` | — |
+| `syncStatus` | Enum | required, default: `idle` | `idle \| syncing \| error` |
+| `syncPolicy` | Enum | required, default: `manual` | `manual \| hourly \| daily \| webhook` |
+| `lastSyncAt` | Date | nullable | — |
+| `rowCount` | Number | default: 0; count after last successful sync | — |
+| `lastSyncErrorMessage` | String | nullable | — |
+| `createdBy` | ObjectId | required | → `users._id` |
+| `createdAt` | Date | auto | — |
+| `updatedAt` | Date | auto | — |
+
+**Indexes:** `{ connectionId: 1 }` · `{ semanticFlag: 1 }` · `{ syncStatus: 1 }` · `{ createdBy: 1, createdAt: -1 }`
+**Relations:** belongs-to DataConnection · has-many SyncRuns · referenced-by DashboardDatasource · referenced-by FilterValueMeta
+**Rules:** `analyticsTable` set by `DataSyncProcessor` after first successful sync; `null` = data not yet loaded; dashboards require `analyticsTable != null` before generation
+
+---
+
+## SyncRun *(change-015)*
+Purpose: history record for each data sync execution.
+Collection: `ws_{workspaceSlug}_syncruns`
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `workspaceSlug` | String | required | — |
+| `datasetId` | ObjectId | required | → `Dataset._id` |
+| `mode` | Enum | required | `full \| incremental` |
+| `status` | Enum | required, default: `running` | `running \| success \| failed` |
+| `rowsIn` | Number | nullable; total rows extracted from source | — |
+| `rowsLoaded` | Number | nullable; rows successfully inserted into OLAP | — |
+| `errorMessage` | String | nullable | — |
+| `startedAt` | Date | required, default: now | — |
+| `finishedAt` | Date | nullable | — |
+| `triggeredBy` | Enum | required | `manual \| schedule \| api` |
+| `createdAt` | Date | auto | — |
+
+**Indexes:** `{ workspaceSlug: 1, datasetId: 1, startedAt: -1 }` · `{ status: 1 }`
+**Relations:** belongs-to Dataset
+
+---
+
+## FilterValueMeta *(change-021)*
+Purpose: stores AI-selected filter column metadata + precomputed distinct values per dataset. Drives the dashboard filter panel without a live OLAP query on page open.
+Collection: `ws_{workspaceSlug}_filtervaluemeta`
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `workspaceSlug` | String | required | — |
+| `datasetId` | String | required; string representation of Dataset `_id` | — |
+| `column` | String | required; exact column name in the OLAP table | — |
+| `label` | String | required; human-readable label for the filter UI | — |
+| `filterType` | Enum | required | `select \| date_range \| range \| search` |
+| `mode` | Enum | required | `list \| search`; `list` = low-cardinality (≤1000 distinct), values stored here; `search` = high-cardinality, typeahead only |
+| `distinctCount` | Number | required; total distinct value count at last compute | — |
+| `values` | [Object] | nullable; populated only when `mode = list`; each `{ value: Mixed, count: Number }` | — |
+| `lastComputedAt` | Date | required; timestamp of last compute | — |
+| `createdAt` | Date | auto | — |
+| `updatedAt` | Date | auto | — |
+
+**Indexes:** `{ workspaceSlug: 1, datasetId: 1, column: 1 }` unique · `{ workspaceSlug: 1, datasetId: 1 }`
+
+---
+
+## PipelineRun *(change-019)*
+Purpose: execution audit trail for every pipeline invocation.
+Collection: `pipeline_runs` (global — not workspace-scoped)
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `pipelineType` | String | required; e.g. `ingest`, `dashboard-generate`, `add-widget`, `edit-widget` | — |
+| `status` | Enum | required | `running \| success \| failed` |
+| `datasetId` | String | nullable | — |
+| `workspaceSlug` | String | nullable | — |
+| `steps` | [Object] | required; array of `{ type, status, startedAt, finishedAt, error? }` | — |
+| `errorMessage` | String | nullable; first fatal error | — |
+| `startedAt` | Date | required, default: now | — |
+| `finishedAt` | Date | nullable | — |
+| `createdAt` | Date | auto | — |
+
+**Indexes:** `{ pipelineType: 1, status: 1 }` · `{ workspaceSlug: 1, datasetId: 1 }` · `{ startedAt: -1 }`
+
+---
+
+// New enums (change-014)
+OlapEngineId = [clickhouse, bigquery]
+OlapBenchmarkStatus = [pending, running, done, failed]
+OlapBenchmarkRecommendation = [clickhouse, bigquery, inconclusive]
+
+// New enums (change-015)
+DataSourceType = [csv, google_sheets, shopify, salla, zid, sql_server, mongodb_atlas]
+DataConnectionStatus = [active, disabled]
+SemanticFlag = [arbitrary, orders, products, customers, inventory, marketing]
+DatasetStatus = [pending, syncing, ready, error]
+SyncRunMode = [full, incremental]
+SyncRunStatus = [running, success, failed]
+SyncRunTrigger = [manual, schedule, api]
+
+// New enums (change-019)
+PipelineRunStatus = [running, success, failed]
+
+// New enums (change-021)
+FilterType = [select, date_range, range, search]
+FilterMode = [list, search]

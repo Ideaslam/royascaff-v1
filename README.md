@@ -49,5 +49,6 @@ it stays a portable, self-contained blueprint.
 ## How to use
 
 - **New build**: open `engine/flow.md` and follow Phase 0 → Phase 4.
+- **Onboard an existing / legacy codebase**: open `engine/reverse-engineer-flow.md` and follow Phase R.0 → R.Done. This reads the code and populates `project/` automatically, then hands off to Phase 5/6 of `flow.md`.
 - **Change an existing app**: create `project/changes/change-<NNN>-<slug>/` from `engine/templates/change-request-template.md`, fill it, then run Phase 5.
 - **Fix a bug**: open `engine/flow.md`, route to Phase 6.

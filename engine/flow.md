@@ -11,6 +11,7 @@ Read this file first on every task. It tells you which flow file to load based o
 | 0–4 | Initial Build (used once) | `engine/flows/initial-build.md` |
 | 5 | Change Mode (the daily workflow) | `engine/flows/change-mode.md` |
 | 6 | Bug Fix | `engine/flows/bug-fix.md` |
+| R | Reverse-Engineer existing codebase | `engine/flows/reverse-engineer.md` |
 
 ## Global Conventions
 
