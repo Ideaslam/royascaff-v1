@@ -48,3 +48,5 @@ Step 5.6. Full detail for each change — the filled `change-request.md` and bot
 | 033 | 2026-07-05 | modify-page | customer-portal | AI loader popup for widget add/edit + dashboard refresh | ✅ PASS | [change-033-ai-widget-loader-popup](change-033-ai-widget-loader-popup/) |
 | 034 | 2026-07-05 | modify-page | customer-portal | Dashboard toolbar icon/button redesign | ✅ PASS | [change-034-dashboard-toolbar-icons](change-034-dashboard-toolbar-icons/) |
 | 035 | 2026-07-05 | refactor | customer-portal | Global shared action button styles in styles.css | ✅ PASS | [change-035-global-action-buttons](change-035-global-action-buttons/) |
+| 036 | 2026-07-05 | modify-feature | customer-portal | ngx-translate i18n (en/ar) for UI strings | ✅ PASS | [change-036-i18n-ngx-translate](change-036-i18n-ngx-translate/) |
+| 037 | 2026-07-05 | modify-data-model | all-apps | Bilingual DB fields (`*Ar` companions) + frontend localized display | ✅ PASS | [change-037-localized-db-fields](change-037-localized-db-fields/) |

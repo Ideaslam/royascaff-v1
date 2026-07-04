@@ -5,6 +5,7 @@
 - **ID field:** `_id` (ObjectId, auto-generated) on every entity
 - **Timestamps:** `createdAt` and `updatedAt` (Date, auto-managed by Mongoose) on every entity unless noted
 - **Enums:** stored as strings, validated by Mongoose enum constraint
+- **Bilingual strings:** English in the primary field (`name`, `title`, `description`, …); Arabic companion with `Ar` suffix (`nameAr`, `titleAr`, …). Frontend/API fall back to English when `*Ar` is empty.
 - **Workspace-scoped collections:** entities 2–8 use dynamic per-workspace collections named `ws_{workspaceSlug}_<entity>`, resolved at runtime by `<Entity>Repository.getModel(workspaceSlug)`
 - **Dynamic CSV data collections:** `csvdata_{fileId}` — one collection per uploaded CSV; created at upload, dropped on file deletion
 
@@ -55,7 +56,9 @@ Collection: `ws_{workspaceSlug}_projects`. No uniqueness constraint on name with
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | name | String | required; no uniqueness constraint | — |
+| nameAr | String | optional, default: `''`; Arabic display name | — |
 | description | String | nullable | — |
+| descriptionAr | String | optional, default: `''`; Arabic description | — |
 | ownerId | ObjectId | required | → User |
 | isActive | Boolean | required, default: true; false = archived | — |
 
@@ -120,7 +123,9 @@ Collection: `ws_{workspaceSlug}_dashboards`.
 | projectId | ObjectId | required | → Project |
 | ownerId | ObjectId | required | → User |
 | name | String | required; unique within same projectId | — |
+| nameAr | String | optional, default: `''`; Arabic display name | — |
 | purposeDescription | String | required; used as AI generation prompt context | — |
+| purposeDescriptionAr | String | optional, default: `''`; Arabic purpose/summary | — |
 | status | String | required; enum: `generating`, `ready`, `error` | — |
 | generationJobId | ObjectId | nullable; the AI generation job | → BackgroundJob |
 | generationError | String | nullable; error message if status = `error` | — |
@@ -145,7 +150,8 @@ Collection: `ws_{workspaceSlug}_chartwidgets`. One doc per widget in a dashboard
 | dashboardId | ObjectId | required | → Dashboard |
 | dataSourceFileId | ObjectId | **deprecated** — kept for backward compat with legacy CSV widgets; prefer `datasetId` | → CsvFile |
 | widgetType | String | required; open string, must match a `widgetdefinitions` catalog entry (NOT a fixed Mongoose enum) | — |
-| title | String | required; widget display title | — |
+| title | String | required; widget display title (English) | — |
+| titleAr | String | optional, default: `''`; Arabic widget title | — |
 | position.x | Number | required; column start position in grid | — |
 | position.y | Number | required; row start position in grid | — |
 | position.w | Number | required; width in grid columns | — |
@@ -260,8 +266,10 @@ Tracks all async background jobs: CSV analysis, dashboard generation, PDF export
 |-------|------|-------------|-----|
 | userId | ObjectId | required; notification recipient | → User |
 | type | String | required; enum: `dashboard_ready`, `generation_error`, `csv_analysis_complete`, `export_ready`, `dashboard_shared` | — |
-| title | String | required; short notification title | — |
-| message | String | required; full notification message body | — |
+| title | String | required; short notification title (English) | — |
+| titleAr | String | optional, default: `''`; Arabic title | — |
+| message | String | required; full notification message body (English) | — |
+| messageAr | String | optional, default: `''`; Arabic message body | — |
 | relatedEntityType | String | nullable; enum: `dashboard`, `csvfile`, `project` | — |
 | relatedEntityId | ObjectId | nullable; ID of related entity for navigation | — |
 | isRead | Boolean | required, default: false | — |
@@ -302,7 +310,9 @@ Admin-managed subscription plan catalog. Not a fixed enum — plans are document
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | name | String | required, unique (e.g. `Free`, `Pro`) | — |
+| nameAr | String | optional, default: `''`; Arabic plan name | — |
 | description | String | nullable, default: `''` | — |
+| descriptionAr | String | optional, default: `''`; Arabic description | — |
 | priceMonthlyUsd | Number | required; min 0 | — |
 | maxDashboards | Number | required; min 0 | — |
 | maxDataUploadsPerMonth | Number | required; min 0 | — |
@@ -394,8 +404,10 @@ AI widget catalog. Seeded at startup; AI dashboard generator picks `widgetType`s
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | widgetType | String | required, unique; catalog identifier (e.g. `bar`, `line`, `kpi_card`) | — |
-| displayName | String | required; human-readable widget name | — |
-| description | String | required; when the AI should choose this widget | — |
+| displayName | String | required; human-readable widget name (English) | — |
+| displayNameAr | String | optional, default: `''`; Arabic display name | — |
+| description | String | required; when the AI should choose this widget (English) | — |
+| descriptionAr | String | optional, default: `''`; Arabic description | — |
 | category | String | required, default: `chart`; grouping category | — |
 | requiredStructure | Object | nullable, default: `{}`; describes queryDefinition/displayConfig shape AI must provide | — |
 | example | Object | nullable, default: `{}`; complete example widget JSON (sample query + output rows) | — |
