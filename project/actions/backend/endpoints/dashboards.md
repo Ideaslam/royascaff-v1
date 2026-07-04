@@ -13,8 +13,8 @@
 | EP-DASH-07 | POST | /api/v1/dashboards/:id/duplicate | JWT | `:id` param | 201 `DashboardDetailsDto` | SVC-DASH.duplicateDashboard() | Clones dashboard + widgets |
 | EP-DASH-08 | GET | /api/v1/dashboards/:id/widgets/:widgetId/data | JWT ǀ token | `:id`, `:widgetId` · query: shareToken?, filters? | 200 aggregation result (varies) | SVC-DASH.getChartData() | @SkipThrottle; OLAP path when querySpec present |
 | EP-DASH-09 | POST | /api/v1/dashboards/:id/refresh | JWT | `:id` param | 202 `{ jobId, message }` | SVC-DASH.refreshDashboard() | Async; invalidates cache |
-| EP-DASH-10 | POST | /api/v1/dashboards/:id/widgets | JWT | `:id` · `CreateWidgetDto` { widgetType, title, position, queryDefinition, displayConfig? } | 201 `ChartWidgetDto` | SVC-DASH.addWidget() | Dispatches add-widget pipeline |
-| EP-DASH-11 | PUT | /api/v1/dashboards/:id/widgets/:widgetId | JWT | `:id`, `:widgetId` · `UpdateWidgetDto` { widgetType?, title?, position?, queryDefinition?, displayConfig? } | 200 `ChartWidgetDto` | SVC-DASH.updateWidget() | Dispatches edit-widget pipeline; invalidates cache |
+| EP-DASH-10 | POST | /api/v1/dashboards/:id/widgets | JWT | `:id` · `CreateWidgetDto` { widgetRequest (min 10) } | 201 `ChartWidgetDto` | SVC-DASH.addWidget() | Runs `add-widget` pipeline synchronously; AI generates widget |
+| EP-DASH-11 | PUT | /api/v1/dashboards/:id/widgets/:widgetId | JWT | `:id`, `:widgetId` · `UpdateWidgetDto` { widgetRequest?, title?, position?, queryDefinition?, displayConfig? } | 200 `ChartWidgetDto` | SVC-DASH.updateWidget() | `widgetRequest` runs `edit-widget` pipeline; title/position for layout-only edits |
 | EP-DASH-12 | DELETE | /api/v1/dashboards/:id/widgets/:widgetId | JWT | `:id`, `:widgetId` params | 204 | SVC-DASH.deleteWidget() | Clears widget cache |
 | EP-DASH-13 | POST | /api/v1/dashboards/:id/generate/retry | JWT | `:id` param | 202 `{ jobId, status }` | SVC-DASH.retryGeneration() | Async |
 | EP-DASH-14 | GET | /api/v1/dashboards/:id/filter-options | JWT ǀ token | `:id` · query: shareToken? | 200 `FilterValueMeta[]` | SVC-DASH.getFilterOptions() | No OLAP query; served from cache/store *(change-021)* |

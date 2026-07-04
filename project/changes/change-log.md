@@ -44,3 +44,4 @@ Step 5.6. Full detail for each change — the filled `change-request.md` and bot
 | 029 | 2026-07-03 | new-feature | all-apps | Cross-cutting sync ops (drift, incremental, observability, limits) | ✅ PASS | [change-029-cross-cutting-sync-ops](change-029-cross-cutting-sync-ops/) |
 | 030 | 2026-07-03 | new-feature + refactor | backend | MongoDB OLAP engine (MONGODB_OLAP_URI) + type-coercion encapsulated in each engine | ✅ PASS | [change-030-mongodb-olap-engine](change-030-mongodb-olap-engine/) |
 | 031 | 2026-07-05 | modify-page | customer-portal | Dashboard description, delete action, project breadcrumb on viewer | ✅ PASS | [change-031-dashboard-description-delete-breadcrumb](change-031-dashboard-description-delete-breadcrumb/) |
+| 032 | 2026-07-05 | modify-feature | customer-portal + backend | Dashboard widget add/edit/delete (AI pipelines + viewer UI) | ✅ PASS | [change-032-dashboard-widget-crud](change-032-dashboard-widget-crud/) |
