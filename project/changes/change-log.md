@@ -47,3 +47,4 @@ Step 5.6. Full detail for each change — the filled `change-request.md` and bot
 | 032 | 2026-07-05 | modify-feature | customer-portal + backend | Dashboard widget add/edit/delete (AI pipelines + viewer UI) | ✅ PASS | [change-032-dashboard-widget-crud](change-032-dashboard-widget-crud/) |
 | 033 | 2026-07-05 | modify-page | customer-portal | AI loader popup for widget add/edit + dashboard refresh | ✅ PASS | [change-033-ai-widget-loader-popup](change-033-ai-widget-loader-popup/) |
 | 034 | 2026-07-05 | modify-page | customer-portal | Dashboard toolbar icon/button redesign | ✅ PASS | [change-034-dashboard-toolbar-icons](change-034-dashboard-toolbar-icons/) |
+| 035 | 2026-07-05 | refactor | customer-portal | Global shared action button styles in styles.css | ✅ PASS | [change-035-global-action-buttons](change-035-global-action-buttons/) |
