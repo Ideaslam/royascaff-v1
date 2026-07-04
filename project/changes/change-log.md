@@ -45,3 +45,4 @@ Step 5.6. Full detail for each change — the filled `change-request.md` and bot
 | 030 | 2026-07-03 | new-feature + refactor | backend | MongoDB OLAP engine (MONGODB_OLAP_URI) + type-coercion encapsulated in each engine | ✅ PASS | [change-030-mongodb-olap-engine](change-030-mongodb-olap-engine/) |
 | 031 | 2026-07-05 | modify-page | customer-portal | Dashboard description, delete action, project breadcrumb on viewer | ✅ PASS | [change-031-dashboard-description-delete-breadcrumb](change-031-dashboard-description-delete-breadcrumb/) |
 | 032 | 2026-07-05 | modify-feature | customer-portal + backend | Dashboard widget add/edit/delete (AI pipelines + viewer UI) | ✅ PASS | [change-032-dashboard-widget-crud](change-032-dashboard-widget-crud/) |
+| 033 | 2026-07-05 | modify-page | customer-portal | AI loader popup for widget add/edit + dashboard refresh | ✅ PASS | [change-033-ai-widget-loader-popup](change-033-ai-widget-loader-popup/) |
