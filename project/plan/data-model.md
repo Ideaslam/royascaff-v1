@@ -688,7 +688,7 @@ Collection: `ws_{workspaceSlug}_datasets`
 | `columnMapping` | Object | optional; `{ canonicalField: sourceColumn }` map; schema-on-read, never rewrites data; user-confirmed | — |
 | `aiProposedMapping` | Object | nullable; AI-suggested `columnMapping` from `column-mapping` prompt; shown in UI for user review; replaced by `columnMapping` on confirm *(change-022)* | — |
 | `aiProposedSemanticFlag` | String | nullable; AI-suggested `semanticFlag`; shown in UI for review *(change-022)* | — |
-| `schema` | [Object] | optional; discovered columns `{ name, type, sample?, nullable? }`; written by `discoverSchema()` | — |
+| `schema` | [Object] | optional; discovered columns `{ name, type, sample?, nullable?, description?, descriptionAr?, userDescription?, isPrimaryKey? }`; written by `discoverSchema()` + updated by `identify-columns` pipeline step; `isPrimaryKey` marks the unique row identifier *(change-038)* | — |
 | `extractOptions` | Object | optional; connector-specific extraction config (e.g. sheet name, SQL query, table name) | — |
 | `analyticsTable` | String | nullable; OLAP table name — set after first successful sync as `ds_{workspaceSlug}_{_id}` | — |
 | `syncStatus` | Enum | required, default: `idle` | `idle \| syncing \| error` |

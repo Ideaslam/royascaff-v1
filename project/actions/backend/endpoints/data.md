@@ -39,8 +39,9 @@
 | EP-DATA-17 | GET | /api/v1/data/datasets/:id | JWT | `:id` | 200 `DatasetDto` | SVC-DATA-DS.get() | Includes schema, aiProposedMapping, aiProposedSemanticFlag, last sync info |
 | EP-DATA-18 | PATCH | /api/v1/data/datasets/:id | JWT | `:id` · `UpdateDatasetDto` { name?, description?, extractOptions? } | 200 `DatasetDto` | SVC-DATA-DS.update() | Mapping changes via EP-DATA-23 (confirm); this endpoint does NOT update columnMapping directly |
 | EP-DATA-19 | DELETE | /api/v1/data/datasets/:id | JWT | `:id` | 204 | SVC-DATA-DS.delete() | Drops OLAP table + FilterValueMeta |
-| EP-DATA-20 | POST | /api/v1/data/datasets/:id/sync | JWT | `:id` · `SyncDatasetDto` { mode: 'full' \| 'incremental' } | 202 `{ syncRunId, status }` | SVC-DATA-DS.enqueueSyncJob() | Async; blocked if already syncing |
+| EP-DATA-20 | POST | /api/v1/data/datasets/:id/sync | JWT | `:id` · body `{ mode?: 'full' \| 'incremental' }` (default `'full'`) | 202 `{ syncRunId, status }` | SVC-DATA-SYNC.triggerSync() | Async; blocked if already syncing; mode forwarded to BullMQ job *(change-038)* |
 | EP-DATA-21 | GET | /api/v1/data/datasets/:id/sync-history | JWT | `:id` · query: page, limit | 200 `Paginated<SyncRunDto>` | SVC-DATA-DS.listSyncHistory() | |
+| EP-DATA-40 | PATCH | /api/v1/data/datasets/:id/schema-columns | JWT | `:id` · body `{ columns: [{ name, userDescription?, isPrimaryKey? }] }` | 200 `DatasetDto` | SVC-DATA-DS.updateSchemaColumns() | Patches userDescription + isPrimaryKey per column; setting a new PK clears isPrimaryKey from all other columns *(change-038)* |
 | EP-DATA-22 | POST | /api/v1/data/datasets/:id/discover-schema | JWT | `:id` | 200 `DatasetDto` | SVC-DATA-DS.discoverSchemaWithAiProposal() | Re-discovers schema + refreshes AI mapping proposal *(change-022)* |
 | EP-DATA-23 | POST | /api/v1/data/datasets/:id/confirm-mapping | JWT | `:id` · `ConfirmMappingDto` { columnMapping: Record<string,string>, semanticFlag: string } | 200 `DatasetDto` | SVC-DATA-DS.confirmMapping() | Promotes mapping into live fields; clears AI proposals *(change-022)* |
 
@@ -79,7 +80,8 @@
 - [EP-DATA-06] Accepts array of column updates setting each column's `userDescription`. When all columns confirmed, file becomes eligible for dashboard generation.
 - [EP-DATA-09] Credentials are accepted in plain text over HTTPS, then immediately encrypted with AES-256-GCM before persisting. Never stored or returned in plaintext.
 - [EP-DATA-15] For CSV datasets, after creating the Dataset record the backend automatically triggers schema discovery + AI mapping proposal. The response includes `aiProposedMapping` and `aiProposedSemanticFlag` for user review.
-- [EP-DATA-20] Creates a `SyncRun` record immediately and returns `syncRunId`; actual sync runs asynchronously via BullMQ `DATA_SYNC_QUEUE`.
+- [EP-DATA-20] Creates a `SyncRun` record immediately and returns `syncRunId`; actual sync runs asynchronously via BullMQ `DATA_SYNC_QUEUE`. The `mode` parameter defaults to `'full'` if omitted; incremental sync requires a PK column to be meaningful but is not server-enforced.
+- [EP-DATA-40] Reads current `Dataset.schema`, applies per-column patches (userDescription override; isPrimaryKey toggle). If any column in `updates` sets `isPrimaryKey: true`, that column is made the exclusive PK (all others set to `false`).
 - [EP-DATA-22] Can be called again at any time to refresh schema (e.g. after re-uploading a CSV). Re-runs connector `discoverSchema` + AI proposal. Clears previous proposal.
 - [EP-DATA-23] User confirms (or edits) the AI-proposed mapping. Only after this call does the Dataset become eligible for dashboard generation.
 - [EP-DATA-24] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (stored in Redis with 10-minute TTL for CSRF validation in EP-DATA-25).

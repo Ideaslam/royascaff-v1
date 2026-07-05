@@ -47,6 +47,7 @@ Manages dataset definitions, column mapping, schema discovery, and AI-assisted m
 - `delete(id, workspaceSlug)` — drops OLAP table via `AnalyticsStoreService`; deletes FilterValueMeta; hard-deletes record
 - `discoverSchemaWithAiProposal(id, workspaceSlug)` — *(change-022)* decrypts connection credentials; calls `connector.discoverSchema(conn, dataset)` → writes `Dataset.schema`; then calls AI with `column-mapping` prompt (column names + inferred types + available canonical fields) → writes `aiProposedMapping` + `aiProposedSemanticFlag` as draft fields for user review; never sends raw rows to AI
 - `confirmMapping(id, workspaceSlug, dto: ConfirmMappingDto)` — *(change-022)* writes user-edited (or AI-proposed) values into `columnMapping` + `semanticFlag`; clears `aiProposedMapping` + `aiProposedSemanticFlag`
+- `updateSchemaColumns(id, workspaceSlug, updates: Array<{name, userDescription?, isPrimaryKey?}>)` — *(change-038)* patches individual `Dataset.schema` columns; setting `isPrimaryKey: true` on one column clears it from all others; used by EP-DATA-40
 - `enqueueSyncJob(id, workspaceSlug, mode: 'full' | 'incremental', triggeredBy)` — validates `syncStatus != syncing`; creates SyncRun record; enqueues `DATA_SYNC_QUEUE` job
 
 **Deps:** DatasetRepository · DataConnectionRepository · DataConnectionService · ConnectorRegistry · AiProviderRegistry · PromptTemplateService · SyncRunRepository · DATA_SYNC_QUEUE (BullMQ) · AnalyticsStoreService · AuditLogService
@@ -95,4 +96,4 @@ Compares the **stored** `Dataset.schema` (from last discovery) against a freshly
 
 **Deps:** DatasetRepository (multi-workspace fan-out query) · WorkspaceRepository (enumerate workspace slugs) · SyncService
 **Side effects:** BullMQ job enqueue
-**Rules:** Guard against duplicate enqueue: skip dataset if `syncStatus = syncing` · Each enqueue uses `mode = full` (incremental not supported for Google Sheets) · On app restart all eligible datasets are naturally re-evaluated at next cron tick — no catch-up backfill
+**Rules:** Guard against duplicate enqueue: skip dataset if `syncStatus = syncing` · *(change-038)* Auto-sync uses `mode = incremental` when `dataset.schema` contains a column with `isPrimaryKey = true`; falls back to `full` otherwise · Google Sheets datasets always use `full` (no watermark support) · On app restart all eligible datasets are naturally re-evaluated at next cron tick — no catch-up backfill

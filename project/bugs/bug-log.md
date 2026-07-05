@@ -45,4 +45,6 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 ## Next Bug Number
 
-**Next**: 012
+**Next**: 013
+
+| 012 | 2026-07-05 | medium | customer-portal/data/google-sheets-setup | Google Sheets setup requires spreadsheet ID instead of URL | PENDING | [bug-012-google-sheets-url-instead-of-id.md](./bug-012-google-sheets-url-instead-of-id.md) |

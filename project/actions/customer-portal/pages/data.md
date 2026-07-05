@@ -1,9 +1,9 @@
 ## Module: Data (Multi-Source Data Management)
 
-### Data Sources Home Page *(change-022)*
+### Data Sources Home Page *(change-022, change-038)*
 - Route: `/app/data`
-- Components: DataSourcesPage — datasets table with columns: name, sourceType badge, semanticFlag badge, syncStatus badge, lastSyncAt, rowCount, actions (detail, sync, delete); "Add CSV Dataset" button; empty state with illustration
-- Service: `GET /api/v1/data/datasets` (list); `DELETE /api/v1/data/datasets/:id`
+- Components: DataSourcesPage — dataset cards with: source icon, name, type, rowCount, lastSyncAt, syncStatus badge; actions on card header: Full Sync icon button + Incremental Sync icon button (disabled + tooltip "No primary key" when `schema` has no PK column); clicking card navigates to detail page; "Connect Source" dialog
+- Service: `GET /api/v1/data/datasets` (list); `POST /api/v1/data/datasets/:id/sync` (with `{ mode }` body)
 - Guard: authGuard + onboardingGuard
 - States: loading skeleton · empty state (no datasets yet) · error toast
 
@@ -145,8 +145,9 @@
   - **Schema Drift Banner:** shown when `dataset.hasSchemaDrift === true`; lists added/removed/retyped columns from the most recent `SyncRun.schemaDrift`; "Dismiss" clears `hasSchemaDrift` via `PATCH /data/datasets/:id`
   - **Sync History Table:** calls `EP in GET /data/datasets/:id/sync-runs`; columns: date, mode (FULL/INCR), status badge (queued/running/done/failed/cancelled), rows loaded, duration, error preview; sorted newest-first
   - **Retry Button:** shown on rows with `status = failed`; calls `EP-DATA-39 POST .../sync-runs/:runId/retry`; re-fetches history on success
-  - **Manual Sync Button:** triggers a new full sync via `POST /data/datasets/:id/sync`; disabled when `syncStatus = syncing`
+  - **Full Sync / Incremental Sync buttons** *(change-038)*: replaces single "Sync Now" button; Full Sync always enabled; Incremental Sync disabled (tooltip: "Add a primary key column first") when no `schema` column has `isPrimaryKey = true`; both disabled when `syncStatus = syncing`
+  - **Schema Columns Section** *(change-038)*: shows discovered columns table with columns: name, type, description (inline editable input), PK checkbox (`isPrimaryKey` toggle — checking one clears others); "Save Schema" button calls EP-DATA-40; "Refresh Schema" button calls EP-DATA-22; loading skeleton while saving
   - **Subscription Limit Warning:** shown inline when retry/manual-sync returns 403 with sync limit code
-- Service: `GET /data/datasets/:id`; `GET /data/datasets/:id/sync-runs`; `POST /data/datasets/:id/sync`; `POST /data/datasets/:id/sync-runs/:runId/retry`; `PATCH /data/datasets/:id`
+- Service: `GET /data/datasets/:id`; `GET /data/datasets/:id/sync-runs`; `POST /data/datasets/:id/sync` (with `{ mode }` body); `POST /data/datasets/:id/sync-runs/:runId/retry`; `PATCH /data/datasets/:id`; `PATCH /data/datasets/:id/schema-columns` (EP-DATA-40)
 - Guard: authGuard
-- States: history table has loading skeleton; running rows poll every 5s (or on-demand refresh); retry row spins during re-queue
+- States: history table has loading skeleton; running rows poll every 5s (or on-demand refresh); retry row spins during re-queue; schema save shows inline saving indicator
