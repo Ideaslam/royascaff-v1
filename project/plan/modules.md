@@ -342,4 +342,6 @@ Infrastructure modules are called by business module services; they do not expos
 - Audience: public visitors (unauthenticated)
 
 ### Features
-1. **Landing Page** [frontend-only] — static HTML/CSS/JS/Tailwind page presenting Dynamo value proposition, features, how-it-works, pricing tiers, CTAs to register; English v1; Roya brand tokens; no backend integration.
+1. **Landing Page** [frontend-only] — static HTML/CSS/JS/Tailwind page presenting Dynamo value proposition, features, how-it-works, pricing tiers, CTAs to register; EN/AR i18n; Roya brand tokens; no backend integration.
+2. **Privacy Policy Page** [frontend-only] — static `/privacy.html` with privacy policy content (EN/AR); linked from landing footer; same brand shell and language toggle.
+3. **Terms of Service Page** [frontend-only] — static `/terms.html` with terms of service content (EN/AR); linked from landing footer; same brand shell and language toggle.

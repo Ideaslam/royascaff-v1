@@ -18,7 +18,7 @@
 4. **How it Works** — Connect data → AI generates → Share insights
 5. **Pricing** — Free, Growth, Scale tiers with limits and Get Started buttons
 6. **Final CTA** — register prompt
-7. **Footer** — copyright, register/login links
+7. **Footer** — copyright, Privacy Policy + Terms of Service links, register/login links
 
 **Visual approach:**
 - Tailwind utility classes + custom CSS variables for Roya brand tokens
