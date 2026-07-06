@@ -672,6 +672,24 @@ Collection: `ws_{workspaceSlug}_dataconnections`
 
 ---
 
+## WebhookRoute *(change-043)*
+Purpose: global index mapping an external store/merchant identifier to the Dynamo workspace that owns it. Used by webhook handlers to resolve `workspaceSlug` without iterating all workspaces.
+Collection: `webhook_routes` *(NOT workspace-scoped — intentionally global)*
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `sourceType` | String | required; enum: `shopify \| salla \| zid` | — |
+| `externalStoreId` | String | required; provider-assigned store/merchant ID | — |
+| `workspaceSlug` | String | required | → Workspace |
+| `connectionId` | ObjectId | required | → `DataConnection._id` |
+| `createdAt` | Date | auto | — |
+| `updatedAt` | Date | auto | — |
+
+**Indexes:** `{ sourceType: 1, externalStoreId: 1 }` unique (upsert key)
+
+---
+
 ## Dataset *(change-015, updated change-022)*
 Purpose: describes a named view of data from a connection — what to extract, how to label it, and its semantic meaning.
 Collection: `ws_{workspaceSlug}_datasets`

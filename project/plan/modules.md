@@ -334,3 +334,12 @@ Infrastructure modules are called by business module services; they do not expos
 2. **Get Filter Options** [backend-only] — returns cached `FilterValueMeta` for all filter columns of a dashboard; Redis-first; no OLAP query on dashboard open *(change-021)*
 3. **Typeahead Search** [backend-only] — for `mode: search` columns calls `AnalyticsStoreService.searchValues(engineId, table, column, query)` via OLAP LIKE query; for `mode: list` columns does in-memory prefix filter *(change-021)*
 4. **Post-Sync Filter Refresh** [backend-only] — `DataSyncProcessor` calls `FilterValuesService.computeAndStore()` after each successful sync, refreshing only the columns already tracked in `FilterValueMeta` *(change-021)*
+
+---
+
+## S13. Marketing
+- Scope: static landing only (`roya-dynamo-landing/`)
+- Audience: public visitors (unauthenticated)
+
+### Features
+1. **Landing Page** [frontend-only] — static HTML/CSS/JS/Tailwind page presenting Dynamo value proposition, features, how-it-works, pricing tiers, CTAs to register; English v1; Roya brand tokens; no backend integration.

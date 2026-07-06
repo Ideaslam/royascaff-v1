@@ -151,3 +151,14 @@
 - Service: `GET /data/datasets/:id`; `GET /data/datasets/:id/sync-runs`; `POST /data/datasets/:id/sync` (with `{ mode }` body); `POST /data/datasets/:id/sync-runs/:runId/retry`; `PATCH /data/datasets/:id`; `PATCH /data/datasets/:id/schema-columns` (EP-DATA-40)
 - Guard: authGuard
 - States: history table has loading skeleton; running rows poll every 5s (or on-demand refresh); retry row spins during re-queue; schema save shows inline saving indicator
+
+### Zid Install Landing Page *(change-044)*
+- Route: `/app/zid-install`
+- Components: ZidInstallPage — branded landing page for merchants arriving from Zid App Market install
+  - Shows Dynamo logo + "Connect your Zid store to Roya AI Dynamo" heading
+  - Explains what data will be synced (orders, products, customers) in a brief bullet list
+  - Two CTA buttons: "Log in" (→ `/auth/login?returnTo=/app/zid-install`) and "Create account" (→ `/auth/register?returnTo=/app/zid-install`)
+  - After login/signup, `returnTo` param brings the user back here where `ngOnInit` detects the session and auto-calls `getZidAuthUrl()` and redirects to Zid consent
+- Service: `GET /api/v1/data/zid/auth-url` (EP-DATA-32) — called after session detected
+- Guard: **none** — page is fully public
+- States: loading spinner while fetching auth URL; error message if auth URL call fails

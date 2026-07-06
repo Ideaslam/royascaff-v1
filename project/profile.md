@@ -25,8 +25,9 @@
 | `customer-portal` | Customer Portal | web | `roya-ai-dynamo-frontend` | Angular 21 (standalone) | PrimeNG 21 + PrimeIcons | same-backend JWT |
 | `admin-panel` | Admin Panel | web (admin) | `roya-ai-dynamo-frontend-admin` | Angular 21 (standalone) | PrimeNG 21 + PrimeIcons | same-backend JWT + admin role |
 | `backend` | API | api | `roya-ai-dynamo-api` | NestJS (Node + TypeScript) | — | JWT (issuer) |
+| `landing-site` | Marketing Landing | web (static) | `roya-dynamo-landing` | HTML + CSS + JS | Tailwind CSS (CDN) | none (public) |
 
-`target-app` values used in change requests resolve against this table. `all-apps` = all three repos.
+`target-app` values used in change requests resolve against this table. `all-apps` = all four repos.
 
 ### App key ↔ action specs
 
@@ -53,6 +54,7 @@ A mobile app is a first-class application in this system. To add one, append a r
 | `roya-ai-dynamo-api` | Backend API, business logic, jobs | `../../roya-ai-dynamo-api` | `subscription` |
 | `roya-ai-dynamo-frontend` | Customer-facing web app | `../../roya-ai-dynamo-frontend` | `subscription` |
 | `roya-ai-dynamo-frontend-admin` | Admin web app | `../../roya-ai-dynamo-frontend-admin` | `subscription` |
+| `roya-dynamo-landing` | Marketing landing page (static) | `../../roya-dynamo-landing` | `main` |
 
 ---
 
@@ -64,6 +66,12 @@ A mobile app is a first-class application in this system. To add one, append a r
 - Redis-backed background jobs via Bull/BullMQ
 - Layered: controller → service → repository (per `../engine/rules/backend-rule.md`)
 - Source layout: `src/{modules, common, config, database, integrations}`
+
+**Landing site (`roya-dynamo-landing`)**
+- Static HTML/CSS/JS — no build step required for v1
+- Tailwind CSS via CDN; custom CSS for brand tokens
+- Navigation URLs via `js/config.js` (`registerUrl`, `loginUrl`)
+- Deployable to any static host (Cloudflare Pages, S3, nginx)
 
 **Frontend (both Angular apps)**
 - Angular 21, standalone components, reactive forms, RxJS

@@ -88,10 +88,10 @@
 - [EP-DATA-25] Public endpoint (callback from Google) — validates `state` nonce, exchanges `code` via `OAuth2Client`, encrypts `{ accessToken, refreshToken }` as `DataConnection.credentialsEncrypted`, then redirects frontend to spreadsheet picker page.
 - [EP-DATA-26] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (Redis TTL 10 min for CSRF validation in EP-DATA-27). `shopDomain` is normalised to `{shop}.myshopify.com`.
 - [EP-DATA-27] Public callback: validates Shopify-signed HMAC on query params + validates state nonce; exchanges `code` for permanent offline access token; stores DataConnection; calls `ShopifyOAuthService.registerWebhooks()`; redirects to `/app/data/shopify/setup/:connectionId`.
-- [EP-DATA-28] Public webhook receiver: validates `X-Shopify-Hmac-Sha256` using raw body + `shopify.webhookSecret`; maps `X-Shopify-Topic` (e.g. `orders/create`) to the corresponding Dataset for the store's DataConnection; enqueues `DATA_SYNC_QUEUE` with `mode=incremental`. Returns 200 immediately (async processing).
+- [EP-DATA-28] Public webhook receiver: validates `X-Shopify-Hmac-Sha256` using raw body + `shopify.webhookSecret`; uses `X-Shopify-Shop-Domain` header to resolve `workspaceSlug` via `WebhookRouteService`; calls `ShopifyDatasetService.applyWebhookEvent()` to enqueue incremental sync. Returns 200 immediately. *(change-042)*
 - [EP-DATA-29] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (Redis TTL 10 min). Salla authorization URL: `https://accounts.salla.sa/oauth2/auth`.
 - [EP-DATA-30] Public callback: validates state nonce; `POST https://accounts.salla.sa/oauth2/token` with `grant_type=authorization_code`; encrypts `{ accessToken, refreshToken, expiresAt }` as `DataConnection.credentialsEncrypted(sourceType=salla)`; calls `SallaDatasetService.provisionFromOAuth()` to create 3 Datasets; redirects to `/app/data/salla/setup/:connectionId`.
-- [EP-DATA-31] Public webhook receiver: validates `X-Salla-Signature` HMAC-SHA256 using app secret; maps Salla event topic (e.g. `order.created`) to entity type → Dataset; enqueues `DATA_SYNC_QUEUE` with `mode=incremental`. Returns 200 immediately.
+- [EP-DATA-31] Public webhook receiver: validates `X-Salla-Signature` HMAC-SHA256 using app secret; extracts `event.merchant_id` from JSON body; resolves `workspaceSlug` via `WebhookRouteService`; calls `SallaDatasetService.applyWebhookEvent()` to enqueue incremental sync. Returns 200 immediately. *(change-042)*
 
 ### Zid OAuth + Webhook Endpoints *(change-026)*
 
@@ -104,7 +104,17 @@
 | EP-DATA-34 | POST | /api/v1/data/zid/webhook | Public | body: Zid event payload; header: `X-Zid-Signature` | 200 | ZidController.handleWebhook() | Validates HMAC-SHA256; maps event topic → entity → Dataset; enqueues incremental sync |
 - [EP-DATA-32] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (Redis TTL 10 min). Zid authorization URL: `https://oauth.zid.sa`.
 - [EP-DATA-33] Public callback: validates state nonce; `POST https://oauth.zid.sa/oauth/token` with `grant_type=authorization_code`; encrypts both tokens `{ authorizationToken, accessToken, expiresAt }` as `DataConnection.credentialsEncrypted(sourceType=zid)`; calls `ZidDatasetService.provisionFromOAuth()` to create 3 Datasets; redirects to `/app/data/zid/setup/:connectionId`.
-- [EP-DATA-34] Public webhook receiver: validates `X-Zid-Signature` HMAC-SHA256 using app secret; maps Zid event topic (e.g. `order.create`) to entity → Dataset; enqueues `DATA_SYNC_QUEUE` with `mode=incremental`. Returns 200 immediately.
+- [EP-DATA-34] Public webhook receiver: validates `X-Zid-Signature` HMAC-SHA256 using app secret; parses JSON body; extracts Zid store ID → resolves `workspaceSlug` via `WebhookRouteService`; calls `ZidDatasetService.applyWebhookEvent(workspaceSlug, topic)` to enqueue incremental sync for matching datasets. Returns 200 immediately (even if workspace not found). *(change-042)*
+
+### Zid Install Endpoint *(change-044)*
+
+`@Controller('data/zid')`
+
+| ID | Method | Route | Auth | Input | Return | Service | Notes |
+|----|--------|-------|------|-------|--------|---------|-------|
+| EP-DATA-35 | GET | /api/v1/data/zid/install | Public | — | 302 | ZidController.handleInstall() | Zid Redirection URL target; redirects to `/app/zid-install` for unauthenticated merchants |
+
+- [EP-DATA-35] Public endpoint used as the **Redirection URL** in the Zid Partner Dashboard. When a merchant clicks Install from the Zid App Market, Zid redirects here. The endpoint always redirects to `{frontendUrl}/app/zid-install` so the frontend can handle login/signup before initiating OAuth.
 
 ### SQL Server — Table Discovery + Preview Endpoints *(change-027)*
 

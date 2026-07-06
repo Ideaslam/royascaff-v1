@@ -97,3 +97,16 @@ Compares the **stored** `Dataset.schema` (from last discovery) against a freshly
 **Deps:** DatasetRepository (multi-workspace fan-out query) · WorkspaceRepository (enumerate workspace slugs) · SyncService
 **Side effects:** BullMQ job enqueue
 **Rules:** Guard against duplicate enqueue: skip dataset if `syncStatus = syncing` · *(change-038)* Auto-sync uses `mode = incremental` when `dataset.schema` contains a column with `isPrimaryKey = true`; falls back to `full` otherwise · Google Sheets datasets always use `full` (no watermark support) · On app restart all eligible datasets are naturally re-evaluated at next cron tick — no catch-up backfill
+
+---
+
+### SVC-DATA-WHROUTE · WebhookRouteService [internal, application, Data] *(change-043)*
+Maintains the global `webhook_routes` index mapping an external store identifier to a Dynamo workspace. Used by Shopify, Salla, and Zid webhook handlers to resolve `workspaceSlug` for dispatch.
+
+**Methods:**
+- `upsert(sourceType, externalStoreId, workspaceSlug, connectionId)` — creates or updates the route entry (upsert by sourceType+externalStoreId)
+- `findByStore(sourceType, externalStoreId): Promise<{ workspaceSlug: string; connectionId: string } | null>` — lookup used by webhook handlers
+
+**Deps:** WebhookRouteRepository
+**Side effects:** MongoDB upsert on `webhook_routes`
+**Rules:** Called fire-and-forget during provisioning; failure must never block OAuth provisioning · Used by webhook handlers before calling `applyWebhookEvent()`
