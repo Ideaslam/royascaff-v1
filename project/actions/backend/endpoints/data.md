@@ -177,3 +177,21 @@
 - [EP-DATA-44] Creates Datasets from the user's entity selection. Because the operation is keyed on `(connectionId, entity)`, re-opening the wizard to add more tables (or removing/re-adding) is safe and non-destructive to already-synced tables. Replaces the old OAuth-callback auto-provisioning of 3 fixed e-commerce datasets.
 - [EP-DATA-45] Returns a single `SyncRun` with `progress` + `phase`; used by the frontend `ProgressLoader` which polls until `status` is terminal (`success`/`failed`).
 - [EP-DATA-46] Reuses the shared `runAiMappingProposal` helper (same AI prompt + name/synonym prefill fallback as discovery), but for the flag the user selected rather than the auto-guessed one. `arbitrary` returns an empty mapping. The proposal is also stored as the `aiProposedMapping` draft so re-opening the review keeps it; the live mapping only changes on EP-DATA-23 (confirm).
+
+---
+
+### Data Source Type Metadata Endpoints *(change-048)*
+
+`@Controller('data')` (customer) · `@Controller('admin')` (admin CRUD)
+
+| ID | Method | Route | Auth | Input | Return | Service | Notes |
+|----|--------|-------|------|-------|--------|---------|-------|
+| EP-DATA-47 | GET | /api/v1/data/source-types | JWT (any role) | — | 200 `DatasourceTypeMetaDto[]` | SVC-DSTYPE.findAll(activeOnly=true) | Returns only `isActive = true` entries; used by customer portal to build picker and display labels/logos |
+| EP-DSTYPE-01 | GET | /api/v1/admin/data-source-types | JWT + admin | — | 200 `DatasourceTypeMetaDto[]` | SVC-DSTYPE.findAll() | Returns all 7 entries including inactive |
+| EP-DSTYPE-02 | GET | /api/v1/admin/data-source-types/:type | JWT + admin | `:type` (DataSourceType string) | 200 `DatasourceTypeMetaDto` | SVC-DSTYPE.findOne() | Single type; 404 if unknown |
+| EP-DSTYPE-03 | PATCH | /api/v1/admin/data-source-types/:type | JWT + admin | `:type` · `UpdateDatasourceTypeMetaDto` { titleEn?, titleAr?, logoUrl?, instructionEn?, instructionAr? } | 200 `DatasourceTypeMetaDto` | SVC-DSTYPE.update() | Partial update; non-admin returns 403 |
+| EP-DSTYPE-04 | PATCH | /api/v1/admin/data-source-types/:type/toggle | JWT + admin | `:type` | 200 `DatasourceTypeMetaDto` | SVC-DSTYPE.toggleActive() | Flips `isActive`; immediate effect on customer portal picker |
+
+- [EP-DATA-47] Authenticated (any JWT role). Returns only active types so the customer portal picker does not show disabled types. Falls back gracefully — if the collection is empty (before seeding), returns an empty array and the frontend falls back to registry icons/labels.
+- [EP-DSTYPE-01..04] Admin-only (role guard). No create/delete endpoints — the set of 7 types is fixed to the `DataSourceType` enum. PATCH is partial (undefined fields are not updated).
+

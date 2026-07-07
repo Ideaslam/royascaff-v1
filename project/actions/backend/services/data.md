@@ -106,6 +106,20 @@ Compares the **stored** `Dataset.schema` (from last discovery) against a freshly
 
 ---
 
+### SVC-DSTYPE · DatasourceTypeMetaService [internal, application, Data] *(change-048)*
+Global lookup table service for data source type display metadata (title, logo, instructions, active flag). One document per `DataSourceType` enum value; not workspace-scoped.
+
+**Methods:**
+- `findAll(activeOnly?: boolean): Promise<DatasourceTypeMeta[]>` — returns all 7 type records; when `activeOnly = true` returns only `isActive = true` entries (used by customer endpoint)
+- `findOne(sourceType: string): Promise<DatasourceTypeMeta>` — returns single record; throws 404 if unknown type
+- `update(sourceType: string, dto: UpdateDatasourceTypeMetaDto): Promise<DatasourceTypeMeta>` — admin-only; updates `titleEn`, `titleAr`, `logoUrl`, `instructionEn`, `instructionAr` in-place
+- `toggleActive(sourceType: string): Promise<DatasourceTypeMeta>` — admin-only; flips `isActive` and returns updated record
+
+**Deps:** DatasourceTypeMetaRepository
+**Rules:** Collection is seeded via manual script; never created/deleted via API · `sourceType` is the natural primary key (unique string) — no ObjectId param on public read · `isActive = false` hides the type from the customer portal source picker only; existing `DataConnection` records for disabled types remain functional
+
+---
+
 ### SVC-DATA-WHROUTE · WebhookRouteService [internal, application, Data] *(change-043)*
 Maintains the global `webhook_routes` index mapping an external store identifier to a Dynamo workspace. Used by Shopify, Salla, and Zid webhook handlers to resolve `workspaceSlug` for dispatch.
 
