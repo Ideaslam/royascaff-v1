@@ -296,6 +296,21 @@ Programmatic access to platform features for integrations and automation.
 - Webhook support for events
 - API documentation
 
+### Feature 17: Canonical Dashboard Templates (Template Catalog) *(change-049)*
+
+**Description:**
+
+An industry-grouped catalog of predefined dashboard templates defined against **canonical models** (semantic flags like `orders`, `customers`, `marketing_spend`) instead of any specific data source. A user picks a template (e.g. MER, MMM, RFM under Ecommerce → Marketing) and selects which of their datasets satisfies each required canonical model; the dashboard is produced immediately — predefined widgets run deterministically against cross-source canonical union views (e.g. one `total_orders` metric across Zid + Shopify together), and AI adapts the widgets to the user's actual mapped columns.
+
+**Key capabilities:**
+
+- Admin-managed catalog: Industries → Industry Fields → Dashboard Templates (bilingual, activatable, seeded — Ecommerce with Sales Overview, MER, MMM, RFM)
+- Templates store required canonical models + a widget blueprint (chart type, title, dialect-neutral QuerySpec on canonical field names)
+- Customer "Start from template" path in the create-dashboard flow with dataset-per-model matching by `semanticFlag`
+- Cross-source canonical union views (`cv_{workspace}_{flag}`) materialized at instantiation
+- New `marketing_spend` canonical model for ad-spend data (MER/MMM)
+- Built as a reusable "processing action" pipeline type — the extension pattern for future data-clean and forecasting engines
+
 ---
 
 ## 4. Key Entities and Data

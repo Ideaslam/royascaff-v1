@@ -76,6 +76,7 @@
 11. **Duplicate Dashboard** [both] — clones dashboard + widgets + data source links; ready immediately (no regeneration).
 12. **Delete Dashboard** [both] — cascade deletes widgets, cache entries, share links.
 13. **Retry Dashboard Generation** [both] — re-queue generation pipeline job, reset status.
+14. **Create Dashboard from Template** [both] — `POST /dashboards/from-template` creates a dashboard from a `DashboardTemplate` blueprint + user-selected datasets per required canonical model; runs the `dashboard-from-template` pipeline (deterministic blueprint instantiation + AI adaptation); see module 22 *(change-049)*.
 
 ## 7. Sharing
 - Scope: BE (`src/modules/sharing/`) + FE (share panel in `pages/dashboards/` + `shared-viewer/` in CP)
@@ -138,6 +139,21 @@
 1. **4-Step Wizard** [both] — step 1: create workspace (mandatory); step 2: branding (skippable); step 3: invite team (skippable); step 4: try it out with sample CSV (skippable); two-column Cisco-style layout; one-time only, re-entry blocked.
 2. **Onboarding Progress Tracking** [both] — `GET/PATCH /onboarding/progress`; `onboardingGuard` redirects to `/onboarding` if step 1 not complete; after step 1 all portal routes accessible.
 3. **Sample CSV Experiment** [both] — sample CSV seed data (`src/integrations/sample-data/sample-csv.seeder.ts`); tips + sample CSV link in step 4.
+
+## 22. Canonical Templates (Template Catalog) *(change-049)*
+- Scope: BE (`src/modules/templates/`) + FE (AP `pages/admin/template-catalog/`; CP template picker in `pages/projects/project-detail/` create wizard)
+- Audience: admin (manage catalog), authenticated editors (create dashboard from template)
+- Entities: `TemplateIndustry`, `TemplateIndustryField`, `DashboardTemplate` — global collections (admin-owned, not workspace-scoped, like `datasource_type_meta`)
+
+### Features
+1. **Industry Catalog** [both] — admin CRUD + toggle-active for industries (bilingual `nameEn`/`nameAr`, `descriptionEn`/`descriptionAr`, `isActive`); e.g. *Ecommerce* (seeded).
+2. **Industry Fields** [both] — admin CRUD + toggle-active for categories inside an industry (e.g. Ecommerce → *Purchases*, *Marketing*); bilingual; ordered.
+3. **Dashboard Templates (Blueprints)** [both] — admin CRUD + toggle-active for predefined templates under a field (e.g. Marketing → *MER*, *MMM*, *RFM*); each stores bilingual metadata, **required canonical models** (semantic flags, required/optional), and a **widget blueprint**: ordered widget definitions (widgetType, bilingual title, dialect-neutral `QuerySpec` on canonical field names with `{{model}}` source placeholders, layout hints); blueprint edited as validated JSON (fields checked against the canonical dictionary).
+4. **Template Catalog Seeding** [backend-only] — idempotent seed script (`npm run seed:template-catalog`) populating Ecommerce → {Purchases: *Sales Overview*; Marketing: *MER*, *MMM*, *RFM*}.
+5. **Browse Templates (Customer)** [both] — customer portal reads active industries → fields → templates (bilingual cards, required canonical models shown); inactive entries hidden from CP, visible in AP.
+6. **Create Dashboard from Template** [both] — user picks a template + one or more datasets per required canonical model (only datasets with matching `semanticFlag` + `analyticsTable != null` offered; missing model blocks with clear message); `POST /dashboards/from-template` enqueues the `dashboard-from-template` pipeline; status polling + viewer reused unchanged; resulting dashboard is standard and fully editable.
+7. **Marketing Spend Canonical Model** [backend-only] — new `marketing_spend` semantic flag in `canonical-fields.config.ts` (spend_date, amount, channel, campaign_id/name, currency, impressions, clicks, conversions) + synonyms; existing mapping UI supports it with no frontend change (dictionary-driven).
+8. **Canonical Union Views** [backend-only] — first application-level wiring of `AnalyticsStoreService.createCanonicalView()`: `ensure-canonical-views` pipeline step materializes `cv_{workspaceSlug}_{semanticFlag}` union views from the selected datasets (validating each dataset's `columnMapping` covers the template's required fields) so template widgets query one cross-source view (e.g. `total_orders` across Zid + Shopify).
 
 ---
 
@@ -323,9 +339,10 @@ Infrastructure modules are called by business module services; they do not expos
 ### Features
 1. **Pipeline Engine** [backend-only] — `PipelineEngine.run(type, opts)` resolves a `PipelineTypeDefinition` (ordered steps), executes them in order against a shared `PipelineContext`, records a `PipelineRun` document (start/end/status/step-errors), surfaces errors cleanly; aborts on first fatal step error *(change-019)*
 2. **Step Registry** [backend-only] — `StepRegistry` maps step type strings to `PipelineStepInterface` implementations; any step can be injected as a NestJS provider and registered with a one-line entry; steps receive `PipelineContext` and return an updated context *(change-019)*
-3. **Pipeline Type Registry + Setup Flow** [backend-only] — `PipelineTypeRegistry` maps pipeline type names (`ingest`, `dashboard-generate`, `add-widget`, `edit-widget`) to ordered `PipelineStepConfig[]`; new pipeline types added here without touching the engine. `getSetupFlow(sourceType)` (EP-DATA-41) resolves the wizard step sequence; step kinds are `connect | select-entities | schema-review | schedule`, with `select-entities` emitted for selection-capable sources (all except csv) *(change-019, change-020, change-045)*
+3. **Pipeline Type Registry + Setup Flow** [backend-only] — `PipelineTypeRegistry` maps pipeline type names (`ingest`, `dashboard-generate`, `add-widget`, `edit-widget`, `dashboard-from-template` *(change-049)*) to ordered `PipelineStepConfig[]`; new pipeline types added here without touching the engine. `getSetupFlow(sourceType)` (EP-DATA-41) resolves the wizard step sequence; step kinds are `connect | select-entities | schema-review | schedule`, with `select-entities` emitted for selection-capable sources (all except csv) *(change-019, change-020, change-045)*
 4. **Built-in Data Ingestion Steps + Progress** [backend-only] — `ExtractStep`, `CleanDataStep`, `TransformStep` (AI-assisted), `ApplyMappingStep`, `LoadStep`, `SyncRunCompleteStep`; used by the `ingest` pipeline type. Steps write `SyncRun.progress`/`phase` as they run so the frontend can show a live percentage loader *(change-019, change-045)*
 5. **Built-in Dashboard Steps** [backend-only] — `GatherDatasetSchemasStep`, `LoadWidgetCatalogStep`, `GenerateWidgetsAiStep`, `BuildFiltersStep`, `SaveWidgetsStep`, `AddWidgetAiStep`, `SaveSingleWidgetStep`, `EditWidgetAiStep`, `SaveUpdatedWidgetStep`, `InvalidateWidgetCacheStep`; used by dashboard pipeline types *(change-020, change-021)*
+6. **Template Instantiation Steps** [backend-only] — `EnsureCanonicalViewsStep` (materializes `cv_{ws}_{flag}` union views from selected datasets, validates mapping coverage), `InstantiateTemplateWidgetsStep` (deterministic: blueprint widgets → concrete widgets bound to canonical views), `AdaptTemplateWidgetsAiStep` (AI adjusts/repairs widgets for the user's actual mapped columns via `adapt-template-widgets` prompt); used by the `dashboard-from-template` pipeline type. Generation worker reads the pipeline type from the job payload (default `dashboard-generate`) *(change-049)*
 
 ## S12. Filters
 - Scope: BE only — `src/modules/filters/`

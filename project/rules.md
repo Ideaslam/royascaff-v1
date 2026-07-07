@@ -128,6 +128,22 @@ Module: Subscriptions · Feature: Account Suspension, Resource Lock, Usage Limit
 
 ---
 
+## Module: Canonical Templates *(change-049)*
+
+### RULE-TPL-001: Template Catalog Integrity
+Module: Canonical Templates · Feature: Dashboard Templates
+The catalog (`template_industries`, `template_industry_fields`, `dashboard_templates`) is **global and admin-owned** — never workspace-scoped, never writable from the customer portal. Blueprint `querySpec`s may reference **only** canonical field names from `canonical-fields.config.ts` for the template's declared `requiredModels`; `source` must be a `{{semanticFlag}}` placeholder of a declared model. Validation runs on admin create/update (400 with structured per-widget errors) and at seed time. Customer reads filter `isActive = true` transitively. Deleting/deactivating a template never affects dashboards already created from it — instantiated dashboards are standard, fully editable, and hold no live template reference.
+
+### RULE-TPL-002: Canonical Union Views
+Module: Canonical Templates · Feature: Create Dashboard from Template
+Cross-source canonical views are named `cv_{workspaceSlug}_{semanticFlag}` and are (re)created **only** by the `ensure-canonical-views` pipeline step via `AnalyticsStoreService.createCanonicalView()` — never from caller-supplied names, never from the frontend. Before creating a view, every selected dataset's `columnMapping` must cover the template's `usedFields` for that model; incomplete mappings fail the pipeline with a structured error (no partial views). Views are create-or-replace (idempotent). Template widgets query the view, never per-dataset `ds_*` tables directly.
+
+### RULE-TPL-003: Template Pipeline Reuse (Action Engine Pattern)
+Module: Canonical Templates · Feature: Create Dashboard from Template
+`dashboard-from-template` is a **pipeline type**, not a new engine: it reuses `gather-dataset-schemas`, `load-widget-catalog`, `build-filters`, `save-widgets`, `invalidate-widget-cache` and adds `ensure-canonical-views`, `instantiate-template-widgets`, `adapt-template-widgets-ai`. `DashboardGenerationProcessor` reads the pipeline type from the job payload (default `dashboard-generate`). Future processing actions (data-clean, forecast) must follow the same pattern: new steps + one `PipelineTypeRegistry` entry — no engine or worker changes. The AI adaptation step receives only column metadata (never raw rows, per RULE-GLOBAL-002) and is non-fatal: on AI failure the deterministic blueprint widgets are kept.
+
+---
+
 ## Global Feature Rules
 
 ### RULE-GLOBAL-001: AI Provider Isolation

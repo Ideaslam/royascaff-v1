@@ -39,6 +39,7 @@ Registry of named pipeline types, each defining an ordered list of `PipelineStep
 | `dashboard-generate` | gather-dataset-schemas (10) · load-widget-catalog (20) · generate-widgets-ai (30) · build-filters (35) · save-widgets (40) · invalidate-widget-cache (50) |
 | `add-widget` | gather-dataset-schemas (10) · load-widget-catalog (20) · add-widget-ai (30) · save-single-widget (40) · invalidate-widget-cache (50) |
 | `edit-widget` | gather-dataset-schemas (10) · edit-widget-ai (20) · save-updated-widget (30) · invalidate-widget-cache (40) |
+| `dashboard-from-template` *(change-049)* | gather-dataset-schemas (10) · ensure-canonical-views (15) · load-widget-catalog (20) · instantiate-template-widgets (25) · adapt-template-widgets-ai (30) · build-filters (35) · save-widgets (40) · invalidate-widget-cache (50) |
 
 **Rules:** Step order values are non-sequential by design (gaps allow inserting steps without renumbering) · Any step can be disabled per pipeline type config without removing it
 
@@ -70,6 +71,17 @@ Registry of named pipeline types, each defining an ordered list of `PipelineStep
 - **EditWidgetAiStep** (`edit-widget-ai`) — renders `edit-widget` prompt with existing widget context; calls AI; parses updated widget; stores `updatedWidget` in `ctx.metadata`
 - **SaveUpdatedWidgetStep** (`save-updated-widget`) — updates existing `ChartWidget` using `ctx.metadata['targetWidgetId']` + `ctx.metadata['updatedWidget']`
 - **InvalidateWidgetCacheStep** (`invalidate-widget-cache`) — fetches all widgets for the dashboard; deletes Redis cache keys; invalidates `ChartDataCache` records
+
+---
+
+### SVC-PIPE-STEPS-TPL · Template Instantiation Steps [internal, domain, Pipelines] *(change-049)*
+
+- **EnsureCanonicalViewsStep** (`ensure-canonical-views`) — reads `ctx.metadata['templateId']` + `modelDatasets` (`{ semanticFlag: datasetId[] }`); for each required model: validates every selected dataset's `columnMapping` covers the template's `usedFields` (fatal, structured error otherwise), then calls `AnalyticsStoreService.createCanonicalView(engineId, 'cv_{ws}_{flag}', sources)` with each dataset's `{ table: analyticsTable, mapping: columnMapping }`; stores `canonicalViews: { semanticFlag: viewName }` in `ctx.metadata`. Idempotent (create-or-replace view).
+- **InstantiateTemplateWidgetsStep** (`instantiate-template-widgets`) — deterministic (no AI); loads the `DashboardTemplate` blueprint; resolves each widget's `querySpec.source` `{{semanticFlag}}` placeholder to the materialized view name; applies layout hints (or default grid); stores `generatedWidgets[]` + `layoutColumns` in `ctx.metadata` (same contract as `generate-widgets-ai`, so downstream steps are reused unchanged).
+- **AdaptTemplateWidgetsAiStep** (`adapt-template-widgets-ai`) — renders `adapt-template-widgets` prompt with blueprint widgets + the datasets' actual mapped/available canonical columns (never raw rows); AI drops/repairs widgets that reference unmapped optional fields and may add complementary widgets from available columns; replaces `ctx.metadata['generatedWidgets']`; on AI failure: logs warning and keeps the deterministic widgets (pipeline continues).
+
+**Deps:** DashboardTemplateRepository · DatasetRepository · AnalyticsStoreService · WidgetDefinitionRepository · AiProviderRegistry · PromptTemplateService
+**Rules:** reuses `build-filters` / `save-widgets` / `invalidate-widget-cache` downstream — output contract identical to `generate-widgets-ai` · canonical view name pattern `cv_{workspaceSlug}_{semanticFlag}` is fixed (never caller-supplied) · `DashboardGenerationProcessor` reads `pipelineType` from the job payload (default `dashboard-generate`) so both flows share the queue/worker
 
 ---
 

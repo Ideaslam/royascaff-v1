@@ -19,6 +19,7 @@
 | EP-DASH-13 | POST | /api/v1/dashboards/:id/generate/retry | JWT | `:id` param | 202 `{ jobId, status }` | SVC-DASH.retryGeneration() | Async |
 | EP-DASH-14 | GET | /api/v1/dashboards/:id/filter-options | JWT ǀ token | `:id` · query: shareToken? | 200 `FilterValueMeta[]` | SVC-DASH.getFilterOptions() | No OLAP query; served from cache/store *(change-021)* |
 | EP-DASH-15 | GET | /api/v1/dashboards/datasets/:datasetId/filter-values/:column/search | JWT ǀ token | `:datasetId`, `:column` · query: q (search string), shareToken? | 200 `{ value: unknown; count: number }[]` | SVC-DASH.searchFilterValues() | Typeahead; OLAP LIKE query for search-mode cols *(change-021)* |
+| EP-DASH-16 | POST | /api/v1/dashboards/from-template | JWT | `CreateDashboardFromTemplateDto` { projectId, name, nameAr?, templateId, datasetSelections: { semanticFlag, datasetIds[] }[] } | 202 `{ dashboardId, jobId, status }` | SVC-DASH.createDashboardFromTemplate() | Async; runs `dashboard-from-template` pipeline; 400 with per-model errors when selections don't cover required models or mappings are incomplete *(change-049)* |
 
 **Notes:**
 - [EP-DASH-01] Creates dashboard, links it to confirmed Datasets (or legacy CsvFiles), queues AI generation pipeline job. `purposeDescription` used as AI context. `datasetIds` must reference confirmed datasets. *(Renamed from `fileIds` in change-015)*

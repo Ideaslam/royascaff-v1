@@ -618,6 +618,8 @@ Collection: `datasource_type_meta` (global — not workspace-scoped)
 16. `chartwidgets.querySpec` takes precedence over `queryDefinition` in the chart data API; both may coexist on the same document *(change-020)*
 17. `dashboards` may only be created from datasets where `analyticsTable != null && syncStatus != syncing`; legacy CsvFile path requires `status == confirmed` *(change-022)*
 18. `datasets.aiProposedMapping` and `aiProposedSemanticFlag` are display-only fields — they are replaced by `columnMapping` and `semanticFlag` upon user confirmation and never used in query execution *(change-022)*
+19. `dashboard_templates.widgetBlueprint[].querySpec` may only reference canonical field names from `canonical-fields.config.ts` for the template's declared `requiredModels`; validated on admin create/update and in the seed script *(change-049)*
+20. Canonical union views must follow the pattern `cv_{workspaceSlug}_{semanticFlag}` and are (re)created only by the `ensure-canonical-views` pipeline step — never from caller-supplied names *(change-049)*
 
 ## Mongoose Enum Reference
 ```
@@ -727,7 +729,7 @@ Collection: `ws_{workspaceSlug}_datasets`
 | `sourceType` | Enum | required | `csv \| google_sheets \| …` |
 | `name` | String | required; human-readable dataset name | — |
 | `description` | String | optional | — |
-| `semanticFlag` | Enum | required, default: `arbitrary` | `arbitrary \| orders \| products \| customers \| inventory \| marketing` |
+| `semanticFlag` | Enum | required, default: `arbitrary` | `arbitrary \| orders \| products \| customers \| marketing_spend` *(dictionary-driven; change-049)* |
 | `columnMapping` | Object | optional; `{ canonicalField: sourceColumn }` map; schema-on-read, never rewrites data; user-confirmed | — |
 | `aiProposedMapping` | Object | nullable; AI-suggested `columnMapping` from `column-mapping` prompt; shown in UI for user review; replaced by `columnMapping` on confirm *(change-022)* | — |
 | `aiProposedSemanticFlag` | String | nullable; AI-suggested `semanticFlag`; shown in UI for review *(change-022)* | — |
@@ -845,3 +847,78 @@ PipelineRunStatus = [running, success, failed]
 // New enums (change-021)
 FilterType = [select, date_range, range, search]
 FilterMode = [list, search]
+
+// Updated enums (change-049)
+SemanticFlag = [arbitrary, orders, products, customers, marketing_spend]  // open string enum; dictionary-driven in canonical-fields.config.ts
+
+---
+
+## TemplateIndustry *(change-049)*
+Purpose: top-level industry grouping for the dashboard template catalog (e.g. Ecommerce, Logistics). Admin-managed; seeded.
+Collection: `template_industries` (global — not workspace-scoped)
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `key` | String | required, unique; stable machine key (e.g. `ecommerce`) used by seeds | — |
+| `nameEn` | String | required | — |
+| `nameAr` | String | required, default: `''` | — |
+| `descriptionEn` | String | optional, default: `''` | — |
+| `descriptionAr` | String | optional, default: `''` | — |
+| `icon` | String | nullable; PrimeIcons name or logo URL | — |
+| `sortOrder` | Number | required, default: 0 | — |
+| `isActive` | Boolean | required, default: true; false hides industry (and its fields/templates) from the customer portal | — |
+| `createdAt` / `updatedAt` | Date | auto | — |
+
+**Indexes:** `{ key: 1 }` unique · `{ isActive: 1, sortOrder: 1 }`
+**Relations:** has-many TemplateIndustryField
+**Seed:** idempotent upsert by `key`; script: `npm run seed:template-catalog`
+
+---
+
+## TemplateIndustryField *(change-049)*
+Purpose: category inside an industry (e.g. Ecommerce → Purchases, Marketing). Admin-managed; seeded.
+Collection: `template_industry_fields` (global — not workspace-scoped)
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `industryId` | ObjectId | required | → `TemplateIndustry._id` |
+| `key` | String | required; unique within industry (e.g. `marketing`) | — |
+| `nameEn` | String | required | — |
+| `nameAr` | String | required, default: `''` | — |
+| `descriptionEn` | String | optional, default: `''` | — |
+| `descriptionAr` | String | optional, default: `''` | — |
+| `sortOrder` | Number | required, default: 0 | — |
+| `isActive` | Boolean | required, default: true | — |
+| `createdAt` / `updatedAt` | Date | auto | — |
+
+**Indexes:** `{ industryId: 1, key: 1 }` unique · `{ industryId: 1, isActive: 1, sortOrder: 1 }`
+**Relations:** belongs-to TemplateIndustry · has-many DashboardTemplate
+
+---
+
+## DashboardTemplate *(change-049)*
+Purpose: predefined dashboard blueprint under an industry field (e.g. Marketing → MER, MMM, RFM). Defined entirely against canonical models — source-agnostic. Admin-managed; seeded.
+Collection: `dashboard_templates` (global — not workspace-scoped)
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `fieldId` | ObjectId | required | → `TemplateIndustryField._id` |
+| `key` | String | required; unique within field (e.g. `mer`, `rfm`) | — |
+| `nameEn` | String | required | — |
+| `nameAr` | String | required, default: `''` | — |
+| `descriptionEn` | String | optional, default: `''` | — |
+| `descriptionAr` | String | optional, default: `''` | — |
+| `requiredModels` | [Object] | required; `{ semanticFlag: String, required: Boolean, usedFields: [String] }` — canonical models the template needs (e.g. RFM: orders + customers); `usedFields` validated against the canonical dictionary | — |
+| `widgetBlueprint` | [Object] | required; ordered widget definitions `{ widgetType, titleEn, titleAr, querySpec, displayConfig?, position? }`; `querySpec.source` uses `{{semanticFlag}}` placeholders resolved to `cv_{ws}_{flag}` views at instantiation; field names must exist in the canonical dictionary | — |
+| `layoutColumns` | Number | required, default: 12 | — |
+| `previewImageUrl` | String | nullable | — |
+| `sortOrder` | Number | required, default: 0 | — |
+| `isActive` | Boolean | required, default: true | — |
+| `createdAt` / `updatedAt` | Date | auto | — |
+
+**Indexes:** `{ fieldId: 1, key: 1 }` unique · `{ fieldId: 1, isActive: 1, sortOrder: 1 }`
+**Relations:** belongs-to TemplateIndustryField
+**Rules:** blueprint `querySpec` may reference **only** canonical field names from the dictionary for the declared `requiredModels` — validated on create/update and by the seed · templates are catalog data: dashboards created from a template hold **no back-reference dependency** (fully editable, deleting a template never touches existing dashboards) · `isActive = false` hides from customer portal only
