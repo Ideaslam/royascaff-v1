@@ -312,7 +312,7 @@ Infrastructure modules are called by business module services; they do not expos
 ### Features
 1. **Connector Interface** [backend-only] — `ConnectorInterface` defines `testConnection()`, `discoverSchema()`, `extract()`, `normalize()`, and **`listEntities()`** (returns the source's importable entities `{ name, label, kind, semanticFlag?, preselected }`) methods; standardized contract for every data source adapter. `listEntities` unifies the previously ad-hoc `listCollections`/`listTables` helpers and adds entity listing for e-commerce (orders/products/customers) and Google Sheets (tabs); csv returns none *(change-018, change-045)*
 2. **Connector Registry** [backend-only] — `ConnectorRegistry` maps `DataSourceType` enum values to concrete implementations; resolving an unknown type throws a typed error; adding a new connector requires only implementing the interface + one registry line *(change-018)*
-3. **CSV Connector** [backend-only] — implements `ConnectorInterface` for `csv` source type; reads from uploaded R2 objects; normalizes rows against `columnMapping`; will be the first production connector *(change-022)*
+3. **CSV Connector** [backend-only] — implements `ConnectorInterface` for `csv` source type; reads CSV and Excel (`.xlsx` / `.xls`) files from R2; for Excel files uses `exceljs` to read the sheet named in credentials (`sheetName`) or the first sheet; normalizes rows against `columnMapping` *(change-022, change-047)*
 
 ## S11. Pipelines
 - Scope: BE only — `src/modules/pipelines/`

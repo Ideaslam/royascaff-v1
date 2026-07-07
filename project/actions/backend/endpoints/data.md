@@ -6,7 +6,7 @@
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-DATA-01 | POST | /api/v1/data/upload/file | JWT | `multipart/form-data` file (CSV, max 50 MB) | 202 `{ fileId, jobId, status }` | SVC-DATA.uploadFile() | Async; rejects non-CSV / >50 MB |
+| EP-DATA-01 | POST | /api/v1/data/upload/file | JWT | `multipart/form-data` file (CSV / XLSX / XLS, max 50 MB) | 202 `{ fileId, jobId, status, storageKey, sheets?: string[] }` | SVC-DATA.uploadFile() | Async; rejects unsupported types / >50 MB; `sheets` populated for Excel files *(change-047)* |
 | EP-DATA-02 | POST | /api/v1/data/upload/initiate | JWT | `InitiateUploadDto` { filename, fileSizeBytes, mimeType } | 201 `{ fileId, uploadUrl, uploadId }` | SVC-DATA.initiateUpload() | Legacy presigned-URL flow |
 | EP-DATA-03 | POST | /api/v1/data/upload/:fileId/complete | JWT | `:fileId` · `CompleteUploadDto` { storageKey } | 202 `{ fileId, jobId, status }` | SVC-DATA.completeUpload() | Async |
 | EP-DATA-04 | GET | /api/v1/data/files | JWT | query: page, limit, search, status | 200 `Paginated<CsvFileListItemDto>` | SVC-DATA.listFiles() | |

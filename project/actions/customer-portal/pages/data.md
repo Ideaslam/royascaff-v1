@@ -32,15 +32,15 @@
 ### Shared UI — ProgressLoader *(change-045)*
 - Component: ProgressLoaderComponent (reusable) — percentage ring/bar + phase label; polls a `SyncRun` (or entity-listing signal) and renders `progress` + `phase` (queued/listing/discovering/extracting/loading/finalizing). Used by the setup wizard (entity listing, first sync) and the Data Source detail page (add-tables, re-sync). Replaces silent blank waits across all sources.
 
-### CSV Upload Page *(change-022)*
+### CSV Upload Page *(change-022, updated change-047)*
 - Route: `/app/data/csv-upload`
 - Components: CsvUploadPage — 3-step wizard:
-  - **Step 1 — Upload:** dropzone (CSV only, max 50 MB), file name preview, upload progress bar; on success → creates DataConnection + Dataset + triggers `discoverSchemaWithAiProposal`
+  - **Step 1 — Upload:** file picker accepting `.csv`, `.xlsx`, `.xls` (max 50 MB), file name preview; after upload response: if `sheets` array has >1 entry a **sheet picker dropdown** appears and the user selects the target sheet before continuing; single-sheet files skip the picker automatically; on continue → creates DataConnection + Dataset + triggers `discoverSchemaWithAiProposal`
   - **Step 2 — Schema Review:** shows discovered columns (name, inferred type, sample) + AI-proposed `semanticFlag` (editable dropdown) + AI-proposed `columnMapping` table (canonical field → source column, each row editable); "Refresh AI Proposal" button calls EP-DATA-22; loading state while AI runs
   - **Step 3 — Confirm & Sync:** summary of confirmed mapping; calls EP-DATA-23 then EP-DATA-20 (full sync); shows sync progress + "Done" redirect to `/app/data/datasets/:id`
-- Service: `POST /api/v1/data/upload/file` (upload CSV to R2); `POST /api/v1/data/connections` (create DataConnection); `POST /api/v1/data/datasets` (create Dataset + triggers AI proposal); `GET /api/v1/data/datasets/:id` (poll for aiProposedMapping); `POST /api/v1/data/datasets/:id/confirm-mapping` (EP-DATA-23); `POST /api/v1/data/datasets/:id/sync` (EP-DATA-20)
+- Service: `POST /api/v1/data/upload/file` (upload CSV/XLSX/XLS to R2, returns `{ storageKey, sheets? }`); `POST /api/v1/data/connections` (create DataConnection, credentials `{ storageKey, sheetName? }`); `POST /api/v1/data/datasets`; `GET /api/v1/data/datasets/:id`; `POST /api/v1/data/datasets/:id/confirm-mapping` (EP-DATA-23); `POST /api/v1/data/datasets/:id/sync` (EP-DATA-20)
 - Guard: authGuard + onboardingGuard
-- Notes: CSV upload creates one `DataConnection` (credentials = `{ storageKey }`) + one `Dataset` atomically. The wizard abstracts this complexity from the user.
+- Notes: CSV/Excel upload creates one `DataConnection` (credentials = `{ storageKey, sheetName? }`) + one `Dataset` atomically. `sheetName` omitted for CSV or single-sheet Excel.
 
 ### Dataset Detail Page *(change-022)*
 - Route: `/app/data/datasets/:id`
