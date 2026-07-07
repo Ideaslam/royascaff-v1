@@ -47,8 +47,9 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 ## Next Bug Number
 
-**Next**: 016
+**Next**: 017
 
 | 012 | 2026-07-05 | medium | customer-portal/data/google-sheets-setup | Google Sheets setup requires spreadsheet ID instead of URL | PENDING | [bug-012-google-sheets-url-instead-of-id.md](./bug-012-google-sheets-url-instead-of-id.md) |
 | 013 | 2026-07-06 | medium | customer-portal/subscriptions | Subscription page shows plan UI before DB data is ready | DONE | [bug-013-subscription-page-initial-plan-flash.md](./bug-013-subscription-page-initial-plan-flash.md) |
 | 014 | 2026-07-06 | medium | customer-portal/dashboards | Dashboard does not expand when sidebar collapsed | DONE | [bug-014-dashboard-width-sidebar-collapsed.md](./bug-014-dashboard-width-sidebar-collapsed.md) |
+| 016 | 2026-07-07 | high | backend/subscriptions, admin-portal/subscriptions | Create workspace subscription returns User not found (404) | DONE | [bug-016-create-subscription-user-not-found.md](./bug-016-create-subscription-user-not-found.md) |
