@@ -78,6 +78,7 @@ The multi-source data experience has five structural issues:
 
 **D. AI mapping for all sources + non-blocking edit (issue 3)**
 - Show the canonical-mapping UI in schema review for **every** semantic source (whenever `semanticFlag !== 'arbitrary'`), not just csv/google_sheets.
+- **On-demand "Map with AI" button**: in schema review, once the user picks a canonical type, a button triggers AI mapping for *that* type (`POST /datasets/:id/propose-mapping`, EP-DATA-46) and fills the dropdowns (editable) before continuing. Available for **all** sources including CSV — not only e-commerce, and not only at discovery time. Shows a loading state and a soft inline error on failure. Backend reuses one shared `runAiMappingProposal` helper for both automatic (discovery) and on-demand mapping.
 - Improve backend proposal: before/after AI, apply a **name-match prefill** for required canonical fields (e.g. `customer_id` ← `customer_id|id|_id`, `order_id` ← `order_id|id`, `product_id` ← `product_id|id|sku`).
 - Frontend highlights required-but-unmapped canonical fields inline and disables **Confirm** until they are mapped (arbitrary datasets have none). This replaces the opaque network 400 with an in-UI, resolvable validation. Backend keeps `validateColumnMapping` as a safety net and returns a structured `{ missing: [...] }` payload.
 
@@ -124,6 +125,7 @@ Authenticated customer-portal editors/admins connecting or managing any data sou
 12. Schema review shows the canonical-mapping UI for every source where `semanticFlag !== 'arbitrary'` (including Zid/Salla/Shopify).
 13. Required canonical fields are pre-filled by name match when possible; the Zid `customers` flow no longer 400s — any still-missing required fields are shown inline and block Confirm until mapped.
 14. AI still proposes mapping + semantic flag; the user can edit every mapping before confirming.
+14b. A **"Map with AI"** button in schema review runs AI mapping on demand for the user-chosen canonical type (EP-DATA-46) and fills the editable dropdowns; it works for every source including CSV, and re-runs correctly after the user changes the semantic type.
 
 **Editability**
 15. From the Data Source detail page the user can: add tables (re-select), edit a table's field descriptions, edit its canonical mapping, change its schedule, trigger a sync, and delete a table.

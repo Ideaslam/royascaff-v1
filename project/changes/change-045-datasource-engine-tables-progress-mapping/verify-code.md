@@ -26,6 +26,7 @@
 - [x] `CANONICAL_SYNONYMS` + `prefillMappingByName` name-match prefill in `canonical-fields.config.ts` ✓
 - [x] `discoverSchemaWithAiProposal` applies prefill; `confirmMapping`/`updateMapping` throw `UnprocessableEntityException` with structured `{ missing: [...] }` ✓
 - [x] `SchemaReviewStepComponent` shows canonical-mapping UI for all sources, highlights required-unmapped fields, disables Confirm until mapped; wizard parses 422 into `serverMissing` ✓
+- [x] On-demand **"Map with AI"** (EP-DATA-46 `POST /datasets/:id/propose-mapping` + `ProposeMappingDto`): shared `runAiMappingProposal` helper reused by discovery + on-demand; `proposeMappingForFlag` runs against discovered schema for the user-chosen flag, returns editable `{ semanticFlag, columnMapping }`. `SchemaReviewStepComponent` button fills dropdowns with loading/error state; works for all sources incl. CSV ✓
 
 ### 4. Progress (AC 9–11)
 - [x] `SyncRun` schema + repository carry `progress` (0–100) and `phase` (`SyncRunPhase`) ✓
