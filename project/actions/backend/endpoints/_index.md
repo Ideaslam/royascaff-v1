@@ -7,7 +7,8 @@
 | Projects | projects.md | EP-PROJ-01..05 | 5 |
 | Data (Legacy CSV) | data.md | EP-DATA-01..08 | 8 |
 | Data Connections | data.md | EP-DATA-09..14 | 6 |
-| Datasets | data.md | EP-DATA-15..23 | 9 |
+| Datasets | data.md | EP-DATA-15..23, 40 | 10 |
+| Data — OAuth/Webhooks/DB/Sync/Grouping | data.md | EP-DATA-24..45 (source-specific IDs; grouping/selection/progress EP-DATA-41..45 *change-045*) | — |
 | Dashboards | dashboards.md | EP-DASH-01..15 | 15 |
 | Sharing | sharing.md | EP-SHARE-01..04 | 4 |
 | Export | export.md | EP-EXPORT-01..03 | 3 |

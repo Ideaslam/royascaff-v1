@@ -35,16 +35,18 @@
 ## 4. Data (Multi-Source Data Management)
 - Scope: BE (`src/modules/data/`) + FE (`pages/data/` in CP)
 - Audience: authenticated editors and admins (CP)
-- Entities: `DataConnection`, `Dataset`, `SyncRun`, `CsvFile` (legacy — kept for backward compat)
+- Entities: `DataConnection` (**a Data Source**), `Dataset` (**a Table inside a source**, linked by `connectionId`), `SyncRun`, `CsvFile` (legacy — kept for backward compat)
+- **Grouping model**: one `DataConnection` (Data Source) owns many `Dataset` records (Tables) via `connectionId`. The UI groups by source — one card per Data Source, its Tables managed inside it *(change-045)*.
 
 ### Features
-1. **Manage Data Connections** [both] — create/list/update/delete named source connections (`csv | google_sheets | shopify | salla | zid | sql_server | mongodb_atlas`); credentials stored AES-256-GCM encrypted; test connection before saving.
-2. **Manage Datasets** [both] — create/list/update/delete a Dataset bound to a connection; assign a `semanticFlag` (`arbitrary | orders | products | customers | …`) and editable `columnMapping` (source-column → canonical field); editing mapping never triggers a sync (schema-on-read).
-3. **Sync Dataset (Manual/Scheduled)** [both] — enqueue a `DATA_SYNC_QUEUE` job; `SyncRun` record tracks mode (full/incremental), status, rows-in/loaded, error; subscription limits enforced before enqueue.
-4. **Sync History** [backend-only] — list `SyncRun` records per dataset with status, timings, row counts.
-5. **Schema Discovery** [backend-only] — connector's `discoverSchema()` called on connection-test or on-demand; writes `Dataset.schema` with inferred column types; used by AI to generate dashboards.
-6. **Legacy CSV Upload (Backward Compat)** [both] — direct multipart upload → `CsvFile` record + per-file `csvdata_{fileId}` collection + AI column analysis; will migrate to Dataset model in change-022.
-7. **Review and Edit Column Descriptions (Legacy)** [both] — `columnmetadata` per `CsvFile` column; edit `userDescription`; confirms file eligible for dashboard generation.
+1. **Manage Data Sources (Connections + Grouping)** [both] — create/list/update/delete named source connections (`csv | google_sheets | shopify | salla | zid | sql_server | mongodb_atlas`); credentials stored AES-256-GCM encrypted; test connection before saving. The data list shows **one card per Data Source** with source type, status, and table count; a **Data Source detail page** lists all Tables in the source with per-table status/rowCount/actions; `GET /connections/:id/datasets` lists a source's tables *(change-045)*.
+2. **Select What to Import (Entity Selection)** [both] — a shared, reusable step lists the importable entities of a source and the user picks which become Tables: e-commerce (zid/salla/shopify) list orders/products/customers; Google Sheets lists tabs; databases list tables/collections; CSV has none (single file). Backed by the connector `listEntities()` contract + `GET /connections/:id/entities`; datasets are created from the selection (e-commerce no longer auto-provisions all three on OAuth callback) *(change-045)*.
+3. **Manage Datasets (Tables)** [both] — create/list/update/delete a Dataset bound to a connection; assign a `semanticFlag` (`arbitrary | orders | products | customers | …`) and editable `columnMapping` (canonical field → source column); editing mapping never triggers a sync (schema-on-read). Everything is editable after setup from the Data Source detail page: add/remove tables (re-select), edit field descriptions, edit canonical mapping, change schedule, sync, delete *(change-045)*.
+4. **Sync Dataset (Manual/Scheduled) + Live Progress** [both] — enqueue a `DATA_SYNC_QUEUE` job; `SyncRun` record tracks mode (full/incremental), status, **`progress` (0–100) + `phase`** (queued/listing/discovering/extracting/loading/finalizing/done/failed), rows-in/loaded, error; subscription limits enforced before enqueue. Pipeline steps update progress as they run; the frontend polls run status and shows a **percentage progress loader** during entity listing, schema discovery, and first sync *(change-045)*.
+5. **Sync History** [backend-only] — list `SyncRun` records per dataset with status, timings, row counts; single-run status via `GET /datasets/:id/sync-runs/:runId` (includes live progress/phase) *(change-045)*.
+6. **Schema Discovery + AI Mapping (all sources)** [backend-only] — connector's `discoverSchema()` writes `Dataset.schema` with inferred column types; `discoverSchemaWithAiProposal()` proposes `columnMapping` + `semanticFlag`, with a **name-match prefill** for required canonical fields (e.g. `customer_id ← id/_id`). The mapping UI is shown for **every** semantic source (not just csv/google_sheets); the user edits before confirming; `confirm-mapping` returns structured `{ missing }` and the UI blocks Confirm until required fields are mapped instead of failing with an opaque 400 *(change-045)*.
+7. **Legacy CSV Upload (Backward Compat)** [both] — direct multipart upload → `CsvFile` record + per-file `csvdata_{fileId}` collection + AI column analysis; unchanged.
+8. **Review and Edit Column Descriptions (Legacy)** [both] — `columnmetadata` per `CsvFile` column; edit `userDescription`; confirms file eligible for dashboard generation.
 
 ## 5. AI Processing
 - Scope: BE only (`src/modules/ai-processing/`) — no frontend pages
@@ -308,7 +310,7 @@ Infrastructure modules are called by business module services; they do not expos
 - Audience: system (consumed by DataSyncProcessor and PipelineEngine)
 
 ### Features
-1. **Connector Interface** [backend-only] — `ConnectorInterface` defines `testConnection(creds)`, `discoverSchema(creds)`, `extract(creds, opts)`, `normalize(rows, mapping)` methods; standardized contract for every data source adapter *(change-018)*
+1. **Connector Interface** [backend-only] — `ConnectorInterface` defines `testConnection()`, `discoverSchema()`, `extract()`, `normalize()`, and **`listEntities()`** (returns the source's importable entities `{ name, label, kind, semanticFlag?, preselected }`) methods; standardized contract for every data source adapter. `listEntities` unifies the previously ad-hoc `listCollections`/`listTables` helpers and adds entity listing for e-commerce (orders/products/customers) and Google Sheets (tabs); csv returns none *(change-018, change-045)*
 2. **Connector Registry** [backend-only] — `ConnectorRegistry` maps `DataSourceType` enum values to concrete implementations; resolving an unknown type throws a typed error; adding a new connector requires only implementing the interface + one registry line *(change-018)*
 3. **CSV Connector** [backend-only] — implements `ConnectorInterface` for `csv` source type; reads from uploaded R2 objects; normalizes rows against `columnMapping`; will be the first production connector *(change-022)*
 
@@ -320,8 +322,8 @@ Infrastructure modules are called by business module services; they do not expos
 ### Features
 1. **Pipeline Engine** [backend-only] — `PipelineEngine.run(type, opts)` resolves a `PipelineTypeDefinition` (ordered steps), executes them in order against a shared `PipelineContext`, records a `PipelineRun` document (start/end/status/step-errors), surfaces errors cleanly; aborts on first fatal step error *(change-019)*
 2. **Step Registry** [backend-only] — `StepRegistry` maps step type strings to `PipelineStepInterface` implementations; any step can be injected as a NestJS provider and registered with a one-line entry; steps receive `PipelineContext` and return an updated context *(change-019)*
-3. **Pipeline Type Registry** [backend-only] — `PipelineTypeRegistry` maps pipeline type names (`ingest`, `dashboard-generate`, `add-widget`, `edit-widget`) to ordered `PipelineStepConfig[]`; new pipeline types added here without touching the engine *(change-019, change-020)*
-4. **Built-in Data Ingestion Steps** [backend-only] — `ExtractStep`, `CleanDataStep`, `TransformStep` (AI-assisted), `ApplyMappingStep`, `LoadStep`, `SyncRunCompleteStep`; used by the `ingest` pipeline type *(change-019)*
+3. **Pipeline Type Registry + Setup Flow** [backend-only] — `PipelineTypeRegistry` maps pipeline type names (`ingest`, `dashboard-generate`, `add-widget`, `edit-widget`) to ordered `PipelineStepConfig[]`; new pipeline types added here without touching the engine. `getSetupFlow(sourceType)` (EP-DATA-41) resolves the wizard step sequence; step kinds are `connect | select-entities | schema-review | schedule`, with `select-entities` emitted for selection-capable sources (all except csv) *(change-019, change-020, change-045)*
+4. **Built-in Data Ingestion Steps + Progress** [backend-only] — `ExtractStep`, `CleanDataStep`, `TransformStep` (AI-assisted), `ApplyMappingStep`, `LoadStep`, `SyncRunCompleteStep`; used by the `ingest` pipeline type. Steps write `SyncRun.progress`/`phase` as they run so the frontend can show a live percentage loader *(change-019, change-045)*
 5. **Built-in Dashboard Steps** [backend-only] — `GatherDatasetSchemasStep`, `LoadWidgetCatalogStep`, `GenerateWidgetsAiStep`, `BuildFiltersStep`, `SaveWidgetsStep`, `AddWidgetAiStep`, `SaveSingleWidgetStep`, `EditWidgetAiStep`, `SaveUpdatedWidgetStep`, `InvalidateWidgetCacheStep`; used by dashboard pipeline types *(change-020, change-021)*
 
 ## S12. Filters

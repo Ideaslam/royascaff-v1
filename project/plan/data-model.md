@@ -735,8 +735,10 @@ Collection: `ws_{workspaceSlug}_syncruns`
 | `datasetId` | ObjectId | required | → `Dataset._id` |
 | `mode` | Enum | required | `full \| incremental` |
 | `status` | Enum | required, default: `running` | `running \| success \| failed` |
-| `rowsIn` | Number | nullable; total rows extracted from source | — |
-| `rowsLoaded` | Number | nullable; rows successfully inserted into OLAP | — |
+| `progress` | Number | required, default: 0; 0–100 completion percentage, updated live by pipeline steps *(change-045)* | — |
+| `phase` | Enum | required, default: `queued`; current stage for the progress loader *(change-045)* | `queued \| listing \| discovering \| extracting \| loading \| finalizing \| done \| failed` |
+| `rowsIn` | Number | nullable; total rows extracted from source; updated as batches accrue *(change-045)* | — |
+| `rowsLoaded` | Number | nullable; rows successfully inserted into OLAP; updated as batches accrue *(change-045)* | — |
 | `errorMessage` | String | nullable | — |
 | `startedAt` | Date | required, default: now | — |
 | `finishedAt` | Date | nullable | — |
@@ -745,6 +747,7 @@ Collection: `ws_{workspaceSlug}_syncruns`
 
 **Indexes:** `{ workspaceSlug: 1, datasetId: 1, startedAt: -1 }` · `{ status: 1 }`
 **Relations:** belongs-to Dataset
+**Rules:** `progress`/`phase` are advisory UI signals updated by pipeline steps; a run is authoritative-complete only when `status = success \| failed` *(change-045)*
 
 ---
 
@@ -805,6 +808,11 @@ DatasetStatus = [pending, syncing, ready, error]
 SyncRunMode = [full, incremental]
 SyncRunStatus = [running, success, failed]
 SyncRunTrigger = [manual, schedule, api]
+SyncRunPhase = [queued, listing, discovering, extracting, loading, finalizing, done, failed]  // change-045
+
+// New enums (change-045)
+DataSourceEntityKind = [entity, sheet, table, collection]  // listEntities() entity classification
+WizardStepKind = [connect, select-entities, schema-review, schedule]
 
 // New enums (change-019)
 PipelineRunStatus = [running, success, failed]

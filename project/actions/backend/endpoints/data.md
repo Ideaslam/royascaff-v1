@@ -43,7 +43,7 @@
 | EP-DATA-21 | GET | /api/v1/data/datasets/:id/sync-history | JWT | `:id` · query: page, limit | 200 `Paginated<SyncRunDto>` | SVC-DATA-DS.listSyncHistory() | |
 | EP-DATA-40 | PATCH | /api/v1/data/datasets/:id/schema-columns | JWT | `:id` · body `{ columns: [{ name, userDescription?, isPrimaryKey? }] }` | 200 `DatasetDto` | SVC-DATA-DS.updateSchemaColumns() | Patches userDescription + isPrimaryKey per column; setting a new PK clears isPrimaryKey from all other columns *(change-038)* |
 | EP-DATA-22 | POST | /api/v1/data/datasets/:id/discover-schema | JWT | `:id` | 200 `DatasetDto` | SVC-DATA-DS.discoverSchemaWithAiProposal() | Re-discovers schema + refreshes AI mapping proposal *(change-022)* |
-| EP-DATA-23 | POST | /api/v1/data/datasets/:id/confirm-mapping | JWT | `:id` · `ConfirmMappingDto` { columnMapping: Record<string,string>, semanticFlag: string } | 200 `DatasetDto` | SVC-DATA-DS.confirmMapping() | Promotes mapping into live fields; clears AI proposals *(change-022)* |
+| EP-DATA-23 | POST | /api/v1/data/datasets/:id/confirm-mapping | JWT | `:id` · `ConfirmMappingDto` { columnMapping: Record<string,string>, semanticFlag: string } | 200 `DatasetDto` \| 422 `{ missing: string[] }` | SVC-DATA-DS.confirmMapping() | Promotes mapping into live fields; clears AI proposals. Applies to **all** semantic sources (not just csv/google_sheets). Returns structured `{ missing }` (422) when required canonical fields for the chosen `semanticFlag` are unmapped, so the UI can highlight fields instead of showing an opaque error *(change-022, updated change-045)* |
 
 ### Google Sheets OAuth Endpoints *(change-023)*
 
@@ -83,14 +83,14 @@
 - [EP-DATA-20] Creates a `SyncRun` record immediately and returns `syncRunId`; actual sync runs asynchronously via BullMQ `DATA_SYNC_QUEUE`. The `mode` parameter defaults to `'full'` if omitted; incremental sync requires a PK column to be meaningful but is not server-enforced.
 - [EP-DATA-40] Reads current `Dataset.schema`, applies per-column patches (userDescription override; isPrimaryKey toggle). If any column in `updates` sets `isPrimaryKey: true`, that column is made the exclusive PK (all others set to `false`).
 - [EP-DATA-22] Can be called again at any time to refresh schema (e.g. after re-uploading a CSV). Re-runs connector `discoverSchema` + AI proposal. Clears previous proposal.
-- [EP-DATA-23] User confirms (or edits) the AI-proposed mapping. Only after this call does the Dataset become eligible for dashboard generation.
+- [EP-DATA-23] User confirms (or edits) the AI-proposed mapping. Only after this call does the Dataset become eligible for dashboard generation. *(change-045)* Validation is user-friendly: the server computes the set of required canonical fields for `semanticFlag` and returns `422 { missing: [...] }` when any are unmapped; the frontend disables Confirm and highlights the missing rows rather than surfacing a raw 400.
 - [EP-DATA-24] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (stored in Redis with 10-minute TTL for CSRF validation in EP-DATA-25).
 - [EP-DATA-25] Public endpoint (callback from Google) — validates `state` nonce, exchanges `code` via `OAuth2Client`, encrypts `{ accessToken, refreshToken }` as `DataConnection.credentialsEncrypted`, then redirects frontend to spreadsheet picker page.
 - [EP-DATA-26] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (Redis TTL 10 min for CSRF validation in EP-DATA-27). `shopDomain` is normalised to `{shop}.myshopify.com`.
 - [EP-DATA-27] Public callback: validates Shopify-signed HMAC on query params + validates state nonce; exchanges `code` for permanent offline access token; stores DataConnection; calls `ShopifyOAuthService.registerWebhooks()`; redirects to `/app/data/shopify/setup/:connectionId`.
 - [EP-DATA-28] Public webhook receiver: validates `X-Shopify-Hmac-Sha256` using raw body + `shopify.webhookSecret`; uses `X-Shopify-Shop-Domain` header to resolve `workspaceSlug` via `WebhookRouteService`; calls `ShopifyDatasetService.applyWebhookEvent()` to enqueue incremental sync. Returns 200 immediately. *(change-042)*
 - [EP-DATA-29] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (Redis TTL 10 min). Salla authorization URL: `https://accounts.salla.sa/oauth2/auth`.
-- [EP-DATA-30] Public callback: validates state nonce; `POST https://accounts.salla.sa/oauth2/token` with `grant_type=authorization_code`; encrypts `{ accessToken, refreshToken, expiresAt }` as `DataConnection.credentialsEncrypted(sourceType=salla)`; calls `SallaDatasetService.provisionFromOAuth()` to create 3 Datasets; redirects to `/app/data/salla/setup/:connectionId`.
+- [EP-DATA-30] Public callback: validates state nonce; `POST https://accounts.salla.sa/oauth2/token` with `grant_type=authorization_code`; encrypts `{ accessToken, refreshToken, expiresAt }` as `DataConnection.credentialsEncrypted(sourceType=salla)`; redirects to the shared setup wizard at the `select-entities` step. *(change-045)* The callback no longer auto-provisions all 3 Datasets — the user picks which entities (orders/products/customers) to import in the wizard, and Datasets are created from that selection.
 - [EP-DATA-31] Public webhook receiver: validates `X-Salla-Signature` HMAC-SHA256 using app secret; extracts `event.merchant_id` from JSON body; resolves `workspaceSlug` via `WebhookRouteService`; calls `SallaDatasetService.applyWebhookEvent()` to enqueue incremental sync. Returns 200 immediately. *(change-042)*
 
 ### Zid OAuth + Webhook Endpoints *(change-026)*
@@ -103,7 +103,7 @@
 | EP-DATA-33 | GET | /api/v1/data/zid/callback | Public | query: `code`, `state` | 302 → `/app/data/zid/setup/:connectionId` | ZidController.handleCallback() | Validates state nonce; exchanges code for dual tokens; encrypts + stores DataConnection; provisions 3 Datasets; redirects |
 | EP-DATA-34 | POST | /api/v1/data/zid/webhook | Public | body: Zid event payload; header: `X-Zid-Signature` | 200 | ZidController.handleWebhook() | Validates HMAC-SHA256; maps event topic → entity → Dataset; enqueues incremental sync |
 - [EP-DATA-32] `state` payload includes `workspaceSlug`, `userId`, and a random nonce (Redis TTL 10 min). Zid authorization URL: `https://oauth.zid.sa`.
-- [EP-DATA-33] Public callback: validates state nonce; `POST https://oauth.zid.sa/oauth/token` with `grant_type=authorization_code`; encrypts both tokens `{ authorizationToken, accessToken, expiresAt }` as `DataConnection.credentialsEncrypted(sourceType=zid)`; calls `ZidDatasetService.provisionFromOAuth()` to create 3 Datasets; redirects to `/app/data/zid/setup/:connectionId`.
+- [EP-DATA-33] Public callback: validates state nonce; `POST https://oauth.zid.sa/oauth/token` with `grant_type=authorization_code`; encrypts both tokens `{ authorizationToken, accessToken, expiresAt }` as `DataConnection.credentialsEncrypted(sourceType=zid)`; redirects to the shared setup wizard at the `select-entities` step. *(change-045)* The callback no longer auto-provisions all 3 Datasets — the user picks which entities to import (with a live progress loader while Zid tables are listed), and Datasets are created from that selection.
 - [EP-DATA-34] Public webhook receiver: validates `X-Zid-Signature` HMAC-SHA256 using app secret; parses JSON body; extracts Zid store ID → resolves `workspaceSlug` via `WebhookRouteService`; calls `ZidDatasetService.applyWebhookEvent(workspaceSlug, topic)` to enqueue incremental sync for matching datasets. Returns 200 immediately (even if workspace not found). *(change-042)*
 
 ### Zid Install Endpoint *(change-044)*
@@ -155,3 +155,23 @@
 
 - [EP-DATA-39] Loads the `SyncRun` by `runId`; validates `status === 'failed'`; calls `SyncService.retryRun(workspaceSlug, runId)` which creates a new `SyncRun` record and enqueues a fresh BullMQ job for the same dataset in `FULL` mode. Returns new `syncRunId`.
 - [EP-ADMIN-SH-1] Admin-only endpoint. Queries `SyncRun` across all workspaces for the most recent run per dataset; groups by `sourceType`; returns summary sorted by most-recent failure first.
+
+---
+
+### Data Source Grouping, Entity Selection & Progress Endpoints *(change-045)*
+
+`@Controller('data')`
+
+| ID | Method | Route | Auth | Input | Return | Service | Notes |
+|----|--------|-------|------|-------|--------|---------|-------|
+| EP-DATA-41 | GET | /api/v1/data/setup-flow | JWT | query: `sourceType` | 200 `{ steps: WizardStep[] }` | SVC-PIPE-TYPE-REG.getSetupFlow() | Backend-driven wizard step sequence for a source type; step kinds `connect \| select-entities \| schema-review \| schedule`; `select-entities` present for all sources except `csv` |
+| EP-DATA-42 | GET | /api/v1/data/connections/:id/datasets | JWT | `:id` · query: page, limit | 200 `Paginated<DatasetListItemDto>` | SVC-DATA-DS.listByConnection() | Lists all Tables (Datasets) grouped under one Data Source (connection); powers the Data Source detail page |
+| EP-DATA-43 | GET | /api/v1/data/connections/:id/entities | JWT | `:id` | 200 `{ entities: DataSourceEntityDto[] }` | SVC-CONN.listEntities() | Generic entity listing via the connector `listEntities()` contract; unifies SQL tables / Mongo collections / Sheets tabs / e-commerce entities; runs live against the source (progress-tracked for slow sources) |
+| EP-DATA-44 | POST | /api/v1/data/connections/:id/datasets/from-entities | JWT | `:id` · body `{ entities: { name, semanticFlag?, extractOptions? }[] }` | 201 `{ datasetIds: string[] }` | SVC-DATA-DS.createFromEntities() | Creates one Dataset per selected entity; idempotent per (connectionId, entity) so re-entering the wizard adds only new tables and never duplicates existing ones; runs `discoverSchemaWithAiProposal()` per dataset |
+| EP-DATA-45 | GET | /api/v1/data/datasets/:id/sync-runs/:runId | JWT | `:id`, `:runId` | 200 `SyncRunDto` | SVC-DATA-SYNC.getRun() | Single sync-run status including live `progress` (0–100) + `phase`; polled by the frontend percentage loader during first sync / re-sync |
+
+- [EP-DATA-41] Reuses the backend-driven wizard registry: resolves the ordered step list for a `sourceType` so the frontend renders the correct flow without per-source hardcoding. Selection-capable sources (`google_sheets`, `shopify`, `salla`, `zid`, `sql_server`, `mongodb_atlas`) include a `select-entities` step; `csv` does not.
+- [EP-DATA-42] Validates workspace ownership of the connection; returns the connection's Datasets with per-table `name`, `sourceRef`/entity, `syncStatus`, `rowCount`, `lastSyncAt`. This is the grouping primitive — the `/app/data` list groups by connection and the detail page calls this to list tables.
+- [EP-DATA-43] Delegates to `connector.listEntities(conn)`. For slow sources (e.g. Zid) the call may create/advance a listing `SyncRun`-style progress signal so the UI can show a percentage loader instead of a blank wait. Never called at dashboard render time.
+- [EP-DATA-44] Creates Datasets from the user's entity selection. Because the operation is keyed on `(connectionId, entity)`, re-opening the wizard to add more tables (or removing/re-adding) is safe and non-destructive to already-synced tables. Replaces the old OAuth-callback auto-provisioning of 3 fixed e-commerce datasets.
+- [EP-DATA-45] Returns a single `SyncRun` with `progress` + `phase`; used by the frontend `ProgressLoader` which polls until `status` is terminal (`success`/`failed`).

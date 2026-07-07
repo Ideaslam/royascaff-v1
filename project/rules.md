@@ -22,9 +22,9 @@ Rotate refresh token on every use (single-use). Store refresh token hash server-
 
 ---
 
-## Module: Data (CSV Management)
+## Module: Data (Multi-Source Data Management)
 
-**Module note:** Owns file upload, row storage, column metadata. AI triggered here but executed by AI Processing. Raw data rows never passed to AI calls.
+**Module note:** Owns data sources (`DataConnection`) and their tables (`Dataset`), the connector engine, entity selection, schema discovery + AI mapping, and sync (with live progress). Legacy CSV upload/row-storage/column-metadata path is retained for backward compat. AI is triggered here but executed by AI Processing. Raw data rows are never passed to AI calls.
 
 ### RULE-DATA-001: CSV Upload Storage & Processing
 Module: Data · Feature: Upload CSV File
@@ -37,6 +37,14 @@ Async BullMQ job (`csv-analysis` queue). Load only `columnmetadata` — never da
 ### RULE-DATA-003: Column Description Confirmation Gate
 Module: Data · Feature: Review Column Descriptions
 Block dashboard generation until ALL columns have `columnmetadata.status = user_confirmed`. On save: set `userDescription` + `status: user_confirmed`. On accept-as-is: copy `aiDescription` → `userDescription`, set confirmed. Set `csvfiles.status = confirmed` when all columns confirmed. Never overwrite confirmed `userDescription` on re-view.
+
+### RULE-DATA-004: Multi-Source Connector Engine *(change-045)*
+Module: Data · Features: Data Sources, Entity Selection, Mapping, Sync Progress
+A **Data Source** is a `DataConnection`; its **Tables** are `Dataset` records grouped by `connectionId`. The UI and APIs group tables under their source — never surface a source's tables (orders/products/customers, sheets, tables, collections) as independent top-level sources. Adding a source stays zero-touch to the engine: implement `ConnectorInterface` (incl. `listEntities()`) + register + add a `setup-flow` entry.
+- **Entity selection is unified:** every source except CSV exposes importable entities via `connector.listEntities()`; datasets are created from the user's selection through `createFromEntities` (idempotent per `(connectionId, entity)` so re-entering the wizard adds/removes tables non-destructively). E-commerce OAuth callbacks must NOT auto-provision fixed datasets — redirect into `select-entities`.
+- **Everything is editable post-setup** from the Data Source detail page: add/remove tables, edit descriptions, edit canonical mapping, change schedule.
+- **Mapping is AI-suggested + user-editable for all semantic sources** (not just csv/google_sheets). Prefill obvious mappings by name-match; `confirmMapping` validates required canonical fields and returns structured `422 { missing }` — never an opaque error. The frontend blocks Confirm and highlights missing rows.
+- **Every long-running fetch reports progress:** `listEntities` and sync pipeline steps write `SyncRun.progress`/`phase`; the frontend shows a percentage `ProgressLoader` (no silent blank waits). Progress is advisory/throttled; `status` remains the terminal truth. Never send raw data rows to AI (RULE-GLOBAL-002 still applies).
 
 ---
 

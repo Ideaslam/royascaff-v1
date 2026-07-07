@@ -36,34 +36,38 @@ Manages named source connection credentials; encrypts/decrypts credentials; vali
 
 ---
 
-### SVC-DATA-DS · DatasetService [internal, application, Data] *(change-015, updated change-022)*
-Manages dataset definitions, column mapping, schema discovery, and AI-assisted mapping proposals.
+### SVC-DATA-DS · DatasetService [internal, application, Data] *(change-015, updated change-022, change-045)*
+Manages dataset definitions, column mapping, schema discovery, AI-assisted mapping proposals, and grouping of tables under a data source.
 
 **Methods:**
 - `create(dto: CreateDatasetDto, userId, workspaceSlug)` — links connection, sets semanticFlag; for CSV datasets calls `discoverSchemaWithAiProposal()` automatically after creation
 - `list(workspaceSlug, filters)` — paginated; filterable by connectionId, semanticFlag, syncStatus
+- `listByConnection(connectionId, workspaceSlug, filters)` — *(change-045)* paginated list of all Tables (Datasets) grouped under one Data Source; powers EP-DATA-42 and the Data Source detail page
+- `createFromEntities(connectionId, workspaceSlug, userId, entities)` — *(change-045)* creates one Dataset per selected entity from the wizard; **idempotent per (connectionId, entity)** so re-entering the wizard adds only new tables and never duplicates; runs `discoverSchemaWithAiProposal()` per created dataset; backs EP-DATA-44 and the e-commerce/DB/Sheets `select-entities` step
 - `get(id, workspaceSlug)` — dataset with schema, last sync info, AI proposal fields
 - `update(id, dto, workspaceSlug)` — updates columnMapping, semanticFlag, description, extractOptions; mapping changes do NOT re-trigger sync
 - `delete(id, workspaceSlug)` — drops OLAP table via `AnalyticsStoreService`; deletes FilterValueMeta; hard-deletes record
-- `discoverSchemaWithAiProposal(id, workspaceSlug)` — *(change-022)* decrypts connection credentials; calls `connector.discoverSchema(conn, dataset)` → writes `Dataset.schema`; then calls AI with `column-mapping` prompt (column names + inferred types + available canonical fields) → writes `aiProposedMapping` + `aiProposedSemanticFlag` as draft fields for user review; never sends raw rows to AI
-- `confirmMapping(id, workspaceSlug, dto: ConfirmMappingDto)` — *(change-022)* writes user-edited (or AI-proposed) values into `columnMapping` + `semanticFlag`; clears `aiProposedMapping` + `aiProposedSemanticFlag`
+- `discoverSchemaWithAiProposal(id, workspaceSlug)` — *(change-022, change-045)* decrypts connection credentials; calls `connector.discoverSchema(conn, dataset)` → writes `Dataset.schema`; then calls AI with `column-mapping` prompt (column names + inferred types + available canonical fields) → writes `aiProposedMapping` + `aiProposedSemanticFlag` as draft fields for user review; never sends raw rows to AI. *(change-045)* Applies a deterministic **name-match prefill** for required canonical fields before/after the AI call so obvious mappings (e.g. `id → customer_id`) are never left blank; runs for every semantic source, not just csv/google_sheets
+- `confirmMapping(id, workspaceSlug, dto: ConfirmMappingDto)` — *(change-022, change-045)* writes user-edited (or AI-proposed) values into `columnMapping` + `semanticFlag`; clears `aiProposedMapping` + `aiProposedSemanticFlag`. *(change-045)* Computes required canonical fields for `semanticFlag`; when any are unmapped, throws `UnprocessableEntity({ missing: string[] })` instead of an opaque validation error, so the UI can highlight the missing rows
 - `updateSchemaColumns(id, workspaceSlug, updates: Array<{name, userDescription?, isPrimaryKey?}>)` — *(change-038)* patches individual `Dataset.schema` columns; setting `isPrimaryKey: true` on one column clears it from all others; used by EP-DATA-40
-- `enqueueSyncJob(id, workspaceSlug, mode: 'full' | 'incremental', triggeredBy)` — validates `syncStatus != syncing`; creates SyncRun record; enqueues `DATA_SYNC_QUEUE` job
+- `enqueueSyncJob(id, workspaceSlug, mode: 'full' | 'incremental', triggeredBy)` — validates `syncStatus != syncing`; creates SyncRun record (`progress: 0`, `phase: queued`); enqueues `DATA_SYNC_QUEUE` job
+- `getRun(id, runId, workspaceSlug)` — *(change-045)* returns a single `SyncRun` with live `progress`/`phase`; backs EP-DATA-45 (frontend progress loader)
 
-**Deps:** DatasetRepository · DataConnectionRepository · DataConnectionService · ConnectorRegistry · AiProviderRegistry · PromptTemplateService · SyncRunRepository · DATA_SYNC_QUEUE (BullMQ) · AnalyticsStoreService · AuditLogService
-**Rules:** `analyticsTable` derived automatically as `ds_{workspaceSlug}_{datasetId}` — never caller-supplied · Sync enqueue blocked if `syncStatus = syncing` · `discoverSchemaWithAiProposal` never exposes raw rows to AI — only column names, inferred types, and sample values · `confirmMapping` is the only way to promote AI proposal fields into live `columnMapping`
+**Deps:** DatasetRepository · DataConnectionRepository · DataConnectionService · ConnectorRegistry · AiProviderRegistry · PromptTemplateService · SyncRunRepository · DATA_SYNC_QUEUE (BullMQ) · AnalyticsStoreService · AuditLogService · `canonical-fields.config` (required-field resolver)
+**Rules:** `analyticsTable` derived automatically as `ds_{workspaceSlug}_{datasetId}` — never caller-supplied · Sync enqueue blocked if `syncStatus = syncing` · `discoverSchemaWithAiProposal` never exposes raw rows to AI — only column names, inferred types, and sample values · `confirmMapping` is the only way to promote AI proposal fields into live `columnMapping`, and enforces required-field completeness via structured `{ missing }` *(change-045)* · `createFromEntities` is non-destructive/idempotent so data sources stay fully editable *(change-045)*
 
 ---
 
-### SVC-DATA-SYNC · SyncService (DataSyncProcessor) [internal, application, Data] *(change-018)*
+### SVC-DATA-SYNC · SyncService (DataSyncProcessor) [internal, application, Data] *(change-018, updated change-045)*
 BullMQ worker that executes a full or incremental dataset sync via the PipelineEngine.
 
 **Methods:**
 - `process(job: Job<{ datasetId, syncRunId, workspaceSlug, pipelineRunId?, mode }>): Promise<void>` — resolves Dataset + DataConnection, runs `PipelineEngine.run('ingest', { dataset, connection, … })`, marks SyncRun completed/failed, calls `FilterValuesService.computeAndStore` after success
+- `updateProgress(syncRunId, workspaceSlug, { progress, phase, rowsIn?, rowsLoaded? })` — *(change-045)* throttled writer used by pipeline steps to advance `SyncRun.progress`/`phase` (and running row counts) so the frontend loader reflects live status
 
 **Deps:** DatasetRepository · DataConnectionRepository · SyncRunRepository · FilterValueMetaRepository · FilterValuesService · PipelineEngine · WorkspaceRepository
-**Side effects:** OLAP inserts · FilterValueMeta refresh · SyncRun status updates
-**Rules:** On pipeline error: SyncRun.status = `failed` + errorMessage captured · Filter refresh only after successful sync · Never re-runs a running SyncRun
+**Side effects:** OLAP inserts · FilterValueMeta refresh · SyncRun status/progress updates
+**Rules:** On pipeline error: SyncRun.status = `failed` + errorMessage captured · Filter refresh only after successful sync · Never re-runs a running SyncRun · *(change-045)* `progress`/`phase` are advisory and throttled (e.g. ≤1 write/sec); terminal truth remains `status`
 
 ---
 

@@ -25,8 +25,11 @@ Maps step type strings to `PipelineStepInterface` implementations. Steps self-re
 
 ---
 
-### SVC-PIPE-TYPE-REG · PipelineTypeRegistry [internal, domain, Pipelines] *(change-019, change-020)*
-Registry of named pipeline types, each defining an ordered list of `PipelineStepConfig` entries.
+### SVC-PIPE-TYPE-REG · PipelineTypeRegistry [internal, domain, Pipelines] *(change-019, change-020, change-045)*
+Registry of named pipeline types, each defining an ordered list of `PipelineStepConfig` entries. Also the single source of truth for the backend-driven **setup flow** (wizard step sequence per data source).
+
+**Methods (change-045):**
+- `getSetupFlow(sourceType: DataSourceType): WizardStep[]` — returns the ordered wizard step list for a source; step kinds `connect | select-entities | schema-review | schedule`. Emits `select-entities` for every source except `csv`. Backs EP-DATA-41 so the frontend renders each source's flow without per-source hardcoding.
 
 **Registered pipeline types:**
 
@@ -41,15 +44,17 @@ Registry of named pipeline types, each defining an ordered list of `PipelineStep
 
 ---
 
-### SVC-PIPE-STEPS-INGEST · Data Ingestion Steps [internal, domain, Pipelines] *(change-019)*
+### SVC-PIPE-STEPS-INGEST · Data Ingestion Steps [internal, domain, Pipelines] *(change-019, change-045)*
 
-- **ExtractStep** (`extract`) — requires `ctx.connection` + `ctx.dataset`; resolves connector from `ConnectorRegistry`, calls `connector.extract(creds, opts)`; stores raw rows in `ctx.rows`
+*(change-045)* Each ingest step advances `SyncRun.progress`/`phase` via `SyncService.updateProgress()` as it runs, so the frontend percentage loader reflects real stage (discovering → extracting → loading → finalizing). Progress writes are throttled and never block ingestion.
+
+- **ExtractStep** (`extract`) — requires `ctx.connection` + `ctx.dataset`; resolves connector from `ConnectorRegistry`, calls `connector.extract(creds, opts)`; stores raw rows in `ctx.rows`; sets phase `extracting` and updates `rowsIn`/progress as batches accrue *(change-045)*
 - **IdentifyColumnsStep** (`identify-columns`, order 15) *(change-038)* — AI-assisted; skips if all columns already have descriptions (idempotent); samples up to 10 rows from `ctx.rows`; calls AI with `column-identify` prompt (column name, type, up to 5 sample values per column) → receives `{ name, description, descriptionAr, isPrimaryKey }` per column; writes results into `Dataset.schema` in DB; stores `ctx.metadata['primaryKeyColumn']` for downstream steps; on AI failure: logs warning + continues
 - **ApplyMappingStep** (`apply-mapping`) — requires `ctx.dataset`; applies `dataset.columnMapping` to rename row keys to canonical fields
 - **TrimStep** (`trim`) — trims leading/trailing whitespace from string values
 - **TypeCastStep** (`type-cast`) — casts row values to the types declared in `dataset.schema`
 - **DedupeStep** (`dedupe`) — removes exact-duplicate rows within the batch; optionally dedupes by a `keyColumn` step config
-- **LoadStep** (`load`) — requires `ctx.dataset`; on **FULL** sync: drops + recreates OLAP table first to prevent data duplication *(change-038)*; then batch-inserts `ctx.rows` via `AnalyticsStoreService`; on **INCREMENTAL** sync: appends without truncation
+- **LoadStep** (`load`) — requires `ctx.dataset`; on **FULL** sync: drops + recreates OLAP table first to prevent data duplication *(change-038)*; then batch-inserts `ctx.rows` via `AnalyticsStoreService`; on **INCREMENTAL** sync: appends without truncation; sets phase `loading`/`finalizing` and updates `rowsLoaded`/progress as batches insert *(change-045)*
 
 ---
 

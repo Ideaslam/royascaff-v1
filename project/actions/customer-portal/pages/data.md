@@ -1,11 +1,36 @@
 ## Module: Data (Multi-Source Data Management)
 
-### Data Sources Home Page *(change-022, change-038)*
+### Data Sources Home Page *(change-022, change-038, change-045)*
 - Route: `/app/data`
-- Components: DataSourcesPage — dataset cards with: source icon, name, type, rowCount, lastSyncAt, syncStatus badge; actions on card header: Full Sync icon button + Incremental Sync icon button (disabled + tooltip "No primary key" when `schema` has no PK column); clicking card navigates to detail page; "Connect Source" dialog
-- Service: `GET /api/v1/data/datasets` (list); `POST /api/v1/data/datasets/:id/sync` (with `{ mode }` body)
+- Components: DataSourcesPage — **grouped by Data Source** *(change-045)*: one card per `DataConnection` (source icon, name, sourceType, status, **table count**, aggregate last-sync). Previously rendered each dataset (orders/products/customers) as its own card — now those are Tables shown **inside** their parent source. Clicking a source card navigates to the Data Source detail page. "Connect Source" dialog launches the shared setup wizard. Legacy CSV files still surface as single-table sources.
+- Service: `GET /api/v1/data/connections` (list sources); `GET /api/v1/data/connections/:id/datasets` (table count / preview per source, EP-DATA-42)
 - Guard: authGuard + onboardingGuard
-- States: loading skeleton · empty state (no datasets yet) · error toast
+- States: loading skeleton · empty state (no sources yet) · error toast
+
+### Data Source Detail Page *(change-045)*
+- Route: `/app/data/sources/:connectionId`
+- Components: DataSourceDetailPage — everything about one Data Source in one place:
+  - **Header:** source name, sourceType badge, connection status, "Test Connection", "Edit Source" (credentials/name)
+  - **Tables list:** all Tables (Datasets) under this source via `GET /connections/:id/datasets`; per row: name, entity/semanticFlag, syncStatus, rowCount, lastSyncAt; row actions: Full/Incremental Sync, open Table detail, remove table
+  - **Add / Manage Tables:** "Add tables" re-opens the shared `select-entities` step to add new entities/tables/collections/sheets to this source (non-destructive — existing tables untouched); backed by EP-DATA-43 (list entities) + EP-DATA-44 (create from selection)
+  - **Per-table config** (opens Dataset/Table detail): edit field descriptions, edit canonical mapping, set watermark/PK, change schedule — all editable post-setup
+- Service: `GET /api/v1/data/connections/:id`; `GET /api/v1/data/connections/:id/datasets` (EP-DATA-42); `GET /api/v1/data/connections/:id/entities` (EP-DATA-43); `POST /api/v1/data/connections/:id/datasets/from-entities` (EP-DATA-44); `POST /api/v1/data/datasets/:id/sync`; `DELETE /api/v1/data/datasets/:id`
+- Guard: authGuard
+- States: loading skeleton · empty (source has no tables yet → prompt to add) · error toast · progress loader while adding tables (entity listing can be slow)
+
+### Backend-Driven Setup Wizard (shared, all sources) *(change-039, change-045)*
+- Route: `/app/data/connect/:sourceType` (and re-entered from the Data Source detail page to add tables)
+- Components: DatasetSetupWizardPage — renders the step sequence returned by `GET /api/v1/data/setup-flow?sourceType=…` (EP-DATA-41). Step kinds:
+  - **`connect`** — source-specific credential/OAuth entry (CSV upload, OAuth redirect, DB URI/creds). OAuth callbacks (Zid/Salla/Shopify/Google) land here or skip straight to `select-entities`.
+  - **`select-entities`** *(change-045)* — **shared "choose what to import" step for every source except CSV**: lists entities via `GET /connections/:id/entities` (EP-DATA-43) — e-commerce orders/products/customers, Google Sheets tabs, SQL tables, Mongo collections — as a multi-select checklist with name/label/type/preselect; "Import selected" calls `POST /connections/:id/datasets/from-entities` (EP-DATA-44). Shows a **percentage ProgressLoader** while entities are being fetched (fixes the long, loader-less Zid wait).
+  - **`schema-review`** *(change-045)* — **shown for all semantic sources** (not just csv/google_sheets): editable AI-proposed mapping table (canonical field → source column, with name-match prefill) + semanticFlag picker; "Refresh AI proposal" (EP-DATA-22); "Confirm" (EP-DATA-23). Confirm is disabled and missing rows highlighted when the server returns `422 { missing }` — never a raw error.
+  - **`schedule`** — syncPolicy selector + "Start sync"; first sync shows the **percentage ProgressLoader** polling `GET /datasets/:id/sync-runs/:runId` (EP-DATA-45) until terminal.
+- Service: EP-DATA-41; EP-DATA-43; EP-DATA-44; EP-DATA-22; EP-DATA-23; EP-DATA-20; EP-DATA-45
+- Guard: authGuard
+- Notes: Supersedes the per-source setup pages below (change-023..028) which are retained here for historical reference; the shared wizard is the live flow. The wizard is fully reusable — a new data source only needs its connector's `listEntities()` + a `setup-flow` entry.
+
+### Shared UI — ProgressLoader *(change-045)*
+- Component: ProgressLoaderComponent (reusable) — percentage ring/bar + phase label; polls a `SyncRun` (or entity-listing signal) and renders `progress` + `phase` (queued/listing/discovering/extracting/loading/finalizing). Used by the setup wizard (entity listing, first sync) and the Data Source detail page (add-tables, re-sync). Replaces silent blank waits across all sources.
 
 ### CSV Upload Page *(change-022)*
 - Route: `/app/data/csv-upload`

@@ -101,14 +101,14 @@ Shopify Partner App OAuth 2.0 flow for data connections.
 
 ---
 
-### SVC-CONN-SHOPIFY-DS · ShopifyDatasetService [internal, application, Data] *(change-024)*
-Creates one `Dataset` per selected Shopify entity from a single `DataConnection`.
+### SVC-CONN-SHOPIFY-DS · ShopifyDatasetService [internal, application, Data] *(change-024, updated change-045)*
+Creates one `Dataset` per **user-selected** Shopify entity from a single `DataConnection`.
 
 **Methods:**
-- `createEntityDatasets(workspaceSlug: string, connectionId: string, userId: string, entities: ('orders' | 'products' | 'customers')[])` — for each entity: creates a `Dataset` with `semanticFlag = entity`, runs `discoverSchemaWithAiProposal()`, returns array of created Dataset records
+- `createEntityDatasets(workspaceSlug, connectionId, userId, entities: ('orders'|'products'|'customers')[])` — for each entity: creates a `Dataset` with `semanticFlag = entity`, runs `discoverSchemaWithAiProposal()`, returns created Dataset records; **idempotent per (connectionId, entity)** so re-entering the wizard adds only new tables *(change-045)*
 
 **Deps:** DatasetService · DatasetRepository · DataConnectionService
-**Rules:** Each entity → independent Dataset (separate OLAP table) · Canonical views include all entity tables across connectors
+**Rules:** Each entity → independent Dataset (separate OLAP table) grouped under one Shopify connection · Canonical views include all entity tables across connectors · entity selection comes from the shared `select-entities` wizard step (backed by `connector.listEntities()`), not a hardcoded all-three provision *(change-045)*
 
 ---
 
@@ -152,15 +152,16 @@ Salla Partner App OAuth 2.0 flow for data connections.
 
 ---
 
-### SVC-CONN-SALLA-DS · SallaDatasetService [internal, application, Data] *(change-025)*
-Creates one `Dataset` per selected Salla entity from a single `DataConnection`.
+### SVC-CONN-SALLA-DS · SallaDatasetService [internal, application, Data] *(change-025, updated change-045)*
+Creates one `Dataset` per **user-selected** Salla entity from a single `DataConnection`.
 
 **Methods:**
-- `provisionFromOAuth(workspaceSlug, userId, tokens)` — creates `DataConnection(sourceType=salla)` with encrypted tokens; creates 3 Datasets (orders, products, customers) each with `sourceRef` set; runs `discoverSchemaWithAiProposal()` for each; enqueues initial full sync; returns `{ connectionId, datasetIds }`
+- `connectFromOAuth(workspaceSlug, userId, tokens)` — creates `DataConnection(sourceType=salla)` with encrypted tokens and returns `{ connectionId }`; **no longer auto-creates 3 Datasets** — the OAuth callback redirects to the `select-entities` wizard step *(change-045)*
+- `createSelectedEntities(workspaceSlug, connectionId, userId, entities)` — for each selected entity: creates a `Dataset` with `sourceRef`/`semanticFlag`, runs `discoverSchemaWithAiProposal()`; idempotent per (connectionId, entity) *(change-045)*
 - `applyWebhookEvent(workspaceSlug, topic, payload)` — maps Salla event topic to entity type; finds matching Datasets; enqueues incremental sync
 
 **Deps:** DataConnectionService · DatasetRepository · DatasetService · SyncService
-**Rules:** Each entity → independent Dataset (separate OLAP table) · Canonical views include both Salla and Shopify entity tables
+**Rules:** Each entity → independent Dataset (separate OLAP table) grouped under one Salla connection · Canonical views include both Salla and Shopify entity tables · entity set chosen in the wizard via `connector.listEntities()` *(change-045)*
 
 ---
 
@@ -203,15 +204,16 @@ Zid Partner App OAuth 2.0 flow for data connections.
 
 ---
 
-### SVC-CONN-ZID-DS · ZidDatasetService [internal, application, Data] *(change-026)*
-Creates one `Dataset` per Zid entity from a single `DataConnection`.
+### SVC-CONN-ZID-DS · ZidDatasetService [internal, application, Data] *(change-026, updated change-045)*
+Creates one `Dataset` per **user-selected** Zid entity from a single `DataConnection`.
 
 **Methods:**
-- `provisionFromOAuth(workspaceSlug, userId, authorizationToken, accessToken, expiresAt)` — creates `DataConnection(sourceType=zid)` with encrypted dual-token credentials; creates 3 Datasets (orders, products, customers) each with `sourceRef` set; runs `discoverSchemaWithAiProposal()`; enqueues initial full sync; returns `{ connectionId, datasetIds }`
+- `connectFromOAuth(workspaceSlug, userId, authorizationToken, accessToken, expiresAt)` — creates `DataConnection(sourceType=zid)` with encrypted dual-token credentials and returns `{ connectionId }`; **no longer auto-creates 3 Datasets** — the OAuth callback redirects to the `select-entities` wizard step *(change-045)*
+- `createSelectedEntities(workspaceSlug, connectionId, userId, entities)` — for each selected entity: creates a `Dataset` with `sourceRef`/`semanticFlag`, runs `discoverSchemaWithAiProposal()`; idempotent per (connectionId, entity) *(change-045)*
 - `applyWebhookEvent(workspaceSlug, topic)` — maps Zid event topic to entity type; finds matching Datasets; enqueues incremental sync
 
 **Deps:** DataConnectionService · DatasetRepository · DatasetService · SyncService
-**Rules:** Each entity → independent Dataset (separate OLAP table) · Canonical views include Zid, Salla, and Shopify entity tables
+**Rules:** Each entity → independent Dataset (separate OLAP table) grouped under one Zid connection · Canonical views include Zid, Salla, and Shopify entity tables · entity set chosen in the wizard via `connector.listEntities()` (progress-tracked, since Zid listing is slow) *(change-045)*
 
 ---
 
@@ -257,16 +259,33 @@ Builds safe, parameterized SQL strings for SQL Server operations.
 **Rules:** All identifiers sanitized against schema whitelist before insertion into query strings · Never concatenates raw user input
 
 ---
+### SVC-CONN-INTERFACE · ConnectorInterface [internal, domain, Connectors] *(change-018, updated change-045)*
 Contract every data source adapter must implement.
 
 ```typescript
+interface DataSourceEntity {
+  name: string;                 // provider identifier (table/collection/sheet/entity name)
+  label: string;                // human-readable label
+  kind: 'entity' | 'sheet' | 'table' | 'collection';
+  semanticFlag?: SemanticFlag;  // suggested flag for e-commerce entities (orders/products/customers)
+  preselected?: boolean;        // UI default-checked
+  meta?: Record<string, unknown>; // e.g. columnCount, rowEstimate, sheetGid
+}
+
 interface ConnectorInterface {
-  testConnection(creds: Record<string, unknown>): Promise<{ ok: boolean; error?: string }>;
-  discoverSchema(creds: Record<string, unknown>, opts?: Record<string, unknown>): Promise<ColumnSpec[]>;
-  extract(creds: Record<string, unknown>, opts?: Record<string, unknown>): AsyncGenerator<Record<string, unknown>[]>;
-  normalize(rows: Record<string, unknown>[], mapping: Record<string, string>): Record<string, unknown>[];
+  testConnection(conn: DataConnectionDocument): Promise<{ ok: boolean; error?: string }>;
+  discoverSchema(conn: DataConnectionDocument, dataset: DatasetDocument): Promise<DiscoveredColumn[]>;
+  extract(conn: DataConnectionDocument, dataset: DatasetDocument, opts: ExtractOptions): AsyncGenerator<Record<string, unknown>[]>;
+  normalize(rows: Record<string, unknown>[], schema: DiscoveredColumn[]): Record<string, unknown>[];
+  // change-045 — unified entity listing used by the shared "select what to import" wizard step.
+  // Replaces the ad-hoc listTables()/listCollections() helpers. csv returns []; e-commerce
+  // returns orders/products/customers; google_sheets returns tabs; sql_server/mongodb_atlas
+  // return tables/collections. May be progress-tracked for slow sources.
+  listEntities(conn: DataConnectionDocument): Promise<DataSourceEntity[]>;
 }
 ```
+
+**Rules:** `listEntities()` is the single source of truth for the wizard's `select-entities` step across all connectors · slow implementations (e.g. Zid) surface progress so the UI can show a percentage loader · adding a new source still only requires implementing this interface + `registry.register()`.
 
 ---
 
