@@ -43,9 +43,11 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 ---
 
+| 015 | 2026-07-06 | high | backend/integrations/zid | Zid OAuth empty client_id / redirect_uri on dev | DONE | [bug-015-zid-oauth-token-exchange.md](./bug-015-zid-oauth-token-exchange.md) |
+
 ## Next Bug Number
 
-**Next**: 015
+**Next**: 016
 
 | 012 | 2026-07-05 | medium | customer-portal/data/google-sheets-setup | Google Sheets setup requires spreadsheet ID instead of URL | PENDING | [bug-012-google-sheets-url-instead-of-id.md](./bug-012-google-sheets-url-instead-of-id.md) |
 | 013 | 2026-07-06 | medium | customer-portal/subscriptions | Subscription page shows plan UI before DB data is ready | DONE | [bug-013-subscription-page-initial-plan-flash.md](./bug-013-subscription-page-initial-plan-flash.md) |
