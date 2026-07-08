@@ -1,8 +1,0 @@
-## Module: Template Catalog *(change-049)*
-
-### Template Catalog Page
-- Route: `/app/template-catalog`
-- Components: TemplateCatalogPage — three-level master-detail: industries list (table with NameEn/NameAr/Fields count/Active toggle/Actions; create + edit dialogs with bilingual fields, icon, sortOrder) → selected industry's fields (same CRUD pattern) → selected field's templates (table with NameEn/NameAr/Required models tags/Active toggle/Actions). Template create/edit dialog: bilingual metadata + `requiredModels` editor (semanticFlag picker + required toggle + usedFields multiselect from canonical dictionary) + `widgetBlueprint` JSON editor (textarea with client-side JSON parse + server-side validation errors rendered per widget index). Delete uses confirm dialog; industry/field delete blocked with a clear message while children exist (409).
-- Service: TemplateCatalogAdminService — `listIndustries()` → `GET /api/v1/admin/template-catalog/industries`; `createIndustry()` / `updateIndustry()` / `toggleIndustry()` / `deleteIndustry()`; `listFields(industryId)` / `createField()` / `updateField()` / `toggleField()` / `deleteField()`; `listTemplates(fieldId)` / `getTemplate(id)` / `createTemplate()` / `updateTemplate()` / `toggleTemplate()` / `deleteTemplate()` — all under `${apiUrl}/admin/template-catalog/...`
-- Guard: authGuard + adminGuard
-- Notes: follows the `data-source-types.page.ts` pattern (standalone component, inline template, signals, PrimeNG table/dialog/toggleswitch/toast); admin app has no ngx-translate — bilingual content edited via `*En`/`*Ar` form fields; sidebar nav item "Template Catalog" (icon `pi-objects-column`) added in `app-shell.ts`.
