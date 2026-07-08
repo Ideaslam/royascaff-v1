@@ -47,7 +47,7 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 ## Next Bug Number
 
-**Next**: 019
+**Next**: 021
 
 | 018 | 2026-07-08 | medium | admin-portal/http | Admin panel duplicate API calls + consolidated admin routes | DONE | [bug-018-admin-double-api-calls.md](./bug-018-admin-double-api-calls.md) |
 
@@ -56,3 +56,4 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 | 014 | 2026-07-06 | medium | customer-portal/dashboards | Dashboard does not expand when sidebar collapsed | DONE | [bug-014-dashboard-width-sidebar-collapsed.md](./bug-014-dashboard-width-sidebar-collapsed.md) |
 | 016 | 2026-07-07 | high | backend/subscriptions, admin-portal/subscriptions | Create workspace subscription returns User not found (404) | DONE | [bug-016-create-subscription-user-not-found.md](./bug-016-create-subscription-user-not-found.md) |
 | 017 | 2026-07-07 | high | admin-portal/deploy | Deployed admin fails to load stale lazy chunk | DONE | [bug-017-admin-chunk-load-failed.md](./bug-017-admin-chunk-load-failed.md) |
+| 020 | 2026-07-08 | high | backend/integrations/zid | Zid app activation fails after integration | PENDING | [bug-020-zid-app-activation-error.md](./bug-020-zid-app-activation-error.md) |
