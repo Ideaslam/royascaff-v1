@@ -47,10 +47,11 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 | 021 | 2026-07-09 | medium | customer-portal/frontend/widgets | Widget numbers not rounded to 2 decimals | PENDING | [bug-021-widget-numbers-two-decimals.md](./bug-021-widget-numbers-two-decimals.md) |
 | 022 | 2026-07-09 | low | customer-portal/dashboards | Widget loading spinner off-center / poor design | DONE | [bug-022-widget-loader-redesign.md](./bug-022-widget-loader-redesign.md) |
+| 023 | 2026-07-09 | high | customer-portal/shared-viewer + backend/dashboards | Filters stuck loading on share link | DONE | [../changes/change-051-bug-fix-share-link-filters/](../changes/change-051-bug-fix-share-link-filters/) |
 
 ## Next Bug Number
 
-**Next**: 023
+**Next**: 024
 
 | 018 | 2026-07-08 | medium | admin-portal/http | Admin panel duplicate API calls + consolidated admin routes | DONE | [bug-018-admin-double-api-calls.md](./bug-018-admin-double-api-calls.md) |
 
