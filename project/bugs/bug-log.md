@@ -45,9 +45,11 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 | 015 | 2026-07-06 | high | backend/integrations/zid | Zid OAuth empty client_id / redirect_uri on dev | DONE | [bug-015-zid-oauth-token-exchange.md](./bug-015-zid-oauth-token-exchange.md) |
 
+| 021 | 2026-07-09 | medium | customer-portal/frontend/widgets | Widget numbers not rounded to 2 decimals | PENDING | [bug-021-widget-numbers-two-decimals.md](./bug-021-widget-numbers-two-decimals.md) |
+
 ## Next Bug Number
 
-**Next**: 021
+**Next**: 022
 
 | 018 | 2026-07-08 | medium | admin-portal/http | Admin panel duplicate API calls + consolidated admin routes | DONE | [bug-018-admin-double-api-calls.md](./bug-018-admin-double-api-calls.md) |
 
