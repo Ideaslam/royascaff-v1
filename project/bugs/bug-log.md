@@ -50,9 +50,11 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 | 023 | 2026-07-09 | high | customer-portal/shared-viewer + backend/dashboards | Filters stuck loading on share link | DONE | [../changes/change-051-bug-fix-share-link-filters/](../changes/change-051-bug-fix-share-link-filters/) |
 | 024 | 2026-07-09 | low | customer-portal/auth | Login/register field & button padding too tight | PENDING | [bug-024-auth-form-padding.md](./bug-024-auth-form-padding.md) |
 
+| 025 | 2026-07-09 | high | backend/data+pipelines, customer-portal/data | SQL Server: slow schema AI, no table search, sync buffers all rows in memory | ESCALATED | [../changes/change-053-bug-fix-sql-server-perf-streaming/](../changes/change-053-bug-fix-sql-server-perf-streaming/) |
+
 ## Next Bug Number
 
-**Next**: 025
+**Next**: 026
 
 | 018 | 2026-07-08 | medium | admin-portal/http | Admin panel duplicate API calls + consolidated admin routes | DONE | [bug-018-admin-double-api-calls.md](./bug-018-admin-double-api-calls.md) |
 
