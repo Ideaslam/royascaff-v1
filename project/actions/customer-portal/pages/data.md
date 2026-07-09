@@ -23,9 +23,9 @@
 - Components: DatasetSetupWizardPage — renders the step sequence returned by `GET /api/v1/data/setup-flow?sourceType=…` (EP-DATA-41). Step kinds:
   - **`connect`** — source-specific credential/OAuth entry (CSV upload, OAuth redirect, DB URI/creds). OAuth callbacks (Zid/Salla/Shopify/Google) land here or skip straight to `select-entities`.
   - **`select-entities`** *(change-045)* — **shared "choose what to import" step for every source except CSV**: lists entities via `GET /connections/:id/entities` (EP-DATA-43) — e-commerce orders/products/customers, Google Sheets tabs, SQL tables, Mongo collections — as a multi-select checklist with name/label/type/preselect; "Import selected" calls `POST /connections/:id/datasets/from-entities` (EP-DATA-44). Shows a **percentage ProgressLoader** while entities are being fetched (fixes the long, loader-less Zid wait).
-  - **`schema-review`** *(change-045)* — **shown for all semantic sources** (not just csv/google_sheets): editable AI-proposed mapping table (canonical field → source column, with name-match prefill) + semanticFlag picker. A **"Map with AI"** button (`POST /datasets/:id/propose-mapping`, EP-DATA-46) runs AI mapping on demand for the currently-selected canonical type and fills the dropdowns (editable) — available for every source incl. CSV, shown once a non-arbitrary type is chosen; shows a loading state + inline error on failure. "Confirm" (EP-DATA-23). Confirm is disabled and missing rows highlighted when the server returns `422 { missing }` — never a raw error.
+  - **`schema-review`** *(change-045, change-055)* — **shown for all semantic sources**: column selection table from `availableColumns` — **checkbox | order | name | type | description | PK | blocked badge**; drag-to-reorder + up/down; AI pre-selects ~25 (incl. FKs); blocked rows disabled with alert styling/tooltip; ≥1 selected required; missing PK allowed with message that incremental sync needs a PK; deselect mapped → warn, reject if mandatory. Then editable AI-proposed mapping (source dropdowns = selected columns) + semanticFlag picker. **"Map with AI"** (EP-DATA-46). Confirm: EP-DATA-48 (schema selection prune) then EP-DATA-23 (mapping); mapping Confirm disabled on `422 { missing }`.
   - **`schedule`** — syncPolicy selector + "Start sync"; first sync shows the **percentage ProgressLoader** polling `GET /datasets/:id/sync-runs/:runId` (EP-DATA-45) until terminal.
-- Service: EP-DATA-41; EP-DATA-43; EP-DATA-44; EP-DATA-22; EP-DATA-23; EP-DATA-46; EP-DATA-20; EP-DATA-45
+- Service: EP-DATA-41; EP-DATA-43; EP-DATA-44; EP-DATA-22; EP-DATA-48; EP-DATA-23; EP-DATA-46; EP-DATA-20; EP-DATA-45
 - Guard: authGuard
 - Notes: Supersedes the per-source setup pages below (change-023..028) which are retained here for historical reference; the shared wizard is the live flow. The wizard is fully reusable — a new data source only needs its connector's `listEntities()` + a `setup-flow` entry.
 
@@ -46,10 +46,10 @@
 - Route: `/app/data/datasets/:id`
 - Components: DatasetDetailPage — tabs:
   - **Overview:** dataset name, sourceType, semanticFlag badge, syncStatus badge, rowCount, analyticsTable; "Re-sync" button (EP-DATA-20); last sync timestamp + error message
-  - **Schema:** discovered columns table (name, type, sample values); "Refresh Schema" button (EP-DATA-22)
-  - **Mapping:** columnMapping editor — table with canonical field → source column dropdown; "Confirm Changes" button (EP-DATA-23)
+  - **Schema:** live selected columns + **Edit Schema** (selection UI over `availableColumns`) + **Add column** (EP-DATA-49 refresh from source, AI for new cols) + confirm selection (EP-DATA-48); Save Schema patches (EP-DATA-40) where applicable
+  - **Mapping:** columnMapping editor — table with canonical field → source column dropdown (selected columns); "Confirm Changes" button (EP-DATA-23)
   - **Sync History:** paginated sync runs table (mode, status, rowsIn, rowsLoaded, duration, error); (EP-DATA-21)
-- Service: `GET /api/v1/data/datasets/:id`; `POST /api/v1/data/datasets/:id/sync`; `POST /api/v1/data/datasets/:id/discover-schema`; `POST /api/v1/data/datasets/:id/confirm-mapping`; `GET /api/v1/data/datasets/:id/sync-history`
+- Service: `GET /api/v1/data/datasets/:id`; `POST /api/v1/data/datasets/:id/sync`; `POST /api/v1/data/datasets/:id/refresh-available-columns` (EP-DATA-49); `POST /api/v1/data/datasets/:id/confirm-schema-selection` (EP-DATA-48); `POST /api/v1/data/datasets/:id/confirm-mapping`; `GET /api/v1/data/datasets/:id/sync-history`
 - Guard: authGuard
 
 ### Legacy CSV — Data Files List Page *(kept for backward compat)*
@@ -171,9 +171,9 @@
   - **Sync History Table:** calls `EP in GET /data/datasets/:id/sync-runs`; columns: date, mode (FULL/INCR), status badge (queued/running/done/failed/cancelled), rows loaded, duration, error preview; sorted newest-first
   - **Retry Button:** shown on rows with `status = failed`; calls `EP-DATA-39 POST .../sync-runs/:runId/retry`; re-fetches history on success
   - **Full Sync / Incremental Sync buttons** *(change-038)*: replaces single "Sync Now" button; Full Sync always enabled; Incremental Sync disabled (tooltip: "Add a primary key column first") when no `schema` column has `isPrimaryKey = true`; both disabled when `syncStatus = syncing`
-  - **Schema Columns Section** *(change-038)*: shows discovered columns table with columns: name, type, description (inline editable input), PK checkbox (`isPrimaryKey` toggle — checking one clears others); "Save Schema" button calls EP-DATA-40; "Refresh Schema" button calls EP-DATA-22; loading skeleton while saving
+  - **Schema Columns Section** *(change-038, change-055)*: table **checkbox | order | name | type | description | PK | blocked badge**; drag + up/down reorder; blocked = disabled checkbox + alert color; "Save / Confirm Selection" → EP-DATA-48 (prune live schema); lightweight desc/PK patches → EP-DATA-40; **Edit Schema** opens full `availableColumns`; **Add column** → EP-DATA-49 then user selects + confirm + **manual sync** for OLAP data; save blocked while `syncStatus = syncing`; EN/AR i18n for new strings
   - **Subscription Limit Warning:** shown inline when retry/manual-sync returns 403 with sync limit code
-- Service: `GET /data/datasets/:id`; `GET /data/datasets/:id/sync-runs`; `POST /data/datasets/:id/sync` (with `{ mode }` body); `POST /data/datasets/:id/sync-runs/:runId/retry`; `PATCH /data/datasets/:id`; `PATCH /data/datasets/:id/schema-columns` (EP-DATA-40)
+- Service: `GET /data/datasets/:id`; `GET /data/datasets/:id/sync-runs`; `POST /data/datasets/:id/sync` (with `{ mode }` body); `POST /data/datasets/:id/sync-runs/:runId/retry`; `PATCH /data/datasets/:id`; `PATCH /data/datasets/:id/schema-columns` (EP-DATA-40); `POST /data/datasets/:id/confirm-schema-selection` (EP-DATA-48); `POST /data/datasets/:id/refresh-available-columns` (EP-DATA-49)
 - Guard: authGuard
 - States: history table has loading skeleton; running rows poll every 5s (or on-demand refresh); retry row spins during re-queue; schema save shows inline saving indicator
 

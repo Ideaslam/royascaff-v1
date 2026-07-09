@@ -42,9 +42,16 @@ Block dashboard generation until ALL columns have `columnmetadata.status = user_
 Module: Data · Features: Data Sources, Entity Selection, Mapping, Sync Progress
 A **Data Source** is a `DataConnection`; its **Tables** are `Dataset` records grouped by `connectionId`. The UI and APIs group tables under their source — never surface a source's tables (orders/products/customers, sheets, tables, collections) as independent top-level sources. Adding a source stays zero-touch to the engine: implement `ConnectorInterface` (incl. `listEntities()`) + register + add a `setup-flow` entry.
 - **Entity selection is unified:** every source except CSV exposes importable entities via `connector.listEntities()`; datasets are created from the user's selection through `createFromEntities` (idempotent per `(connectionId, entity)` so re-entering the wizard adds/removes tables non-destructively). E-commerce OAuth callbacks must NOT auto-provision fixed datasets — redirect into `select-entities`.
-- **Everything is editable post-setup** from the Data Source detail page: add/remove tables, edit descriptions, edit canonical mapping, change schedule.
+- **Everything is editable post-setup** from the Data Source detail page: add/remove tables, edit descriptions, **edit column selection (Edit Schema / Add column)**, edit canonical mapping, change schedule.
 - **Mapping is AI-suggested + user-editable for all semantic sources** (not just csv/google_sheets). Prefill obvious mappings by name-match; `confirmMapping` validates required canonical fields and returns structured `422 { missing }` — never an opaque error. The frontend blocks Confirm and highlights missing rows.
 - **Every long-running fetch reports progress:** `listEntities` and sync pipeline steps write `SyncRun.progress`/`phase`; the frontend shows a percentage `ProgressLoader` (no silent blank waits). Progress is advisory/throttled; `status` remains the terminal truth. Never send raw data rows to AI (RULE-GLOBAL-002 still applies).
+
+### RULE-DATA-005: Column Selection, Blocked Columns & OLAP Projection *(change-055)*
+Module: Data · Features: Schema Discovery, Schema Review, Sync
+- **Full vs live schema:** `availableColumns` holds the full last-discovered list; live `Dataset.schema` holds only user-confirmed **selected** columns (ordered). Confirm selection (EP-DATA-48) is the only prune path; failed confirm leaves schema unchanged.
+- **AI (one `column-identify` call):** descriptions + PK + `isSelected`/`selectionOrder` (soft ~25, always include PK + important FKs) + `blocked` for sensitive fields (passwords, tokens, secrets). Setup runs this before schema-review (option A). AI failure → select none. `blocked` forces unselected and is never user-selectable (UI disabled + alert; API rejects).
+- **Sync stores selected columns only:** extract/load (buffered + streaming) project rows to live `schema` keys; unselected data is absent from OLAP until re-select + **manual** sync. Schema drift appends new source columns to `availableColumns`, not silently into live `schema`.
+- **Audit:** `confirmSchemaSelection` writes `auditlogs` with action `dataset.schema_selection` (entityType `dataset`, details of added/removed/ordered). Controllers never write audit logs directly.
 
 ---
 

@@ -640,7 +640,7 @@ BackgroundJobType = [csv_analysis, dashboard_generation, pdf_export, cache_recal
 BackgroundJobStatus = [queued, processing, completed, failed]
 BackgroundJobEntityType = [csvfile, dashboard]
 NotificationType = [dashboard_ready, generation_error, csv_analysis_complete, export_ready, dashboard_shared]
-AuditAction = [user.register, user.login, user.logout, user.login_failed, user.update, user.delete, user.deactivate, user.activate, user.auto_suspend, project.create, project.update, project.delete, dashboard.create, dashboard.update, dashboard.delete, dashboard.duplicate, dashboard.refresh, csvfile.upload, csvfile.delete, sharelink.create, sharelink.revoke, export.pdf, export.excel, export.csv, subscription.assign, subscription.upgrade, subscription.cancel, subscription.activate, subscription.deactivate, settings.update]
+AuditAction = [user.register, user.login, user.logout, user.login_failed, user.update, user.delete, user.deactivate, user.activate, user.auto_suspend, project.create, project.update, project.delete, dashboard.create, dashboard.update, dashboard.delete, dashboard.duplicate, dashboard.refresh, csvfile.upload, csvfile.delete, sharelink.create, sharelink.revoke, export.pdf, export.excel, export.csv, subscription.assign, subscription.upgrade, subscription.cancel, subscription.activate, subscription.deactivate, settings.update, dataset.schema_selection]
 SubscriptionStatus = [active, inactive, expired, cancelled]
 PaymentStatus = [paid, pending, refunded, failed]
 AiLogStatus = [pending, success, failed]
@@ -730,10 +730,11 @@ Collection: `ws_{workspaceSlug}_datasets`
 | `name` | String | required; human-readable dataset name | — |
 | `description` | String | optional | — |
 | `semanticFlag` | Enum | required, default: `arbitrary` | `arbitrary \| orders \| products \| customers \| marketing_spend` *(dictionary-driven; change-049)* |
-| `columnMapping` | Object | optional; `{ canonicalField: sourceColumn }` map; schema-on-read, never rewrites data; user-confirmed | — |
+| `columnMapping` | Object | optional; `{ canonicalField: sourceColumn }` map; schema-on-read, never rewrites data; user-confirmed; source columns must be among selected live `schema` columns *(change-055)* | — |
 | `aiProposedMapping` | Object | nullable; AI-suggested `columnMapping` from `column-mapping` prompt; shown in UI for user review; replaced by `columnMapping` on confirm *(change-022)* | — |
 | `aiProposedSemanticFlag` | String | nullable; AI-suggested `semanticFlag`; shown in UI for review *(change-022)* | — |
-| `schema` | [Object] | optional; discovered columns `{ name, type, sample?, nullable?, description?, descriptionAr?, userDescription?, isPrimaryKey? }`; written by `discoverSchema()` + updated by `identify-columns` pipeline step; `isPrimaryKey` marks the unique row identifier *(change-038)* | — |
+| `availableColumns` | [Object] | optional; full last-discovered column list (same shape as schema columns, including selection/blocked flags); written by discover + Add-column refresh; UI source for Edit Schema; schema drift appends here *(change-055)* | — |
+| `schema` | [Object] | optional; **live selected columns only** after user confirm `{ name, type, sample?, nullable?, description?, descriptionAr?, userDescription?, isPrimaryKey?, isSelected?, selectionOrder?, blocked? }`; AI `column-identify` proposes selection/PK/blocked on `availableColumns`; confirm prunes into `schema`; ingest projects rows to these columns only *(change-038, change-055)* | — |
 | `extractOptions` | Object | optional; connector-specific extraction config (e.g. sheet name, SQL query, table name) | — |
 | `analyticsTable` | String | nullable; OLAP table name — set after first successful sync as `ds_{workspaceSlug}_{_id}` | — |
 | `syncStatus` | Enum | required, default: `idle` | `idle \| syncing \| error` |
@@ -747,7 +748,7 @@ Collection: `ws_{workspaceSlug}_datasets`
 
 **Indexes:** `{ connectionId: 1 }` · `{ semanticFlag: 1 }` · `{ syncStatus: 1 }` · `{ createdBy: 1, createdAt: -1 }`
 **Relations:** belongs-to DataConnection · has-many SyncRuns · referenced-by DashboardDatasource · referenced-by FilterValueMeta
-**Rules:** `analyticsTable` set by `DataSyncProcessor` after first successful sync; `null` = data not yet loaded; dashboards require `analyticsTable != null` before generation
+**Rules:** `analyticsTable` set by `DataSyncProcessor` after first successful sync; `null` = data not yet loaded; dashboards require `analyticsTable != null` before generation · *(change-055)* `availableColumns` = full discovered list; live `schema` = user-confirmed selected columns only (ordered by `selectionOrder`); `blocked: true` forces unselected and is never selectable; unselected columns are not stored in OLAP until re-selected + manual sync; migration backfills existing datasets with all current schema columns as selected into both arrays
 
 ---
 

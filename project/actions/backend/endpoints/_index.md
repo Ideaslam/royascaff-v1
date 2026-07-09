@@ -8,7 +8,7 @@
 | Data (Legacy CSV) | data.md | EP-DATA-01..08 | 8 |
 | Data Connections | data.md | EP-DATA-09..14 | 6 |
 | Datasets | data.md | EP-DATA-15..23, 40 | 10 |
-| Data — OAuth/Webhooks/DB/Sync/Grouping | data.md | EP-DATA-24..45 (source-specific IDs; grouping/selection/progress EP-DATA-41..45 *change-045*) | — |
+| Data — OAuth/Webhooks/DB/Sync/Grouping | data.md | EP-DATA-24..49 (source-specific IDs; grouping/selection/progress EP-DATA-41..45 *change-045*; schema selection EP-DATA-48/49 *change-055*) | — |
 | Dashboards | dashboards.md | EP-DASH-01..16 | 16 |
 | Canonical Templates | templates.md | EP-TPL-01..04 (customer), EP-TPL-10..23 (admin) *(change-049)* | 18 |
 | Sharing | sharing.md | EP-SHARE-01..04 | 4 |
