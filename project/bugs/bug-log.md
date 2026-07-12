@@ -52,7 +52,7 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 | 025 | 2026-07-09 | high | backend/data+pipelines, customer-portal/data | SQL Server: slow schema AI, no table search, sync buffers all rows in memory | ESCALATED | [../changes/change-053-bug-fix-sql-server-perf-streaming/](../changes/change-053-bug-fix-sql-server-perf-streaming/) |
 
-| 026 | 2026-07-12 | high | backend/data, customer-portal/data/setup | CSV setup wizard uploads via legacy path — stores rows in main DB not OLAP | PENDING | [bug-026-csv-upload-main-db-instead-of-olap.md](./bug-026-csv-upload-main-db-instead-of-olap.md) |
+| 026 | 2026-07-12 | high | backend/data, customer-portal/data/setup | CSV setup wizard uploads via legacy path — stores rows in main DB not OLAP | DONE | [bug-026-csv-upload-main-db-instead-of-olap.md](./bug-026-csv-upload-main-db-instead-of-olap.md) |
 
 ## Next Bug Number
 

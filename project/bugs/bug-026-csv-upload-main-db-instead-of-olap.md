@@ -1,7 +1,7 @@
 # Bug #026 — CSV upload stores data in main DB instead of OLAP
 
 ## Status
-**PENDING** — Fix applied, awaiting user verification
+**DONE** — **Confirmed**: 2026-07-12
 
 ## Fix Applied
 1. Added `DataService.uploadSourceFile()` — uploads to R2 at `uploads/{workspaceSlug}/{id}/{filename}`, returns `{ storageKey, sheets? }` only. No `CsvFile`, no analysis job, no `csvdata_*` collection.
@@ -13,8 +13,8 @@ Legacy `POST /data/upload/file` unchanged for `/app/data/upload` wizard.
 
 ## Verification
 - [x] Fix implemented in code
-- [ ] No regressions introduced
-- [ ] User confirmed fix resolves the issue
+- [x] No regressions introduced
+- [x] User confirmed fix resolves the issue
 
 ## Reported
 - **Date**: 2026-07-12
