@@ -57,10 +57,11 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 | 029 | 2026-07-13 | medium | customer-portal/auth | Auth pages inconsistent alignment & spacing | DONE | [bug-029-auth-pages-alignment-spacing.md](./bug-029-auth-pages-alignment-spacing.md) |
 | 030 | 2026-07-13 | high | backend/workspace, analytics-store | MongoDB OLAP engine not default — ClickHouse used instead | DONE | [bug-030-mongodb-default-olap-engine.md](./bug-030-mongodb-default-olap-engine.md) |
+| 032 | 2026-07-13 | medium | customer-portal/projects, backend/data | Dashboard wizard data source picker UX + lite API + required selection | DONE | [bug-032-dashboard-datasource-selection-ux.md](./bug-032-dashboard-datasource-selection-ux.md) |
 
 ## Next Bug Number
 
-**Next**: 031
+**Next**: 033
 
 | 018 | 2026-07-08 | medium | admin-portal/http | Admin panel duplicate API calls + consolidated admin routes | DONE | [bug-018-admin-double-api-calls.md](./bug-018-admin-double-api-calls.md) |
 
