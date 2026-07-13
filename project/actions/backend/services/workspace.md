@@ -4,7 +4,7 @@
 Workspace lifecycle — create, read, update (name/slug), delete, switch active workspace.
 
 **Methods:**
-- `createWorkspace(userId, name): WorkspaceDto` — creates Workspace doc, WorkspaceMembership (workspace-owner), WorkspaceBranding (empty), OnboardingProgress (step 1 false); audit log; enforces max 10 owned workspaces per user
+- `createWorkspace(userId, name): WorkspaceDto` — creates Workspace doc, WorkspaceMembership (workspace-owner), WorkspaceBranding (empty), OnboardingProgress (step 1 false), auto-assigns active free plan subscription; audit log; enforces max 10 owned workspaces per user. Called from signup (`AuthService.register`) and `POST /workspaces`.
 - `getWorkspace(workspaceId): WorkspaceDto` — fetch workspace
 - `updateWorkspace(workspaceId, dto, userId): WorkspaceDto` — updates name/slug, audit log
 - `checkSlugAvailability(slug): { available: boolean }` — DB lookup

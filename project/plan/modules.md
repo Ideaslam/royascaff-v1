@@ -5,7 +5,7 @@
 - Audience: public and authenticated users (CP + AP)
 
 ### Features
-1. **User Registration** [both] — name/email/password form, email uniqueness check, bcrypt hash, default non-admin role, issue JWT tokens; rate-limited (10/min); subject to `registrationEnabled` setting; register page in CP only.
+1. **User Registration** [both] — name/email/password form, email uniqueness check, bcrypt hash, default non-admin role, issue JWT tokens; sends branded verification email (EN/AR, 24h token); user logged in but limited until verified; check-email + verify-email pages in CP; resend with 5-min cooldown; OAuth signups auto-verified; migration backfills existing users *(change-056)*; rate-limited (10/min); subject to `registrationEnabled` setting; register page in CP only.
 2. **User Login** [both] — email/password auth, issue access + refresh tokens, return user profile for bootstrap; rate-limited (10/min); AP login requires `admin` role (admin route guard).
 3. **OAuth Login (Google / Microsoft)** [both] — provider config via env, `AuthService.oauthLogin` maps identity to user; **partial**: `oauth/callback` is a stub, not wired end-to-end; `src/integrations/oauth/` is empty.
 4. **Token Refresh** [backend-only] — validate refresh token, issue new access token, rotate refresh; called via HTTP interceptor, no dedicated page.
@@ -123,7 +123,7 @@
 - Audience: authenticated users (CP) + admin (AP)
 
 ### Features
-1. **Create Workspace** [both] — triggered by `AuthService.register()` (not a separate user-facing endpoint); auto-generates slug `{word}-{word}-{4digits}`.
+1. **Create Workspace** [both] — triggered by `AuthService.register()` (signup) and `POST /workspaces` (create new workspace); auto-generates slug `{word}-{word}-{4digits}`; auto-assigns the first active free plan (`priceMonthlyUsd = 0`, `isActive = true`) via `SubscriptionsService.assignDefaultFreePlan` *(change-056)*.
 2. **Workspace Slug Management** [both] — slug availability check, update slug/name; JWT carries `{ currentWorkspaceId, workspaceSlug, workspaceRole }`.
 3. **Workspace Members + Roles** [both] — member list, add, remove, role change via `WorkspaceMembership`; members page at `/app/settings/members`.
 4. **Workspace Invitation Flow** [both] — invite by email, accept via token, resend; uses Email integration for invitation emails.
@@ -299,7 +299,7 @@ Infrastructure modules are called by business module services; they do not expos
 - Audience: system
 
 ### Features
-1. **Transactional Email Service** [backend] — Mailjet client, email templates (welcome, password reset, share/dashboard notifications); provider-agnostic interface (`MAIL_PROVIDER` env var); currently called directly by Auth flow; notifications auto-email wiring pending.
+1. **Transactional Email Service** [backend] — Mailjet client, branded HTML templates in `src/integrations/mail/templates/` (verification + welcome EN/AR, password reset, share/dashboard notifications) via `MailTemplateService`; provider-agnostic interface (`MAIL_PROVIDER` env var); verification + welcome sent by Auth on register/verify *(change-056)*; notifications auto-email wiring pending.
 
 ## S8. Payment Gateway
 - Scope: BE only (`src/integrations/payment/`)

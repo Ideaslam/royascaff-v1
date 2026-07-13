@@ -119,7 +119,11 @@ Fetch aggregated widget data (not raw rows). One sheet per widget with headers. 
 
 ### RULE-NOTIF-001: Email via MailJet Integration
 Module: Notifications · Feature: Email Notifications
-All emails via `src/integrations/mail/` — never call MailJet SDK directly. Email types: `welcome`, `dashboard_ready`, `generation_error`, `export_ready` (with signed link), `password_reset`, `dashboard_shared`. HTML templates in `src/integrations/mail/templates/` with Roya brand colors. Fire-and-forget: email failure must not fail primary operation (log + continue). Provider: MailJet (`MAILJET_API_KEY`, `MAILJET_SECRET`). Never call SDK outside integration layer, never include password hashes/tokens/internal IDs in emails, never send synchronously on request path — queue via notification service.
+All emails via `src/integrations/mail/` — never call MailJet SDK directly. Email types: `email_verification`, `welcome`, `dashboard_ready`, `generation_error`, `export_ready` (with signed link), `password_reset`, `dashboard_shared`. HTML templates in `src/integrations/mail/templates/` with Roya brand colors (`#5922ea` header, `#ff6043` CTA). Fire-and-forget: email failure must not fail primary operation (log + continue). Provider: MailJet (`MAILJET_API_KEY`, `MAILJET_SECRET`). Never call SDK outside integration layer, never include password hashes/tokens/internal IDs in emails, never send synchronously on request path — queue via notification service.
+
+### RULE-AUTH-002: Email Verification Enforcement *(change-056)*
+Module: Auth · Feature: User Registration
+Email/password signups require verification before mutating actions. Unverified users may login and browse read-only. Backend returns `403` with code `EMAIL_NOT_VERIFIED` when unverified user attempts: create project, create dashboard, data upload/sync, data connection create, dataset create, workspace invite. OAuth signups auto-set `emailVerified: true`. Verification token expires in 24h; resend cooldown 5 min per user. Welcome email sent only after successful verification.
 
 ---
 

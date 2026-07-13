@@ -41,6 +41,10 @@ Fields below are entity-specific only. `_id`, `createdAt`, `updatedAt` are omitt
 | avatarUrl | String | nullable; Cloudflare R2 URL | — |
 | languagePreference | String | required; enum: `en`, `ar`; default: `en` | — |
 | refreshTokenHash | String | nullable; hashed refresh token for revocation | — |
+| emailVerified | Boolean | required, default: false; true for OAuth users and migrated existing users *(change-056)* | — |
+| emailVerificationToken | String | nullable; bcrypt hash of verification token | — |
+| emailVerificationExpiry | Date | nullable; token expires 24h after issue *(change-056)* | — |
+| emailVerificationSentAt | Date | nullable; last verification email sent; 5-min resend cooldown *(change-056)* | — |
 | lastLoginAt | Date | nullable; updated on each login | — |
 | currentWorkspaceId | ObjectId | nullable; active workspace for session scoping | → Workspace |
 | defaultWorkspaceId | ObjectId | nullable; auto-routing on login | → Workspace |

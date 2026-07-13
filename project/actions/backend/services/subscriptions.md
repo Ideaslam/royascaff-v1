@@ -5,6 +5,7 @@ Manages subscription plan catalog (admin), per-user subscription assignment/chan
 
 **Methods:**
 - `listPlans()` — public list of active plans
+- `assignDefaultFreePlan(workspaceId)` — finds first active free plan (`priceMonthlyUsd = 0`, `isActive = true`); if found and workspace has no subscription, activates via `activateFromPayment`; no-op if no free plan or subscription already exists. Called from `WorkspaceService.createWorkspace` on signup and new-workspace creation *(change-056)*
 - `listAllPlans()` — admin list of all plans (incl. inactive)
 - `createPlan(dto: CreatePlanDto)` — creates plan (defaults isActive true)
 - `updatePlan(id, dto: UpdatePlanDto)` — updates plan, 404 if missing

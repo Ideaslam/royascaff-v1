@@ -31,6 +31,19 @@ Mailjet email adapter (bound to MAIL_PROVIDER) for transactional email.
 
 ---
 
+### SVC-EXT-MAIL-TPL · MailTemplateService [internal, application, email] *(change-056)*
+Loads HTML email templates from `src/integrations/mail/templates/` and renders `{{var}}` placeholders.
+
+**Methods:**
+- `render(templateName: string, vars: Record<string, string>): string` — reads `{templateName}.html`, interpolates variables
+
+**Templates:** `email-verification.en|ar`, `welcome.en|ar` — Roya brand styling (purple header, coral CTA)
+
+**Deps:** filesystem (bundled via nest-cli assets)
+**Rules:** Templates must use inline CSS for email client compatibility · Never embed secrets or raw tokens beyond verify URL
+
+---
+
 ### SVC-EXT-STOR · R2StorageProvider [external, Cloudflare R2 (S3-compatible), storage]
 Object storage adapter (bound to STORAGE_PROVIDER) for CSV files.
 

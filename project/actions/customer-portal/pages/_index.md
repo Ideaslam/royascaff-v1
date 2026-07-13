@@ -2,7 +2,7 @@
 
 | Module | File | Pages | Routes |
 |--------|------|-------|--------|
-| Auth | auth.md | Login, Register, Forgot Password, Reset Password | `/auth/login`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password` |
+| Auth | auth.md | Login, Register, Forgot Password, Reset Password, Check Email, Verify Email | `/auth/login`, `/auth/register`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/check-email`, `/auth/verify-email` |
 | Sharing (public) | sharing.md | Shared Dashboard Viewer | `/shared/:token` |
 | Projects | projects.md | Projects List, Project Detail | `/app/projects`, `/app/projects/:id` |
 | Dashboards | dashboards.md | Dashboard Generating, Dashboard Viewer | `/app/dashboards/:id/generating`, `/app/dashboards/:id` |
