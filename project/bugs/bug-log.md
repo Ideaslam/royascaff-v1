@@ -53,10 +53,11 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 | 025 | 2026-07-09 | high | backend/data+pipelines, customer-portal/data | SQL Server: slow schema AI, no table search, sync buffers all rows in memory | ESCALATED | [../changes/change-053-bug-fix-sql-server-perf-streaming/](../changes/change-053-bug-fix-sql-server-perf-streaming/) |
 
 | 026 | 2026-07-12 | high | backend/data, customer-portal/data/setup | CSV setup wizard uploads via legacy path — stores rows in main DB not OLAP | DONE | [bug-026-csv-upload-main-db-instead-of-olap.md](./bug-026-csv-upload-main-db-instead-of-olap.md) |
+| 028 | 2026-07-13 | medium | customer-portal/data/setup/mongodb-atlas | MongoDB connection URI masked as password field | DONE | [bug-028-mongodb-uri-password-field.md](./bug-028-mongodb-uri-password-field.md) |
 
 ## Next Bug Number
 
-**Next**: 027
+**Next**: 029
 
 | 018 | 2026-07-08 | medium | admin-portal/http | Admin panel duplicate API calls + consolidated admin routes | DONE | [bug-018-admin-double-api-calls.md](./bug-018-admin-double-api-calls.md) |
 
