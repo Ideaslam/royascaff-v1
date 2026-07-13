@@ -56,7 +56,7 @@
 | 8 | API blocks create project/dashboard/data/invite | ✅ |
 | 9 | Unverified can login + onboarding | ✅ |
 | 10 | OAuth auto-verified | ✅ |
-| 11 | Migration script for existing users | ✅ `npm run migrate:email-verified` |
+| 11 | Legacy users without emailVerified field | ✅ Treated as verified in `assertEmailVerified` (`!== false`) |
 | 12 | HTML templates EN/AR with brand styling | ✅ |
 | 13 | i18n EN/AR + RTL pages | ✅ |
 
@@ -75,6 +75,5 @@ Skipped (not provided) — does not block verification.
 
 ## Notes
 
-- Run `npm run migrate:email-verified` once on deploy to backfill existing users.
-- Legacy users without `emailVerified` field are treated as verified in `assertEmailVerified` until migration runs (`!== false` check).
+- Legacy users without `emailVerified` field are treated as verified in `assertEmailVerified` (`!== false` check).
 - Welcome email sent after verification only; verification email sent at registration.

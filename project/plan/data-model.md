@@ -41,7 +41,7 @@ Fields below are entity-specific only. `_id`, `createdAt`, `updatedAt` are omitt
 | avatarUrl | String | nullable; Cloudflare R2 URL | — |
 | languagePreference | String | required; enum: `en`, `ar`; default: `en` | — |
 | refreshTokenHash | String | nullable; hashed refresh token for revocation | — |
-| emailVerified | Boolean | required, default: false; true for OAuth users and migrated existing users *(change-056)* | — |
+| emailVerified | Boolean | default: false for new email/password users; true for OAuth; legacy users without field treated as verified in API *(change-056)* | — |
 | emailVerificationToken | String | nullable; bcrypt hash of verification token | — |
 | emailVerificationExpiry | Date | nullable; token expires 24h after issue *(change-056)* | — |
 | emailVerificationSentAt | Date | nullable; last verification email sent; 5-min resend cooldown *(change-056)* | — |
@@ -476,7 +476,7 @@ AI model pricing table. Seeded at startup; used to compute `ailogs.costUsd` from
 | name | String | required; human display name | — |
 | ownerId | ObjectId | required; user who created the workspace | → User |
 | status | String | required; enum: `active`, `suspended`, `deleted`; default: `active` | — |
-| olapEngine | String | optional; enum: `clickhouse \| bigquery`; default: `clickhouse`; overrides which OLAP engine is used for all analytics tables in this workspace *(change-015)* | — |
+| olapEngine | String | optional; enum: `clickhouse \| bigquery \| mongodb`; default: `mongodb`; overrides which OLAP engine is used for all analytics tables in this workspace *(change-015, bug-029)* | — |
 
 **Indexes:** `{ slug: 1 }` unique · `{ ownerId: 1 }` · `{ status: 1 }`
 **Relations:** belongs-to User (via ownerId) · has-many WorkspaceMemberships, WorkspaceInvitations · has-one WorkspaceBranding

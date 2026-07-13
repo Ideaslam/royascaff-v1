@@ -26,7 +26,7 @@
 ## Affected Modules
 
 ### Auth (primary)
-- User schema + migration backfill
+- User schema (verification fields; legacy users without field treated as verified in code)
 - AuthService: register, oauthLogin, new verifyEmail/resendVerification/sendVerificationEmail/sendWelcomeEmail
 - AuthController: 2 new endpoints; fix getMe to return full profile with emailVerified
 - UserProfileDto + JWT strategy RequestUser: add emailVerified
@@ -87,7 +87,6 @@
 | `src/integrations/mail/templates/email-verification.ar.html` | Branded verification email AR |
 | `src/integrations/mail/templates/welcome.en.html` | Branded welcome email EN |
 | `src/integrations/mail/templates/welcome.ar.html` | Branded welcome email AR |
-| `src/database/seeds/email-verified.migrate.ts` | Backfill existing users emailVerified=true |
 | `frontend: pages/auth/check-email/*` | Post-register page |
 | `frontend: pages/auth/verify-email/*` | Token handler page |
 
@@ -111,7 +110,6 @@
 | `dataset.service.ts` | assertEmailVerified on create |
 | `sync.service.ts` | assertEmailVerified on triggerSync |
 | `workspace-invitation.service.ts` | assertEmailVerified on invite |
-| `package.json` | migrate script entry |
 | `frontend: auth.service.ts` | verify/resend methods |
 | `frontend: auth.models.ts` | emailVerified on UserProfile |
 | `frontend: register.page.ts` | Redirect to check-email |
@@ -133,15 +131,15 @@
 |------|-------|------------|
 | Complexity | Medium | Centralize assert in one service; inject into 7 services |
 | Cross-module ripple | Yes | 7 backend services need one-line assert at create entry points |
-| Migration | Yes | Idempotent script; default schema default false, migration sets true for existing |
+| Migration | No | Legacy users: `assertEmailVerified` treats missing/`true` as verified; only explicit `false` blocks |
 | getMe currently returns JWT payload | Low | Fix to load user + toProfileDto (needed for emailVerified anyway) |
 | verify-email route auth | Low | Place as authenticated route OR public with token-only (public chosen per spec) |
 | OAuth partial wiring | Low | Set emailVerified on oauthLogin path; Google OAuth controller may call oauthLogin separately — verify during implementation |
 
 ## Recommendation
 
-- **Create:** EmailVerificationService, MailTemplateService, 4 HTML templates, 2 frontend pages, migration script, 2 auth endpoints
+- **Create:** EmailVerificationService, MailTemplateService, 4 HTML templates, 2 frontend pages, 2 auth endpoints
 - **Complete:** Mail integration (templates folder per rules), User Registration flow
 - **Modify:** AuthService register/oauth, 7 enforcing services, app shell, register redirect, plan docs
 
-**Risk:** complexity M · cross-module Y · migration Y
+**Risk:** complexity M · cross-module Y · migration N

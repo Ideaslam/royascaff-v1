@@ -45,7 +45,7 @@ Customer Portal email/password signups are not verified, allowing fake signups w
 
 **OAuth users:** `emailVerified: true` set automatically on first OAuth login/register — no verification step.
 
-**Existing users:** Migration backfills all existing users with `emailVerified: true`.
+**Existing users:** No migration script. Users without `emailVerified` (legacy) are treated as verified in `assertEmailVerified` (`!== false`).
 
 ### Out of scope
 - Admin Panel email verification
@@ -65,7 +65,7 @@ Customer Portal email/password signups are not verified, allowing fake signups w
 ### Data model changes (User)
 | Field | Type | Default | Notes |
 |-------|------|---------|-------|
-| `emailVerified` | Boolean | `false` (new users) | `true` for OAuth + migrated existing users |
+| `emailVerified` | Boolean | `false` (new users) | `true` for OAuth; legacy users without field treated as verified |
 | `emailVerificationToken` | String (hashed) | null | bcrypt hash of raw token |
 | `emailVerificationExpiry` | Date | null | 24h from issue |
 | `emailVerificationSentAt` | Date | null | for resend cooldown |
@@ -116,7 +116,7 @@ Customer Portal email/password signups are not verified, allowing fake signups w
 8. Unverified users are blocked at API level from: create project, create dashboard, data upload/sync, workspace invite — with `403 EMAIL_NOT_VERIFIED`
 9. Unverified users can still log in, complete onboarding, and browse read-only content
 10. OAuth (Google/Microsoft) new users get `emailVerified: true` automatically
-11. Migration sets `emailVerified: true` for all existing users
+11. Legacy users without `emailVerified` field are not blocked (code treats only explicit `false` as unverified)
 12. HTML email templates exist for verification + welcome in EN and AR with Roya brand styling
 13. All new UI strings are translated (EN/AR) with RTL support on new auth pages
 

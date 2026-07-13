@@ -5,7 +5,7 @@
 - Audience: public and authenticated users (CP + AP)
 
 ### Features
-1. **User Registration** [both] — name/email/password form, email uniqueness check, bcrypt hash, default non-admin role, issue JWT tokens; sends branded verification email (EN/AR, 24h token); user logged in but limited until verified; check-email + verify-email pages in CP; resend with 5-min cooldown; OAuth signups auto-verified; migration backfills existing users *(change-056)*; rate-limited (10/min); subject to `registrationEnabled` setting; register page in CP only.
+1. **User Registration** [both] — name/email/password form, email uniqueness check, bcrypt hash, default non-admin role, issue JWT tokens; sends branded verification email (EN/AR, 24h token); user logged in but limited until verified; check-email + verify-email pages in CP; resend with 5-min cooldown; OAuth signups auto-verified; legacy users without `emailVerified` treated as verified *(change-056)*; rate-limited (10/min); subject to `registrationEnabled` setting; register page in CP only.
 2. **User Login** [both] — email/password auth, issue access + refresh tokens, return user profile for bootstrap; rate-limited (10/min); AP login requires `admin` role (admin route guard).
 3. **OAuth Login (Google / Microsoft)** [both] — provider config via env, `AuthService.oauthLogin` maps identity to user; **partial**: `oauth/callback` is a stub, not wired end-to-end; `src/integrations/oauth/` is empty.
 4. **Token Refresh** [backend-only] — validate refresh token, issue new access token, rotate refresh; called via HTTP interceptor, no dedicated page.

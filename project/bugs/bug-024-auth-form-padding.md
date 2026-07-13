@@ -1,7 +1,7 @@
 # Bug #024 — Auth Login/Register Field & Button Padding Too Tight
 
 ## Status
-**PENDING** — Fix applied, awaiting user confirmation
+**DONE** — **Confirmed**: 2026-07-13 (resolved as part of Bug #029)
 
 ## Reported
 - **Date**: 2026-07-09
@@ -34,7 +34,7 @@ In `login.page.scss` and `register.page.scss`:
 ## Verification
 - [x] Fix implemented in code
 - [x] No regressions introduced
-- [ ] User confirmed fix resolves the issue
+- [x] User confirmed fix resolves the issue
 
 ## Related Files
 - `roya-ai-dynamo-frontend/src/app/pages/auth/login/login.page.scss`
