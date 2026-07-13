@@ -2,7 +2,7 @@
 
 ### Data Sources Home Page *(change-022, change-038, change-045)*
 - Route: `/app/data`
-- Components: DataSourcesPage — **grouped by Data Source** *(change-045)*: one card per `DataConnection` (source icon, name, sourceType, status, **table count**, aggregate last-sync). Previously rendered each dataset (orders/products/customers) as its own card — now those are Tables shown **inside** their parent source. Clicking a source card navigates to the Data Source detail page. "Connect Source" dialog launches the shared setup wizard. Legacy CSV files still surface as single-table sources.
+- Components: DataSourcesPage — **grouped by Data Source** *(change-045)*: one card per `DataConnection` (source icon, name, sourceType, status, **table count**, aggregate last-sync). Previously rendered each dataset (orders/products/customers) as its own card — now those are Tables shown **inside** their parent source. Clicking a source card navigates to the Data Source detail page. **"Connect Source"** opens a shared **side drawer** (type picker by category) *(change-057)*; selecting a type navigates to `/app/data/connect/:type` (full-page setup wizard). Drawer: end-edge desktop / full-width mobile, backdrop dismiss, RTL-aware. Legacy CSV files still surface as single-table sources.
 - Service: `GET /api/v1/data/connections` (list sources); `GET /api/v1/data/connections/:id/datasets` (table count / preview per source, EP-DATA-42)
 - Guard: authGuard + onboardingGuard
 - States: loading skeleton · empty state (no sources yet) · error toast

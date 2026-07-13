@@ -1,5 +1,12 @@
 ## Modified Shared Infrastructure
 
+### SideDrawerComponent *(change-057)*
+- Shared shell wrapping PrimeNG `p-drawer` for practical create/connect flows
+- Location: `shared/components/side-drawer/`
+- Behavior: end-edge position (right LTR / left RTL via `I18nService` / `document.dir`), full-width on mobile, modal + dismissible mask, projected body + optional footer
+- Used by: Projects List (create project), Project Detail (create dashboard), Data Sources (connect type picker)
+- Out of scope for drawer migration: confirm dialogs, dashboard share/widget dialogs, workspace create, sync batch panel
+
 ### AppShell
 - Workspace Switcher (topbar): dropdown showing workspace name + role, lists all workspaces, "Create new workspace" option. Switch calls `POST /api/v1/workspaces/switch` then reloads.
 - Sidebar nav additions: Workspace Settings → `/app/settings/workspace`, Members → `/app/settings/members`, Branding → `/app/settings/branding`
