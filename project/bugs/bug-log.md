@@ -59,9 +59,12 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 | 030 | 2026-07-13 | high | backend/workspace, analytics-store | MongoDB OLAP engine not default — ClickHouse used instead | DONE | [bug-030-mongodb-default-olap-engine.md](./bug-030-mongodb-default-olap-engine.md) |
 | 032 | 2026-07-13 | medium | customer-portal/projects, backend/data | Dashboard wizard data source picker UX + lite API + required selection | DONE | [bug-032-dashboard-datasource-selection-ux.md](./bug-032-dashboard-datasource-selection-ux.md) |
 
+| 033 | 2026-07-13 | medium | customer-portal/data/setup | Empty datatables block datasource pipeline — should auto-skip | DONE | [bug-033-skip-empty-datatable-columns.md](./bug-033-skip-empty-datatable-columns.md) |
+| 034 | 2026-07-13 | medium | customer-portal/projects/projects-list | Search input disappears when no matching projects are found | DONE | [bug-034-projects-search-disappears.md](./bug-034-projects-search-disappears.md) |
+
 ## Next Bug Number
 
-**Next**: 033
+**Next**: 035
 
 | 018 | 2026-07-08 | medium | admin-portal/http | Admin panel duplicate API calls + consolidated admin routes | DONE | [bug-018-admin-double-api-calls.md](./bug-018-admin-double-api-calls.md) |
 
