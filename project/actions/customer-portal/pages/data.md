@@ -1,56 +1,57 @@
 ## Module: Data (Multi-Source Data Management)
 
-### Data Sources Home Page *(change-022, change-038, change-045)*
+### Data Sources Home Page *(change-022, change-038, change-045, change-059)*
 - Route: `/app/data`
-- Components: DataSourcesPage — **grouped by Data Source** *(change-045)*: one card per `DataConnection` (source icon, name, sourceType, status, **table count**, aggregate last-sync). Previously rendered each dataset (orders/products/customers) as its own card — now those are Tables shown **inside** their parent source. Clicking a source card navigates to the Data Source detail page. **"Connect Source"** opens a shared **side drawer** (type picker by category) *(change-057)*; selecting a type navigates to `/app/data/connect/:type` (full-page setup wizard). Drawer: end-edge desktop / full-width mobile, backdrop dismiss, RTL-aware. Legacy CSV files still surface as single-table sources.
-- Service: `GET /api/v1/data/connections` (list sources); `GET /api/v1/data/connections/:id/datasets` (table count / preview per source, EP-DATA-42)
+- Components: DataSourcesPage — **one card per Data Source** (not Connection): icon, name, sourceType, status, **table count**, aggregate last-sync. Click → Data Source detail. **"Connect Source"** opens side drawer (type picker) *(change-057)* → `/app/data/connect/:type`. Secondary nav/link to **Connections** (`/app/data/connections`). Legacy CSV files surface as single-table sources.
+- Service: `GET /api/v1/data/sources` (EP-DATA-52); table counts via list or embedded count
 - Guard: authGuard + onboardingGuard
-- States: loading skeleton · empty state (no sources yet) · error toast
+- States: loading skeleton · empty state · error toast
 
-### Data Source Detail Page *(change-045)*
-- Route: `/app/data/sources/:connectionId`
-- Components: DataSourceDetailPage — everything about one Data Source in one place:
-  - **Header:** source name, sourceType badge, connection status, "Test Connection", "Edit Source" (credentials/name)
-  - **Tables list:** all Tables (Datasets) under this source via `GET /connections/:id/datasets`; per row: name, entity/semanticFlag, syncStatus, rowCount, lastSyncAt; row actions: Full/Incremental Sync, open Table detail, remove table
-  - **Add / Manage Tables:** "Add tables" re-opens the shared `select-entities` step to add new entities/tables/collections/sheets to this source (non-destructive — existing tables untouched); backed by EP-DATA-43 (list entities) + EP-DATA-44 (create from selection). *(change-058)* After import, shows per-table schema-discovery status list (poll 5s); Continue with successes; Retry on failed.
-  - **Per-table config** (opens Dataset/Table detail): edit field descriptions, edit canonical mapping, set watermark/PK, change schedule — all editable post-setup
-- Service: `GET /api/v1/data/connections/:id`; `GET /api/v1/data/connections/:id/datasets` (EP-DATA-42, optional `schemaDiscoveryBatchId`); `GET /api/v1/data/connections/:id/entities` (EP-DATA-43); `POST /api/v1/data/connections/:id/datasets/from-entities` (EP-DATA-44); `POST /api/v1/data/datasets/:id/discover-schema` (Retry, EP-DATA-22); `POST /api/v1/data/datasets/:id/sync`; `DELETE /api/v1/data/datasets/:id`
-- Guard: authGuard
-- States: loading skeleton · empty (source has no tables yet → prompt to add) · error toast · entity-list ProgressLoader · discovery status rows while schema jobs run *(change-058)*
+### Connections List Page *(change-059)*
+- Route: `/app/data/connections`
+- Components: ConnectionsPage — **table** layout (dense credential management): name, sourceType, status, dataSourceCount, lastTestedAt; search/filter/sort; row actions: rename, edit credentials / re-auth, test, disable/enable, delete (blocked if in use with clear message). Create/edit via **side drawer** (existing drawer patterns). Empty state CTA “Add connection”.
+- Service: EP-DATA-09..14, EP-DATA-50; EN/AR i18n
+- Guard: authGuard + onboardingGuard
+- States: loading · empty · error · delete 409 toast
 
-### Backend-Driven Setup Wizard (shared, all sources) *(change-039, change-045, change-058)*
-- Route: `/app/data/connect/:sourceType` (and re-entered from the Data Source detail page to add tables)
-- Components: DatasetSetupWizardPage — renders the step sequence returned by `GET /api/v1/data/setup-flow?sourceType=…` (EP-DATA-41). Step kinds:
-  - **`connect`** — source-specific credential/OAuth entry (CSV upload, OAuth redirect, DB URI/creds). OAuth callbacks (Zid/Salla/Shopify/Google) land here or skip straight to `select-entities`. Single-dataset connect paths (CSV/Sheets/SQL/Mongo) enqueue discover (EP-DATA-22) and poll status before schema-review *(change-058)*.
-  - **`select-entities`** *(change-045, change-058)* — **shared "choose what to import" step for every source except CSV**: lists entities via `GET /connections/:id/entities` (EP-DATA-43); "Import selected" calls `POST /connections/:id/datasets/from-entities` (EP-DATA-44) which returns quickly with `schemaDiscoveryBatchId`. Then shows a **per-table status list** (name | badge queued/running/success/failed | error | Retry) matching existing progress UI patterns; polls EP-DATA-42 with `schemaDiscoveryBatchId` every **5 seconds**. **Continue** enabled when ≥1 `success` and none `queued`/`running`; failed tables skipped with Retry (re-calls EP-DATA-22). Entity listing still uses ProgressLoader while `listEntities` runs.
-  - **`schema-review`** *(change-045, change-055)* — only for datasets that reached `schemaDiscoveryStatus=success`; column selection table from `availableColumns` — **checkbox | order | name | type | description | PK | blocked badge**; drag-to-reorder + up/down; AI pre-selects ~25 (incl. FKs); blocked rows disabled with alert styling/tooltip; ≥1 selected required; missing PK allowed with message that incremental sync needs a PK; deselect mapped → warn, reject if mandatory. Then editable AI-proposed mapping (source dropdowns = selected columns) + semanticFlag picker. **"Map with AI"** (EP-DATA-46). Confirm: EP-DATA-48 (schema selection prune) then EP-DATA-23 (mapping); mapping Confirm disabled on `422 { missing }`.
-  - **`schedule`** — syncPolicy selector + "Start sync"; first sync shows the **percentage ProgressLoader** polling EP-DATA-45 until terminal.
-- Service: EP-DATA-41; EP-DATA-43; EP-DATA-44; EP-DATA-42 (batch poll); EP-DATA-22 (enqueue/retry); EP-DATA-48; EP-DATA-23; EP-DATA-46; EP-DATA-20; EP-DATA-45
+### Data Source Detail Page *(change-045, change-059)*
+- Route: `/app/data/sources/:dataSourceId`
+- Components: DataSourceDetailPage:
+  - **Header:** source name (renamable), sourceType badge, linked Connection name/status, "Test Connection" (on Connection), "Edit scope" / rename source — **not** rebind Connection
+  - **Tables list:** `GET /data/sources/:id/datasets` (EP-DATA-42); sync / open / remove table
+  - **Add tables:** re-opens `select-entities` using **current Connection** (no re-auth); EP-DATA-43/44; discovery status list *(change-058)*
+  - **Delete source:** confirmation alert → cascade tables; blocked with message if dashboards use any table
+- Service: EP-DATA-53/54/55; EP-DATA-42/43/44; dataset sync/delete; EP-DATA-14 (test)
 - Guard: authGuard
-- Notes: Supersedes the per-source setup pages below (change-023..028) which are retained here for historical reference; the shared wizard is the live flow. EN/AR i18n for discovery statuses and Retry/Continue *(change-058)*.
+- States: loading · empty tables · discovery rows · delete confirm / 409
+
+### Backend-Driven Setup Wizard (shared, all sources) *(change-039, change-045, change-058, change-059)*
+- Route: `/app/data/connect/:sourceType`
+- Components: DatasetSetupWizardPage — steps from EP-DATA-41:
+  - **`choose-connection`** *(change-059, non-CSV)* — pick existing Connection of this type **or** “Add new connection” (drawer/inline). New: enter credentials/OAuth → **Test must pass before save** → then continue. Empty list → only Add new.
+  - **`connect` / scope** — type-specific scope (spreadsheet, database name, shop) after Connection selected; OAuth callbacks land with `connectionId` then continue to scope/`select-entities`. CSV skips choose-connection (one-off).
+  - **`select-entities`** — via Data Source (`GET /sources/:id/entities`); import → EP-DATA-44 + discovery status poll *(change-058)*
+  - **`schema-review`** — column selection + mapping *(change-055)*
+  - **`schedule`** — sync + ProgressLoader (EP-DATA-45)
+- Service: EP-DATA-41; Connections CRUD/test; Data Sources create; EP-DATA-43/44/42; EP-DATA-22/48/23/46/20/45
+- Guard: authGuard
+- Notes: Shared wizard is the live flow; EN/AR for all new strings *(change-059)*.
 
 ### Shared UI — ProgressLoader *(change-045)* + Discovery Status List *(change-058)*
-- Component: ProgressLoaderComponent (reusable) — percentage ring/bar + phase label; polls a `SyncRun` (or entity-listing signal) and renders `progress` + `phase`. Used for entity listing and sync.
-- Component: SchemaDiscoveryStatusList (shared) — table/list of datasets with discovery status badges + Retry; polls every 5s until all terminal; used after multi-select and for single-dataset connect/Add-column waits.
+- Component: ProgressLoaderComponent — sync / entity listing.
+- Component: SchemaDiscoveryStatusList — per-table discovery badges + Retry; poll 5s.
 
-### CSV Upload Page *(change-022, updated change-047)*
-- Route: `/app/data/csv-upload`
-- Components: CsvUploadPage — 3-step wizard:
-  - **Step 1 — Upload:** file picker accepting `.csv`, `.xlsx`, `.xls` (max 50 MB), file name preview; after upload response: if `sheets` array has >1 entry a **sheet picker dropdown** appears and the user selects the target sheet before continuing; single-sheet files skip the picker automatically; on continue → creates DataConnection + Dataset + **enqueues** schema discovery *(change-058)*
-  - **Step 2 — Schema Review:** shows discovered columns after `schemaDiscoveryStatus=success` (poll Dataset); "Refresh AI Proposal" button calls EP-DATA-22 (enqueue) + poll; loading/status while job runs
-  - **Step 3 — Confirm & Sync:** summary of confirmed mapping; calls EP-DATA-23 then EP-DATA-20 (full sync); shows sync progress + "Done" redirect to `/app/data/datasets/:id`
-- Service: `POST /api/v1/data/upload/file` (upload CSV/XLSX/XLS to R2, returns `{ storageKey, sheets? }`); `POST /api/v1/data/connections` (create DataConnection, credentials `{ storageKey, sheetName? }`); `POST /api/v1/data/datasets`; `GET /api/v1/data/datasets/:id`; `POST /api/v1/data/datasets/:id/confirm-mapping` (EP-DATA-23); `POST /api/v1/data/datasets/:id/sync` (EP-DATA-20)
+### CSV Upload Page *(change-022, updated change-047, change-059)*
+- Route: `/app/data/csv-upload` (or via connect/csv)
+- Components: CsvUploadPage — upload → creates **one-off Data Source** (no reusable Connection) + Dataset + enqueues discovery *(change-058)*
+- Service: upload file; `POST /data/sources` (CSV); `POST /data/datasets` with `dataSourceId`; confirm-mapping; sync
 - Guard: authGuard + onboardingGuard
-- Notes: CSV/Excel upload creates one `DataConnection` (credentials = `{ storageKey, sheetName? }`) + one `Dataset` atomically. `sheetName` omitted for CSV or single-sheet Excel.
+- Notes: CSV does **not** create a Connection *(change-059)*.
 
-### Dataset Detail Page *(change-022)*
+### Dataset Detail Page *(change-022, change-059)*
 - Route: `/app/data/datasets/:id`
-- Components: DatasetDetailPage — tabs:
-  - **Overview:** dataset name, sourceType, semanticFlag badge, syncStatus badge, rowCount, analyticsTable; "Re-sync" button (EP-DATA-20); last sync timestamp + error message
-  - **Schema:** live selected columns + **Edit Schema** (selection UI over `availableColumns`) + **Add column** (EP-DATA-49 enqueue + poll discovery status until terminal, then AI for new cols) + confirm selection (EP-DATA-48); Save Schema patches (EP-DATA-40) where applicable *(change-058)*
-  - **Mapping:** columnMapping editor — table with canonical field → source column dropdown (selected columns); "Confirm Changes" button (EP-DATA-23)
-  - **Sync History:** paginated sync runs table (mode, status, rowsIn, rowsLoaded, duration, error); (EP-DATA-21)
-- Service: `GET /api/v1/data/datasets/:id` (poll `schemaDiscoveryStatus`); `POST /api/v1/data/datasets/:id/sync`; `POST /api/v1/data/datasets/:id/refresh-available-columns` (EP-DATA-49, 202); `POST /api/v1/data/datasets/:id/discover-schema` (EP-DATA-22, 202/Retry); `POST /api/v1/data/datasets/:id/confirm-schema-selection` (EP-DATA-48); `POST /api/v1/data/datasets/:id/confirm-mapping`; `GET /api/v1/data/datasets/:id/sync-history`
+- Components: DatasetDetailPage — Overview / Schema / Mapping / Sync History; parent breadcrumb loads Data Source (then Connection) via `dataSourceId`
+- Service: dataset endpoints EP-DATA-17/20/21/22/40/48/49/23
 - Guard: authGuard
 
 ### Legacy CSV — Data Files List Page *(kept for backward compat)*

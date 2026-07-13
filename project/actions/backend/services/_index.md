@@ -5,7 +5,7 @@
 | Auth | auth.md | SVC-AUTH, SVC-AUTH-JWT | 2 |
 | Users | users.md | SVC-USR | 1 |
 | Projects | projects.md | SVC-PROJ | 1 |
-| Data (Multi-Source) | data.md | SVC-DATA, SVC-DATA-CONN, SVC-DATA-DS, SVC-DATA-SYNC | 4 |
+| Data (Multi-Source) | data.md | SVC-DATA, SVC-DATA-CONN, SVC-DATA-SOURCE, SVC-DATA-DS, SVC-DATA-SYNC (+ schema-discovery/sched/drift) | 5+ |
 | AI Processing | ai-processing.md | SVC-AI-CSV, SVC-AI-DASH, SVC-AI-DGC | 3 |
 | Dashboards | dashboards.md | SVC-DASH, SVC-DASH-FILTER, SVC-DASH-SEED | 3 |
 | Sharing | sharing.md | SVC-SHARE | 1 |

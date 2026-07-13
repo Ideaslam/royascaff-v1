@@ -129,7 +129,7 @@ Core dashboard lifecycle management with purpose-driven creation.
 
 **Description:**
 
-Simple drag-and-drop CSV file upload with data storage and reuse.
+Simple drag-and-drop CSV file upload with data storage and reuse. The broader Data platform also supports multi-source ingest via a three-layer model *(change-059)*: **Connection** (reusable auth), **Data Source** (name + connection + scope), **Table/Dataset** — CSV remains a one-off Data Source without a reusable Connection.
 
 **Key capabilities:**
 
@@ -138,6 +138,7 @@ Simple drag-and-drop CSV file upload with data storage and reuse.
 - List previously uploaded CSV files
 - Select existing data for new dashboards
 - File metadata tracking (name, size, upload date)
+- Manage reusable Connections and Data Sources (non-CSV) from Customer Portal *(change-059)*
 
 ### Feature 6: AI Column Analysis
 

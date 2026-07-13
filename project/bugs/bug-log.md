@@ -61,10 +61,11 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 | 033 | 2026-07-13 | medium | customer-portal/data/setup | Empty datatables block datasource pipeline — should auto-skip | DONE | [bug-033-skip-empty-datatable-columns.md](./bug-033-skip-empty-datatable-columns.md) |
 | 034 | 2026-07-13 | medium | customer-portal/projects/projects-list | Search input disappears when no matching projects are found | DONE | [bug-034-projects-search-disappears.md](./bug-034-projects-search-disappears.md) |
+| 035 | 2026-07-13 | high | customer-portal/data/setup | Wizard re-auths when choosing an existing Connection | DONE | [bug-035-wizard-existing-connection-reauth.md](./bug-035-wizard-existing-connection-reauth.md) |
 
 ## Next Bug Number
 
-**Next**: 035
+**Next**: 036
 
 | 018 | 2026-07-08 | medium | admin-portal/http | Admin panel duplicate API calls + consolidated admin routes | DONE | [bug-018-admin-double-api-calls.md](./bug-018-admin-double-api-calls.md) |
 

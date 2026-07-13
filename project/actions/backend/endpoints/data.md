@@ -15,37 +15,50 @@
 | EP-DATA-07 | DELETE | /api/v1/data/files/:fileId | JWT | `:fileId` param | 200 delete result | SVC-DATA.deleteFile() | Removes file, rows, columns |
 | EP-DATA-08 | POST | /api/v1/data/files/:fileId/analyze/retry | JWT | `:fileId` param | 202 `{ jobId, status }` | SVC-DATA.retryAnalysis() | Async |
 
-### DataConnection Endpoints *(change-015)*
+### Connection Endpoints *(change-015, evolved change-059)*
 
-`@Controller('data/connections')`
+`@Controller('data/connections')` — **auth-only** Connection management
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-DATA-09 | POST | /api/v1/data/connections | JWT | `CreateDataConnectionDto` { name, sourceType, credentials } | 201 `DataConnectionDto` | SVC-DATA-CONN.create() | Credentials encrypted before persist; never returned |
-| EP-DATA-10 | GET | /api/v1/data/connections | JWT | query: page, limit, sourceType | 200 `Paginated<DataConnectionListItemDto>` | SVC-DATA-CONN.list() | No credentials in response |
-| EP-DATA-11 | GET | /api/v1/data/connections/:id | JWT | `:id` | 200 `DataConnectionDto` | SVC-DATA-CONN.get() | |
-| EP-DATA-12 | PATCH | /api/v1/data/connections/:id | JWT | `:id` · `UpdateDataConnectionDto` | 200 `DataConnectionDto` | SVC-DATA-CONN.update() | Re-encrypts if credentials changed |
-| EP-DATA-13 | DELETE | /api/v1/data/connections/:id | JWT | `:id` | 204 | SVC-DATA-CONN.delete() | Blocked if active datasets reference it |
-| EP-DATA-14 | POST | /api/v1/data/connections/:id/test | JWT | `:id` | 200 `{ ok: boolean, error?: string, testedAt: Date }` | SVC-DATA-CONN.testConnection() | |
+| EP-DATA-09 | POST | /api/v1/data/connections | JWT | `CreateConnectionDto` { name, sourceType, credentials } | 201 `ConnectionDto` | SVC-DATA-CONN.create() | **Test must pass before persist**; auth-only credentials encrypted; never returned; rate-limited *(change-059)* |
+| EP-DATA-10 | GET | /api/v1/data/connections | JWT | query: page, limit, search, sourceType, sort | 200 `Paginated<ConnectionListItemDto>` | SVC-DATA-CONN.list() | No credentials; optional `dataSourceCount` *(change-059)* |
+| EP-DATA-11 | GET | /api/v1/data/connections/:id | JWT | `:id` | 200 `ConnectionDto` | SVC-DATA-CONN.get() | Safe display fields only |
+| EP-DATA-12 | PATCH | /api/v1/data/connections/:id | JWT | `:id` · `UpdateConnectionDto` { name?, credentials?, status? } | 200 `ConnectionDto` | SVC-DATA-CONN.update() | Credential changes require successful test; rename/disable/enable |
+| EP-DATA-13 | DELETE | /api/v1/data/connections/:id | JWT | `:id` | 204 \| 409 | SVC-DATA-CONN.delete() | **Blocked** if any Data Source references it *(change-059)* |
+| EP-DATA-14 | POST | /api/v1/data/connections/:id/test | JWT | `:id` | 200 `{ ok: boolean, error?: string, testedAt: Date }` | SVC-DATA-CONN.testConnection() | Real connector test; rate-limited *(change-059)* |
+| EP-DATA-50 | POST | /api/v1/data/connections/:id/reauth | JWT | `:id` · credentials or OAuth resume payload | 200 `ConnectionDto` | SVC-DATA-CONN.reauth() | Refresh expired OAuth/tokens in place; rate-limited *(change-059)* |
 
-### Dataset Endpoints *(change-015, updated change-022)*
+### Data Source Endpoints *(change-059)*
+
+`@Controller('data/sources')`
+
+| ID | Method | Route | Auth | Input | Return | Service | Notes |
+|----|--------|-------|------|-------|--------|---------|-------|
+| EP-DATA-51 | POST | /api/v1/data/sources | JWT | `CreateDataSourceDto` { name, connectionId?, sourceType, scope? } | 201 `DataSourceDto` | SVC-DATA-SOURCE.create() | `connectionId` required except CSV; `connectionId` immutable after create |
+| EP-DATA-52 | GET | /api/v1/data/sources | JWT | query: page, limit, search, sourceType, sort | 200 `Paginated<DataSourceListItemDto>` | SVC-DATA-SOURCE.list() | Powers Data Sources home (table counts) |
+| EP-DATA-53 | GET | /api/v1/data/sources/:id | JWT | `:id` | 200 `DataSourceDto` | SVC-DATA-SOURCE.get() | Includes Connection summary (no secrets) |
+| EP-DATA-54 | PATCH | /api/v1/data/sources/:id | JWT | `:id` · `UpdateDataSourceDto` { name?, scope?, status? } | 200 `DataSourceDto` | SVC-DATA-SOURCE.update() | Rename / scope only — no rebind |
+| EP-DATA-55 | DELETE | /api/v1/data/sources/:id | JWT | `:id` | 204 \| 409 | SVC-DATA-SOURCE.delete() | Cascade Tables+SyncRuns; **blocked** if dashboards use any child table |
+
+### Dataset Endpoints *(change-015, updated change-022, change-059)*
 
 `@Controller('data/datasets')`
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-DATA-15 | POST | /api/v1/data/datasets | JWT | `CreateDatasetDto` { connectionId, name, semanticFlag?, extractOptions? } | 201 `DatasetDto` | SVC-DATA-DS.create() | For CSV: auto-triggers `discoverSchemaWithAiProposal` *(change-022)* |
-| EP-DATA-16 | GET | /api/v1/data/datasets | JWT | query: page, limit, connectionId, semanticFlag, syncStatus | 200 `Paginated<DatasetListItemDto>` | SVC-DATA-DS.list() | |
-| EP-DATA-17 | GET | /api/v1/data/datasets/:id | JWT | `:id` | 200 `DatasetDto` | SVC-DATA-DS.get() | Includes schema, aiProposedMapping, aiProposedSemanticFlag, last sync info |
-| EP-DATA-18 | PATCH | /api/v1/data/datasets/:id | JWT | `:id` · `UpdateDatasetDto` { name?, description?, extractOptions? } | 200 `DatasetDto` | SVC-DATA-DS.update() | Mapping changes via EP-DATA-23 (confirm); this endpoint does NOT update columnMapping directly |
-| EP-DATA-19 | DELETE | /api/v1/data/datasets/:id | JWT | `:id` | 204 | SVC-DATA-DS.delete() | Drops OLAP table + FilterValueMeta |
-| EP-DATA-20 | POST | /api/v1/data/datasets/:id/sync | JWT | `:id` · body `{ mode?: 'full' \| 'incremental' }` (default `'full'`) | 202 `{ syncRunId, status }` | SVC-DATA-SYNC.triggerSync() | Async; blocked if already syncing; mode forwarded to BullMQ job *(change-038)* |
+| EP-DATA-15 | POST | /api/v1/data/datasets | JWT | `CreateDatasetDto` { dataSourceId, name, semanticFlag?, extractOptions? } | 201 `DatasetDto` | SVC-DATA-DS.create() | Uses `dataSourceId` *(change-059)*; CSV enqueues discovery *(change-058)* |
+| EP-DATA-16 | GET | /api/v1/data/datasets | JWT | query: page, limit, dataSourceId, semanticFlag, syncStatus | 200 `Paginated<DatasetListItemDto>` | SVC-DATA-DS.list() | |
+| EP-DATA-17 | GET | /api/v1/data/datasets/:id | JWT | `:id` | 200 `DatasetDto` | SVC-DATA-DS.get() | Includes schema, AI proposals, discovery status, `dataSourceId` |
+| EP-DATA-18 | PATCH | /api/v1/data/datasets/:id | JWT | `:id` · `UpdateDatasetDto` { name?, description?, extractOptions? } | 200 `DatasetDto` | SVC-DATA-DS.update() | Mapping via EP-DATA-23 |
+| EP-DATA-19 | DELETE | /api/v1/data/datasets/:id | JWT | `:id` | 204 \| 409 | SVC-DATA-DS.delete() | Drops OLAP + FilterValueMeta; block if dashboard-linked |
+| EP-DATA-20 | POST | /api/v1/data/datasets/:id/sync | JWT | `:id` · body `{ mode?: 'full' \| 'incremental' }` | 202 `{ syncRunId, status }` | SVC-DATA-SYNC.triggerSync() | Async; blocked if syncing *(change-038)* |
 | EP-DATA-21 | GET | /api/v1/data/datasets/:id/sync-history | JWT | `:id` · query: page, limit | 200 `Paginated<SyncRunDto>` | SVC-DATA-DS.listSyncHistory() | |
-| EP-DATA-40 | PATCH | /api/v1/data/datasets/:id/schema-columns | JWT | `:id` · body `{ columns: [{ name, userDescription?, isPrimaryKey?, isSelected?, selectionOrder? }] }` | 200 `DatasetDto` | SVC-DATA-DS.updateSchemaColumns() | Patches descriptions/PK/selection flags on `availableColumns`; rejects selecting `blocked` columns; exclusive PK; does not prune live `schema` *(change-038, change-055)* |
-| EP-DATA-48 | POST | /api/v1/data/datasets/:id/confirm-schema-selection | JWT | `:id` · body `{ columns: [{ name, isSelected, selectionOrder?, userDescription?, isPrimaryKey? }] }` | 200 `DatasetDto` \| 400/409/422 | SVC-DATA-DS.confirmSchemaSelection() | Prunes live `schema` to selected ordered columns; strips mapping for deselected when allowed; rejects blocked/zero-selected/mandatory-map deselect; blocked while syncing; audits `dataset.schema_selection` *(change-055)* |
-| EP-DATA-49 | POST | /api/v1/data/datasets/:id/refresh-available-columns | JWT | `:id` | 202 `DatasetDto` (status queued) | SVC-DATA-DS.enqueueSchemaDiscovery(mode=`new-columns-only`) | Add-column: enqueues rediscovery + AI for **new columns only**; poll Dataset until terminal *(change-055, change-058)* |
-| EP-DATA-22 | POST | /api/v1/data/datasets/:id/discover-schema | JWT | `:id` | 202 `DatasetDto` (status queued) | SVC-DATA-DS.enqueueSchemaDiscovery(mode=`full`) | Enqueues rediscovery + column-identify + mapping proposal; also used as **Retry** for failed discovery *(change-022, change-055, change-058)* |
-| EP-DATA-23 | POST | /api/v1/data/datasets/:id/confirm-mapping | JWT | `:id` · `ConfirmMappingDto` { columnMapping: Record<string,string>, semanticFlag: string } | 200 `DatasetDto` \| 422 `{ missing: string[] }` | SVC-DATA-DS.confirmMapping() | Promotes mapping into live fields; clears AI proposals. Applies to **all** semantic sources (not just csv/google_sheets). Returns structured `{ missing }` (422) when required canonical fields for the chosen `semanticFlag` are unmapped, so the UI can highlight fields instead of showing an opaque error *(change-022, updated change-045)* |
+| EP-DATA-40 | PATCH | /api/v1/data/datasets/:id/schema-columns | JWT | `:id` · body `{ columns: [...] }` | 200 `DatasetDto` | SVC-DATA-DS.updateSchemaColumns() | *(change-038, change-055)* |
+| EP-DATA-48 | POST | /api/v1/data/datasets/:id/confirm-schema-selection | JWT | `:id` · body `{ columns: [...] }` | 200 `DatasetDto` \| 400/409/422 | SVC-DATA-DS.confirmSchemaSelection() | *(change-055)* |
+| EP-DATA-49 | POST | /api/v1/data/datasets/:id/refresh-available-columns | JWT | `:id` | 202 `DatasetDto` | SVC-DATA-DS.enqueueSchemaDiscovery(mode=`new-columns-only`) | *(change-055, change-058)* |
+| EP-DATA-22 | POST | /api/v1/data/datasets/:id/discover-schema | JWT | `:id` | 202 `DatasetDto` | SVC-DATA-DS.enqueueSchemaDiscovery(mode=`full`) | *(change-022, change-055, change-058)* |
+| EP-DATA-23 | POST | /api/v1/data/datasets/:id/confirm-mapping | JWT | `:id` · `ConfirmMappingDto` | 200 `DatasetDto` \| 422 `{ missing }` | SVC-DATA-DS.confirmMapping() | *(change-022, change-045)* |
 
 ### Google Sheets OAuth Endpoints *(change-023)*
 
@@ -54,7 +67,7 @@
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
 | EP-DATA-24 | GET | /api/v1/data/google/auth-url | JWT | query: `workspaceSlug` | 200 `{ authUrl: string }` | GoogleOAuthService.buildAuthUrl() | Returns Google OAuth consent URL; `state` param encodes workspaceSlug + userId + CSRF nonce |
-| EP-DATA-25 | GET | /api/v1/data/google/callback | Public | query: `code`, `state` | 302 → `/app/data/google-sheets/setup/:connectionId` | GoogleOAuthService.handleCallback() | Exchanges code for tokens; encrypts + stores as new `DataConnection(sourceType=google_sheets)`; redirects to frontend setup page |
+| EP-DATA-25 | GET | /api/v1/data/google/callback | Public | query: `code`, `state` | 302 → wizard with `connectionId` | GoogleOAuthService.handleCallback() | Exchanges code for tokens; encrypts + stores as new **Connection** (auth only); rate-limited; redirects to choose-scope / select-entities *(change-059)* |
 
 ### Shopify OAuth + Webhook Endpoints *(change-024)*
 
@@ -162,25 +175,25 @@
 
 ---
 
-### Data Source Grouping, Entity Selection & Progress Endpoints *(change-045)*
+### Data Source Grouping, Entity Selection & Progress Endpoints *(change-045, change-059)*
 
 `@Controller('data')`
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-DATA-41 | GET | /api/v1/data/setup-flow | JWT | query: `sourceType` | 200 `{ steps: WizardStep[] }` | SVC-PIPE-TYPE-REG.getSetupFlow() | Backend-driven wizard step sequence for a source type; step kinds `connect \| select-entities \| schema-review \| schedule`; `select-entities` present for all sources except `csv` |
-| EP-DATA-42 | GET | /api/v1/data/connections/:id/datasets | JWT | `:id` · query: page, limit, `schemaDiscoveryBatchId?` | 200 `Paginated<DatasetListItemDto>` | SVC-DATA-DS.listByConnection() | Lists all Tables (Datasets) grouped under one Data Source; optional batch filter for discovery status polling *(change-045, change-058)* |
-| EP-DATA-43 | GET | /api/v1/data/connections/:id/entities | JWT | `:id` | 200 `{ entities: DataSourceEntityDto[] }` | SVC-CONN.listEntities() | Generic entity listing via the connector `listEntities()` contract; unifies SQL tables / Mongo collections / Sheets tabs / e-commerce entities; runs live against the source (progress-tracked for slow sources) |
-| EP-DATA-44 | POST | /api/v1/data/connections/:id/datasets/from-entities | JWT | `:id` · body `{ entities: { name, semanticFlag?, extractOptions? }[] }` | 201 `{ datasetIds: string[], createdIds: string[], schemaDiscoveryBatchId: string }` | SVC-DATA-DS.createFromEntities() | Creates one Dataset per selected entity; idempotent per (connectionId, entity); **enqueues parallel schema-discovery jobs** for newly created datasets; does not await AI *(change-045, change-058)* |
-| EP-DATA-45 | GET | /api/v1/data/datasets/:id/sync-runs/:runId | JWT | `:id`, `:runId` | 200 `SyncRunDto` | SVC-DATA-SYNC.getRun() | Single sync-run status including live `progress` (0–100) + `phase`; polled by the frontend percentage loader during first sync / re-sync |
-| EP-DATA-46 | POST | /api/v1/data/datasets/:id/propose-mapping | JWT | `:id` · `ProposeMappingDto` { semanticFlag } | 200 `{ semanticFlag, columnMapping: Record<string,string> }` | SVC-DATA-DS.proposeMappingForFlag() | On-demand AI mapping for the **user-chosen** semantic type — powers the "Map with AI" button in schema review. Runs against the already-discovered schema for ANY source (incl. csv); returns an editable proposal (does not mutate live `columnMapping`) *(change-045)* |
+| EP-DATA-41 | GET | /api/v1/data/setup-flow | JWT | query: `sourceType` | 200 `{ steps: WizardStep[] }` | SVC-PIPE-TYPE-REG.getSetupFlow() | Steps include `choose-connection` (non-CSV) then `connect`/`scope` \| `select-entities` \| `schema-review` \| `schedule` *(change-059)* |
+| EP-DATA-42 | GET | /api/v1/data/sources/:id/datasets | JWT | `:id` · query: page, limit, `schemaDiscoveryBatchId?` | 200 `Paginated<DatasetListItemDto>` | SVC-DATA-DS.listByDataSource() | Tables under one Data Source *(change-045, change-058, change-059)* |
+| EP-DATA-43 | GET | /api/v1/data/sources/:id/entities | JWT | `:id` | 200 `{ entities: ImportableEntityDto[] }` | SVC-DATA-DS.listDataSourceEntities() | Resolves Connection+scope; `listEntities()` *(change-059)* |
+| EP-DATA-44 | POST | /api/v1/data/sources/:id/datasets/from-entities | JWT | `:id` · body `{ entities: [...] }` | 201 `{ datasetIds, createdIds, schemaDiscoveryBatchId }` | SVC-DATA-DS.createFromEntities() | Idempotent per `(dataSourceId, entity)`; enqueues parallel discovery *(change-045, change-058, change-059)* |
+| EP-DATA-45 | GET | /api/v1/data/datasets/:id/sync-runs/:runId | JWT | `:id`, `:runId` | 200 `SyncRunDto` | SVC-DATA-SYNC.getRun() | Live progress/phase |
+| EP-DATA-46 | POST | /api/v1/data/datasets/:id/propose-mapping | JWT | `:id` · `ProposeMappingDto` { semanticFlag } | 200 `{ semanticFlag, columnMapping }` | SVC-DATA-DS.proposeMappingForFlag() | *(change-045)* |
 
-- [EP-DATA-41] Reuses the backend-driven wizard registry: resolves the ordered step list for a `sourceType` so the frontend renders the correct flow without per-source hardcoding. Selection-capable sources (`google_sheets`, `shopify`, `salla`, `zid`, `sql_server`, `mongodb_atlas`) include a `select-entities` step; `csv` does not.
-- [EP-DATA-42] Validates workspace ownership of the connection; returns the connection's Datasets with per-table `name`, `sourceRef`/entity, `syncStatus`, `rowCount`, `lastSyncAt`, and discovery status fields. Optional `schemaDiscoveryBatchId` filters a multi-select batch for wizard polling *(change-058)*.
-- [EP-DATA-43] Delegates to `connector.listEntities(conn)`. For slow sources (e.g. Zid) the call may create/advance a listing `SyncRun`-style progress signal so the UI can show a percentage loader instead of a blank wait. Never called at dashboard render time.
-- [EP-DATA-44] Creates Datasets from the user's entity selection and enqueues parallel schema-discovery jobs for new tables. Because the operation is keyed on `(connectionId, entity)`, re-opening the wizard to add more tables is safe and non-destructive. Already-existing entities are returned in `datasetIds` without re-enqueue unless the client calls Retry (EP-DATA-22) *(change-058)*.
-- [EP-DATA-45] Returns a single `SyncRun` with `progress` + `phase`; used by the frontend `ProgressLoader` which polls until `status` is terminal (`success`/`failed`).
-- [EP-DATA-46] Reuses the shared `runAiMappingProposal` helper (same AI prompt + name/synonym prefill fallback as discovery), but for the flag the user selected rather than the auto-guessed one. `arbitrary` returns an empty mapping. The proposal is also stored as the `aiProposedMapping` draft so re-opening the review keeps it; the live mapping only changes on EP-DATA-23 (confirm).
+- [EP-DATA-41] Includes `choose-connection` for all non-CSV types so the wizard can pick/create a Connection before scope/entities *(change-059)*.
+- [EP-DATA-42] Validates workspace ownership of the Data Source; optional `schemaDiscoveryBatchId` for wizard polling *(change-058)*.
+- [EP-DATA-43] Uses Data Source → Connection credentials + scope for live entity listing.
+- [EP-DATA-44] Keyed on `(dataSourceId, entity)`; non-destructive add-tables from detail page.
+- [EP-DATA-45] ProgressLoader polls until terminal status.
+- [EP-DATA-46] On-demand AI mapping; live mapping only on EP-DATA-23.
 
 ---
 

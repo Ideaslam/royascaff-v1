@@ -6,7 +6,7 @@
 | Sharing (public) | sharing.md | Shared Dashboard Viewer | `/shared/:token` |
 | Projects | projects.md | Projects List, Project Detail | `/app/projects`, `/app/projects/:id` |
 | Dashboards | dashboards.md | Dashboard Generating, Dashboard Viewer | `/app/dashboards/:id/generating`, `/app/dashboards/:id` |
-| Data (Multi-Source) | data.md | Data Sources Home (grouped), **Data Source Detail** *(change-045)*, **Backend-Driven Setup Wizard** *(change-039/045)*, ProgressLoader (shared), CSV Upload, Dataset/Table Detail (Sync History), Legacy per-source Connect/Setup pages (historical), Legacy CSV Files, Legacy CSV Upload | `/app/data`, `/app/data/sources/:connectionId` *(change-045)*, `/app/data/connect/:sourceType` *(change-039)*, `/app/data/csv-upload`, `/app/data/datasets/:id`, `/app/data/files`, `/app/data/upload` (+ legacy `/app/data/{google-sheets,shopify,salla,zid}/…`, `/app/data/{sql-server,mongodb-atlas}/connect`) |
+| Data (Multi-Source) | data.md | Data Sources Home, **Connections table** *(change-059)*, **Data Source Detail**, **Setup Wizard** (choose-connection + entities) *(change-039/045/059)*, ProgressLoader, Discovery Status List, CSV Upload, Dataset Detail, Legacy pages | `/app/data`, `/app/data/connections` *(change-059)*, `/app/data/sources/:dataSourceId` *(change-045/059)*, `/app/data/connect/:sourceType`, `/app/data/csv-upload`, `/app/data/datasets/:id`, `/app/data/files`, `/app/data/upload` (+ legacy per-source routes) |
 | Notifications | notifications.md | Notifications | `/app/notifications` |
 | Subscriptions | subscriptions.md | Subscriptions | `/app/subscriptions` |
 | User Settings | profile.md | Profile Settings | `/app/settings/profile` |

@@ -599,7 +599,7 @@ Collection: `datasource_type_meta` (global — not workspace-scoped)
 
 **Indexes:** `{ sourceType: 1 }` unique (natural PK for upserts)
 **Seed:** idempotent upsert by `sourceType`; script: `npm run seed:datasource-types` (manual, not run on app start)
-**Rules:** No create/delete API endpoints — the set of types is fixed to the `DataSourceType` enum · Admin can update all display fields + `isActive` via PATCH · `isActive = false` hides the type from the customer portal picker; existing `DataConnection` records for disabled types are unaffected
+**Rules:** No create/delete API endpoints — the set of types is fixed to the `DataSourceType` enum · Admin can update all display fields + `isActive` via PATCH · `isActive = false` hides the type from the customer portal picker; existing Connection / DataSource records for disabled types are unaffected
 
 ---
 
@@ -616,7 +616,7 @@ Collection: `datasource_type_meta` (global — not workspace-scoped)
 10. `backgroundjobs.status` must always be updated to `failed` with `errorMessage` on failure — no silent failures
 11. `chartdatacache` entries must be invalidated (deleted or set `stale`) before a refresh response is returned
 12. `csvdata_{fileId}` collections must be dropped entirely when the parent `csvfile` record is deleted
-13. `dataconnections.credentialsEncrypted` must always be AES-256-GCM encrypted before persisting; decryption only inside connector-facing service methods — never exposed in API responses *(change-015)*
+13. `data_connections.credentialsEncrypted` must always be AES-256-GCM encrypted before persisting; decryption only inside connector-facing service methods — never exposed in API responses; blob must contain **auth only** (no Data Source scope) *(change-015, change-059)*
 14. `datasets.analyticsTable` must follow the pattern `ds_{workspaceSlug}_{datasetId}` — never allow caller-supplied table names *(change-015)*
 15. `filtervaluemeta` rows must be refreshed (not created anew) after every successful sync run *(change-021)*
 16. `chartwidgets.querySpec` takes precedence over `queryDefinition` in the chart data API; both may coexist on the same document *(change-020)*
@@ -624,6 +624,9 @@ Collection: `datasource_type_meta` (global — not workspace-scoped)
 18. `datasets.aiProposedMapping` and `aiProposedSemanticFlag` are display-only fields — they are replaced by `columnMapping` and `semanticFlag` upon user confirmation and never used in query execution *(change-022)*
 19. `dashboard_templates.widgetBlueprint[].querySpec` may only reference canonical field names from `canonical-fields.config.ts` for the template's declared `requiredModels`; validated on admin create/update and in the seed script *(change-049)*
 20. Canonical union views must follow the pattern `cv_{workspaceSlug}_{semanticFlag}` and are (re)created only by the `ensure-canonical-views` pipeline step — never from caller-supplied names *(change-049)*
+21. Connection delete is blocked while any Data Source references it; Data Source delete is blocked while any DashboardDatasource references a child Dataset; otherwise Data Source delete cascade-deletes Datasets + SyncRuns *(change-059)*
+22. Creating/updating Connection credentials requires a successful `testConnection` before persist; Data Source `connectionId` is immutable after create *(change-059)*
+23. Dataset credential resolution is always `dataset → dataSource → connection`; Dataset stores `dataSourceId`, not `connectionId` *(change-059)*
 
 ## Mongoose Enum Reference
 ```
@@ -681,25 +684,48 @@ Indexes: index `status`; index `createdAt` desc; index `triggeredBy`
 
 ---
 
-## DataConnection *(change-015)*
-Purpose: stores named connection credentials for an external data source. Credentials are encrypted.
-Collection: `ws_{workspaceSlug}_dataconnections`
+## Connection *(change-015, evolved change-059)*
+Purpose: stores **auth-only** credentials/tokens for an external system. Reusable across many Data Sources. Formerly conflated with “Data Source” as `DataConnection`.
+Collection: `ws_{workspaceSlug}_data_connections` (runtime; preserve existing collection + `_id` values on migrate)
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
-| `_id` | ObjectId | PK | — |
-| `workspaceSlug` | String | required; workspace scope | — |
-| `name` | String | required; human-readable connection name | — |
-| `sourceType` | Enum | required | `csv \| google_sheets \| shopify \| salla \| zid \| sql_server \| mongodb_atlas` |
-| `credentialsEncrypted` | String | required; AES-256-GCM encrypted JSON blob of credentials | — |
-| `status` | Enum | required; default: `active` | `active \| disabled` |
+| `_id` | ObjectId | PK — **preserve across migration** | — |
+| `name` | String | required; human-readable connection name (renamable) | — |
+| `sourceType` | Enum | required | `google_sheets \| shopify \| salla \| zid \| sql_server \| mongodb_atlas` (CSV excluded — no reusable Connection) |
+| `credentialsEncrypted` | String | required; AES-256-GCM encrypted JSON blob of **auth only** (DB host/user/password/URI; OAuth access/refresh tokens) — never type-specific scope | — |
+| `status` | Enum | required; default: `active` | `active \| error \| disabled` |
 | `lastTestedAt` | Date | nullable; when connection was last tested | — |
 | `lastTestResult` | String | nullable; `ok \| error: <message>` | — |
+| `lastErrorMessage` | String | nullable | — |
 | `createdBy` | ObjectId | required | → `users._id` |
 | `createdAt` | Date | auto | — |
 | `updatedAt` | Date | auto | — |
 
-**Indexes:** `{ workspaceSlug: 1, sourceType: 1 }` · `{ workspaceSlug: 1, name: 1 }` unique
+**Indexes:** `{ sourceType: 1 }` · `{ status: 1 }` · `{ createdBy: 1, createdAt: -1 }` · `{ name: 1 }`
+**Rules:** Credentials always encrypted at rest · never returned in API · test must succeed before create/update-credentials persist *(change-059)* · delete blocked while any Data Source references this Connection · OAuth re-auth updates credentials in place without recreating linked Data Sources
+
+---
+
+## DataSource *(change-059)*
+Purpose: a named logical source that uses a Connection plus type-specific **scope**. Many Data Sources may share one Connection. Owns Tables (Datasets).
+Collection: `ws_{workspaceSlug}_data_sources`
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `name` | String | required; renamable | — |
+| `connectionId` | ObjectId | required (except CSV one-off — nullable/`null` for CSV) | → `Connection._id` |
+| `sourceType` | Enum | required | `csv \| google_sheets \| shopify \| salla \| zid \| sql_server \| mongodb_atlas` |
+| `scope` | Object | optional; type-specific non-auth config, e.g. `{ database }`, `{ spreadsheetId, sheetTitle? }`, `{ shopDomain, storeId }` | — |
+| `status` | Enum | required; default: `active` | `active \| error \| disabled` |
+| `createdBy` | ObjectId | required | → `users._id` |
+| `createdAt` | Date | auto | — |
+| `updatedAt` | Date | auto | — |
+
+**Indexes:** `{ connectionId: 1 }` · `{ sourceType: 1 }` · `{ createdBy: 1, createdAt: -1 }`
+**Relations:** belongs-to Connection · has-many Datasets
+**Rules:** No rebind of `connectionId` after create · CSV has no Connection (`connectionId` null; scope/credentials one-off as needed) · delete requires confirmation; cascade-deletes Datasets + SyncRuns; **blocked** if any `DashboardDatasource` references a child Dataset
 
 ---
 
@@ -713,7 +739,7 @@ Collection: `webhook_routes` *(NOT workspace-scoped — intentionally global)*
 | `sourceType` | String | required; enum: `shopify \| salla \| zid` | — |
 | `externalStoreId` | String | required; provider-assigned store/merchant ID | — |
 | `workspaceSlug` | String | required | → Workspace |
-| `connectionId` | ObjectId | required | → `DataConnection._id` |
+| `connectionId` | ObjectId | required | → `Connection._id` *(auth identity; preserved on migrate)* |
 | `createdAt` | Date | auto | — |
 | `updatedAt` | Date | auto | — |
 
@@ -721,16 +747,15 @@ Collection: `webhook_routes` *(NOT workspace-scoped — intentionally global)*
 
 ---
 
-## Dataset *(change-015, updated change-022, change-058)*
-Purpose: describes a named view of data from a connection — what to extract, how to label it, and its semantic meaning.
+## Dataset *(change-015, updated change-022, change-058, change-059)*
+Purpose: describes a named Table under a Data Source — what to extract, how to label it, and its semantic meaning.
 Collection: `ws_{workspaceSlug}_datasets`
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | `_id` | ObjectId | PK | — |
-| `workspaceSlug` | String | required | — |
-| `connectionId` | ObjectId | required | → `DataConnection._id` |
-| `sourceType` | Enum | required | `csv \| google_sheets \| …` |
+| `dataSourceId` | ObjectId | required | → `DataSource._id` *(change-059; replaces `connectionId`)* |
+| `sourceType` | Enum | required | `csv \| google_sheets \| shopify \| salla \| zid \| sql_server \| mongodb_atlas` |
 | `name` | String | required; human-readable dataset name | — |
 | `description` | String | optional | — |
 | `semanticFlag` | Enum | required, default: `arbitrary` | `arbitrary \| orders \| products \| customers \| marketing_spend` *(dictionary-driven; change-049)* |
@@ -740,12 +765,15 @@ Collection: `ws_{workspaceSlug}_datasets`
 | `availableColumns` | [Object] | optional; full last-discovered column list (same shape as schema columns, including selection/blocked flags); written by discover + Add-column refresh; UI source for Edit Schema; schema drift appends here *(change-055)* | — |
 | `schema` | [Object] | optional; **live selected columns only** after user confirm `{ name, type, sample?, nullable?, description?, descriptionAr?, userDescription?, isPrimaryKey?, isSelected?, selectionOrder?, blocked? }`; AI `column-identify` proposes selection/PK/blocked on `availableColumns`; confirm prunes into `schema`; ingest projects rows to these columns only *(change-038, change-055)* | — |
 | `extractOptions` | Object | optional; connector-specific extraction config (e.g. sheet name, SQL query, table name) | — |
+| `sourceRef` | String | optional; connector sub-resource key (entity/table/sheet/collection name) | — |
 | `analyticsTable` | String | nullable; OLAP table name — set after first successful sync as `ds_{workspaceSlug}_{_id}` | — |
 | `syncStatus` | Enum | required, default: `idle` | `idle \| syncing \| error` |
 | `syncPolicy` | Enum | required, default: `manual` | `manual \| hourly \| daily \| webhook` |
 | `lastSyncAt` | Date | nullable | — |
 | `rowCount` | Number | default: 0; count after last successful sync | — |
 | `lastSyncErrorMessage` | String | nullable | — |
+| `watermarkColumn` | String | nullable | — |
+| `hasSchemaDrift` | Boolean | default: false | — |
 | `schemaDiscoveryStatus` | Enum | optional, default: `idle` | `idle \| queued \| running \| success \| failed` *(change-058)* |
 | `schemaDiscoveryError` | String | nullable; last discovery/identify failure message *(change-058)* | — |
 | `schemaDiscoveryBatchId` | String | nullable; groups jobs from one multi-select / add-tables action *(change-058)* | — |
@@ -755,9 +783,9 @@ Collection: `ws_{workspaceSlug}_datasets`
 | `createdAt` | Date | auto | — |
 | `updatedAt` | Date | auto | — |
 
-**Indexes:** `{ connectionId: 1 }` · `{ semanticFlag: 1 }` · `{ syncStatus: 1 }` · `{ createdBy: 1, createdAt: -1 }` · `{ schemaDiscoveryBatchId: 1 }` *(change-058)*
-**Relations:** belongs-to DataConnection · has-many SyncRuns · referenced-by DashboardDatasource · referenced-by FilterValueMeta
-**Rules:** `analyticsTable` set by `DataSyncProcessor` after first successful sync; `null` = data not yet loaded; dashboards require `analyticsTable != null` before generation · *(change-055)* `availableColumns` = full discovered list; live `schema` = user-confirmed selected columns only (ordered by `selectionOrder`); `blocked: true` forces unselected and is never selectable; unselected columns are not stored in OLAP until re-selected + manual sync; migration backfills existing datasets with all current schema columns as selected into both arrays · *(change-058)* setup/re-discover/Add-column enqueue `SCHEMA_DISCOVERY_QUEUE` (one job per dataset, parallel); status fields default safe for existing docs (no migration); failed discovery does not delete the Dataset
+**Indexes:** `{ dataSourceId: 1 }` · `{ semanticFlag: 1 }` · `{ syncStatus: 1 }` · `{ createdBy: 1, createdAt: -1 }` · `{ schemaDiscoveryBatchId: 1 }` *(change-058)*
+**Relations:** belongs-to DataSource · has-many SyncRuns · referenced-by DashboardDatasource · referenced-by FilterValueMeta
+**Rules:** Credential path for connectors: Dataset → DataSource → Connection *(change-059)* · `analyticsTable` set by `DataSyncProcessor` after first successful sync; `null` = data not yet loaded; dashboards require `analyticsTable != null` before generation · *(change-055)* `availableColumns` = full discovered list; live `schema` = user-confirmed selected columns only; `blocked: true` never selectable · *(change-058)* setup/re-discover/Add-column enqueue `SCHEMA_DISCOVERY_QUEUE`
 
 ---
 
