@@ -721,7 +721,7 @@ Collection: `webhook_routes` *(NOT workspace-scoped — intentionally global)*
 
 ---
 
-## Dataset *(change-015, updated change-022)*
+## Dataset *(change-015, updated change-022, change-058)*
 Purpose: describes a named view of data from a connection — what to extract, how to label it, and its semantic meaning.
 Collection: `ws_{workspaceSlug}_datasets`
 
@@ -746,13 +746,18 @@ Collection: `ws_{workspaceSlug}_datasets`
 | `lastSyncAt` | Date | nullable | — |
 | `rowCount` | Number | default: 0; count after last successful sync | — |
 | `lastSyncErrorMessage` | String | nullable | — |
+| `schemaDiscoveryStatus` | Enum | optional, default: `idle` | `idle \| queued \| running \| success \| failed` *(change-058)* |
+| `schemaDiscoveryError` | String | nullable; last discovery/identify failure message *(change-058)* | — |
+| `schemaDiscoveryBatchId` | String | nullable; groups jobs from one multi-select / add-tables action *(change-058)* | — |
+| `schemaDiscoveryStartedAt` | Date | nullable *(change-058)* | — |
+| `schemaDiscoveryFinishedAt` | Date | nullable *(change-058)* | — |
 | `createdBy` | ObjectId | required | → `users._id` |
 | `createdAt` | Date | auto | — |
 | `updatedAt` | Date | auto | — |
 
-**Indexes:** `{ connectionId: 1 }` · `{ semanticFlag: 1 }` · `{ syncStatus: 1 }` · `{ createdBy: 1, createdAt: -1 }`
+**Indexes:** `{ connectionId: 1 }` · `{ semanticFlag: 1 }` · `{ syncStatus: 1 }` · `{ createdBy: 1, createdAt: -1 }` · `{ schemaDiscoveryBatchId: 1 }` *(change-058)*
 **Relations:** belongs-to DataConnection · has-many SyncRuns · referenced-by DashboardDatasource · referenced-by FilterValueMeta
-**Rules:** `analyticsTable` set by `DataSyncProcessor` after first successful sync; `null` = data not yet loaded; dashboards require `analyticsTable != null` before generation · *(change-055)* `availableColumns` = full discovered list; live `schema` = user-confirmed selected columns only (ordered by `selectionOrder`); `blocked: true` forces unselected and is never selectable; unselected columns are not stored in OLAP until re-selected + manual sync; migration backfills existing datasets with all current schema columns as selected into both arrays
+**Rules:** `analyticsTable` set by `DataSyncProcessor` after first successful sync; `null` = data not yet loaded; dashboards require `analyticsTable != null` before generation · *(change-055)* `availableColumns` = full discovered list; live `schema` = user-confirmed selected columns only (ordered by `selectionOrder`); `blocked: true` forces unselected and is never selectable; unselected columns are not stored in OLAP until re-selected + manual sync; migration backfills existing datasets with all current schema columns as selected into both arrays · *(change-058)* setup/re-discover/Add-column enqueue `SCHEMA_DISCOVERY_QUEUE` (one job per dataset, parallel); status fields default safe for existing docs (no migration); failed discovery does not delete the Dataset
 
 ---
 
@@ -841,6 +846,7 @@ SyncRunMode = [full, incremental]
 SyncRunStatus = [running, success, failed]
 SyncRunTrigger = [manual, schedule, api]
 SyncRunPhase = [queued, listing, discovering, extracting, loading, finalizing, done, failed]  // change-045
+SchemaDiscoveryStatus = [idle, queued, running, success, failed]  // change-058 — setup/re-discover/Add-column jobs
 
 // New enums (change-045)
 DataSourceEntityKind = [entity, sheet, table, collection]  // listEntities() entity classification
