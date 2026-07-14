@@ -1,15 +1,15 @@
 ## Module: Data (Multi-Source Data Management)
 
-### Data Sources Home Page *(change-022, change-038, change-045, change-059)*
+### Data Sources Home Page *(change-022, change-038, change-045, change-059, change-066)*
 - Route: `/app/data`
-- Components: DataSourcesPage — **one card per Data Source** (not Connection): icon, name, sourceType, status, **table count**, aggregate last-sync. Click → Data Source detail. **"Connect Source"** opens side drawer (type picker) *(change-057)* → `/app/data/connect/:type`. Secondary nav/link to **Connections** (`/app/data/connections`). Legacy CSV files surface as single-table sources.
-- Service: `GET /api/v1/data/sources` (EP-DATA-52); table counts via list or embedded count
+- Components: DataSourcesPage — **integration-style tiles** per Data Source: bordered icon + status badge (table count / syncing / error), **title**, 3-line **description** (registry or DB instruction), footer with **status toggle** (read-only) + **Details** / **Manage** buttons → source detail. Compact grid (~3 columns). **"Connect Source"** opens side drawer (type picker) *(change-057)* → `/app/data/connect/:type`. Link to **Connections** (`/app/data/connections`). List uses **`projection=lite`**. Distinct from Connections **row** layout.
+- Service: `GET /api/v1/data/sources` (EP-DATA-52); table counts via list aggregation
 - Guard: authGuard + onboardingGuard
-- States: loading skeleton · empty state · error toast
+- States: loading skeleton tiles · empty state · error toast
 
 ### Connections List Page *(change-059, change-066)*
 - Route: `/app/data/connections`
-- Components: ConnectionsPage — **card grid** (matches Data Sources visual language): source-type icon, name, type, status tag, linked data-source count, last tested. Breadcrumbs: Data Sources → Connections. Search/filter/sort/pagination preserved. **Card click** opens a **detail side drawer** (name, type, status, last tested, linked data sources with links to source detail, grouped actions: test, rename, edit credentials/re-auth, delete). **Add connection** opens a **type-picker drawer first** (category icons, CSV excluded) → credentials/OAuth form step. Shared `ConnectionCardComponent` reused in setup wizard choose-connection step. Empty/loading/error states; mobile-friendly.
+- Components: ConnectionsPage — **compact horizontal rows** (left accent, inline meta — distinct from Data Source tiles). Breadcrumbs: Data Sources → Connections. Row click → **detail side drawer** (full connection + linked sources). **Add connection** → type-picker drawer → credentials/OAuth. Shared `ConnectionCardComponent` in wizard choose-connection step. **`projection=lite`** list.
 - Service: EP-DATA-09..14, EP-DATA-50; EN/AR i18n
 - Guard: authGuard + onboardingGuard
 - States: loading · empty · error · delete 409 toast
