@@ -7,9 +7,9 @@
 - Guard: authGuard + onboardingGuard
 - States: loading skeleton · empty state · error toast
 
-### Connections List Page *(change-059)*
+### Connections List Page *(change-059, change-066)*
 - Route: `/app/data/connections`
-- Components: ConnectionsPage — **table** layout (dense credential management): name, sourceType, status, dataSourceCount, lastTestedAt; search/filter/sort; row actions: rename, edit credentials / re-auth, test, disable/enable, delete (blocked if in use with clear message). Create/edit via **side drawer** (existing drawer patterns). Empty state CTA “Add connection”.
+- Components: ConnectionsPage — **card grid** (matches Data Sources visual language): source-type icon, name, type, status tag, linked data-source count, last tested. Breadcrumbs: Data Sources → Connections. Search/filter/sort/pagination preserved. **Card click** opens a **detail side drawer** (name, type, status, last tested, linked data sources with links to source detail, grouped actions: test, rename, edit credentials/re-auth, delete). **Add connection** opens a **type-picker drawer first** (category icons, CSV excluded) → credentials/OAuth form step. Shared `ConnectionCardComponent` reused in setup wizard choose-connection step. Empty/loading/error states; mobile-friendly.
 - Service: EP-DATA-09..14, EP-DATA-50; EN/AR i18n
 - Guard: authGuard + onboardingGuard
 - States: loading · empty · error · delete 409 toast
