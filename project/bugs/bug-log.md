@@ -63,9 +63,11 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 | 034 | 2026-07-13 | medium | customer-portal/projects/projects-list | Search input disappears when no matching projects are found | DONE | [bug-034-projects-search-disappears.md](./bug-034-projects-search-disappears.md) |
 | 035 | 2026-07-13 | high | customer-portal/data/setup | Wizard re-auths when choosing an existing Connection | DONE | [bug-035-wizard-existing-connection-reauth.md](./bug-035-wizard-existing-connection-reauth.md) |
 
+| 036 | 2026-07-14 | high | customer-portal/projects | Generate Dashboard button silently fails when purpose field empty | DONE | [bug-036-generate-dashboard-no-action.md](./bug-036-generate-dashboard-no-action.md) |
+
 ## Next Bug Number
 
-**Next**: 036
+**Next**: 037
 
 | 018 | 2026-07-08 | medium | admin-portal/http | Admin panel duplicate API calls + consolidated admin routes | DONE | [bug-018-admin-double-api-calls.md](./bug-018-admin-double-api-calls.md) |
 

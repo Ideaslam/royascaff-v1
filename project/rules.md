@@ -44,7 +44,8 @@ Module: Data · Features: Connections, Data Sources, Entity Selection, Mapping, 
 - **Reusable connections:** many Data Sources may share one Connection. Creating a Data Source requires choosing an existing Connection of that type or adding a new one (test must pass before save). After create, a Data Source cannot be rebound to a different Connection — only rename / edit credentials on the original Connection (incl. OAuth re-auth). CSV is a one-off Data Source without a reusable Connection.
 - **Credential resolution:** sync / listEntities / discoverSchema resolve `dataset → DataSource → Connection`; connectors receive decrypted Connection credentials plus Data Source scope. Secrets never returned in API responses.
 - **Delete guards:** Connection delete blocked while any Data Source references it. Data Source delete requires confirmation, then cascade-deletes Tables + sync history; blocked if any dashboard still references a table from that source. No undo after delete.
-- **UI grouping:** tables live under their Data Source — never surface a source's tables as independent top-level sources. Data Sources home is primary; Connections page is secondary. Adding a connector type stays zero-touch: implement `ConnectorInterface` (incl. `listEntities()`) + register + add a `setup-flow` entry (include `choose-connection` step for non-CSV).
+- **UI grouping:** tables live under their Data Source — never surface a source's tables as independent top-level sources. Data Sources home is primary; Connections page is secondary. Adding a connector type stays zero-touch: implement `ConnectorInterface` (incl. `listEntities()`) + declare its `pipelineProfile` (ingest overrides + wizard traits; `chooseConnection`/`entitySelection`/`oneShot`) + register — the setup-wizard flow is derived from that profile, no kernel or `setup-flow` table edit *(change-064)*.
+- **Setup wizard is backend-driven, single source of truth *(change-065)*:** `DatasetSetupWizardPage` renders the `SetupFlow` from EP-DATA-41 **verbatim** — no source-type branching, no re-injected steps, no fabricated fallback flow. Per-step UI toggles ride on `WizardStepMeta.config` (e.g. `schedule.config.allowPolicy = !oneShot`). If the flow fails to load, the wizard shows a retryable error. The only permitted local edit is dropping `choose-connection`/`connect` when adding tables to an existing source. Adding a wizard step for all sources = extend the backend flow only; the frontend needs no change.
 - **Entity selection is unified:** every source except CSV exposes importable entities via `connector.listEntities()`; datasets are created from the user's selection through `createFromEntities` (idempotent per `(dataSourceId, entity)`). E-commerce OAuth callbacks create/update a **Connection** only — redirect into choose-connection/scope/`select-entities`, not auto-provision fixed datasets.
 - **Everything is editable post-setup** from the Data Source detail page: add/remove tables (same Connection), edit descriptions, **edit column selection (Edit Schema / Add column)**, edit canonical mapping, change schedule, rename source.
 - **Mapping is AI-suggested + user-editable for all semantic sources**. Prefill by name-match; `confirmMapping` returns structured `422 { missing }`. Frontend blocks Confirm and highlights missing rows.
@@ -203,11 +204,20 @@ MCP tool) over the engine contract. New REST/MCP surfaces must not reimplement e
 supply a valid `TenantContext` from their own auth (JWT, API key, or service token). Engines must not
 assume a specific delivery mechanism (no direct dependence on JWT-embedded claims inside engine code).
 
-### RULE-ARCH-006: Extend by Registration, Not Modification
+### RULE-ARCH-006: Extend by Registration, Not Modification *(sharpened change-064)*
 New connectors (`ConnectorInterface`), OLAP engines (`OlapEngine`), pipeline steps
 (`PipelineStepInterface`), pipeline types (`PipelineTypeRegistry`), and widget types are added by
 implementing the interface + one registry entry within the **owning** engine — never by editing the
-engine core or reaching across engine boundaries.
+engine core or reaching across engine boundaries. Concretely *(change-064)*:
+- **New data source type** → implement `ConnectorInterface` + declare its `pipelineProfile` (ingest
+  step overrides + wizard traits) on the connector + register it. No `engine-core` edit; the ingest
+  pipeline and setup-wizard flow are derived from the profile by `DataSourcePipelineService`.
+- **New pipeline type** → register it via `PipelineTypeRegistry.register()` from the owning engine's
+  bootstrap (`DataSourcePipelineService` for data/ingest, `DashboardPipelineRegistrar` for reporting) —
+  never seed it in the kernel.
+- **New step on the default ingest pipeline** → add to the data engine's ingest definition; it applies
+  to every source automatically (a source opts out only via its `pipelineProfile.ingestOverrides`).
+The kernel (`engine-core`) must never contain a source-type name or a seeded pipeline-type definition.
 
 ---
 

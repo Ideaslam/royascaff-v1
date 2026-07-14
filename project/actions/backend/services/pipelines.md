@@ -8,18 +8,31 @@
 > with their owning engine (ingest → Data Source Engine; dashboard → Reporting Engine) in later phases.
 > `PipelineRunRepository` is bound to `PIPELINE_RUN_STORE` so the kernel stays persistence-agnostic.
 > Behavior is unchanged.
+>
+> **Registration seam *(change-064)*:** the kernel now holds **only registration/lookup mechanics** —
+> no seeded pipeline types, no source-type names, no wizard tables. Every pipeline **type** is
+> registered at bootstrap by its **owning engine**, and every data source's ingest profile travels on
+> its connector:
+> - **Data Source Engine** (`SVC-DATA-PIPELINE`, `modules/data`) owns the `ingest` type + the default
+>   ingest step list, resolves per-source ingest steps and the setup-wizard flow from each connector's
+>   `pipelineProfile`, and passes the resolved `steps` to the engine.
+> - **Reporting Engine** (`SVC-DASH-PIPELINE-REG`, `modules/dashboards`) registers
+>   `dashboard-generate` / `add-widget` / `edit-widget`.
+> Adding a new **source type** = one connector `pipelineProfile`; adding a new **pipeline type** = one
+> `register()` in the owning engine; adding a **step** to the default ingest pipeline applies to every
+> source automatically. Never edit `engine-core` to extend (RULE-ARCH-002 / RULE-ARCH-006).
 
-### SVC-PIPE-ENGINE · PipelineEngine [internal, application, engine-core] *(change-019, change-060)*
-Orchestrates the execution of an ordered sequence of pipeline steps. The single entry point for all pipeline invocations. Located in `src/engine-core/`. `RunPipelineOptions`/`PipelineContext` are generic over the domain dataset/connection types; persists runs via the injected `PIPELINE_RUN_STORE`.
+### SVC-PIPE-ENGINE · PipelineEngine [internal, application, engine-core] *(change-019, change-060, change-064)*
+Orchestrates the execution of an ordered sequence of pipeline steps. The single entry point for all pipeline invocations. Located in `src/engine-core/`. `RunPipelineOptions`/`PipelineContext` are generic over the domain dataset/connection types; persists runs via the injected `PIPELINE_RUN_STORE`. **Fully neutral (change-064):** no per-source / per-type special-casing — it runs the caller-supplied `steps` if given, otherwise the registered type's steps.
 
 **Methods:**
-- `run(type: string, opts: RunPipelineOptions): Promise<PipelineContext>` — resolves `PipelineTypeDefinition` from `PipelineTypeRegistry`, initializes `PipelineContext`, executes enabled steps in order via `StepRegistry`, records a `PipelineRun` document, surfaces first fatal error
+- `run(opts: RunPipelineOptions): Promise<{ pipelineRunId, metadata }>` — resolves `PipelineTypeDefinition` from `PipelineTypeRegistry`, initializes `PipelineContext`, executes enabled steps (`opts.steps ?? typeDef.steps`) in order via `StepRegistry`, records a `PipelineRun` document, surfaces first fatal error
 
-**RunPipelineOptions fields:** `workspaceSlug`, `dataset?`, `connection?`, `syncRunId?`, `metadata?: Record<string, unknown>` (generic bag for pipeline-specific data like `dashboardId`, `purpose`, etc.)
+**RunPipelineOptions fields:** `pipelineType`, `workspaceSlug`, `engineId`, `syncRunId`, `mode`, `dataset?`, `connection?`, `steps?` (per-run resolved step list — used by ingest for per-source resolution *(change-064)*), `metadata?: Record<string, unknown>` (generic bag for pipeline-specific data like `dashboardId`, `purpose`, etc.)
 
 **Deps:** PipelineTypeRegistry · StepRegistry · PipelineRunRepository
 **Side effects:** PipelineRun create/update · step-specific side effects
-**Rules:** Steps executed in ascending `order` value · Disabled steps (`enabled: false`) are skipped · On step error: PipelineRun status = `failed`, error captured, pipeline aborts · `metadata` is mutable across steps (accumulation pattern)
+**Rules:** Steps executed in ascending `order` value · Disabled steps (`enabled: false`) are skipped · On step error: PipelineRun status = `failed`, error captured, pipeline aborts · `metadata` is mutable across steps (accumulation pattern) · the engine never inspects `sourceType` — per-source resolution happens in the Data Source Engine *(change-064)*
 
 ---
 
@@ -34,23 +47,49 @@ Maps step type strings to `PipelineStepInterface` implementations. Steps self-re
 
 ---
 
-### SVC-PIPE-TYPE-REG · PipelineTypeRegistry [internal, domain, Pipelines] *(change-019, change-020, change-045)*
-Registry of named pipeline types, each defining an ordered list of `PipelineStepConfig` entries. Also the single source of truth for the backend-driven **setup flow** (wizard step sequence per data source).
+### SVC-PIPE-TYPE-REG · PipelineTypeRegistry [internal, domain, engine-core] *(change-019, change-020, change-045, change-064)*
+Neutral registry of named pipeline types, each defining an ordered list of `PipelineStepConfig` entries. **Pure mechanics (change-064):** it seeds nothing and knows no source-type names — types are registered by their owning engine at bootstrap.
 
-**Methods (change-045):**
-- `getSetupFlow(sourceType: DataSourceType): WizardStep[]` — returns the ordered wizard step list for a source; step kinds `connect | select-entities | schema-review | schedule`. Emits `select-entities` for every source except `csv`. Backs EP-DATA-41 so the frontend renders each source's flow without per-source hardcoding.
+**Methods:**
+- `register(def: PipelineTypeDefinition): void` — owning engine registers a type on `onModuleInit`
+- `resolve(name): PipelineTypeDefinition` · `has(name): boolean` · `list(): string[]`
+- `setSteps(name, steps): void` — runtime override of a type's steps (e.g. DB-driven config)
 
-**Registered pipeline types:**
+> Per-source ingest resolution (`resolveIngestForSource`) and the setup-wizard flow (`getSetupFlow`)
+> **moved to the Data Source Engine** (`SVC-DATA-PIPELINE`) in change-064 — they are feature logic, not
+> kernel mechanics.
 
-| Type | Steps (in order) |
-|------|-----------------|
-| `ingest` | extract (10) · identify-columns (15) · apply-mapping (20) · trim (30) · type-cast (40) · dedupe (50) · load (60) |
-| `dashboard-generate` | gather-dataset-schemas (10) · load-widget-catalog (20) · generate-widgets-ai (30) · build-filters (35) · save-widgets (40) · invalidate-widget-cache (50) |
-| `add-widget` | gather-dataset-schemas (10) · load-widget-catalog (20) · add-widget-ai (30) · save-single-widget (40) · invalidate-widget-cache (50) |
-| `edit-widget` | gather-dataset-schemas (10) · edit-widget-ai (20) · save-updated-widget (30) · invalidate-widget-cache (40) |
-| `dashboard-from-template` *(change-049)* | gather-dataset-schemas (10) · ensure-canonical-views (15) · load-widget-catalog (20) · instantiate-template-widgets (25) · adapt-template-widgets-ai (30) · build-filters (35) · save-widgets (40) · invalidate-widget-cache (50) |
+**Registered pipeline types** (each registered by its owning engine, not the kernel):
 
-**Rules:** Step order values are non-sequential by design (gaps allow inserting steps without renumbering) · Any step can be disabled per pipeline type config without removing it
+| Type | Registered by | Steps (in order) |
+|------|---------------|-----------------|
+| `ingest` | `SVC-DATA-PIPELINE` (data engine) | extract (10) · identify-columns (15) · apply-mapping (20) · trim (30) · type-cast (40) · dedupe (50) · load (60) |
+| `dashboard-generate` | `SVC-DASH-PIPELINE-REG` (reporting) | gather-dataset-schemas (10) · load-widget-catalog (20) · generate-widgets-ai (30) · build-filters (35) · save-widgets (40) · invalidate-widget-cache (50) |
+| `add-widget` | `SVC-DASH-PIPELINE-REG` (reporting) | gather-dataset-schemas (10) · load-widget-catalog (20) · add-widget-ai (30) · save-single-widget (40) · invalidate-widget-cache (50) |
+| `edit-widget` | `SVC-DASH-PIPELINE-REG` (reporting) | gather-dataset-schemas (10) · edit-widget-ai (20) · save-updated-widget (30) · invalidate-widget-cache (40) |
+| `dashboard-from-template` *(change-049; documented, not yet in code)* | reporting | gather-dataset-schemas (10) · ensure-canonical-views (15) · load-widget-catalog (20) · instantiate-template-widgets (25) · adapt-template-widgets-ai (30) · build-filters (35) · save-widgets (40) · invalidate-widget-cache (50) |
+
+**Rules:** Step order values are non-sequential by design (gaps allow inserting steps without renumbering) · Any step can be disabled per pipeline type config without removing it · The kernel never seeds or names a type — owning engines register on bootstrap *(change-064)*
+
+---
+
+### SVC-DATA-PIPELINE · DataSourcePipelineService [internal, domain, Data] *(change-064)*
+Data Source Engine owner of the **ingest** pipeline and per-source resolution. Registers the `ingest` type (default ingest step list, incl. wizard `ui` blocks) into `PipelineTypeRegistry` on `onModuleInit`, and derives everything per-source from the connectors' `pipelineProfile`.
+
+**Methods:**
+- `resolveIngestSteps(sourceType): PipelineStepConfig[]` — base ingest steps + the connector's `pipelineProfile.ingestOverrides` (enable/disable/reorder). Passed to `PipelineEngine.run({ steps })` by `DataSyncProcessor`.
+- `getSetupFlow(sourceType): SetupFlow` — ordered wizard steps derived from the resolved ingest steps' `ui` blocks + the connector's `pipelineProfile.wizard` traits (`chooseConnection` / `entitySelection` / `oneShot`). Backs EP-DATA-41. Each `WizardStepMeta` may carry a neutral `config` bag: the `schedule` step gets `config.allowPolicy = !oneShot`, so the frontend renders one-shot vs scheduled **without any source-type knowledge** *(change-065)*.
+
+**Deps:** PipelineTypeRegistry · ConnectorRegistry
+**Rules:** the ingest base step list + wizard-flow logic live here (not in `engine-core`) · a source with no `pipelineProfile` gets the full default pipeline + default wizard traits
+
+---
+
+### SVC-DASH-PIPELINE-REG · DashboardPipelineRegistrar [internal, domain, Dashboards] *(change-064)*
+Reporting Engine owner of the dashboard pipeline **type definitions**. On `onModuleInit` registers `dashboard-generate`, `add-widget`, and `edit-widget` into `PipelineTypeRegistry` (step lists as tabled above). Adding a new dashboard/reporting pipeline type = one entry here — no kernel edit.
+
+**Deps:** PipelineTypeRegistry
+**Rules:** dashboard step *implementations* still self-register into `StepRegistry` (see `SVC-PIPE-STEPS-DASH`); this registrar only owns the ordered type definitions
 
 ---
 

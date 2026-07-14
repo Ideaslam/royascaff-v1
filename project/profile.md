@@ -72,6 +72,11 @@ A mobile app is a first-class application in this system. To add one, append a r
     (`PipelineEngine`, step/type registries, `PipelineContext`, `TenantContext`, queue-registry seam,
     `PIPELINE_RUN_STORE` persistence seam). Imported via relative paths (repo convention). Build
     output (`dist/main.js`) and `Dockerfile.build` unchanged.
+  - **Registration seam *(change-064, done)*:** the kernel is now pure registration/lookup mechanics —
+    zero feature knowledge (no source-type names, no seeded pipeline types, no per-source special-case
+    in `PipelineEngine`). Pipeline types are registered by their owning engine at bootstrap, and each
+    data source's ingest profile (step overrides + wizard traits) travels on its `ConnectorInterface`
+    `pipelineProfile`. Adding a new source type or pipeline type is register-only — no kernel edit.
   - **Target (Phase 4):** relocate to a true NestJS monorepo — thin `apps/api` + `libs/{engine-core,
     data-source-engine,reporting-engine}` with a `@roya/*` path alias — bundled with the required
     `Dockerfile.build` + build-pipeline changes. Deferred to keep earlier phases low-risk/CI-green.

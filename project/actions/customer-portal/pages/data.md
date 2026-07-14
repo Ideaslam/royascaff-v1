@@ -25,17 +25,17 @@
 - Guard: authGuard
 - States: loading · empty tables · discovery rows · delete confirm / 409
 
-### Backend-Driven Setup Wizard (shared, all sources) *(change-039, change-045, change-058, change-059)*
+### Backend-Driven Setup Wizard (shared, all sources) *(change-039, change-045, change-058, change-059, change-065)*
 - Route: `/app/data/connect/:sourceType`
-- Components: DatasetSetupWizardPage — steps from EP-DATA-41:
-  - **`choose-connection`** *(change-059, non-CSV)* — pick existing Connection of this type **or** “Add new connection” (drawer/inline). New: enter credentials/OAuth → **Test must pass before save** → then continue. Empty list → only Add new.
-  - **`connect` / scope** — type-specific scope (spreadsheet, database name, shop) after Connection selected; OAuth callbacks land with `connectionId` then continue to scope/`select-entities`. CSV skips choose-connection (one-off).
+- Components: DatasetSetupWizardPage — steps come **verbatim** from EP-DATA-41 (`SetupFlow`). The page renders whatever ordered steps the backend returns and does **no source-type branching** *(change-065)*. Step kinds:
+  - **`choose-connection`** — pick existing Connection of this type **or** “Add new connection” (drawer/inline). New: enter credentials/OAuth → **Test must pass before save** → then continue. Empty list → only Add new. *(Backend omits this step for one-shot sources like csv.)*
+  - **`connect` / scope** — type-specific scope (spreadsheet, database name, shop). Mounted from the resolved flow when it lands on `connect`; OAuth callbacks land with `connectionId` then continue to scope/`select-entities`.
   - **`select-entities`** — via Data Source (`GET /sources/:id/entities`); import → EP-DATA-44 + discovery status poll *(change-058)*
   - **`schema-review`** — column selection + mapping *(change-055)*
-  - **`schedule`** — sync + ProgressLoader (EP-DATA-45)
+  - **`schedule`** — sync + ProgressLoader (EP-DATA-45). Cadence/policy UI shown only when the backend sets `config.allowPolicy` on this step (false for one-shot sources) *(change-065)*.
 - Service: EP-DATA-41; Connections CRUD/test; Data Sources create; EP-DATA-43/44/42; EP-DATA-22/48/23/46/20/45
 - Guard: authGuard
-- Notes: Shared wizard is the live flow; EN/AR for all new strings *(change-059)*.
+- Notes: Shared wizard is the live flow; EN/AR for all new strings *(change-059)*. **Single source of truth = backend flow.** If EP-DATA-41 fails, the wizard shows a retryable error banner instead of fabricating steps; the only local flow edit is dropping `choose-connection`/`connect` when adding tables to an existing source (`dataSourceId`) *(change-065)*.
 
 ### Shared UI — ProgressLoader *(change-045)* + Discovery Status List *(change-058)*
 - Component: ProgressLoaderComponent — sync / entity listing.

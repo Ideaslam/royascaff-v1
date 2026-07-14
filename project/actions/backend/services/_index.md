@@ -23,6 +23,6 @@
 | Color Templates | color-templates.md | SVC-COLTPL | 1 |
 | Analytics Store (OLAP Engine) | analytics-store.md | SVC-OLAP-ENGINE, SVC-OLAP-STORE, SVC-OLAP-BENCH | 3 |
 | Connectors | connectors.md | SVC-CONN-REG, SVC-CONN-CSV, SVC-CONN-INTERFACE (+ `listEntities()` *change-045*), SVC-CONN-GOOGLE, SVC-CONN-SHOPIFY(+OAUTH/DS), SVC-CONN-SALLA(+OAUTH/DS), SVC-CONN-ZID(+OAUTH/DS), SVC-CONN-SQLSERVER(+QB), SVC-CONN-MONGOATLAS(+SAMPLER) | 3 |
-| Pipelines | pipelines.md | SVC-PIPE-ENGINE, SVC-PIPE-STEP-REG, SVC-PIPE-TYPE-REG (→ `src/engine-core/` *change-060*), SVC-PIPE-STEPS-INGEST, SVC-PIPE-STEPS-DASH, SVC-PIPE-STEPS-TPL *(change-049; not in code — see modules.md drift note)*, SVC-PIPE-RUN-REPO | 7 |
+| Pipelines | pipelines.md | SVC-PIPE-ENGINE, SVC-PIPE-STEP-REG, SVC-PIPE-TYPE-REG (→ `src/engine-core/`, pure mechanics *change-060/064*), SVC-DATA-PIPELINE *(change-064, data engine)*, SVC-DASH-PIPELINE-REG *(change-064, reporting)*, SVC-PIPE-STEPS-INGEST, SVC-PIPE-STEPS-DASH, SVC-PIPE-STEPS-TPL *(change-049; not in code — see modules.md drift note)*, SVC-PIPE-RUN-REPO | 9 |
 | Canonical Templates | templates.md | SVC-TPL, SVC-TPL-SEED | 2 |
-| **Total** | | | **55** |
+| **Total** | | | **57** |
