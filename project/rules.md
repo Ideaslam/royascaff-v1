@@ -161,6 +161,56 @@ Module: Canonical Templates · Feature: Create Dashboard from Template
 
 ---
 
+## Architecture: Engine Isolation *(change-060)*
+
+**Module note:** The Data Source Engine and the Reporting Engine are isolated, contract-driven engine
+domains over a neutral kernel. **Target** (Phase 4): NestJS monorepo — `libs/{engine-core,
+data-source-engine,reporting-engine}` composed by a thin `apps/api`. **Current** (change-060 Phase 1):
+the neutral kernel is an isolated library at `src/engine-core/` (relative imports; build/Docker
+unchanged). Migration is phased and behavior-neutral. Full blueprint:
+`project/changes/change-060-isolate-data-reporting-engines/isolation-architecture.md`.
+
+### RULE-ARCH-001: Contract-Driven Engine Boundaries
+Engines expose a stable public contract (interfaces + DTOs + DI tokens): `IDataSourceEngine` /
+`IDataSourceResolver` / `IQueryExecutor` (data), `IReportingEngine` (reporting). Callers depend on the
+contract, never on an engine's internals (repositories, schemas, processors). The Reporting Engine may
+depend on the Data Source **contract** only — never on `DatasetRepository`/`CsvFileRepository` or any
+data-engine internal. **No cross-engine internal imports; no upward imports from a lib into `apps/api`.**
+
+### RULE-ARCH-002: Neutral Engine Core
+The engine core (`src/engine-core/`; → `libs/engine-core` in Phase 4) — PipelineEngine, StepRegistry,
+PipelineTypeRegistry, PipelineContext, TenantContext, queue-registry + `PIPELINE_RUN_STORE` seams —
+must contain **no feature knowledge**: no imports of datasets, dashboards, connectors, or OLAP. It
+depends on nothing feature-specific and stays persistence-agnostic — PipelineRun persistence is
+supplied by the composing engine through the `PIPELINE_RUN_STORE` interface, and `PipelineContext` is
+generic over the domain dataset/connection types.
+
+### RULE-ARCH-003: Explicit Tenant Context
+Tenant scope is carried by `TenantContext` (`{ workspaceSlug, workspaceId, userId, role, engineId }`),
+resolved once at the edge (JWT / API-key / MCP session) and injected. New engine code must consume
+`TenantContext` rather than threading ad-hoc `workspaceSlug` params (existing params remain valid until
+each engine migrates). Workspace-scoped collections keep the `ws_{slug}_*` naming.
+
+### RULE-ARCH-004: Pluggable Sync Lifecycle Hooks
+Post-sync concerns (filter-value refresh, notifications, usage metering, audit) are registered as
+sync lifecycle hooks (`onSyncComplete` / `onSyncFailed`) — never hardwired into the sync processor.
+This keeps the Data Source Engine free of any Reporting-Engine dependency (filter refresh is a hook
+registered by the Reporting Engine).
+
+### RULE-ARCH-005: Delivery Is an Adapter
+Business logic lives in the engines; invocation is a swappable adapter (in-process DI, REST controller,
+MCP tool) over the engine contract. New REST/MCP surfaces must not reimplement engine logic and must
+supply a valid `TenantContext` from their own auth (JWT, API key, or service token). Engines must not
+assume a specific delivery mechanism (no direct dependence on JWT-embedded claims inside engine code).
+
+### RULE-ARCH-006: Extend by Registration, Not Modification
+New connectors (`ConnectorInterface`), OLAP engines (`OlapEngine`), pipeline steps
+(`PipelineStepInterface`), pipeline types (`PipelineTypeRegistry`), and widget types are added by
+implementing the interface + one registry entry within the **owning** engine — never by editing the
+engine core or reaching across engine boundaries.
+
+---
+
 ## Global Feature Rules
 
 ### RULE-GLOBAL-001: AI Provider Isolation

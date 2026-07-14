@@ -1,3 +1,26 @@
+## Engine Isolation Architecture *(change-060)*
+
+The backend is being refactored (phased, behavior-neutral) into a **NestJS monorepo** with two
+**self-contained, injectable, contract-driven engine domains** that can be reused anywhere and later
+exposed to other systems via REST API and MCP:
+
+- **Data Source Engine** (`libs/data-source-engine`) — connect → analyze → clean → store → sync.
+  Owns modules 4 (Data), S9 (OLAP/Analytics Store), S10 (Connectors), the ingest pipeline steps, and
+  the sync lifecycle. Public contract: `IDataSourceEngine` + `IDataSourceResolver` + `IQueryExecutor`.
+- **Reporting Engine** (`libs/reporting-engine`) — dashboards, widgets, chart-data, sharing, export,
+  filters (modules 6, 7, 8, S12) + the dashboard/AI pipeline steps. Public contract:
+  `IReportingEngine`. Depends only on the Data Source **contract**, never its internals.
+- **Engine Core** — neutral kernel: `PipelineEngine` + step/type registries, `PipelineContext`,
+  `TenantContext`, queue-registry + `PIPELINE_RUN_STORE` seams. No feature knowledge. **Currently at
+  `src/engine-core/` (change-060 Phase 1)**; relocates to `libs/engine-core` in Phase 4.
+
+Rules: no cross-engine internal imports (contracts only); `TenantContext` replaces manual
+`workspaceSlug` threading; post-sync concerns (filters/notifications/metering) are pluggable lifecycle
+hooks; delivery (in-process / REST / MCP) is a swappable adapter over the engine contracts. Full
+blueprint + phase plan: `project/changes/change-060-isolate-data-reporting-engines/isolation-architecture.md`.
+
+---
+
 ## Business Modules
 
 ## 1. Auth
@@ -143,6 +166,10 @@
 3. **Sample CSV Experiment** [both] — sample CSV seed data (`src/integrations/sample-data/sample-csv.seeder.ts`); tips + sample CSV link in step 4.
 
 ## 22. Canonical Templates (Template Catalog) *(change-049)*
+> ⚠️ **Plan-vs-code drift (noted change-060):** `src/modules/templates/` and the `dashboard-from-template`
+> pipeline steps (`ensure-canonical-views`, `instantiate-template-widgets`, `adapt-template-widgets`)
+> are **not present in the current codebase**. This module is documented but unimplemented. Left as-is
+> and out of scope for the engine-isolation program; revisit when the Reporting Engine is isolated.
 - Scope: BE (`src/modules/templates/`) + FE (AP `pages/admin/template-catalog/`; CP template picker in `pages/projects/project-detail/` create wizard)
 - Audience: admin (manage catalog), authenticated editors (create dashboard from template)
 - Entities: `TemplateIndustry`, `TemplateIndustryField`, `DashboardTemplate` — global collections (admin-owned, not workspace-scoped, like `datasource_type_meta`)
@@ -334,7 +361,9 @@ Infrastructure modules are called by business module services; they do not expos
 3. **CSV Connector** [backend-only] — implements `ConnectorInterface` for `csv` source type; reads CSV and Excel (`.xlsx` / `.xls`) files from R2; for Excel files uses `exceljs` to read the sheet named in credentials (`sheetName`) or the first sheet; normalizes rows against `columnMapping` *(change-022, change-047)*
 
 ## S11. Pipelines
-- Scope: BE only — `src/modules/pipelines/`
+- Scope: BE only — neutral engine core in `src/engine-core/` *(change-060; → `libs/engine-core` in
+  Phase 4)*; step packs currently in `src/modules/pipelines/` (ingest steps move to the Data Source
+  Engine, dashboard steps to the Reporting Engine in later phases)
 - Audience: system (executed by AI Processing workers and Dashboards operations)
 - Entities: `PipelineRun`
 

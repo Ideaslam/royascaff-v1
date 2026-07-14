@@ -1,7 +1,16 @@
 ## Module: Pipelines
 
-### SVC-PIPE-ENGINE · PipelineEngine [internal, application, Pipelines] *(change-019)*
-Orchestrates the execution of an ordered sequence of pipeline steps. The single entry point for all pipeline invocations.
+> **Engine isolation *(change-060)*:** the neutral kernel — `SVC-PIPE-ENGINE`, `SVC-PIPE-STEP-REG`,
+> `SVC-PIPE-TYPE-REG`, plus `PipelineContext`/`PipelineStepInterface`/`TenantContext` and the
+> `PIPELINE_RUN_STORE` persistence seam — lives in the isolated library `src/engine-core/` (Phase 1;
+> relocates to `libs/engine-core` in Phase 4). Concrete step packs (`SVC-PIPE-STEPS-INGEST`,
+> `SVC-PIPE-STEPS-DASH`) and `SVC-PIPE-RUN-REPO` remain in `src/modules/pipelines/` until they move
+> with their owning engine (ingest → Data Source Engine; dashboard → Reporting Engine) in later phases.
+> `PipelineRunRepository` is bound to `PIPELINE_RUN_STORE` so the kernel stays persistence-agnostic.
+> Behavior is unchanged.
+
+### SVC-PIPE-ENGINE · PipelineEngine [internal, application, engine-core] *(change-019, change-060)*
+Orchestrates the execution of an ordered sequence of pipeline steps. The single entry point for all pipeline invocations. Located in `src/engine-core/`. `RunPipelineOptions`/`PipelineContext` are generic over the domain dataset/connection types; persists runs via the injected `PIPELINE_RUN_STORE`.
 
 **Methods:**
 - `run(type: string, opts: RunPipelineOptions): Promise<PipelineContext>` — resolves `PipelineTypeDefinition` from `PipelineTypeRegistry`, initializes `PipelineContext`, executes enabled steps in order via `StepRegistry`, records a `PipelineRun` document, surfaces first fatal error

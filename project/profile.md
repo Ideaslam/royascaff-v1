@@ -65,7 +65,18 @@ A mobile app is a first-class application in this system. To add one, append a r
 - MongoDB via Mongoose ODM (document store; per-CSV collections for dynamic data rows)
 - Redis-backed background jobs via Bull/BullMQ
 - Layered: controller → service → repository (per `../engine/rules/backend-rule.md`)
-- Source layout: `src/{modules, common, config, database, integrations}`
+- **Engine isolation (phased)** *(change-060)*: two contract-driven, injectable engine domains —
+  Data Source Engine and Reporting Engine — over a neutral kernel. Delivery adapters (in-process
+  today; REST + MCP later) wrap the engine contracts.
+  - **Phase 1 (done):** neutral kernel extracted to an isolated library **`src/engine-core/`**
+    (`PipelineEngine`, step/type registries, `PipelineContext`, `TenantContext`, queue-registry seam,
+    `PIPELINE_RUN_STORE` persistence seam). Imported via relative paths (repo convention). Build
+    output (`dist/main.js`) and `Dockerfile.build` unchanged.
+  - **Target (Phase 4):** relocate to a true NestJS monorepo — thin `apps/api` + `libs/{engine-core,
+    data-source-engine,reporting-engine}` with a `@roya/*` path alias — bundled with the required
+    `Dockerfile.build` + build-pipeline changes. Deferred to keep earlier phases low-risk/CI-green.
+- Business source under `src/{modules, common, config, database, integrations}`; engine kernel under
+  `src/engine-core/` during the phased migration.
 
 **Landing site (`roya-dynamo-landing`)**
 - Static HTML/CSS/JS — no build step required for v1
