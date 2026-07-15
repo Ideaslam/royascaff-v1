@@ -48,6 +48,7 @@
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
 | EP-DATA-15 | POST | /api/v1/data/datasets | JWT | `CreateDatasetDto` { dataSourceId, name, semanticFlag?, extractOptions? } | 201 `DatasetDto` | SVC-DATA-DS.create() | Uses `dataSourceId` *(change-059)*; CSV enqueues discovery *(change-058)* |
+| EP-DATA-56 | GET | /api/v1/data/datasets/lite | JWT | query: page, limit, search, sourceType, `dataSourceId?` | 200 `{ items: DatasetLiteDto[], page, limit, total, groups: { sourceType, count }[], sources: { dataSourceId, dataSourceName, sourceType, count }[] }` | SVC-DATA-DS.listLite() | Synced-only (`analyticsTable != null`) for dashboard picker; items include `_id, name, sourceType, rowCount, columnCount, dataSourceId, dataSourceName`; `sources` = per–data-source synced counts for source-first UI; `dataSourceId` scopes items to one source *(change-068, change-069)* |
 | EP-DATA-16 | GET | /api/v1/data/datasets | JWT | query: page, limit, dataSourceId, semanticFlag, syncStatus | 200 `Paginated<DatasetListItemDto>` | SVC-DATA-DS.list() | |
 | EP-DATA-17 | GET | /api/v1/data/datasets/:id | JWT | `:id` | 200 `DatasetDto` | SVC-DATA-DS.get() | Includes schema, AI proposals, discovery status, `dataSourceId` |
 | EP-DATA-18 | PATCH | /api/v1/data/datasets/:id | JWT | `:id` · `UpdateDatasetDto` { name?, description?, extractOptions? } | 200 `DatasetDto` | SVC-DATA-DS.update() | Mapping via EP-DATA-23 |

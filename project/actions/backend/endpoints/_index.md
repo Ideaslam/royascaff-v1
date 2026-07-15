@@ -8,7 +8,7 @@
 | Data (Legacy CSV) | data.md | EP-DATA-01..08 | 8 |
 | Data Connections (auth) | data.md | EP-DATA-09..14, 50 | 7 |
 | Data Sources | data.md | EP-DATA-51..55 | 5 |
-| Datasets | data.md | EP-DATA-15..23, 40 | 10 |
+| Datasets | data.md | EP-DATA-15..23, 40, 48..49, **56** (lite picker) | 13 |
 | Data — OAuth/Webhooks/DB/Sync/Grouping | data.md | EP-DATA-24..49 (grouping under `/sources` EP-DATA-41..45 *change-045/059*; schema selection EP-DATA-48/49 *change-055*; Connection reauth EP-DATA-50 *change-059*) | — |
 | Dashboards | dashboards.md | EP-DASH-01..16 | 16 |
 | Canonical Templates | templates.md | EP-TPL-01..04 (customer), EP-TPL-10..23 (admin) *(change-049)* | 18 |
@@ -24,7 +24,7 @@
 | Workspace | workspace.md | EP-WS-01..21 | 21 |
 | Color Templates | color-templates.md | EP-CTPL-01..05 | 5 |
 | Analytics Store (Admin Benchmark) | analytics-store.md | EP-AS-01..02 | 2 |
-| **Total** | | | **166** |
+| **Total** | | | **167** |
 
 ---
 
