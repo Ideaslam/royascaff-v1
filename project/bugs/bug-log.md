@@ -68,7 +68,9 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 ## Next Bug Number
 
-**Next**: 038
+**Next**: 039
+
+| 038 | 2026-07-15 | medium | backend/integrations/connectors, data pipeline | Dotted column names (Google Ads, Mongo) misaligned with storage schema | DONE | [bug-038-flatten-dotted-column-names.md](./bug-038-flatten-dotted-column-names.md) |
 
 | 018 | 2026-07-08 | medium | admin-portal/http | Admin panel duplicate API calls + consolidated admin routes | DONE | [bug-018-admin-double-api-calls.md](./bug-018-admin-double-api-calls.md) |
 
