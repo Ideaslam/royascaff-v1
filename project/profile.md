@@ -141,6 +141,7 @@ system rules in `rules.md`). The frontend never calls these directly — all tra
 | Google Analytics (GA4) | Product analytics | Client tracking |
 | Grafana / Prometheus | Monitoring & observability | API latency, error rates, job + AI cost metrics |
 | OAuth Providers | Social login | Google, Microsoft (OAuth 2.0) |
+| Google Ads API | Advertising data ingest | OAuth 2.0 (dedicated client) + developer token; read-only GAQL reports via `google_ads` connector *(change-067)* |
 
 ---
 
