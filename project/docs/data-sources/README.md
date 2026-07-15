@@ -18,6 +18,7 @@ This folder contains one guide per supported data source in **Roya AI Dynamo**. 
 | SQL Server | Database | Credentials | No | [sql-server.md](./sql-server.md) |
 | MongoDB Atlas | Database | Connection URI | No | [mongodb-atlas.md](./mongodb-atlas.md) |
 | Google Ads | Advertising | OAuth 2.0 (dedicated client) | Google Cloud app + Ads API developer token | [google-ads.md](./google-ads.md) |
+| Meta Ads | Advertising | OAuth 2.0 (dedicated Meta app) | Meta developer app + Marketing API | [meta-ads.md](./meta-ads.md) |
 
 ## Common merchant flow (all sources)
 

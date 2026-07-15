@@ -716,8 +716,8 @@ Collection: `ws_{workspaceSlug}_data_sources`
 | `_id` | ObjectId | PK | — |
 | `name` | String | required; renamable | — |
 | `connectionId` | ObjectId | required (except CSV one-off — nullable/`null` for CSV) | → `Connection._id` |
-| `sourceType` | Enum | required | `csv \| google_sheets \| shopify \| salla \| zid \| sql_server \| mongodb_atlas \| google_ads` |
-| `scope` | Object | optional; type-specific non-auth config, e.g. `{ database }`, `{ spreadsheetId, sheetTitle? }`, `{ shopDomain, storeId }`, `{ customerId, loginCustomerId?, syncLookback? }` *(change-067: `syncLookback` preset id when connector declares sync-settings capability)* | — |
+| `sourceType` | Enum | required | `csv \| google_sheets \| shopify \| salla \| zid \| sql_server \| mongodb_atlas \| google_ads \| meta_ads` |
+| `scope` | Object | optional; type-specific non-auth config, e.g. `{ database }`, `{ spreadsheetId, sheetTitle? }`, `{ shopDomain, storeId }`, `{ customerId, loginCustomerId?, syncLookback? }` *(change-067)*, `{ businessId, adAccountId, syncLookback? }` *(change-070)* | — |
 | `status` | Enum | required; default: `active` | `active \| error \| disabled` |
 | `createdBy` | ObjectId | required | → `users._id` |
 | `createdAt` | Date | auto | — |
@@ -755,7 +755,7 @@ Collection: `ws_{workspaceSlug}_datasets`
 |-------|------|-------------|-----|
 | `_id` | ObjectId | PK | — |
 | `dataSourceId` | ObjectId | required | → `DataSource._id` *(change-059; replaces `connectionId`)* |
-| `sourceType` | Enum | required | `csv \| google_sheets \| shopify \| salla \| zid \| sql_server \| mongodb_atlas \| google_ads` |
+| `sourceType` | Enum | required | `csv \| google_sheets \| shopify \| salla \| zid \| sql_server \| mongodb_atlas \| google_ads \| meta_ads` |
 | `name` | String | required; human-readable dataset name | — |
 | `description` | String | optional | — |
 | `semanticFlag` | Enum | required, default: `arbitrary` | `arbitrary \| orders \| products \| customers \| marketing_spend` *(dictionary-driven; change-049)* |
@@ -866,7 +866,7 @@ OlapBenchmarkStatus = [pending, running, done, failed]
 OlapBenchmarkRecommendation = [clickhouse, bigquery, inconclusive]
 
 // New enums (change-015)
-DataSourceType = [csv, google_sheets, shopify, salla, zid, sql_server, mongodb_atlas, google_ads]
+DataSourceType = [csv, google_sheets, shopify, salla, zid, sql_server, mongodb_atlas, google_ads, meta_ads]
 DataConnectionStatus = [active, disabled]
 SemanticFlag = [arbitrary, orders, products, customers, inventory, marketing]
 DatasetStatus = [pending, syncing, ready, error]
