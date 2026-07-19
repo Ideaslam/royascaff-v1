@@ -66,9 +66,11 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 | 036 | 2026-07-14 | high | customer-portal/projects | Generate Dashboard button silently fails when purpose field empty | DONE | [bug-036-generate-dashboard-no-action.md](./bug-036-generate-dashboard-no-action.md) |
 | 037 | 2026-07-15 | medium | customer-portal/data/setup | Confirm All Tables runs sequentially instead of parallel | DONE | [bug-037-confirm-all-tables-sequential.md](./bug-037-confirm-all-tables-sequential.md) |
 
+| 039 | 2026-07-19 | high | customer-portal/settings/workspace | Workspace slug editable — breaks data sources and tables | DONE | [bug-039-workspace-slug-not-editable.md](./bug-039-workspace-slug-not-editable.md) |
+
 ## Next Bug Number
 
-**Next**: 039
+**Next**: 040
 
 | 038 | 2026-07-15 | medium | backend/integrations/connectors, data pipeline | Dotted column names (Google Ads, Mongo) misaligned with storage schema | DONE | [bug-038-flatten-dotted-column-names.md](./bug-038-flatten-dotted-column-names.md) |
 
