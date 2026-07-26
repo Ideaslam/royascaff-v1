@@ -18,3 +18,24 @@
 - Methods: send proposal via email / WhatsApp where wired
 - Deps: MailjetService, MetaWhatsAppService, ProposalsRepository
 - Side effects: email, external API
+
+### SVC-PROPOSALS-04 · Proposal pipeline status (v3) [domain, internal, Proposals]
+- Status: done
+- Methods: `GET …/proposals/:id/status` — generation through ready/partially_failed + section counters + rendered summary
+- Deps: ProjectsDataService / ProposalsRepository
+- Side effects: none
+- Rules: non-blocking poll; Redis not required for status read
+
+### SVC-PROPOSALS-05 · Proposal section retry + rendered (v3) [domain, internal, Proposals]
+- Status: done
+- Methods: retry failed sections; get rendered HTML/PDF URLs
+- Deps: SectionOrchestratorService, ProposalsRepository
+- Side effects: async (retry enqueue)
+- Rules: Ready with gaps → `partially_failed` after export
+
+### SVC-PROPOSALS-06 · Proposal regen / translate / rerender facades (v3) [domain, internal, Proposals]
+- Status: done
+- Methods: `regenerateProposal`, `translateProposal`, `rerenderProposal` via ProjectsDataService → Pipeline v3 services
+- Deps: ProposalRegenerateService, TranslateOrchestratorService
+- Side effects: async
+- Rules: require `pipelineV3Enabled`; see `pipeline-regen-translate.md`

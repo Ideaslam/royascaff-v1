@@ -10,13 +10,21 @@
 | Clients | `clients.md` | SVC-CLIENTS-01 | done | 1/1 | client CRM data + logos |
 | Services | `services.md` | SVC-SERVICES-01 | done | 1/1 | service catalog |
 | Service Categories | `service-categories.md` | SVC-SVCCAT-01 | done | 1/1 | category catalog |
-| Proposals | `proposals.md` | SVC-PROPOSALS-01..03 | done | 3/3 | proposal data, ops, sending |
+| Proposals | `proposals.md` | SVC-PROPOSALS-01..06 | done | 6/6 | proposal data, ops, sending, v3 status/retry/rendered/regen |
 | Contracts | `contracts.md` | SVC-CONTRACTS-01 | done | 1/1 | legal contracts |
 | Roles | `roles.md` | SVC-ROLES-01 | done | 1/1 | roles CRUD/batch |
-| Permissions | `permissions.md` | SVC-PERMS-01 | done | 1/1 | permission catalog |
-| Settings | `settings.md` | SVC-SETTINGS-01..02 | done | 2/2 | workspace settings + schema |
+| Permissions | `permissions.md` | SVC-PERMS-01..SEED-01 | done | 2/2 | permission catalog + seed keys |
+| Settings | `settings.md` | SVC-SETTINGS-01..03 | done | 3/3 | workspace settings + schema + v3 flag (default true) |
+| Cutover Backfill | `cutover-backfill.md` | SVC-CUTOVER-01 | done | 1/1 | legacy proposals → projects ops script |
 | AI | `ai.md` | SVC-AI-01..04 | partial | 3/4 | Claude/chat; OpenAI stub |
 | AI Jobs | `ai-jobs.md` | SVC-AIJOBS-01..03 | done | 3/3 | jobs, creative pipeline, poller |
+| Pipeline v3 Foundations | `pipeline-v3-foundations.md` | SVC-PIPEV3-01..07 | done | 8/8 | BullMQ, repos, traces, schemas, prompts, PDF |
+| Pipeline Traces | `pipeline-traces.md` | SVC-TRACES-01..02 | done | 2/2 | proposal + workspace cost aggregates |
+| Pipeline Analyze + Map | `pipeline-analyze-map.md` | SVC-PIPE-AM-01..07 | partial | 6/7 | Steps 1–2; vision 1b partial |
+| Pipeline Sections + Engine | `pipeline-sections-engine.md` | SVC-PIPE-S3-01..09 | done | 9/9 | Steps 3–5, reconciler, prompts |
+| Pipeline Regen + Translate | `pipeline-regen-translate.md` | SVC-PIPE-RT-01..06 | done | 6/6 | regen, translate, sibling, formal seed |
+| Projects | `projects.md` | SVC-PROJECTS-01..04 | done | 4/4 | CRUD, RFP, images, DNA enqueue, sibling create |
+| Templates | `templates.md` | SVC-TPL-01..07 | done | 7/7 | Handlebars pitch-landscape + formal + fixture + list |
 | Admin | `admin.md` | SVC-ADMIN-01..02 | done | 2/2 | admin AI jobs + data reset |
 | Integrations | `integrations.md` | SVC-INT-01..05 | done | 5/5 | S3, Mailjet, WhatsApp, Redis, encryption |
 | Infrastructure | `infrastructure.md` | SVC-INFRA-01..03 | done | 3/3 | maintenance, ownership, creative config |

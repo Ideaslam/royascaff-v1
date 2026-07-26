@@ -11,3 +11,10 @@
 - Methods: load decrypted settings for AI/runtime
 - Deps: SettingsRepository, EncryptionService
 - Side effects: none
+
+### SVC-SETTINGS-03 · pipelineV3Enabled flag [infrastructure, Settings]
+- Status: done
+- Methods: patch/read `pipelineV3Enabled` via settings whitelist + schema fallback; `isPipelineV3Enabled(workspaceId)`
+- Deps: SettingsDataService / getSettingsFromDb
+- Side effects: none
+- Rules: default **true** (cutover); seed `settingsSchema` includes field; `settings.manage` to flip; false re-enables legacy creative create; gates Projects create-from-project + regen/translate

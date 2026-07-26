@@ -14,10 +14,10 @@
 | Role key | Name (AR) | Permission keys |
 |----------|-----------|-----------------|
 | `admin` | مدير النظام | all seeded permissions |
-| `sales_manager` | مدير مبيعات | user.create/edit/resetPassword; proposal.create/edit/view; client.create/edit/delete |
-| `sales_user` | مستخدم مبيعات | proposal.view/create/edit; client.create/edit |
+| `sales_manager` | مدير مبيعات | user.create/edit/resetPassword; proposal.create/edit/view; client.create/edit/delete; projects.*; pipeline-traces.read |
+| `sales_user` | مستخدم مبيعات | proposal.view/create/edit; client.create/edit; projects.create/view/edit |
 
-Also referenced in code: `workspace_owner` (roles repository default).
+Also referenced in code: `workspace_owner` (roles repository default; includes projects.* + pipeline-traces.read).
 
 ## Permission catalog (seeded)
 
@@ -26,6 +26,8 @@ Also referenced in code: `workspace_owner` (roles repository default).
 | user.create / user.edit / user.delete / user.resetPassword | user |
 | proposal.create / proposal.edit / proposal.delete / proposal.view | proposal |
 | client.create / client.edit / client.delete | client |
+| projects.create / projects.view / projects.edit / projects.delete | projects |
+| pipeline-traces.read | pipeline |
 | settings.manage / roles.manage | settings |
 
 ## Endpoint access (summary)
@@ -38,6 +40,7 @@ Also referenced in code: `workspace_owner` (roles repository default).
 | Most `/api/data/*` and `/api/proposals/*`, `/api/ai*` | authenticated (WorkspaceAuthGuard) |
 | User mutate | permission:user.create/edit/delete |
 | Settings PATCH | permission:settings.manage |
+| Pipeline traces GET | permission:pipeline-traces.read |
 | Admin seed-config / admin users | matching PermissionGuard keys |
 | Admin reset | admin role or settings.manage (service check) |
 

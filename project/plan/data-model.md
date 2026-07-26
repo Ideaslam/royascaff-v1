@@ -9,7 +9,7 @@
 - PKs: `_id: string` (stored as Mongo `_id`; app often exposes as `id`)
 - Timestamps: typically present as `createdAt` / `updatedAt` (Date) where written by services
 - Schema-less: most collections use `flexibleSchema` (`strict: false`) — fields below are observed from DTOs/repos/models, not enforced at DB layer
-- Tenant-isolated collections: `clients`, `proposals`, `contracts`, `services`, `service-categories`, `aiJobs`/`ai-jobs`, `user`
+- Tenant-isolated collections: `clients`, `proposals`, `contracts`, `services`, `service-categories`, `aiJobs`/`ai-jobs`, `user`, `projects`, `pipelineTraces`
 
 ---
 
@@ -200,8 +200,88 @@ Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), ge
 | `technicalHtmlUrlByLang` / `financialHtmlUrlByLang` | Object | | — |
 | `emailSent` / send meta | Mixed | [INFERRED] ProposalEmailSentMeta | — |
 | `createdBy` | String | | → `user` |
+| `projectId` | String \| null | set for Pipeline v3 create-from-project | → `projects` |
+| `templateKey` | String \| null | e.g. `pitch-landscape` \| `pitch-landscape-formal` | → `templates.key` |
+| `templateVersion` | Number \| null | pinned | — |
+| `language` | String \| null | `ar` \| `en` (primary / source language) | — |
+| `pipelineVersion` | String \| null | `"3"` for v3 runs | — |
+| `dnaVersion` | Number \| null | pinned `projects.dna.version` at create / regen-with-latest | — |
+| `sourceProposalId` | String \| null | sibling / template-switch provenance | → `proposals` |
+| `revisions` | Object[] \| null | last **5** archives (newest first) | regen/translate |
+| `sectionMap` | Object \| null | `schemaVersion: map.v1` + `sections[]` | Step 2 output |
+| `sections` | Object[] \| null | Step 3 content rows (`contentByLang`, status) | — |
+| `renderedByLang` | Object \| null | `{ ar\|en: { htmlUrl, pdfUrl, … } }` | Steps 4–5 |
+| `generation` | Object \| null | pipeline truth (see below) | Redis = work |
 
-Relations: client, aiJob, contracts
+### `sections[]` (Step 3)
+
+```jsonc
+{
+  "instanceId": "sec_01",
+  "key": "cover",
+  "order": 1,
+  "status": "pending" | "running" | "ready" | "failed",
+  "attempts": 0,
+  "error": null | { "code", "message" },
+  "contentByLang": {
+    "ar": { /* AJV vs catalog contentSchema */ },
+    "en": { /* optional after translate */ }
+  }
+}
+```
+
+### `revisions[]` item
+
+```jsonc
+{
+  "id": "rev_…",
+  "archivedAt": "ISO",
+  "reason": "regenerate" | "translate" | "manual",
+  "runId": "uuid",
+  "language": "ar",
+  "sectionMap": { /* optional snapshot */ },
+  "sections": [ /* prior sections */ ],
+  "renderedByLang": { /* prior artifacts */ }
+}
+```
+
+### `generation` (Pipeline v3 — through export)
+
+```jsonc
+{
+  "pipelineVersion": "3",
+  "status": "queued" | "analyzing" | "mapping" | "generating_sections"
+         | "assembling" | "exporting" | "ready" | "failed" | "partially_failed",
+  "language": "ar",
+  "runId": "uuid",
+  "mode": null | "translate",
+  "translate": null | {
+    "sourceLang": "ar",
+    "targetLang": "en",
+    "total": 12,
+    "completed": 10,
+    "failed": [{ "instanceId": "sec_07", "error": "…" }]
+  },
+  "steps": {
+    "dna": { "status": "pending|running|done|failed", "attempts": 0 },
+    "map": { "status": "pending|running|done|failed", "attempts": 0 },
+    "sections": {
+      "status": "pending|running|done|failed|partial",
+      "total": 14,
+      "completed": 12,
+      "failed": [{ "instanceId": "sec_07", "error": "…" }]
+    },
+    "assembly": { "status": "pending|running|done|failed", "attempts": 0 },
+    "export": { "status": "pending|running|done|failed", "attempts": 0 }
+  },
+  "staging": null | { "htmlUrl", "pdfUrl", "language", … },
+  "error": null | { "code", "message" }
+}
+```
+
+**Rules:** Mongo = truth; Redis = work. Section failures with ≥1 ready → `partially_failed` after export. Financial money injected at assemble from services — never from AI. `generation.language` = language for the active run (translate/rerender). DNA pin: `regenerate-dna` bumps project version only; proposals remapped only on explicit regenerate.
+
+Relations: client, aiJob, contracts, project (v3)
 Indexes: list sort fields mapped in repo; clientId filter supports string/number legacy
 Files: `mongodb-proposals.repository.ts`, `dtos/data/proposals.dto.ts`
 
@@ -244,10 +324,11 @@ Purpose: per-workspace company + integration settings (Claude key encrypted)
 | `tax` / `currency` / `validity` | Mixed | financial | — |
 | `model` | String | default Claude model | — |
 | `defaultColor` / `defaultFont` | String | theme | — |
+| `pipelineV3Enabled` | Boolean | default **`true`** (soft cutover); explicit `false` = legacy creative escape hatch | gates v3 create + soft-blocks new creative jobs |
 | `[key: string]` | Mixed | schema-driven extras | — |
 
-Note: plaintext `apiKey` decrypted at runtime only
-Files: `models/settings.model.ts`, `mongodb-settings.repository.ts`, `lib/settings-schema.ts`
+Note: plaintext `apiKey` decrypted at runtime only  
+Files: `models/settings.model.ts`, `mongodb-settings.repository.ts`, `lib/settings-schema.ts`, `dtos/data/settings.dto.ts`
 
 ---
 
@@ -303,6 +384,82 @@ Files: `mongodb-queue.gateway.ts`, `models/ai-job.model.ts` (`JobQueuePayload`)
 
 ---
 
+## 15. projects
+Purpose: container for one client engagement — raw `info`, services/financials, RFP/images, versioned DNA (Analyze Step 1).
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | String | PK | — |
+| `workspaceId` | String | required, tenant | → workspaces |
+| `createdBy` | String | required | → user |
+| `clientId` | String | required | → clients |
+| `clientName` | String | denormalized | — |
+| `name` | String | required | — |
+| `type` | Enum/string | branding\|campaign\|social\|…\|other | — |
+| `info` | Object | raw create-form input (competitors max 3; researchOptions) | — |
+| `services` | Object[] | snapshot; source of truth for money | — |
+| `financial` | Object | code-computed subtotal/tax/grandTotal/currency | — |
+| `rfp` | Object\|null | `fileKey`, `extractedTextKey`, `status` parsed\|failed | S3 |
+| `images` | Object[] | id, url, name, userNote | S3 |
+| `dna` | Object\|null | `schemaVersion: dna.v2`, `version` (number), `data`, `generatedAt`, `runId`, `regenerating?` | AJV fail-closed; version bumps on regenerate-dna |
+| `status` | Enum | active\|archived | — |
+| `createdAt` / `updatedAt` | Date | auto | — |
+
+Relations: one project → many proposals (v3 create-from-project).  
+Indexes: `{ workspaceId: 1, updatedAt: -1 }`; `{ workspaceId: 1, clientId: 1 }`.  
+Files: `mongodb-projects.repository.ts`, `services/data/projects.data.service.ts`, `modules/data/projects.controller.ts`  
+Rules: Redis jobs are work; Mongo `projects.dna` + `proposal.sectionMap` + `generation` are truth.
+
+---
+
+## 16. templates
+Purpose: catalog metadata for hand-crafted proposal templates; disk assets under `templates/<key>/v<version>/`.
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | String | PK | — |
+| `key` | String | required | e.g. `pitch-landscape`, `pitch-landscape-formal` |
+| `version` | Number | required; proposals pin later | — |
+| `status` | Enum | active\|draft\|deprecated | — |
+| `name` | Object | `{ ar, en }` | — |
+| `engine` | String | `handlebars.v1` | — |
+| `type` / `orientation` | String | launch: presentation / landscape | — |
+| `page` / `theme` / `assets` / `rules` | Object | geometry, tokens, disk paths | — |
+| `sections` | Object[] | Section Definitions (abstract + contentSchema); pitch-landscape v1 has 14 keys | — |
+| `createdAt` / `updatedAt` | Date | auto | — |
+
+Indexes: unique `{ key: 1, version: 1 }`; `{ status: 1 }`.  
+Files: `mongodb-templates.repository.ts`, `pitch-landscape.catalog.ts`, disk `templates/pitch-landscape/v1/` (not tenant-isolated — global catalog). Formal catalog reuses the same disk `basePath` with distinct theme tokens.
+
+**pitch-landscape / formal v1 section keys:** cover, executive_summary, client_context, objectives_kpis, services, methodology, timeline, insights_divider, market_analysis, competitor_analysis, audience_insights, financial, next_steps, footer.
+
+---
+
+## 17. pipelineTraces
+Purpose: every Pipeline v3 AI call/action with full parsed JSON I/O, tokens, cost.
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | String | PK | — |
+| `workspaceId` | String | required, tenant | — |
+| `projectId` / `proposalId` | String | optional | → projects / proposals |
+| `runId` | String | required | — |
+| `seq` | Number | auto-increment within runId | — |
+| `step` | Enum | analyze\|map\|sections\|assemble\|export | — |
+| `action` | Enum | ai_call\|validation\|repair\|…\|error | — |
+| `label` | String | e.g. `1a.core_dna` | — |
+| `ai` | Object\|null | model, input, output, usage, cost | — |
+| `validation` | Object\|null | passed, errors, schema | — |
+| `status` | Enum | success\|failed\|retrying | — |
+| `error` | Object\|null | code, message, stack? | — |
+| `startedAt` / `finishedAt` / `createdAt` / `updatedAt` | Date | — | — |
+| `sectionInstanceId` / `sectionKey` / `researchModuleKey` / `language` | String | optional | — |
+
+Indexes: `{ proposalId, seq }`, `{ runId, seq }`, `{ workspaceId, createdAt }`, `{ workspaceId, action, status }`, `{ "ai.model", createdAt }`, `{ proposalId, step, action }`.  
+Files: `mongodb-pipeline-traces.repository.ts`, `pipeline-trace.service.ts`
+
+---
+
 ## Enums (summary)
 
 | Enum | Values |
@@ -313,6 +470,10 @@ Files: `mongodb-queue.gateway.ts`, `models/ai-job.model.ts` (`JobQueuePayload`)
 | AiJob type | creative, chat |
 | Workspace status | active, inactive |
 | Generation status | pending, completed |
+| Project status | active, archived |
+| Template status | active, draft, deprecated |
+| Pipeline trace status | success, failed, retrying |
+| Pipeline step | analyze, map, sections, assemble, export |
 
 ## Repository / collection map
 
@@ -332,3 +493,6 @@ Files: `mongodb-queue.gateway.ts`, `models/ai-job.model.ts` (`JobQueuePayload`)
 | config | MongoConfigRepository / MongoMaintenanceRepository |
 | aiJobs | MongoAiJobsRepository |
 | aiJobQueue | MongoQueueGateway |
+| projects | MongoProjectsRepository |
+| templates | MongoTemplatesRepository |
+| pipelineTraces | MongoPipelineTracesRepository |

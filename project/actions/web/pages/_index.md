@@ -6,14 +6,16 @@
 |--------|------|--------------|--------|-----------|---------|
 | Auth | `auth.md` | `/login` … | partial | 4/4 | login/register/verify/reset; MainLayout authGuard disabled (REQ-R) |
 | Dashboard | `dashboard.md` | `/dashboard` | done | 1/1 | KPIs / charts |
-| Proposals | `proposals.md` | `/proposals`, `/proposal` | done | 4/4 | list/view/edit + wizard entry |
-| Creative | `creative.md` | `/creative`, `/creative/output` | done | 2/2 | AI creative generation + output |
+| Proposals | `proposals.md` | `/proposals`, `/proposal` | done | 6/6 | list/view/edit + wizard + v3 stepper/actions |
+| Projects | `projects.md` | `/projects` | done | 3/3 | list / create wizard / workspace |
+| Creative | `creative.md` | `/creative`, `/creative/output` | done | 2/2 | legacy creative; soft-retired when v3 on |
 | Contracts | `contracts.md` | `/contracts` | done | 2/2 | list + edit |
 | Clients | `clients.md` | `/clients` | done | 1/1 | client CRM |
 | Services | `services.md` | `/services` | done | 2/2 | catalog list + edit |
 | Service Categories | `service-categories.md` | `/service-categories` | done | 1/1 | categories |
 | AI | `ai.md` | `/ai` | done | 1/1 | AI playground |
 | AI Jobs | `ai-jobs.md` | `/ai-jobs` | done | 2/2 | jobs list + details |
+| AI Requests | `ai-requests.md` | `/ai-requests` | done | 3/3 | pipeline traces list / detail / cost |
 | Users | `users.md` | `/users` | done | 1/1 | team members |
 | Profile | `profile.md` | `/profile` | done | 1/1 | self profile |
 | Roles | `roles.md` | `/roles-permissions` | done | 1/1 | roles & permissions UI |

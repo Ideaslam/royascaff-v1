@@ -11,9 +11,10 @@
 ### Proposal View `PG-PROPOSALS-02`
 - Route: `/proposals/:id/view`
 - Status: done
-- Components: VisualEditor / HTML preview
-- Service: AppDataService → EP-PROPOSALS-05, document HTML
+- Components: VisualEditor / HTML preview (legacy); **v3 branch** PipelineStepper + server PDF/HTML + Retry/Translate/sibling/Regenerate
+- Service: AppDataService → EP-PROPOSALS-05; v3 → EP-PROP-PIPE-01,03,04,05,06 + EP-PROJECTS-10
 - Guard: layout
+- Notes: branch on `pipelineVersion === "3"` / `generation` / `projectId`
 
 ### Proposal Edit `PG-PROPOSALS-03`
 - Route: `/proposals/:id/edit`
@@ -28,3 +29,18 @@
 - Components: proposal creation flow entry
 - Service: AppDataService / creative services → EP-PROPOSALS-06, AI jobs
 - Guard: layout
+
+### Pipeline Stepper `PG-PROP-V3-01`
+- Route: embedded on proposal view (v3)
+- Status: done
+- Components: `PipelineStepperComponent`
+- Service: EP-PROP-PIPE-01 (poll 3–5s)
+- Guard: layout
+- Notes: real failed / partially_failed / ready
+
+### Proposal View v3 actions `PG-PROP-V3-02`
+- Route: `/proposals/:id/view` (v3 branch)
+- Status: done
+- Components: lang tabs, Download PDF, Open HTML, Retry, Translate, New template, Regenerate
+- Service: EP-PROP-PIPE-03..06; EP-PROJECTS-10
+- Guard: projects.edit / projects.create as noted

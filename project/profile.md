@@ -23,15 +23,15 @@
 
 ## Tech Stack
 
-**Backend**: TypeScript, NestJS 11, Express platform, Mongoose 8 (custom persistence layer — not `@nestjs/mongoose`), MongoDB, Redis/ioredis (cache only), custom Mongo job queue (`setInterval` poller), class-validator/class-transformer, axios, ajv, bcrypt, @nestjs/jwt + jsonwebtoken (no Passport). Global prefix: `api`.
+**Backend**: TypeScript, NestJS 11, Express platform, Mongoose 8 (custom persistence layer — not `@nestjs/mongoose`), MongoDB, Redis/ioredis (cache + BullMQ), custom Mongo job queue (`setInterval` poller for v2), BullMQ (Pipeline v3), handlebars (proposal templates), puppeteer-core (PDF), class-validator/class-transformer, axios, ajv, bcrypt, @nestjs/jwt + jsonwebtoken (no Passport). Global prefix: `api`.
 
 **Frontend**: Angular 18 standalone, PrimeNG 18 + @primeng/themes (Aura/RoyaPreset), primeicons, ngx-translate (en/ar, RTL), Chart.js + ng2-charts, xlsx; jspdf/html2canvas/pdfjs-dist present in package.json (❓ little/no `src/` usage yet).
 
-**Source layout (API)**: `src/modules/` (HTTP), `src/services/`, `src/models/`, `src/dtos/`, `src/infrastructure/` (cache, claude, persistence, settings), `src/creative-pipeline/`, `src/common/`, `src/config/environment.ts`.
+**Source layout (API)**: `src/modules/` (HTTP), `src/services/`, `src/models/`, `src/dtos/`, `src/infrastructure/` (cache, claude, persistence, settings), `src/creative-pipeline/`, `src/pipeline-v3/`, `src/common/`, `src/config/environment.ts`; design-first templates at repo `templates/`.
 
 **Source layout (Web)**: `src/app/core/`, `layout/`, `pages/`, `shared/`, `environments/`.
 
-**Async / jobs**: In-process Mongo-backed job queue + Claude Message Batches polling (not Bull/BullMQ). Redis is cache-only.
+**Async / jobs**: (1) Legacy: Mongo-backed job queue + Claude Message Batches polling. (2) Pipeline v3: BullMQ on Redis (`pipeline.*` queues); Mongo holds business truth. Redis also used for cache.
 
 ## Brand Tokens
 
