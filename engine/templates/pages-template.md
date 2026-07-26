@@ -2,7 +2,7 @@
 
 Per-module page specs for one web app. Lives at `project/actions/<app-key>/pages/<module>.md` with a routing registry at `pages/_index.md`. For mobile apps, use `views-template.md` instead.
 
-Layout contract: `engine/project-layout.md`. Reference endpoints by `EP-<MODULE>-NN` IDs.
+Layout contract: `engine/project-layout.md`. Each page has a `PG-<MODULE>-NN` ID. Reference endpoints by `EP-<MODULE>-NN` IDs.
 
 > Verbose guidance → `references/pages-template-guide.md`
 
@@ -11,7 +11,7 @@ Layout contract: `engine/project-layout.md`. Reference endpoints by `EP-<MODULE>
 ```md
 # Pages — {App Name} · {ModuleName}
 
-### PageName
+### PageName `PG-MODULE-NN`
 
 - Route: `/app/resource`
 - Status: planned | partial | done | deferred

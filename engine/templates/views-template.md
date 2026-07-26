@@ -2,7 +2,7 @@
 
 Per-module screen specs for one mobile app. Lives at `project/actions/<app-key>/views/<module>.md` with a routing registry at `views/_index.md`. For web apps, use `pages-template.md` instead. Mobile apps reuse the shared backend API — no duplicated business logic.
 
-Layout contract: `engine/project-layout.md`. Reference endpoints by `EP-<MODULE>-NN` IDs.
+Layout contract: `engine/project-layout.md`. Each view has a `VW-<MODULE>-NN` ID. Reference endpoints by `EP-<MODULE>-NN` IDs.
 
 > Verbose guidance → `references/views-template-guide.md`
 
@@ -11,7 +11,7 @@ Layout contract: `engine/project-layout.md`. Reference endpoints by `EP-<MODULE>
 ```md
 # Views — {App Name} · {ModuleName}
 
-### ScreenName
+### ScreenName `VW-MODULE-NN`
 
 - Route/Navigation: `ScreenName` (stack | bottom-tab | modal | drawer)
 - Status: planned | partial | done | deferred

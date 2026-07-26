@@ -6,17 +6,19 @@ Read this file first on every task. It tells you which flow file to load based o
 
 **RoyaScaff = `engine/` only.** The blueprint folder `project/` is **not** shipped empty. The engine creates it when a build or reverse-engineer starts. Layout contract: `engine/project-layout.md`.
 
-**Resuming change / polish / bug work?** Read `project/changes/change-log.md` first (and `project/bugs/bug-log.md` for bugs). Then open the pack or bug file. Main `project/status.md` shows **merged** build state only.
+**Resuming change / polish / bug / init packs?** Read `project/changes/change-log.md` first (and `project/changes/build-program.md` for REQ-INIT / REQ-R). Then open the pack. Also check `project/bugs/bug-log.md` for bugs.
 
-**Resuming merged blueprint work?** If `project/status.md` exists, read it for what is `done` / `partial` / `planned` / `deferred` on the main blueprint. See `engine/conventions.md` → **Build Status** and **Main vs pack vs index**.
+**Resuming blueprint overview?** If `project/status.md` exists, read it for `done` / `partial` / `planned` / `deferred` on main. See `engine/conventions.md` → **Build Status** and **Main vs pack vs index**.
 
 **No blueprint yet?** If `project/profile.md` is missing, run Phase 0–4 (greenfield) or Phase R (existing code). Phase 5, P, and 6 require an existing blueprint.
+
+**Greenfield implementation:** Phase 0–2 design on main (`planned`); Phase 3 = REQ-INIT work packs (not a monolith build). Phase R documents on main, then REQ-R packs for gaps.
 
 ## Phase Routing
 
 | Phase | Purpose | Flow File |
 |-------|---------|-----------|
-| 0–4 | Initial Build (used once) | `engine/flows/initial-build.md` |
+| 0–4 | Initial Build (design + REQ-INIT packs) | `engine/flows/initial-build.md` |
 | 5 | Change Mode (features / plan-impacting work) | `engine/flows/change-mode.md` |
 | P | Polish (visual/style/copy only) | `engine/flows/polish.md` |
 | 6 | Bug Fix | `engine/flows/bug-fix.md` |
@@ -37,7 +39,7 @@ Read this file first on every task. It tells you which flow file to load based o
 1. Load `engine/project-layout.md`.
 2. Run the **Bootstrap gate** there (create root dirs if missing; never seed placeholder READMEs).
 3. Create each file only when its flow step runs, from the matching template.
-4. For Phase 5 / P / 6 Path A: write in-flight specs only inside the **change work pack**; merge to main after verify.
+4. For Phase 5 / P / 6 Path A / Init 3.x / REQ-R packs: write in-flight work only inside the **change work pack**; merge to main after verify.
 
 ## Global Conventions
 
@@ -53,7 +55,8 @@ See `engine/conventions.md` for defaults that specs inherit (route prefix, auth 
 (Paths below exist only after the engine has generated them.)
 
 - **In-flight changes index**: `project/changes/change-log.md` (read first when resuming packs)
-- **Merged build state**: `project/status.md`
+- **Build program**: `project/changes/build-program.md` (REQ-INIT / REQ-R queue)
+- **Build state dashboard**: `project/status.md`
 - **System identity**: `project/profile.md`, `project/description.md`
 - **Planning (main)**: `project/plan/modules.md`, `data-model.md`, `roles-and-authorization.md`
 - **Business rules**: `project/rules.md`

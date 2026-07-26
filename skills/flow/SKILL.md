@@ -15,18 +15,18 @@ Layout contract: `engine/project-layout.md`. Router: `engine/flow.md`.
 
 | Command | Phase | When to Use |
 |---------|-------|-------------|
-| `/initial-build` | 0–4 | Starting a brand-new project from scratch |
-| `/change-mode` | 5 | Features / plan-impacting work (isolated work packs) |
+| `/initial-build` | 0–4 | Greenfield: design on main, implement via REQ-INIT packs |
+| `/change-mode` | 5 | Features / continue a pack (incl. REQ-INIT / REQ-R) |
 | `/polish` | P | Visual/style/copy/spacing only — nothing broken, no API/data |
 | `/bug-fix` | 6 | Reporting or fixing a bug |
-| `/reverse-engineer` | R | Onboarding an existing codebase with no blueprint |
+| `/reverse-engineer` | R | Onboard existing code; REQ-R packs for gaps |
 
 ## Quick Guide
 
-- **New capability on an existing app?** → `/change-mode` (requires `project/`; resume via `change-log.md`)
+- **New capability / continue a pack?** → `/change-mode` (resume via `change-log.md` / `build-program.md`)
 - **Button look / spacing / copy only?** → `/polish`
 - **Something is broken?** → `/bug-fix`
-- **Starting from zero?** → `/initial-build`
+- **Starting from zero?** → `/initial-build` (not one giant build session)
 - **Inherited a codebase with no docs?** → `/reverse-engineer`
 
 ## Engine Root

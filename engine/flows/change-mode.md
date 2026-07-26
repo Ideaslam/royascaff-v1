@@ -10,7 +10,9 @@ Phase 5 is independent of Phases 0–4. Use it any time after a blueprint exists
 
 **UI polish only?** Use Phase P (`engine/flows/polish.md`) instead — not this flow.
 
-**Resume:** Read `project/changes/change-log.md` first, then open the pack folder.
+**Initial Build / Phase R packs:** Packs created under `request-id: REQ-INIT` or `REQ-R` (see `project/changes/build-program.md`) use this **same** lifecycle from Step 5.4 (implement → verify → merge). Do not invent a second implementation path.
+
+**Resume:** Read `project/changes/change-log.md` first (and `build-program.md` if present), then open the pack folder.
 
 ---
 

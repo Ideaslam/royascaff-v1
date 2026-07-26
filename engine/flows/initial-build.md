@@ -116,7 +116,7 @@ Proceed to **Phase 1**.
 
 ## Phase 2 — Actions
 
-**Goal**: Generate service map, endpoint specs, and client (page/view) specs. Outputs land in per-app folders under `project/actions/<app-key>/`.
+**Goal**: Generate service map, endpoint specs, and client (page/view) specs on **main** under `project/actions/<app-key>/`. This is the product intent backlog (artifact status `planned`). Implementation happens later via REQ-INIT packs in Phase 3 — not by editing these files mid-build.
 
 **Call chain** (dependency direction):
 ```
@@ -175,65 +175,87 @@ Create one client spec per frontend app. Web → `pages/`, Mobile → `views/`. 
 
 ---
 
-## Phase 3 — Build
+## Phase 3 — Build (via work packs)
 
-**Goal**: Generate backend and frontend code into the repositories defined in `project/profile.md`.
+**Goal**: Implement the Phase 2 planned blueprint into code **one work pack at a time** — never the whole system in one session.
 
-**Status maintenance (applies to every build step)**: As each artifact is implemented, update its **status** in the spec file and the module's `_index.md`:
-- fully implemented & matches spec → `done`
-- started but incomplete → `partial` (note what remains)
-- intentionally skipped for now → `deferred` (note the reason)
-- not started → leave `planned`
+**Invariant:** Phase 0–2 write the full intent to **main** with artifact status `planned`. Implementation edits happen only inside change packs; main artifact status flips to `done`/`partial` at **merge**. Same lifecycle as Phase 5 (`engine/flows/change-mode.md`). Layout: `engine/project-layout.md`.
 
-This is how a later model knows exactly what is left. Keep each `_index.md` `Done/Total` count in sync.
+**Resume:** Read `project/changes/change-log.md` + `project/changes/build-program.md` first, then open the next pack.
 
 ### ⛔ Pre-Build Confirmation Gate (MANDATORY — do not skip)
 
-Before writing **any** code, present the following for explicit user approval:
+Before creating the build program or writing **any** code, present for approval:
 
-1. **What will be built** — every backend module, schema, service, controller, endpoint from planning docs
-2. **What will be created on the frontend** — every page, component, service, route per app
-3. **Target repos/folders** — exact paths from `project/profile.md`
-4. **Frontend visual approach** — design system, brand tokens, UI library (from `project/profile.md`); reference screenshot/mockup/Figma if available
+1. **What will be packed** — modules/slices from Phase 2 (not “build everything now”)
+2. **Proposed pack order** — foundation → Auth → modules by dependency → cross-cutting
+3. **Target repos/folders** — from `project/profile.md`
+4. **Frontend visual approach** — design system / brand tokens from profile
 
-End with: **"Can I proceed with building the code?"**
+End with: **"Can I proceed with creating the build program and work packs?"**
 
-Wait for explicit confirmation. Do not interpret silence, ambiguous replies, or follow-up questions as confirmation. If user requests changes, update planning docs and re-present.
+Wait for explicit confirmation. Silence ≠ confirmation.
 
-### Step 3.1 — Generate Backend Code
+---
 
-- **Input**: `project/plan/data-model.md`, `project/actions/<api-app>/services/`, `project/actions/<api-app>/endpoints/`, `engine/rules/backend-rule.md`, `project/rules.md`
-- **Output**: Code in backend repo per `project/profile.md`
-- **Done when**:
-  - All modules have backend folders
-  - All schemas from `data-model.md` implemented
-  - All services (internal + external) implemented
-  - All endpoints implemented
-  - Layered architecture (controller → service → repository) followed
-  - Auth guards, validation DTOs, error handling in place
-  - Integration providers isolated per `engine/rules/backend-rule.md`
-  - Custom feature rules implemented
-  - **Status updated**: every built service/endpoint set to `done` (or `partial`/`deferred` with a note); `services/_index.md` and `endpoints/_index.md` `Done/Total` counts refreshed
+### Step 3.0 — Create Build Program
 
-### Step 3.2 — Generate Frontend Code (per app)
+- **Input**: `project/plan/modules.md`, main `project/actions/**` (all `planned`), `project/profile.md`
+- **Template**: `engine/templates/build-program-template.md`
+- **Output**:
+  - `project/changes/build-program.md` with `request-id: REQ-INIT`
+  - Pack folders `change-<NNN>-init-<slug>/` materialized
+  - Rows in `project/changes/change-log.md`
 
-- **Input**: `project/actions/<app-key>/pages/` or `views/`, `project/actions/<api-app>/endpoints/`, `engine/rules/frontend-rule.md`, `project/rules.md`
-- **Output**: Code in frontend/mobile repo per `project/profile.md`
-- **Done when**:
-  - All pages/views from app spec implemented
-  - All components, services, models created
-  - Routing follows `engine/rules/frontend-rule.md`
-  - Auth guards protect routes correctly
-  - All pages handle loading/empty/error/success states
-  - API calls use services, not direct HTTP in components
-  - Custom feature rules respected
-  - **Status updated**: every built page/view set to `done` (or `partial`/`deferred` with a note); the app's `pages/_index.md` or `views/_index.md` `Done/Total` counts refreshed
+#### Actions
+
+1. Create `change-log.md` from `engine/templates/change-log-template.md` if missing.
+2. Slice **vertical packs per module** (data-model slice → services → endpoints → pages/views for that module).
+3. Order packs:
+   - Foundation (app shell, shared infra) first
+   - **Auth** next
+   - Remaining modules by dependency from `modules.md`
+   - Cross-cutting (jobs, integrations) last
+4. For each pack, create `project/changes/change-<NNN>-init-<slug>/`:
+   - `change-request.md` — `change-type: new-module` or `new-feature`; `request-id: REQ-INIT`; `part: N/M`; `depends-on`; `pack-status: drafted` or `blocked`
+   - `blueprint/` — copy/slice **only** that module’s specs from main (`plan/` excerpts + `actions/.../<module>.md`)
+   - `status.md` + `blueprint/_index.md` (artifacts start `planned`)
+   - `impact.md` — abbreviated create list for code files
+   - Register in `change-log.md`
+5. Write `build-program.md` with the ordered table + Progress + **Next pack**.
+6. **Stop.** Present the program. Ask which pack to run (default: first unblocked).
+
+- **Done when**: Build program exists; all packs registered; user has chosen the next pack (or paused).
+
+---
+
+### Step 3.x — Execute one pack (loop)
+
+For the chosen pack only:
+
+1. **Dependency gate** — if `depends-on` is not `verified` or `merged`, set this pack `blocked`, update change-log, stop.
+2. **Implement → verify → merge** — follow `engine/flows/change-mode.md` from **Step 5.4** through **Step 5.6** (pack blueprint already drafted in 3.0).
+   - Implementer load set: pack `change-request.md` + `blueprint/` + `impact.md` + `status.md` (+ minimal main read-only for that module if needed)
+   - Do **not** load unrelated modules or implement other packs in the same session
+3. On merge: main artifact statuses for owned IDs → `done`/`partial`/`deferred`; refresh main `_index.md` + `project/status.md`; update `build-program.md` Progress / Next pack.
+4. **Hard stop** after merge (or after verify if user defers merge). Next chat resumes from change-log / build-program.
+
+Repeat Step 3.x until exit criteria.
+
+### Phase 3 exit criteria
+
+- All non-`deferred` REQ-INIT packs are `merged`, **or**
+- User explicitly pauses: remaining packs stay `drafted`/`blocked`; main keeps those artifacts `planned`; `project/status.md` **Next Up** lists them.
+
+Do **not** run a monolith “generate all backend then all frontend” pass.
 
 ---
 
 ## Phase 4 — Verify
 
-**Goal**: Run consistency checks across all documents and code.
+**Goal**: Run consistency checks across documents and code for the **merged** system (plus remaining `planned` backlog).
+
+**When to run full Phase 4:** build program complete (all non-deferred packs `merged`), **or** user requests a mid-stream audit. Each pack already has its own scoped `verify-code.md`; Phase 4 is the system-level gate.
 
 ### Cross-Document Consistency Checks
 
@@ -294,15 +316,13 @@ Save to `project/verify/verification-report.md`:
 
 ## Done
 
-When all phases complete and verification passes, the framework has produced:
+When Phase 3 exit criteria are met and Phase 4 verification passes (or user paused with a clear Next Up):
 
 - Confirmed system profile in `project/profile.md`
-- Complete planning documents in `project/plan/`
-- Complete action specs in `project/actions/` — one folder per app
-- Project-specific rules in `project/rules.md`
-- Backend code following all specifications
-- Frontend code following all specifications
-- Verification report in `project/verify/`
-- Build-status dashboard in `project/status.md` (per-artifact status in specs + `_index.md`, rolled up system-wide)
+- Complete planning + action specs on main (implemented artifacts `done`; backlog may remain `planned`)
+- `project/changes/build-program.md` + REQ-INIT packs in `change-log.md`
+- Code for merged packs in repos from `project/profile.md`
+- Verification report (when Phase 4 ran) in `project/verify/`
+- Build-status dashboard in `project/status.md`
 
-The system is ready for testing and iteration. Use `engine/flows/change-mode.md` for all subsequent changes.
+Further product work: Phase 5 (`change-mode.md`). Resume unfinished REQ-INIT packs via `change-log.md` / `build-program.md`.
