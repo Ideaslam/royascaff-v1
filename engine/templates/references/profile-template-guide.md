@@ -34,14 +34,19 @@ The most important section. Its **Key** column defines:
 
 ### App Key → Spec Files
 
-| Type | Folder | Files |
-|------|--------|-------|
-| `api` | `project/actions/<key>/` | `services.md`, `endpoints.md` |
-| `web` | `project/actions/<key>/` | `pages.md` |
-| `mobile-*` | `project/actions/<key>/` | `views.md` |
+Per-module layout (see `engine/project-layout.md`):
+
+| Type | Folder | Spec structure |
+|------|--------|----------------|
+| `api` | `project/actions/<key>/` | `services/_index.md` + `services/<module>.md` · `endpoints/_index.md` + `endpoints/<module>.md` |
+| `web` | `project/actions/<key>/` | `pages/_index.md` + `pages/<module>.md` |
+| `mobile-*` | `project/actions/<key>/` | `views/_index.md` + `views/<module>.md` |
 
 ### Adding a Mobile App
-Append a row with `mobile-*` Type, its own Key, repo, framework, and native UI library. Its screens are specified in `project/actions/<key>/views.md`. Mobile apps reuse the existing API — no duplicated business logic.
+Append a row with `mobile-*` Type, its own Key, repo, framework, and native UI library. Its screens are specified in `project/actions/<key>/views/<module>.md`. Mobile apps reuse the existing API — no duplicated business logic.
+
+### Tech Stack & Brand (live here, not in engine)
+`project/profile.md` is the **only** place for concrete stack (language, framework, DB, queues, storage), integration providers, brand tokens, and product name. `engine/conventions.md` stays product-agnostic.
 
 ### Repositories
 Include role and where each lives relative to workspace root, plus the active branch.

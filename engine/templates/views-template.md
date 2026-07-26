@@ -1,22 +1,22 @@
 # Views Template (Mobile Apps)
 
-Lists all screens for one mobile app. Lives at `project/actions/<app-key>/views.md`. For web apps, use `pages-template.md` instead. Mobile apps reuse the shared backend API — no duplicated business logic.
+Per-module screen specs for one mobile app. Lives at `project/actions/<app-key>/views/<module>.md` with a routing registry at `views/_index.md`. For web apps, use `pages-template.md` instead. Mobile apps reuse the shared backend API — no duplicated business logic.
+
+Layout contract: `engine/project-layout.md`. Reference endpoints by `EP-<MODULE>-NN` IDs.
 
 > Verbose guidance → `references/views-template-guide.md`
 
-## Schema
+## Schema — `views/<module>.md`
 
 ```md
-# Views — {App Name}
-
-## Module: {ModuleName}
+# Views — {App Name} · {ModuleName}
 
 ### ScreenName
 
 - Route/Navigation: `ScreenName` (stack | bottom-tab | modal | drawer)
 - Status: planned | partial | done | deferred
 - Components: `WidgetCard`, `FilterChip`
-- Service: `ResourceApi` → EP-001 (GET /resource)
+- Service: `ResourceApi` → EP-RESOURCE-01 (GET /resource)
 - Guard: `authenticated` | `role:admin` | `none`
 - Platform: pull-to-refresh, offline cache, push notifications
 - Notes: read-only on mobile; native chart library
@@ -24,30 +24,32 @@ Lists all screens for one mobile app. Lives at `project/actions/<app-key>/views.
 
 Status: `planned` · `partial` · `done` · `deferred` (see `engine/conventions.md`). New screens default to `planned`; `deferred` states its reason in Notes.
 
-## Example
+## Registry — `views/_index.md`
+
+Use `engine/templates/index-template.md`. One row per module file.
+
+## Example — `views/dashboards.md`
 
 ```md
-# Views — Customer Mobile App
-
-## Module: Dashboards
+# Views — Customer Mobile App · Dashboards
 
 ### Dashboard Viewer
 
 - Route/Navigation: `DashboardViewer` (stack, pushed from Projects tab)
 - Status: done
 - Components: `WidgetCard`
-- Service: `DashboardsApi` → EP-020 (GET /dashboards/:id), EP-021 (GET /dashboards/:id/widgets/:wid/data)
+- Service: `DashboardsApi` → EP-DASHBOARDS-01 (GET /dashboards/:id), EP-DASHBOARDS-02 (GET /dashboards/:id/widgets/:wid/data)
 - Guard: `authenticated`
 - Platform: pull-to-refresh; native charts (no WebView); offline read-only from cached payload
-- Notes: read-only on mobile — no create/edit; RTL layout for Arabic
+- Notes: read-only on mobile — no create/edit; RTL layout when required by product i18n
 
 ### Notifications List
 
 - Route/Navigation: `Notifications` (bottom-tab)
 - Status: planned
 - Components: `NotificationItem`, `EmptyState`
-- Service: `NotificationsApi` → EP-030 (GET /notifications), EP-031 (PATCH /notifications/read)
+- Service: `NotificationsApi` → EP-NOTIFICATIONS-01 (GET /notifications), EP-NOTIFICATIONS-02 (PATCH /notifications/read)
 - Guard: `authenticated`
-- Platform: push notifications via Expo; badge count on tab icon
+- Platform: push notifications; badge count on tab icon
 - Notes: mark-all-read action; swipe-to-dismiss individual items
 ```

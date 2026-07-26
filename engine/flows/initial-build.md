@@ -3,6 +3,20 @@
 Use this flow once to go from product description to a fully built, verified application.
 Follow each phase in order. Each step declares **Inputs**, **Template**, **Output**, and **Done-when** criteria.
 
+`project/` is **not** pre-seeded. Before Phase 0, run the bootstrap gate so the engine creates the blueprint root. Layout contract: `engine/project-layout.md`.
+
+---
+
+## Bootstrap — Create Blueprint Root
+
+- **Input**: `engine/project-layout.md`
+- **Output**: `project/` root skeleton (directories only)
+- **Actions**:
+  1. Load `engine/project-layout.md`.
+  2. Run the **Bootstrap gate**: if `project/` is missing, create `plan/`, `actions/`, `changes/`, `bugs/`, `verify/`, `docs/`.
+  3. Do **not** write placeholder READMEs or empty stub files. Create each real file only when its phase step runs, from the matching template.
+- **Done when**: Blueprint root exists (or already existed) and is ready for Phase 0 writes.
+
 ---
 
 ## Phase 0 — Understand

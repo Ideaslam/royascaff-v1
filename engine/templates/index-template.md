@@ -1,8 +1,8 @@
 # Registry (`_index.md`) Template
 
-Every spec subdirectory (`services/`, `endpoints/`, `pages/`, `views/`) has an `_index.md` at its top. It is the **routing registry** a reader loads *first* to find which module file to open — and it now doubles as the **build-status map** for that directory.
+Every spec subdirectory (`services/`, `endpoints/`, `pages/`, `views/`) has an `_index.md` at its top. It is the **routing registry** a reader loads *first* to find which module file to open — and it doubles as the **build-status map** for that directory.
 
-> Read this before scanning a directory. Load only the module files you need. Status values are defined in `engine/conventions.md` (`planned` · `partial` · `done` · `deferred`).
+> Read this before scanning a directory. Load only the module files you need. Status values and ID scheme: `engine/conventions.md`. Layout: `engine/project-layout.md`.
 
 ## Schema
 
@@ -18,12 +18,12 @@ Every spec subdirectory (`services/`, `endpoints/`, `pages/`, `views/`) has an `
 
 - **Module** — module name (must match `project/plan/modules.md`).
 - **File** — the per-module spec file in this directory.
-- **IDs / Route prefix** — ID range (`EP-`, `SVC-`) for backend, or route prefix for pages/views.
+- **IDs / Route prefix** — ID range (`EP-<MODULE>-NN`, `SVC-<MODULE>-NN`) for backend, or route prefix for pages/views.
 - **Status** — the **rolled-up** module status (see rollup rule in `engine/conventions.md`).
 - **Done/Total** — count of `done` artifacts vs total specced (deferred count as not-done). Omit for page/view registries if IDs aren't used — keep the Status column.
 - **Purpose** — one line.
 
-## Example — `project/actions/backend/endpoints/_index.md`
+## Example — `project/actions/<api-app>/endpoints/_index.md`
 
 ```md
 # Endpoints Registry — Backend API
@@ -32,9 +32,9 @@ Every spec subdirectory (`services/`, `endpoints/`, `pages/`, `views/`) has an `
 
 | Module | File | Route prefix | Status | Done/Total | Purpose |
 |--------|------|--------------|--------|-----------|---------|
-| Auth | `auth.md` | `/auth` | done | 8/8 | login, refresh, password reset |
-| Users | `users.md` | `/users` | partial | 5/6 | admin user management (export deferred) |
-| Billing | `billing.md` | `/billing` | planned | 0/4 | subscription + invoices |
+| Auth | `auth.md` | `/auth` · `EP-AUTH-01..08` | done | 8/8 | login, refresh, password reset |
+| Users | `users.md` | `/users` · `EP-USERS-01..06` | partial | 5/6 | admin user management (export deferred) |
+| Billing | `billing.md` | `/billing` · `EP-BILLING-01..04` | planned | 0/4 | subscription + invoices |
 ```
 
 ## Maintenance

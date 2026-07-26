@@ -36,9 +36,10 @@ exists and produces the same artifacts.
 
 **Two zones still apply**:
 - **`engine/`** — this flow (`flows/reverse-engineer.md`), generic templates (`engine/templates/`),
-  and generic rules (`engine/rules/`). Reusable across any product.
-- **`project/`** — the living blueprint and single source of truth for the current system:
-  `profile.md`, `description.md`, `plan/`, `actions/`, `rules.md`, `verify/`.
+  and generic rules (`engine/rules/`). Reusable across any product. Layout contract:
+  `engine/project-layout.md`.
+- **`project/`** — **generated** living blueprint (not shipped empty):
+  `profile.md`, `description.md`, `plan/`, `actions/`, `rules.md`, `verify/`, `status.md`.
 
 The engine never hardcodes a specific system's data. All concrete facts about *this* system —
 applications, repositories, tech stack, brand tokens, environments, integrations — live in
@@ -46,6 +47,18 @@ applications, repositories, tech stack, brand tokens, environments, integrations
 
 Follow each phase in order. Each step declares its **Input**, **Template** (optional), **Output**,
 **Actions**, and **Done-when** criteria.
+
+---
+
+## Bootstrap — Create Blueprint Root
+
+- **Input**: `engine/project-layout.md`
+- **Output**: `project/` root skeleton (directories only)
+- **Actions**:
+  1. Load `engine/project-layout.md`.
+  2. Run the **Bootstrap gate**: if `project/` is missing, create `plan/`, `actions/`, `changes/`, `bugs/`, `verify/`, `docs/`.
+  3. Do **not** write placeholder READMEs. Create each real file only when its Phase R step runs.
+- **Done when**: Blueprint root exists and is ready for R.0 writes.
 
 ---
 

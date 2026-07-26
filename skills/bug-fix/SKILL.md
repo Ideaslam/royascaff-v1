@@ -10,46 +10,40 @@ description: >-
 
 ## First Action
 
-Read `.ai-control/engine/flows/bug-fix.md` in full before doing anything else.
+1. Require blueprint: if `project/profile.md` is missing → `/initial-build` or `/reverse-engineer`.
+2. If style-only and nothing broken → `/polish` instead.
+3. Read `project/bugs/bug-log.md` if present.
+4. Read `engine/flows/bug-fix.md` in full.
 
 ## Flow Overview
 
-### Step 6.0 — Triage (always first)
-
-Gather: what is broken, where, expected behavior, reproduction steps, severity.
-Then run the decision tree:
+### Step 6.0 — Triage
 
 | Question | YES → | NO → |
 |----------|-------|------|
-| Fix requires plan changes (new entity/endpoint/page/service)? | Path A | Q2 |
-| Fix touches > 1 module or app? | Path A | Q3 |
-| Fix requires a data migration? | Path A | Path B |
+| Fix needs plan/action blueprint changes? | Path A | Q2 |
+| Touches > 1 module or app? | Path A | Q3 |
+| Needs data migration? | Path A | Path B |
 
-### Path A — Escalate to Change Request
+### Path A — Change work pack
 
-Create `project/changes/change-<NNN>-bug-fix-<slug>/`, set `change-type: bug-fix`, then follow **Phase 5** (`change-mode` flow) from Step 5.0.
+- bug-log → `ESCALATED` + link to `change-<NNN>-bug-fix-<slug>/`
+- Follow `/change-mode` isolation (blueprint in pack; merge at 5.6)
+- bug-log → `DONE` when pack is `merged`
 
-### Path B — Direct Fix (isolated code only)
-
-Steps: **6.1 → 6.2 → 6.3 ⛔ → 6.4 → 6.5 ⛔ → 6.6**
+### Path B — Direct fix
 
 | Step | Action |
 |------|--------|
-| 6.1 | Create `project/bugs/bug-<NNN>-<slug>.md`, status PENDING |
-| 6.2 | Investigate, document root cause — **no code changed yet** |
-| 6.3 ⛔ | Present root cause + proposed fix, wait for confirmation |
-| 6.4 | Implement the confirmed fix (minimal, isolated) |
-| 6.5 ⛔ | Present fix summary, ask user to confirm it resolves the bug |
-| 6.6 | Set status DONE, append row to `project/bugs/bug-log.md` |
+| 6.1 | Create `bug-<NNN>-<slug>.md`, bug-log `PENDING` |
+| 6.2 | Root cause (no code yet) |
+| 6.3 | ⛔ Pre-fix gate |
+| 6.4 | Implement minimal fix |
+| 6.5 | ⛔ Post-fix confirm |
+| 6.6 | bug-log `DONE` |
 
-## Mandatory Rules
+Path B: **no** main plan/actions edits. Plan drift → escalate to Path A.
 
-- **NEVER skip Confirmation Gates** (⛔ 6.3 and 6.5).
-- **Silence is NOT confirmation.**
-- Keep fixes **minimal and isolated** — do not refactor unrelated code.
-- Follow `engine/rules/backend-rule.md` / `engine/rules/frontend-rule.md` + `project/rules.md`.
+## Done
 
-## Output Artifacts
-
-**Path B**: `project/bugs/bug-<NNN>-<slug>.md` + row in `project/bugs/bug-log.md`
-**Path A**: Full Phase 5 artifacts + `change-log.md` row (type `bug-fix`)
+Path A: change pack `merged` + bug-log `DONE`. Path B: bug-log `DONE`.

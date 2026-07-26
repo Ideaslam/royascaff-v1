@@ -11,12 +11,14 @@ description: >-
 
 ## First Action
 
-Read `.ai-control/engine/flows/initial-build.md` in full before doing anything else.
+1. Read `engine/project-layout.md` (bootstrap gate — create `project/` dirs if missing; no placeholder READMEs).
+2. Read `engine/flows/initial-build.md` in full before doing anything else.
 
 ## Phase Summary
 
 | Phase | Goal | Key Output |
 |-------|------|------------|
+| **Bootstrap** | Create blueprint root | `project/` directories only |
 | **0 — Understand** | Complete product spec + system profile | `project/description.md`, `project/profile.md` |
 | **1 — Plan** | Modules, rules, data model | `project/plan/modules.md`, `project/rules.md`, `project/plan/data-model.md` |
 | **2 — Actions** | Services, endpoints, client specs | `project/actions/<api>/services/`, `endpoints/`, `project/actions/<app>/pages/` |

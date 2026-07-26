@@ -36,8 +36,9 @@ Document existing services, endpoints, or components to reuse instead of creatin
 
 ## Plan vs Code Drift
 
-- Code that exists but is **not** in the plan docs: reconcile by adding to plan
+- Code that exists but is **not** in the plan docs: schedule reconciliation via this pack's blueprint (merge later) — do not edit main early
 - Plan entries with **no** code yet: expected if feature is new; flagged if it should exist
+- Pack blueprint files to create: list under impact (not main `project/plan` / `project/actions`)
 
 Both must be reconciled by the end of the change.
 

@@ -74,7 +74,7 @@ src/
 - Use DTOs for: create body, update body, list query filters, route params
 - Validate at the boundary — reject invalid input before it reaches services
 - Use consistent response shapes across the API
-- Paginated list format: `{ items, page, limit, total }`
+- Paginated list format: `{ data: T[], total, page, limit }` (see `engine/conventions.md`)
 - For selector endpoints: return minimal projections (id, label, needed fields only)
 
 ### REST Defaults
@@ -188,7 +188,7 @@ src/
 | `500` | Unexpected server errors |
 
 - Use global exception filters/middleware — not repetitive try/catch per controller
-- Return consistent error shape: `{ statusCode, message, errors: [{ field, message }] }`
+- Return consistent error shape: `{ success: false, message, statusCode, error?, errors?: [{ field, message }] }` (see `engine/conventions.md`)
 - Log full details server-side; return safe messages to clients
 
 ---

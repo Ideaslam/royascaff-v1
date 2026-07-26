@@ -32,8 +32,8 @@ Reports are permanent — do not delete them after archiving.
 
 ### Check 2: Service Coverage
 
-| Endpoint | Service Called | Exists in services.md? |
-|----------|---------------|:---------------------:|
+| Endpoint | Service Called | Exists in services/<module>.md? |
+|----------|---------------|:-------------------------------:|
 | [METHOD /route] | [Service.method()] | yes / no |
 
 ### Check 3: Data Model Consistency
@@ -44,9 +44,9 @@ Reports are permanent — do not delete them after archiving.
 
 ### Check 4: Endpoint-Page Linking
 
-| Page | Endpoint Referenced | Route in endpoints.md | Match? |
-|------|--------------------|-----------------------|:------:|
-| [page] | [METHOD /route] | [actual] | ✓ / ✗ |
+| Page | Endpoint Referenced | Route in endpoints/<module>.md | Match? |
+|------|--------------------|--------------------------------|:------:|
+| [page] | [EP-ID · METHOD /route] | [actual] | ✓ / ✗ |
 
 ### Check 5: Auth Declarations
 

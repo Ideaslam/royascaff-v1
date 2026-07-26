@@ -4,9 +4,10 @@
 
 ## File-Level Rules
 
-- `services.md` lives at `project/actions/<api-app>/services.md` alongside `endpoints.md`.
-- Create `services.md` **before** `endpoints.md`. Endpoints call services; client pages call endpoints.
-- Every service must have a unique SVC- ID (sequential per file).
+- One file per module: `project/actions/<api-app>/services/<module>.md`.
+- Registry: `project/actions/<api-app>/services/_index.md` (see `../index-template.md`).
+- Create **services** for a module **before** its endpoints. Endpoints call services; client pages call endpoints.
+- Every service must have a unique `SVC-<MODULE>-NN` ID (see `engine/conventions.md` → Artifact ID Scheme).
 - Group services by module using the same module names from `project/plan/modules.md`.
 - If a service is async, say so explicitly.
 - If a service triggers side effects (email, webhooks, file upload), say so explicitly.
@@ -17,7 +18,7 @@
 | Type | Meaning | Examples |
 |------|---------|----------|
 | `internal` | Domain or application service. Owns business logic. | `UsersService`, `OrdersService` |
-| `external` | Integration provider. Wraps a third-party SDK/API. | `S3StorageProvider`, `SendGridEmailProvider` |
+| `external` | Integration provider. Wraps a third-party SDK/API. | `ObjectStorageProvider`, `EmailProvider` |
 
 ## Layering Rules
 
@@ -28,10 +29,11 @@
 ## SVC- ID Header Format
 
 ```
-### SVC-{NNN} · {ClassName} [{category}, {type}, {ModuleName}]
+### SVC-{MODULE}-{NN} · {ClassName} [{category}, {type}, {ModuleName}]
 ```
 
-- **NNN**: Sequential number within the file
+- **MODULE**: Uppercase module token (`USERS`, `AUTH`)
+- **NN**: Two-digit sequence within the module file
 - **ClassName**: PascalCase service or provider class name
 - **category**: `domain` (core business logic), `application` (orchestration), or `integration` (third-party)
 - **type**: `internal` or `external`
@@ -39,37 +41,21 @@
 
 ## Extended Entry Format
 
-When a service needs detailed documentation beyond the compact format:
-
 ```md
-### SVC-NNN · ServiceName [category, type, Module]
-
-#### Description
-{Clear explanation of what this service does in backend terms.}
-
-#### Methods
-- `methodName(inputShape): ReturnType` — what it does
-
-#### Dependencies
-- Repositories: `RepoName` — why
-- Internal Services: `ServiceName` — why
-- External Providers: `ProviderName` — why
-
-#### Entities / DTOs
-- `EntityOrDtoName` — purpose
-
-#### Business Rules
-- rule 1
-- rule 2
-
-#### Constraints / Notes
-- async, retry, idempotency, side effects, security, or isolation notes
+### SVC-USERS-01 · UsersService [domain, internal, Users]
+- Status: done
+- Methods:
+  - `createUser(dto: CreateUserDto): User` — validate uniqueness, hash password, persist
+  - `listUsers(query: ListUsersQuery): PaginatedResponse<User>` — admin list with filters
+  - `deleteUser(id: string): void` — soft-delete; reject if last admin
+- Deps: `UsersRepository`, `PasswordHasher`
+- Side effects: none
+- Rules:
+  - email unique system-wide
+  - never return password hashes
+  - last-admin cannot be deleted
 ```
 
-## Suggested Field Meanings
+## Status
 
-- **Status** — build state: `planned`, `partial`, `done`, `deferred` (see `engine/conventions.md`). Defaults to `planned` when specced before code; `deferred` states its reason.
-- **Methods** — public methods endpoints or other services will call
-- **Deps** — repositories, internal services, and external providers used
-- **Side effects** — email, file operations, webhooks, async jobs, audit logs
-- **Rules** — important business logic owned by this service
+Use `planned` · `partial` · `done` · `deferred` from `engine/conventions.md`. New services default to `planned`. When `deferred`, state the reason on the Status line.

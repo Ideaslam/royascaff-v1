@@ -12,11 +12,12 @@ description: >-
 
 ## First Action
 
-Read `.ai-control/engine/flows/reverse-engineer.md` in full before doing anything else.
+1. Read `engine/project-layout.md` (bootstrap gate — create `project/` dirs if missing; no placeholder READMEs).
+2. Read `engine/flows/reverse-engineer.md` in full before doing anything else.
 
 ## When to Use
 
-- Existing codebase has no `project/` blueprint yet
+- Existing codebase has no `project/` blueprint yet (`project/` is never shipped empty)
 - Legacy system being onboarded into the AI-Control framework
 - Team inherits a codebase and needs documentation before making changes
 
@@ -24,6 +25,7 @@ Read `.ai-control/engine/flows/reverse-engineer.md` in full before doing anythin
 
 | Phase | Goal | Key Output |
 |-------|------|------------|
+| **Bootstrap** | Create blueprint root | `project/` directories only |
 | **R.0** | Workspace scan + system profile | `project/profile.md` |
 | **R.1** | Reverse-engineer description + modules + data model | `project/description.md`, `project/plan/modules.md`, `project/plan/data-model.md` |
 | **R.2** | Reverse-engineer services, endpoints, pages, rules | `project/actions/`, `project/rules.md`, `project/plan/roles-and-authorization.md` |

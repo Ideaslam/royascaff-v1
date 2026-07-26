@@ -1,17 +1,17 @@
 # Services Template
 
-All backend services for one API app. Lives at `project/actions/<api-app>/services.md`. Created **before** endpoints — endpoints reference services.
+Per-module service specs for one API app. Lives at `project/actions/<api-app>/services/<module>.md` with a routing registry at `services/_index.md`. Created **before** endpoints — endpoints reference services.
+
+Layout contract: `engine/project-layout.md`. ID scheme: `engine/conventions.md` → **Artifact ID Scheme**.
 
 > Verbose guidance → `references/services-template-guide.md`
 
-## Schema
+## Schema — `services/<module>.md`
 
 ```md
-# Services — {App}
+# Services — {App} · {Module}
 
-## Module: {Name}
-
-### SVC-001 · ClassName [category, type, Module]
+### SVC-{MODULE}-01 · ClassName [category, type, Module]
 - Status: planned | partial | done | deferred
 - Methods:
   - `method(input): Return` — what it does
@@ -23,12 +23,16 @@ All backend services for one API app. Lives at `project/actions/<api-app>/servic
 Type: `internal` (business logic) or `external` (third-party adapter).
 Status: `planned` · `partial` · `done` · `deferred` (see `engine/conventions.md`). New services default to `planned`; `deferred` states its reason (e.g. `deferred: waiting on provider`).
 
-## Example
+## Registry — `services/_index.md`
+
+Use `engine/templates/index-template.md`. One row per module file.
+
+## Example — `services/users.md`
 
 ```md
-## Module: Users
+# Services — Backend API · Users
 
-### SVC-001 · UsersService [domain, internal, Users]
+### SVC-USERS-01 · UsersService [domain, internal, Users]
 - Status: done
 - Methods:
   - `createUser(dto): User` — validate, hash password, persist
@@ -37,15 +41,19 @@ Status: `planned` · `partial` · `done` · `deferred` (see `engine/conventions.
 - Deps: `UsersRepository`
 - Side effects: none
 - Rules: email unique; never return password hashes
+```
 
-## Module: Files
+## Example — `services/files.md`
 
-### SVC-002 · S3StorageProvider [integration, external, Files]
+```md
+# Services — Backend API · Files
+
+### SVC-FILES-01 · ObjectStorageProvider [integration, external, Files]
 - Status: planned
 - Methods:
   - `getPresignedUploadUrl(key, type): PresignedUrl` — PUT URL
   - `deleteObject(key): void` — remove from bucket
-- Deps: `AWS SDK (from env config)`
+- Deps: storage SDK (from env config)
 - Side effects: file upload/delete on remote storage
 - Rules: config-driven credentials; never called from controllers
 ```

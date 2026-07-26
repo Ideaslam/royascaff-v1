@@ -3,6 +3,8 @@
 All spec files (endpoints, services, pages, views) inherit these defaults.
 A spec only documents a value when it **deviates** from this file.
 
+**System-specific facts** (framework versions, database, queues, storage, AI/email/payment providers, brand colors, product name, repo paths) live only in generated `project/profile.md`. Never put them in `engine/`.
+
 ---
 
 ## API Conventions
@@ -10,46 +12,48 @@ A spec only documents a value when it **deviates** from this file.
 | Convention | Default |
 |------------|---------|
 | Route prefix | `/api/v1` |
-| Auth model | `JwtAuthGuard` + `RolesGuard` (applied globally) |
-| Workspace auth | `WorkspaceRoleGuard` + `@WorkspaceRoles()` (per-endpoint when workspace-scoped) |
+| Auth model | JWT bearer; global auth + role/permission guards; workspace-scoped guards when the product needs them |
 | Success envelope | `{ success: true, data: <payload> }` |
-| Error envelope | `{ success: false, message: string, error?: string, statusCode: number }` |
-| Pagination | `{ data: T[], total: number, page: number, limit: number }` via `PaginationDto` query params `?page=1&limit=20` |
-| Validation | `class-validator` DTOs + global `ValidationPipe` (whitelist + forbidNonWhitelisted) |
-| Rate limiting | Auth endpoints: 10/min/IP · Data refresh: per subscription tier · All other: 100/min/user |
+| Error envelope | `{ success: false, message: string, statusCode: number, error?: string, errors?: [{ field, message }] }` |
+| Pagination | `{ data: T[], total: number, page: number, limit: number }` via query params `?page=1&limit=20` |
+| Validation | Validate request DTOs at the API boundary (whitelist unknown fields) |
+| Rate limiting | Auth endpoints: 10/min/IP · All other: 100/min/user (override per product in profile/rules) |
+
+Concrete guard/class names and libraries come from `project/profile.md` Tech Stack.
 
 ## Frontend Conventions
 
 | Convention | Default |
 |------------|---------|
-| API base | `environment.apiUrl` — all HTTP calls go through this, never third-party directly |
-| Auth | JWT in `Authorization: Bearer` header via `AuthInterceptor` |
-| Loading state | Spinner on async operations |
-| Error state | Toast notification on failure (via shared toast service) |
-| Success state | Navigates to next route or shows success feedback |
+| API base | Environment/config API URL — all HTTP calls go through the app's API client, never third-party SDKs from UI |
+| Auth | JWT in `Authorization: Bearer` header via HTTP interceptor |
+| Loading state | Spinner (or equivalent) on async operations |
+| Error state | Toast / inline error on failure |
+| Success state | Navigate to next route or show success feedback |
 | Empty state | Context-appropriate empty message + optional CTA |
-| Guards | `AuthGuard` (redirect to `/auth/login` if unauthenticated) · `GuestGuard` (redirect to `/dashboard` if already logged in) · `AdminGuard` · `WorkspaceGuard` |
+| Guards | Unauthenticated → login · Guest-only routes → app home if already logged in · Role/workspace guards as defined in profile |
 
-## Architecture Conventions
+## Artifact ID Scheme
 
-| Convention | Default |
-|------------|---------|
-| Framework | NestJS (backend) · Angular (frontend) |
-| Database | MongoDB with Mongoose ODM |
-| Queue | BullMQ (Redis-backed) for all async jobs |
-| Caching | Redis (TTL-based) + MongoDB `chartdatacache` for persistent cache |
-| Storage | Cloudflare R2 (S3-compatible) via `src/integrations/storage/` |
-| AI | Claude via `src/integrations/ai/` (IAIProvider interface) |
-| Email | MailJet via `src/integrations/mail/` |
-| Payment | PayUp via `src/integrations/payment/` (PaymentProvider interface) |
-| Audit | All CRUD + auth events → `auditlogs` via `AuditService` |
+IDs are stable cross-references across services, endpoints, and pages/views.
+
+| Artifact | Pattern | Example |
+|----------|---------|---------|
+| Service | `SVC-<MODULE>-NN` | `SVC-USERS-01` |
+| Endpoint | `EP-<MODULE>-NN` | `EP-USERS-01` |
+| Custom rule | `RULE-<AREA>-NN` | `RULE-AUTH-01` |
+
+- `<MODULE>` — short uppercase token from the module name (`Auth` → `AUTH`, `Users` → `USERS`).
+- `NN` — two-digit sequence **per module file**, starting at `01`.
+- IDs never reuse a number after deletion; append the next free number.
+- Client specs reference endpoints by these IDs (e.g. `→ EP-USERS-01`).
 
 ## Naming Conventions
 
 | Item | Convention |
 |------|-----------|
 | Entities | PascalCase singular (`User`, `Project`, `Dashboard`) |
-| Collections | lowercase plural (`users`, `projects`, `dashboards`) |
+| Collections / tables | lowercase plural (`users`, `projects`, `dashboards`) |
 | DTOs | PascalCase + `Dto` suffix (`CreateProjectDto`, `AuthResponseDto`) |
 | Services | PascalCase + `Service` (`AuthService`, `ProjectService`) |
 | Controllers | PascalCase + `Controller` (`AuthController`) |
@@ -92,13 +96,32 @@ Rules:
 - No code started (all `planned`) → module is `planned`
 - All remaining work is `deferred` → module is `deferred`
 
-`project/status.md` and each `_index.md` are **summaries** — they must always agree with the per-artifact status in the spec files. History of *what changed* stays in `project/changes/change-log.md`; **status is the current state, not the history.**
+`project/status.md` and each `_index.md` are **summaries** — they must always agree with the per-artifact status in the **main** spec files.
 
-## Brand
+---
 
-| Token | Value |
-|-------|-------|
-| Main color | `#ff6043` |
-| Primary color | `#5922ea` |
-| Secondary color | `#282828` |
-| Product name | Roya AI Dynamo |
+## Main vs pack vs index
+
+| Layer | What it tracks | When it updates |
+|-------|----------------|-----------------|
+| **Main** `project/plan`, `project/actions`, `project/status.md` | **Implemented / merged** reality only | After change/polish pack **merge** (or Initial Build / Phase R) |
+| **Pack** `changes/change-<NNN>-…/blueprint/` + `status.md` | In-flight specs + per-artifact `planned`/`partial`/`done` | While drafting and implementing a change |
+| **Index** `changes/change-log.md` | Every pack's `pack-status` + Artifacts done | On every pack-status transition |
+| **Bugs index** `bugs/bug-log.md` | `PENDING` · `DONE` · `ESCALATED` | On every bug transition |
+
+### Pack-status (change-log + change-request metadata)
+
+| Status | Meaning |
+|--------|---------|
+| `drafted` | Request + pack blueprint written; code not started |
+| `in-progress` | Implementation started |
+| `verified` | `verify-code.md` PASS; not yet merged |
+| `merged` | Main blueprint updated |
+| `cancelled` | Abandoned; main never touched |
+| `blocked` | Waiting on `depends-on` |
+
+**Rules:**
+
+- Never edit main plan/actions for in-flight work — use the pack `blueprint/`.
+- Never leave `change-log.md` stale relative to pack `status.md`.
+- Resume change/polish work from `change-log.md` first; resume merged build state from `project/status.md`.

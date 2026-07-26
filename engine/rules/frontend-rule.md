@@ -228,7 +228,7 @@ Every data screen must handle:
 
 Same architectural principles apply to mobile (React Native, Expo, Flutter, SwiftUI, Compose):
 
-- **Screens** replace pages — route-bound, specified in views.md
+- **Screens** replace pages — route-bound, specified in `views/<module>.md`
 - Use platform's native component library/design system
 - Use platform navigator (stack/bottom-tab/drawer/modal) — keep screens deep-linkable
 - Same layering: screen → data hook/service → HTTP client → API

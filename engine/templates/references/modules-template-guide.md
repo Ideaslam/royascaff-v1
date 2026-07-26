@@ -4,7 +4,7 @@
 
 ## File-Level Rules
 
-- `modules.md` is created before `features.md`, `endpoints.md`, and `pages.md`.
+- `modules.md` is created before action specs (`services/<module>.md`, `endpoints/<module>.md`, `pages/<module>.md`).
 - Every module must use the same section order.
 - Module names must stay stable — reused in endpoints, pages, and code folders as `## Module: {Module Name}`.
 - Name modules by business capability, not by one screen or one endpoint.

@@ -19,7 +19,7 @@ Examples: `Customer Mobile App`, `Partner Portal`, `Ops Dashboard`
 
 ### `app-slug`
 Lowercase kebab-case id derived from `app-name`. Used for files and repos.
-The new app gets `project/actions/<app-slug>/` folder. Its spec is `pages.md` (web) or `views.md` (mobile).
+The new app gets `project/actions/<app-slug>/` folder. Specs are per-module: `pages/<module>.md` (web) or `views/<module>.md` (mobile), each with `_index.md`.
 
 ### `target-platform`
 | Value | Means |
@@ -55,11 +55,11 @@ Tips:
 ## Client Spec for a New App
 
 After Step 5.1b, the AI creates:
-- **Web app** → `project/actions/<app-slug>/pages.md` using `pages-template.md`
-- **Mobile app** → `project/actions/<app-slug>/views.md` using `views-template.md`
+- **Web app** → `project/actions/<app-slug>/pages/_index.md` + `pages/<module>.md` using `pages-template.md`
+- **Mobile app** → `project/actions/<app-slug>/views/_index.md` + `views/<module>.md` using `views-template.md`
 
 Each page/screen entry must declare:
-- **Reused endpoints** — from the API app's endpoints.md
+- **Reused endpoints** — from the API app's `endpoints/<module>.md` (by `EP-<MODULE>-NN`)
 - **New endpoints needed** — flagged for addition to the API
 - **Platform notes** — mobile-specific behavior (navigation, gestures, push, offline)
 

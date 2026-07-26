@@ -1,41 +1,43 @@
 # Pages Template (Web Apps)
 
-Lists all pages for one web app. Lives at `project/actions/<app-key>/pages.md`. For mobile apps, use `views-template.md` instead.
+Per-module page specs for one web app. Lives at `project/actions/<app-key>/pages/<module>.md` with a routing registry at `pages/_index.md`. For mobile apps, use `views-template.md` instead.
+
+Layout contract: `engine/project-layout.md`. Reference endpoints by `EP-<MODULE>-NN` IDs.
 
 > Verbose guidance → `references/pages-template-guide.md`
 
-## Schema
+## Schema — `pages/<module>.md`
 
 ```md
-# Pages — {App Name}
-
-## Module: {ModuleName}
+# Pages — {App Name} · {ModuleName}
 
 ### PageName
 
 - Route: `/app/resource`
 - Status: planned | partial | done | deferred
 - Components: `FilterBar`, `DataTable`, `CreateDialog`
-- Service: `ResourceService` → EP-001 (GET /resource), EP-002 (POST /resource)
+- Service: `ResourceService` → EP-RESOURCE-01 (GET /resource), EP-RESOURCE-02 (POST /resource)
 - Guard: `authGuard` | `adminGuard` | `none`
 - Notes: paginated list, create via modal dialog
 ```
 
 Status: `planned` · `partial` · `done` · `deferred` (see `engine/conventions.md`). New pages default to `planned`; `deferred` states its reason in Notes.
 
-## Example
+## Registry — `pages/_index.md`
+
+Use `engine/templates/index-template.md`. One row per module file.
+
+## Example — `pages/users.md`
 
 ```md
-# Pages — Customer Portal
-
-## Module: Users
+# Pages — Customer Portal · Users
 
 ### Users List Page
 
 - Route: `/app/users`
 - Status: done
 - Components: `UsersFilterBar`, `UsersTable`, `CreateUserDialog`
-- Service: `UsersService` → EP-001 (GET /users), EP-005 (DELETE /users/:id)
+- Service: `UsersService` → EP-USERS-01 (GET /users), EP-USERS-05 (DELETE /users/:id)
 - Guard: `adminGuard`
 - Notes: paginated table with search/role filters; delete via confirmation dialog
 
@@ -44,7 +46,7 @@ Status: `planned` · `partial` · `done` · `deferred` (see `engine/conventions.
 - Route: `/app/users/:id/edit`
 - Status: partial
 - Components: `UserForm`, `RoleSelector`
-- Service: `UsersService` → EP-003 (GET /users/:id), EP-004 (PATCH /users/:id)
+- Service: `UsersService` → EP-USERS-03 (GET /users/:id), EP-USERS-04 (PATCH /users/:id)
 - Guard: `adminGuard`
 - Notes: combined create/edit form; role changes require admin — role selector not yet wired
 ```
