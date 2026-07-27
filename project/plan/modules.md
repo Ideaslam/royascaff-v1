@@ -85,12 +85,13 @@
 10. **Section fan-out (Step 3)** [backend-only] — parallel `pipeline.section`; AJV contentSchema + richness; per-section fail/retry
 11. **Assemble (Step 4)** [backend-only] — Handlebars + financial inject + overflow guard + PDF (no AI); uses `generation.language`
 12. **Export (Step 5)** [backend-only] — S3 HTML/PDF → `renderedByLang`; `ready` / `partially_failed`
-13. **Orchestration engine** [backend-only] — Mongo fan-in after sections; idempotent workers; reconciler ~60s
+13. **Orchestration engine** [backend-only] — Mongo fan-in after sections; idempotent workers; reconciler ~60s; durable resume from Mongo checkpoints when Redis/app interrupted
 14. **Workspace v3 feature flag** [both] — `settings.pipelineV3Enabled` default **true**; gates create-from-project + regen/translate/rerender + FE Projects create; soft-blocks new creative jobs
 15. **Translate section jobs** [backend-only] — fast model (`translate`); schema-validated; glossary rules; fan-in → assemble/export
 16. **Regen orchestrator** [backend-only] — ProposalRegenerateService wires map/section/assemble/export queues
 17. **Primary path (FE)** [frontend-only] — Projects primary when flag on (default); Creative nav hidden; `/ai-jobs` for history; Creative deep link escape when flag off
 18. **Legacy proposal backfill** [backend-only] — ops script wraps proposals missing `projectId` into projects
+19. **Durable resume** [both] — `PipelineResumeService` status machine (Mongo = checkpoint); reconciler + `POST …/resume`; FE Continue only when stuck (idle ≥60s, no BullMQ jobs for proposal); incomplete sections only, never wipe `ready`
 
 ## 7. Contracts
 - Scope: BE `modules/data/contracts` + FE contracts pages

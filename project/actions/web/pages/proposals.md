@@ -13,8 +13,8 @@
 ### Proposal View `PG-PROPOSALS-02`
 - Route: `/proposals/:id/view`
 - Status: done
-- Components: VisualEditor / HTML preview (legacy); **v3 branch** PipelineStepper + server PDF/HTML + Retry/Translate/sibling/Regenerate
-- Service: AppDataService → EP-PROPOSALS-05; v3 → EP-PROP-PIPE-01,03,04,05,06 + EP-PROJECTS-10
+- Components: VisualEditor / HTML preview (legacy); **v3 branch** PipelineStepper + server PDF/HTML + Retry/Translate/sibling/Regenerate + **Continue when stuck**
+- Service: AppDataService → EP-PROPOSALS-05; v3 → EP-PROP-PIPE-01,03,04,05,06,08 + EP-PROJECTS-10
 - Guard: layout
 - Notes: branch on `pipelineVersion === "3"` / `generation` / `projectId`
 
@@ -43,7 +43,15 @@
 ### Proposal View v3 actions `PG-PROP-V3-02`
 - Route: `/proposals/:id/view` (v3 branch)
 - Status: done
-- Components: lang tabs (from `renderedByLang`), Download PDF, Open HTML, Retry, Translate, New template, Regenerate
-- Service: EP-PROP-PIPE-03..06; EP-PROJECTS-10
+- Components: lang tabs (from `renderedByLang`), Download PDF, Open HTML, Retry, Translate, New template, Regenerate, **Continue** (`canResume`/`stuck`)
+- Service: EP-PROP-PIPE-03..06,08; EP-PROJECTS-10
 - Guard: projects.edit / projects.create as noted
-- Notes: translate adds a language without wiping source; list still opens standalone financial per lang after export
+- Notes: Continue when stuck (non-terminal + idle ≥60s + no BullMQ jobs) **or** recoverable terminal assemble/export fail; Retry with no failed sections re-runs assemble; auto-resume via reconciler preferred; translate adds a language without wiping source
+
+### Proposal Continue `PG-PROP-RESUME-01`
+- Route: `/proposals/:id/view` (v3, stuck or recoverable failed)
+- Status: done
+- Components: Continue generation button
+- Service: EP-PROP-PIPE-08
+- Guard: `projects.edit`
+- Notes: hidden while `hasQueueWork` (non-recoverable); shown when stuck or recoverable assemble/export failure

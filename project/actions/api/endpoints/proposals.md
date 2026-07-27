@@ -10,12 +10,13 @@
 | EP-PROPOSALS-03 | GET | /api/data/proposals/lite | authenticated | list query | lite[] | ProposalsDataService | done | |
 | EP-PROPOSALS-04 | GET | /api/data/proposals/dashboard | authenticated | ?period | dashboard dto | ProposalsDataService | done | |
 | EP-PROPOSALS-05 | GET | /api/data/proposals/:id | authenticated | param | proposal | ProposalsDataService | done | |
-| EP-PROP-PIPE-01 | GET | /api/data/proposals/:id/status | authenticated | param | generation snapshot | ProjectsDataService | done | through ready/partially_failed |
+| EP-PROP-PIPE-01 | GET | /api/data/proposals/:id/status | authenticated | param | generation snapshot + `stuck`/`canResume`/`hasQueueWork` | ProjectsDataService | done | through ready/partially_failed |
 | EP-PROP-PIPE-03 | POST | /api/data/proposals/:id/sections/retry | permission:`projects.edit` | `{ instanceIds? }` | `202` enqueued | SectionOrchestrator | done | failed sections only |
 | EP-PROP-PIPE-04 | GET | /api/data/proposals/:id/rendered | authenticated | ?lang= | `{ htmlUrl, pdfUrl }` | ProjectsDataService | done | when exported |
 | EP-PROP-PIPE-05 | POST | /api/data/proposals/:id/regenerate | permission:`projects.edit` | `{ useLatestDna? }` | `{ proposalId, runId }` | ProposalRegenerateService | done | flag gated |
 | EP-PROP-PIPE-06 | POST | /api/data/proposals/:id/translate | permission:`projects.edit` | `{ lang }` | `{ proposalId, runId, lang }` | TranslateOrchestrator | done | flag gated |
 | EP-PROP-PIPE-07 | POST | /api/data/proposals/:id/rerender | permission:`projects.edit` | `{ lang? }` | `{ proposalId, runId }` | ProposalRegenerateService | done | flag gated |
+| EP-PROP-PIPE-08 | POST | /api/data/proposals/:id/resume | permission:`projects.edit` | — | `202` `{ proposalId, runId, status, enqueued }` | PipelineResumeService | done | durable resume; flag gated |
 | EP-PROPOSALS-06 | POST | /api/data/proposals | authenticated | body | created | ProposalsDataService | done | |
 | EP-PROPOSALS-07 | PATCH | /api/data/proposals/:id | authenticated | body | updated | ProposalsDataService | done | |
 | EP-PROPOSALS-08 | DELETE | /api/data/proposals/:id | authenticated | param | ok | ProposalsDataService | done | |

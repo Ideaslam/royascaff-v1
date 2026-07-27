@@ -10,7 +10,7 @@
 | Clients | `clients.md` | `/api/data/clients` · EP-CLIENTS-01..08 | done | 8/8 | clients + logos |
 | Services | `services.md` | `/api/data/services` · EP-SERVICES-01..06 | done | 6/6 | service catalog |
 | Service Categories | `service-categories.md` | `/api/data/service-categories` · EP-SVCCAT-01..06 | done | 6/6 | categories |
-| Proposals | `proposals.md` + `proposals-pipeline.md` | `/api/data/proposals` + `/api/proposals` · EP-PROPOSALS-01..14 + EP-PROP-PIPE-01,03..07 | done | 20/20 | CRUD + ops + send + v3 status/retry/rendered/regen/translate |
+| Proposals | `proposals.md` + `proposals-pipeline.md` | `/api/data/proposals` + `/api/proposals` · EP-PROPOSALS-01..14 + EP-PROP-PIPE-01,03..08 | done | 21/21 | CRUD + ops + send + v3 status/retry/rendered/regen/translate/resume |
 | Contracts | `contracts.md` | `/api/data/contracts` · EP-CONTRACTS-01..09 | done | 9/9 | contracts lifecycle |
 | Roles | `roles.md` | `/api/data/roles` · EP-ROLES-01..07 | done | 7/7 | roles |
 | Permissions | `permissions.md` | `/api/data/permissions` · EP-PERMS-01..06 | done | 6/6 | permissions |
