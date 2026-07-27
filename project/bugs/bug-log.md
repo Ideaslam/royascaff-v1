@@ -4,7 +4,7 @@
 
 | # | Date | Severity | Area | Summary | Status | File / Change pack |
 |---|------|----------|------|---------|--------|--------------------|
-| 007 | 2026-07-27 | high | Pipeline v3 sections | Always stuck at Writing 15/16; Continue finishes | PENDING | `bug-007-stuck-at-15-of-16-sections.md` |
+| 007 | 2026-07-27 | high | Pipeline v3 sections | Always stuck at Writing 15/16; Continue finishes | DONE | `bug-007-stuck-at-15-of-16-sections.md` |
 | 006 | 2026-07-27 | medium | Project DNA page | DNA view omits branding section after palette regen | DONE | `bug-006-dna-page-missing-branding.md` |
 | 005 | 2026-07-27 | high | Projects create/edit form | Research modules UI only shows 3 of 8 types | DONE | `bug-005-project-form-missing-research-types.md` |
 | 001 | 2026-07-27 | high | AI Requests / pipeline-traces | Tokens/cost missing; detail viewer incomplete; label lacks projectId; needs project grouping | DONE | `bug-001-ai-requests-display.md` |

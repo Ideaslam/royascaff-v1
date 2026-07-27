@@ -1,12 +1,12 @@
 # Project Status
 
-_Last updated: 2026-07-27 — after change-025 pitch branding color roles merge_
+_Last updated: 2026-07-28 — after change-026 DNA versions merge_
 
 ## Snapshot
 
 | App | Services | Endpoints | Pages/Views | Overall |
 |-----|----------|-----------|-------------|---------|
-| api | 82/84 | 126/127 | — | partial |
+| api | 82/84 | 137/138 | — | partial |
 | web | — | — | 35/35 | partial |
 
 > Web overall `partial` (MainLayout authGuard). **REQ-PROP-V3 parts 1–8/8 merged** (soft cutover; hard delete of v2 poller deferred).
@@ -21,7 +21,7 @@ _Last updated: 2026-07-27 — after change-025 pitch branding color roles merge_
 | Services | 1/1 | 6/6 | 2/2 | done |
 | Service Categories | 1/1 | 6/6 | 1/1 | done |
 | Proposals | 6/6 | 20/20 | 6/6 | done |
-| Projects | 4/4 | 11/11 | 5/5 | done |
+| Projects | 4/4 | 22/22 | 5/5 | done |
 | Creative / AI Jobs | 3/3 | 5/5 | 2/2 | done |
 | Pipeline v3 Foundations | 8/8 | 2/2 | — | done |
 | Pipeline Analyze + Map | 6/7 | — | — | partial |
@@ -63,6 +63,8 @@ _Last updated: 2026-07-27 — after change-025 pitch branding color roles merge_
 
 | Artifact | App · Module | Reason | Revisit when |
 |----------|--------------|--------|--------------|
+| Full retire `/projects/:id/edit` + workspace shell dialog | web · Projects | DNA form is primary; legacy edit kept | follow-up DNA pack |
+| Structured DNA content editor UI | web · Projects | PUT content API done; FE inputs-only | follow-up DNA pack |
 | OpenAI / Gemini providers | api · AI | stubs / not configured | product decides multi-provider |
 | Hard delete v2 poller / creative-pipeline | api · Creative | soft cutover done; keep for quiet period | after quiet traffic |
 | Admin cross-workspace traces | api · Pipeline Traces | workspace-scoped only in v1 | later admin pack |

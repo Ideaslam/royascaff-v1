@@ -155,18 +155,18 @@
 6. **BullMQ (Redis work queues)** [backend-only] — Pipeline v3 job queues; Redis also remains cache
 
 ## 12. Projects
-- Scope: BE `modules/data/projects` + `ProjectsDataService` + `pipeline-v3` analyze inputs + FE `/projects*`
+- Scope: BE `modules/data/projects` + `ProjectsDataService` + `project_dna_versions` + `pipeline-v3` analyze inputs + FE `/projects*`
 - Audience: sales roles with `projects.*`
-- Entities: `projects`
+- Entities: `projects`, `project_dna_versions`
 - Depends on: Clients, Services Catalog, Integrations (S3), Pipeline v3 (analyze enqueue)
 
 ### Features
-1. **Project CRUD** [both] — create/list/get/patch/archive; competitors ≤3; researchOptions full 8 keys; optional `colorPalette` (1–5 hex); financials code-computed
-2. **RFP upload + parse** [both] — multipart → S3 + extracted text (pdf-parse / mammoth / txt)
-3. **Image upload** [both] — multipart → S3 URLs on `images[]` with **purpose** + optional userNote; PATCH metadata for existing images
-4. **DNA get / regenerate** [both] — read `projects.dna`; bump `dna.version` + clear data + enqueue `pipeline.analyze` (does not auto-rebuild proposals); DNA images include purpose; inject `dna.branding.colors` + `colorRoles` (palette → client_logo → Roya defaults; derive missing roles from primary / white+near-black) + force-reconcile
-5. **Sibling proposal / template switch** [both] — new proposal, same DNA, different `templateKey`; map-only when DNA present; pin `dnaVersion`
-6. **Project list / create / workspace / edit / DNA (FE)** [frontend-only] — `/projects`, `/projects/new`, `/projects/:id`, `/projects/:id/edit`, `/projects/:id/dna`; edit/delete/View DNA; shared breadcrumbs; template gallery → create proposal; Create/Edit **Project images** card + **Branding** card (`CMP-PALETTE-01`); Workspace DNA-stale badge on Regenerate after Edit save
+1. **Project shell CRUD** [both] — create/list/get/patch/archive; create also inserts first DNA version (inputs may mirror on project during transition)
+2. **DNA versions CRUD** [both] — list/create (blank\|copyFrom)/get/patch inputs/rename/hard-delete; title required; duplicates OK; no max; zero versions allowed
+3. **DNA generate (per version)** [both] — enqueue analyze for that version’s inputs; confirmOverwrite if ready; 409 if regenerating; branding inject/force-reconcile; PUT content AJV `dna.v2`
+4. **RFP / images (version-scoped)** [both] — multipart + purpose/notes on DNA version; legacy project-level routes remain as shim/mirror
+5. **Sibling / create proposal** [both] — pick `dnaVersionId` (default latest ready); pin `dnaVersionId` + `dnaSnapshot`; map-only when ready DNA; services from version
+6. **Project list / create / workspace / DNA form (FE)** [frontend-only] — `/projects`, `/projects/new`, `/projects/:id` (DNA versions table + proposal picker), `/projects/:id/dna/new`, `/projects/:id/dna/:vid` (form); `/edit` legacy; shared breadcrumbs; Branding + images cards; dialog selects `appendTo="body"`
 
 ## 13. Templates
 - Scope: BE `src/pipeline-v3/templates/*` + disk `templates/pitch-landscape/v1/` + `templates/website-template/v1/` + `templates` collection + FE gallery

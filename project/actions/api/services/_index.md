@@ -24,7 +24,7 @@
 | Pipeline Sections + Engine | `pipeline-sections-engine.md` | SVC-PIPE-S3-01..09 | done | 9/9 | Steps 3–5 + assemble colorRoles→themeOverrides; reconciler |
 | Pipeline Regen + Translate | `pipeline-regen-translate.md` | SVC-PIPE-RT-01..06 | done | 6/6 | regen, translate, sibling, formal seed |
 | Pipeline Durable Resume | `pipeline-resume.md` | SVC-PIPE-RESUME-01..04 | done | 4/4 | resume helper, incomplete sections, reconciler, fan-in |
-| Projects | `projects.md` | SVC-PROJECTS-01..04 | done | 4/4 | CRUD + colorPalette, RFP, images purpose/PATCH, DNA colors+colorRoles inject |
+| Projects | `projects.md` | SVC-PROJECTS-01..04 | done | 4/4 | CRUD + DNA versions + snapshot pin + RFP/images (version+legacy) |
 | Templates | `templates.md` | SVC-TPL-01..08 | done | 8/8 | pitch primary-led theme + formal + website landing; 20 sections |
 | Admin | `admin.md` | SVC-ADMIN-01..02 | done | 2/2 | admin AI jobs + data reset |
 | Integrations | `integrations.md` | SVC-INT-01..05 | done | 5/5 | S3, Mailjet, WhatsApp, Redis, encryption |

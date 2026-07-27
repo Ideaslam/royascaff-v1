@@ -205,7 +205,9 @@ Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), ge
 | `templateVersion` | Number \| null | pinned | — |
 | `language` | String \| null | `ar` \| `en` (primary / source language) | — |
 | `pipelineVersion` | String \| null | `"3"` for v3 runs | — |
-| `dnaVersion` | Number \| null | pinned `projects.dna.version` at create / regen-with-latest | — |
+| `dnaVersionId` | String \| null | → `project_dna_versions._id` | preferred pin at create |
+| `dnaSnapshot` | Object \| null | immutable copy of version DNA + inputs at create | workers prefer snapshot first |
+| `dnaVersion` | Number \| null | legacy numeric pin; optional keep | prefer `dnaVersionId` + snapshot |
 | `sourceProposalId` | String \| null | sibling / template-switch provenance | → `proposals` |
 | `revisions` | Object[] \| null | last **5** archives (newest first) | regen/translate |
 | `sectionMap` | Object \| null | `schemaVersion: map.v1` + `sections[]` | Step 2 output |
@@ -392,7 +394,7 @@ Files: `mongodb-queue.gateway.ts`, `models/ai-job.model.ts` (`JobQueuePayload`)
 ---
 
 ## 15. projects
-Purpose: container for one client engagement — raw `info`, services/financials, RFP/images, versioned DNA (Analyze Step 1).
+Purpose: container for one client engagement (shell + optional legacy mirrored inputs). **Canonical inputs + DNA live on `project_dna_versions`** (change-026).
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
@@ -403,15 +405,19 @@ Purpose: container for one client engagement — raw `info`, services/financials
 | `clientName` | String | denormalized | — |
 | `name` | String | required | — |
 | `type` | Enum/string | branding\|campaign\|social\|…\|other | — |
-| `info` | Object | create-form facts (see below) | — |
-| `services` | Object[] | snapshot; source of truth for money; line items may override catalog name/price/qty | — |
-| `financial` | Object | code-computed subtotal/tax/grandTotal/currency | — |
-| `rfp` | Object\|null | `fileKey`, `extractedTextKey`, `status` parsed\|failed | S3 |
-| `images` | Object[] | id, url, key?, name, **purpose** (`client_logo`\|`product`\|`reference`\|`other`, default `other`), userNote? | S3; DNA mirrors purpose + userNote; missing purpose → `other` at read/assemble |
-| `colorPalette` | `string[]` \| null/absent | optional; when set length **1–5**; each `#RRGGBB` (normalized) | User project palette; empty/absent → DNA branding fallback chain |
-| `dna` | Object\|null | `schemaVersion: dna.v2`, `version` (number), `data`, `generatedAt`, `runId`, `regenerating?` | AJV fail-closed; version bumps on regenerate-dna |
+| `info` | Object | create-form facts (see below) | **legacy/mirror** during transition; prefer DNA version |
+| `services` | Object[] | snapshot; line items may override catalog | **legacy/mirror**; money for proposals from DNA version |
+| `financial` | Object | code-computed subtotal/tax/grandTotal/currency | **legacy/mirror** |
+| `rfp` | Object\|null | `fileKey`, `extractedTextKey`, `status` parsed\|failed | S3; prefer version-scoped |
+| `images` | Object[] | id, url, key?, name, **purpose**, userNote? | S3; prefer version-scoped |
+| `colorPalette` | `string[]` \| null/absent | 1–5 `#RRGGBB` when set | prefer DNA version palette |
+| `dna` | Object\|null | legacy single blob | shim / mirror of latest generate; prefer version |
 | `status` | Enum | active\|archived | — |
 | `createdAt` / `updatedAt` | Date | auto | — |
+
+Relations: one project → many `project_dna_versions` → many proposals.  
+Create: writes first DNA version (+ may mirror inputs on project).  
+Rules: pipeline resolve DNA via `proposal.dnaSnapshot` → version by `dnaVersionId` → legacy `projects.dna`.
 
 ### `projects.info` (create / DNA passthrough)
 
@@ -447,10 +453,35 @@ When `source === 'roya_default'`, secondary/accent may keep catalog Roya blues. 
 
 AJV `dna.v2`: `branding` remains an object; `colors` / `colorRoles` / `source` documented (strict schema optional). Assemble maps `colorRoles` → `themeOverrides.primary|secondary|accent|surface|text` (legacy DNA with only `colors[]` derives roles at assemble).
 
-Relations: one project → many proposals (v3 create-from-project; proposals get `type: 'creative'`).  
+Relations: one project → many DNA versions → many proposals (v3 create-from-project; proposals get `type: 'creative'`).  
 Indexes: `{ workspaceId: 1, updatedAt: -1 }`; `{ workspaceId: 1, clientId: 1 }`.  
-Files: `mongodb-projects.repository.ts`, `services/data/projects.data.service.ts`, `modules/data/projects.controller.ts`, `pipeline-v3/analyze/dna-passthrough.ts`, `pipeline-v3/analyze/branding-colors.ts`  
-Rules: Redis jobs are work; Mongo `projects.dna` + `proposal.sectionMap` + `generation` are truth; never invent competitor/social URLs; generate must not fail solely for missing palette/logo.
+Files: `mongodb-projects.repository.ts`, `mongodb-project-dna-versions.repository.ts`, `services/data/projects.data.service.ts`, `modules/data/projects.controller.ts`, `pipeline-v3/analyze/dna-passthrough.ts`, `pipeline-v3/analyze/branding-colors.ts`, `pipeline-v3/analyze/dna-version-resolve.ts`  
+Rules: Redis jobs are work; Mongo DNA **versions** + `proposal.dnaSnapshot` / `sectionMap` / `generation` are truth; never invent competitor/social URLs; generate must not fail solely for missing palette/logo.
+
+---
+
+## 15b. project_dna_versions
+Purpose: versioned snapshot of project inputs + Analyze DNA. Many per project; proposals pin a version (+ frozen snapshot).
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | String | PK | — |
+| `workspaceId` | String | required, tenant | → workspaces |
+| `projectId` | String | required | → projects |
+| `createdBy` | String | required | → user |
+| `title` | String | required, non-empty trim; duplicates allowed | — |
+| `info` | Object | same shape as `projects.info` | DNA passthrough |
+| `services` | Object[] | money source when creating proposals from this version | — |
+| `financial` | Object | code-computed totals | — |
+| `rfp` | Object\|null | same as project.rfp | S3 |
+| `images` | Object[] | purpose + userNote | S3 |
+| `colorPalette` | `string[]` \| null | 1–5 `#RRGGBB` | branding inject |
+| `dna` | Object\|null | `schemaVersion`, `data`, `generatedAt`, `runId`, `regenerating?`, `version?` | AJV `dna.v2` |
+| `status` | Enum string | `empty` \| `generating` \| `ready` \| `failed` | derived/set with dna |
+| `createdAt` / `updatedAt` | Date | auto | — |
+
+Indexes: `{ workspaceId: 1, projectId: 1, updatedAt: -1 }`. Tenant: `TENANT_ISOLATED_COLLECTIONS`.  
+Migration: `scripts/backfill-project-dna-versions.js` (dry-run / `--apply`).
 
 ---
 

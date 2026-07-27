@@ -6,7 +6,7 @@
 ### SVC-PIPE-AM-01 · AnalyzeOrchestrator [domain, internal, PipelineV3]
 - Status: done
 - Methods:
-  - `runAnalyze(job)` — passthrough DNA skeleton; parallel 1a + 1d×selected; AJV+depth gate; repair ≤2; write `projects.dna` or fail
+  - `runAnalyze(job)` — job may include `dnaVersionId`; load version inputs when set; passthrough DNA skeleton; parallel 1a + 1d×selected; AJV+depth gate; repair ≤2; write **DNA version** (+ mirror `projects.dna`) or mark version `failed`; refresh proposal `dnaSnapshot` when `proposalId`
 - Deps: ProjectsRepository, ClientsRepository, Claude, ModelResolver, PipelineTraceService, SchemaRegistry, S3
 - Side effects: async, external API, file read
 - Rules: research full 8 options; never invent URLs/money; fail-closed; trace AI + validation
