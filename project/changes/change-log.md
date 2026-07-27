@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-27_
 
-> Next change number: 018
+> Next change number: 019
 
 ## Summary
 
@@ -10,7 +10,7 @@ _Last updated: 2026-07-27_
 |-------------|------:|
 | drafted | 2 |
 | in-progress | 0 |
-| verified | 1 |
+| verified | 2 |
 | merged | 13 |
 | cancelled | 0 |
 | blocked | 1 |
@@ -19,6 +19,7 @@ _Last updated: 2026-07-27_
 
 | # | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |---|------|------|---------|------------|-------------|----------------|-------|--------|
+| 018 | 2026-07-27 | modify-feature | REQ-PROP-V3 | — | verified | 5/5 | Full research types → pipeline + pitch-landscape sections | `change-018-full-research-types/` |
 | 014 | 2026-07-26 | modify-feature | REQ-PROP-V3 | — | verified | 3/3 | Project edit/delete + DNA page + breadcrumbs | `change-014-project-control-dna-breadcrumbs/` |
 | 001 | 2026-07-26 | bug-fix | REQ-R | — | drafted | 0/1 | Enable MainLayout authGuard | `change-001-r-enable-web-auth-guard/` |
 | 002 | 2026-07-26 | bug-fix | REQ-R | change-001 | blocked | 0/2 | API PermissionGuard parity w/ seed+FE | `change-002-r-api-permission-parity/` |
