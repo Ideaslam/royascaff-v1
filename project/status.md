@@ -1,13 +1,13 @@
 # Project Status
 
-_Last updated: 2026-07-26 — after REQ-PROP-V3 change-012 + change-013 merge_
+_Last updated: 2026-07-27 — after change-019 revenue-type-as-unit merge_
 
 ## Snapshot
 
 | App | Services | Endpoints | Pages/Views | Overall |
 |-----|----------|-----------|-------------|---------|
 | api | 82/84 | 121/122 | — | partial |
-| web | — | — | 32/32 | partial |
+| web | — | — | 33/33 | partial |
 
 > Web overall `partial` (MainLayout authGuard). **REQ-PROP-V3 parts 1–8/8 merged** (soft cutover; hard delete of v2 poller deferred).
 
@@ -21,7 +21,7 @@ _Last updated: 2026-07-26 — after REQ-PROP-V3 change-012 + change-013 merge_
 | Services | 1/1 | 6/6 | 2/2 | done |
 | Service Categories | 1/1 | 6/6 | 1/1 | done |
 | Proposals | 6/6 | 20/20 | 6/6 | done |
-| Projects | 4/4 | 10/10 | 3/3 | done |
+| Projects | 4/4 | 10/10 | 4/4 | done |
 | Creative / AI Jobs | 3/3 | 5/5 | 2/2 | done |
 | Pipeline v3 Foundations | 8/8 | 2/2 | — | done |
 | Pipeline Analyze + Map | 6/7 | — | — | partial |
@@ -67,6 +67,6 @@ _Last updated: 2026-07-26 — after REQ-PROP-V3 change-012 + change-013 merge_
 | Admin cross-workspace traces | api · Pipeline Traces | workspace-scoped only in v1 | later admin pack |
 | Vision 1b full | api · Pipeline | partial skip in Phase 2 | later PROP-V3 / polish pack |
 | Full formal disk theme | api · Templates | catalog tokens + shared assets | design pack |
-| Remaining §5.6 template keys | api · Templates | shippable subset only | later template packs |
+| Remaining §5.6 non-research keys (opportunities, swot, channel_strategy, toc, …) | api · Templates | research primaries shipped in change-018 | later template packs |
 | Structured section editor | web · Proposals | out of v1 | later PROP pack |
 | Remove unused FE pdf deps | web | investigate first | cleanup sprint |

@@ -28,10 +28,10 @@
 
 ### SVC-PIPE-S3-02 · DnaSliceBuilder [domain, internal, PipelineV3]
 - Status: done
-- Methods: `buildSlice(sectionKey, mapEntry, dna): JsonObject`
+- Methods: `buildDnaSlice(sectionKey, mapEntry, dna, competitorIndex?)`, `isResearchSectionKey(key)`
 - Deps: none (pure)
 - Side effects: none
-- Rules: competitor_analysis instance gets matching competitor index when possible
+- Rules: full module DNA for research keys `market_analysis`, `competitor_analysis`, `audience_insights`, `market_trends`, `benchmarks`, `case_studies`, `social_audit`, `action_plan`; competitor_analysis instance gets matching competitor index when possible
 
 ### SVC-PIPE-S3-03 · RichnessGate [domain, internal, PipelineV3]
 - Status: done

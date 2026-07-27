@@ -10,7 +10,7 @@
 - **part**: —
 - **depends-on**: —
 - **blocks**: —
-- **pack-status**: verified
+- **pack-status**: merged
 
 ## Scope
 - Module(s): Pipeline v3 Analyze (1d), Map (coverage), Sections (DNA slice), Templates (`pitch-landscape`)

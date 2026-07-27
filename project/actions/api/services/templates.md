@@ -28,21 +28,21 @@
 - Methods: `buildPitchLandscapeTemplateDoc` + bootstrap upsert
 - Deps: TemplatesRepository
 - Side effects: Mongo upsert on boot
-- Rules: `status: active`; 14 section defs with contentSchema; requiredKeys cover/financial/footer
+- Rules: `status: active`; 19 section defs with contentSchema (commercial + all research primaries); `maxSections` 28; requiredKeys cover/financial/footer; disk partials for market_trends/benchmarks/case_studies/social_audit/action_plan
 
 ### SVC-TPL-05 · Fixture render [domain, internal, Templates]
 - Status: done
 - Methods: via TemplateRenderService fixture helpers
 - Deps: fixture-content.ts
 - Side effects: PDF optional
-- Rules: AR + EN fixtures for all shippable sections
+- Rules: AR + EN fixtures for all 19 shippable sections
 
 ### SVC-TPL-06 · pitch-landscape-formal catalog seed [domain, internal, Templates]
 - Status: done
 - Methods: `buildPitchLandscapeFormalTemplateDoc` + bootstrap upsert
 - Deps: TemplatesRepository
 - Side effects: Mongo upsert on boot
-- Rules: active; shares pitch-landscape disk `basePath`; formal theme tokens (design-partial OK)
+- Rules: active; shares pitch-landscape disk `basePath` + same 19 section list; formal theme tokens (design-partial OK)
 
 ### SVC-TPL-07 · List active templates [domain, internal, Templates]
 - Status: done

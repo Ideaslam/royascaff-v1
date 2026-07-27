@@ -420,7 +420,7 @@ Purpose: container for one client engagement — raw `info`, services/financials
 | `summary` | String | required on create (project description) | → `dna.project.summaryUser` |
 | `kpis` | String \| Array | optional; string seeds one KPI | → `dna.project.kpis` |
 | `budget` / `duration` | String \| Object | select values from Creative options | → `dna.project.budget` / `duration` |
-| `researchOptions` | String[] | launch subset market\|competitor\|audience | → `dna.research.selectedOptions` |
+| `researchOptions` | String[] | market\|competitor\|audience\|trends\|benchmarks\|case-studies\|social-analysis\|action-plan | → `dna.research.selectedOptions` |
 
 Relations: one project → many proposals (v3 create-from-project; proposals get `type: 'creative'`).  
 Indexes: `{ workspaceId: 1, updatedAt: -1 }`; `{ workspaceId: 1, clientId: 1 }`.  
@@ -442,13 +442,13 @@ Purpose: catalog metadata for hand-crafted proposal templates; disk assets under
 | `engine` | String | `handlebars.v1` | — |
 | `type` / `orientation` | String | launch: presentation / landscape | — |
 | `page` / `theme` / `assets` / `rules` | Object | geometry, tokens, disk paths | — |
-| `sections` | Object[] | Section Definitions (abstract + contentSchema); pitch-landscape v1 has 14 keys | — |
+| `sections` | Object[] | Section Definitions (abstract + contentSchema); pitch-landscape v1 has 19 keys; `rules.maxSections` 28 | — |
 | `createdAt` / `updatedAt` | Date | auto | — |
 
 Indexes: unique `{ key: 1, version: 1 }`; `{ status: 1 }`.  
 Files: `mongodb-templates.repository.ts`, `pitch-landscape.catalog.ts`, disk `templates/pitch-landscape/v1/` (not tenant-isolated — global catalog). Formal catalog reuses the same disk `basePath` with distinct theme tokens.
 
-**pitch-landscape / formal v1 section keys:** cover, executive_summary, client_context, objectives_kpis, services, methodology, timeline, insights_divider, market_analysis, competitor_analysis, audience_insights, financial, next_steps, footer.
+**pitch-landscape / formal v1 section keys:** cover, executive_summary, client_context, objectives_kpis, services, methodology, timeline, insights_divider, market_analysis, competitor_analysis, audience_insights, market_trends, benchmarks, case_studies, social_audit, action_plan, financial, next_steps, footer.
 
 ---
 

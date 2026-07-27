@@ -8,11 +8,11 @@
 | Global UI | `global-cards.md` | — | done | 1/1 | Shared `p-card` chrome (Create Project look) |
 | Dashboard | `dashboard.md` | `/dashboard` | done | 1/1 | KPIs / charts |
 | Proposals | `proposals.md` | `/proposals`, `/proposal` | done | 7/7 | list/view/edit + wizard + v3 stepper/actions + stuck Continue |
-| Projects | `projects.md` | `/projects` | done | 3/3 | list / create wizard (Creative parity) / workspace |
+| Projects | `projects.md` | `/projects` | done | 4/4 | list / create / workspace / edit (revenue-type overrides) |
 | Creative | `creative.md` | `/creative`, `/creative/output` | done | 2/2 | legacy creative; soft-retired when v3 on |
 | Contracts | `contracts.md` | `/contracts` | done | 2/2 | list + edit |
 | Clients | `clients.md` | `/clients` | done | 1/1 | client CRM |
-| Services | `services.md` | `/services` | done | 2/2 | catalog list + edit |
+| Services | `services.md` | `/services` | done | 2/2 | catalog list + edit; revenue type = unit |
 | Service Categories | `service-categories.md` | `/service-categories` | done | 1/1 | categories |
 | AI | `ai.md` | `/ai` | done | 1/1 | AI playground |
 | AI Jobs | `ai-jobs.md` | `/ai-jobs` | done | 2/2 | jobs list + details |

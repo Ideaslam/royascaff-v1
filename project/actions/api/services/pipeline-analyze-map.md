@@ -9,14 +9,14 @@
   - `runAnalyze(job)` — passthrough DNA skeleton; parallel 1a + 1d×selected; AJV+depth gate; repair ≤2; write `projects.dna` or fail
 - Deps: ProjectsRepository, ClientsRepository, Claude, ModelResolver, PipelineTraceService, SchemaRegistry, S3
 - Side effects: async, external API, file read
-- Rules: research launch subset only; never invent URLs/money; fail-closed; trace AI + validation
+- Rules: research full 8 options; never invent URLs/money; fail-closed; trace AI + validation
 
 ### SVC-PIPE-AM-02 · ResearchModuleRunner [domain, internal, PipelineV3]
 - Status: done
-- Methods: `runModule(key, context)` for market|competitor|audience
-- Deps: Claude, prompts `research.{key}.v1.md`, traces
+- Methods: `runModule(key, context)` for market|competitor|audience|trends|benchmarks|case-studies|social-analysis|action-plan
+- Deps: Claude, prompts `research.{key}.v1.md`, ModelResolver request types, traces
 - Side effects: external API
-- Rules: competitor per-URL findings; `recommendedSectionKeys` + `suggestedMapBrief`; depth contract
+- Rules: competitor per-URL findings; `recommendedSectionKeys` + `suggestedMapBrief`; depth contract; unknown key throws
 
 ### SVC-PIPE-AM-03 · MapOrchestrator [domain, internal, PipelineV3]
 - Status: done
@@ -24,19 +24,27 @@
   - `runMap(job)` — DNA + abstract catalog; AI map; validate map.v1 + researchCoverageGate; inject/repair; write `proposal.sectionMap`; status `mapped`
 - Deps: ProposalsRepository, ProjectsRepository, catalog, Claude, traces
 - Side effects: async, external API
-- Rules: cover first, footer last, financial present; competitor → N instances; fail closed on template gap
+- Rules: cover first, footer last, financial present; competitor → N instances; max 28 sections; fail closed on template gap
 
 ### SVC-PIPE-AM-04 · ResearchCoverageGate [domain, internal, PipelineV3]
 - Status: done
 - Methods: `assertResearchCoverage`, `deriveRequiredSectionKeys`
 - Deps: none (pure)
 - Side effects: none
-- Rules: market→`market_analysis`, competitor→`competitor_analysis`×N, audience→`audience_insights`
+- Rules:
+  - market→`market_analysis`
+  - competitor→`competitor_analysis`×N
+  - audience→`audience_insights`
+  - trends→`market_trends`
+  - benchmarks→`benchmarks`
+  - case-studies→`case_studies`
+  - social-analysis→`social_audit`
+  - action-plan→`action_plan`
 
 ### SVC-PIPE-AM-05 · Prompt packs (files) [domain, internal, PipelineV3]
 - Status: done
 - Methods: N/A — file content via `loadPipelinePrompt`
-- Deps: `dna.core.v1.md`, `research.*.v1.md`, `map.plan.v1.md`, shared voice/anti-hallucination/depth
+- Deps: `dna.core.v1.md`, `research.*.v1.md` (all 8), `map.plan.v1.md`, shared voice/anti-hallucination/depth
 - Side effects: none
 
 ### SVC-PIPE-AM-06 · Queue processors + ProposalPipelineService [domain, internal, PipelineV3]

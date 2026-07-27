@@ -160,7 +160,7 @@
 - Depends on: Clients, Services Catalog, Integrations (S3), Pipeline v3 (analyze enqueue)
 
 ### Features
-1. **Project CRUD** [both] — create/list/get/patch/archive; competitors ≤3; researchOptions launch subset; financials code-computed
+1. **Project CRUD** [both] — create/list/get/patch/archive; competitors ≤3; researchOptions full 8 keys; financials code-computed
 2. **RFP upload + parse** [both] — multipart → S3 + extracted text (pdf-parse / mammoth / txt)
 3. **Image upload** [both] — multipart → S3 URLs on `images[]`
 4. **DNA get / regenerate** [both] — read `projects.dna`; bump `dna.version` + clear data + enqueue `pipeline.analyze` (does not auto-rebuild proposals)
@@ -177,7 +177,7 @@
 1. **Disk TemplateAssetResolver** [backend-only] — layout, CSS, partials from `assets.basePath`
 2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; zero AI
 3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; Roya tokens; RTL/LTR; design-first disk edits affect render
-4. **Section catalog subset** [backend-only] — 14 keys (commercial + market/competitor/audience research); abstract + contentSchema; active v1 seed
+4. **Section catalog** [backend-only] — 19 keys (commercial + all 8 research primaries incl. market_trends/benchmarks/case_studies/social_audit/action_plan); abstract + contentSchema; active v1 seed; `maxSections` 28
 5. **Fixture render API** [backend-only] — `POST /api/data/templates/pitch-landscape/fixture-render` (html|pdf)
 6. **pitch-landscape-formal** [backend-only] — active catalog sibling; formal theme tokens; shares pitch-landscape disk assets (partial design)
 7. **Active template list API** [backend-only] — `GET /api/data/templates` slim DTO for gallery

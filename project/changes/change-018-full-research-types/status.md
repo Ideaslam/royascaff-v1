@@ -1,6 +1,6 @@
 # Pack Status — change-018-full-research-types
 
-- **pack-status**: verified
+- **pack-status**: merged
 - **request-id**: REQ-PROP-V3
 - **depends-on**: —
 - **Artifacts done**: 5/5
@@ -9,23 +9,18 @@
 
 | Step | Status | Notes |
 |------|--------|-------|
-| 5.0 Change request | done | |
-| 5.1 Impact | done | |
-| 5.2 Pack gate | done | |
-| 5.3 Pack blueprint | done | |
-| 5.4 Implement | done | Code + prompts + partials |
-| 5.5 Verify | done | `verify-code.md` Overall PASS |
-| 5.6 Merge | pending | Awaiting confirmation |
+| 5.0–5.5 | done | Verified |
+| 5.6 Merge | done | Main blueprint updated 2026-07-27 |
 
 ## Artifacts
 
 | ID / Name | Layer | Status | Notes |
 |-----------|-------|--------|-------|
-| plan/modules.md | plan | done | |
-| plan/data-model.md | plan | done | |
-| pipeline-analyze-map.md | service | done | |
-| pipeline-sections-engine.md | service | done | |
-| templates.md | service | done | |
+| plan/modules.md | plan | done | merged |
+| plan/data-model.md | plan | done | merged |
+| pipeline-analyze-map.md | service | done | merged |
+| pipeline-sections-engine.md | service | done | merged |
+| templates.md | service | done | merged |
 
 ## Blockers
 
@@ -33,4 +28,4 @@
 
 ## Next action
 
-- User confirm Step 5.6 merge into main blueprint
+- Pack complete. Further work = new pack.

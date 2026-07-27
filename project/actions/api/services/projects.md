@@ -3,8 +3,9 @@
 ### SVC-PROJECTS-01 · ProjectsDataService [domain, internal, Projects]
 - Status: done
 - Methods:
-  - `create(workspaceId, userId, dto)` — richer `info` (digitalPresence, summary, kpis, budget, duration); normalize competitors to `{ url }` (max 3); compute financials in code from services; default status active
-  - `list(workspaceId, query)`, `get(workspaceId, id)`, `update(workspaceId, id, patch)`, `archive(workspaceId, id)` — update re-normalizes competitors
+  - `create(workspaceId, userId, dto)` — richer `info` (digitalPresence, summary, kpis, budget, duration); normalize competitors to `{ url }` (max 3); `normalizeServiceLines` → plain objects then compute financials; default status active
+  - `list(workspaceId, query)`, `get(workspaceId, id)`, `update(workspaceId, id, patch)`, `archive(workspaceId, id)` — update re-normalizes competitors + service lines
+  - DTO: `ProjectServiceLineDto` + `@ValidateNested`/`@Type` on create/patch so `enableImplicitConversion` does not turn service objects into empty arrays
   - `createProposalFromProject(..., { templateKey, language, themeOverrides?, fromStep?, sourceProposalId? })` — active template; pin dnaVersion; sibling/map-only when DNA; **`type: 'creative'`** (not `project.type`)
   - `getProposalGenerationStatus(...)`, `regenerateProposal`, `translateProposal`, `rerenderProposal`
 - Deps: ProjectsRepository, ClientsRepository, ProposalsRepository, TemplatesRepository, S3Service, RfpParseService, PipelineQueueService, regen/translate services

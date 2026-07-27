@@ -2,16 +2,16 @@
 
 _Last updated: 2026-07-27_
 
-> Next change number: 019
+> Next change number: 021
 
 ## Summary
 
 | pack-status | Count |
 |-------------|------:|
-| drafted | 2 |
+| drafted | 3 |
 | in-progress | 0 |
-| verified | 2 |
-| merged | 13 |
+| verified | 1 |
+| merged | 15 |
 | cancelled | 0 |
 | blocked | 1 |
 
@@ -19,7 +19,7 @@ _Last updated: 2026-07-27_
 
 | # | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |---|------|------|---------|------------|-------------|----------------|-------|--------|
-| 018 | 2026-07-27 | modify-feature | REQ-PROP-V3 | — | verified | 5/5 | Full research types → pipeline + pitch-landscape sections | `change-018-full-research-types/` |
+| 020 | 2026-07-27 | new-feature | REQ-SETTINGS-LOGO | — | drafted | 0/0 | Workspace logo upload (Settings + sidebar) | `change-020-workspace-logo-upload/` |
 | 014 | 2026-07-26 | modify-feature | REQ-PROP-V3 | — | verified | 3/3 | Project edit/delete + DNA page + breadcrumbs | `change-014-project-control-dna-breadcrumbs/` |
 | 001 | 2026-07-26 | bug-fix | REQ-R | — | drafted | 0/1 | Enable MainLayout authGuard | `change-001-r-enable-web-auth-guard/` |
 | 002 | 2026-07-26 | bug-fix | REQ-R | change-001 | blocked | 0/2 | API PermissionGuard parity w/ seed+FE | `change-002-r-api-permission-parity/` |
@@ -29,6 +29,8 @@ _Last updated: 2026-07-27_
 
 | # | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |---|------|------|---------|-------------|-------|--------|--------|
+| 019 | 2026-07-27 | modify-feature | REQ-PROP-V3 | merged | Revenue type = unit; project overrides; services persist fix | `change-019-revenue-type-as-unit/` | 2026-07-27 |
+| 018 | 2026-07-27 | modify-feature | REQ-PROP-V3 | merged | Full research types → pipeline + pitch-landscape sections | `change-018-full-research-types/` | 2026-07-27 |
 | 017 | 2026-07-27 | polish | — | merged | Global p-card style = Create Project form cards | `change-017-polish-global-card-style/` | 2026-07-27 |
 | 016 | 2026-07-27 | bug-fix | REQ-PROP-V3 | merged | Resume/Continue after assemble-export fail | `change-016-bug-fix-resume-after-assemble-fail/` | 2026-07-27 |
 | 015 | 2026-07-27 | bug-fix | REQ-PROP-V3 | merged | Durable pipeline resume after app/Redis stop | `change-015-pipeline-durable-resume/` | 2026-07-27 |

@@ -4,10 +4,10 @@
 
 | ID | Method | Route | Auth | Input | Return | Service | Status | Notes |
 |----|--------|-------|------|-------|--------|---------|--------|-------|
-| EP-PROJECTS-01 | POST | /api/data/projects | permission:`projects.create` | body: create dto | project | ProjectsDataService.create | done | competitors ≤3 |
+| EP-PROJECTS-01 | POST | /api/data/projects | permission:`projects.create` | body: UpsertProjectDto (`services[]` → ProjectServiceLineDto) | project | ProjectsDataService.create | done | competitors ≤3; nested `@Type` keeps service objects (no `[[]]` strip) |
 | EP-PROJECTS-02 | GET | /api/data/projects | permission:`projects.view` | list query | page | list | done | |
 | EP-PROJECTS-03 | GET | /api/data/projects/:id | permission:`projects.view` | param | project | get | done | |
-| EP-PROJECTS-04 | PATCH | /api/data/projects/:id | permission:`projects.edit` | body patch | project | update | done | |
+| EP-PROJECTS-04 | PATCH | /api/data/projects/:id | permission:`projects.edit` | PatchProjectDto (incl. `clientId?`, nested services) | project | update | done | normalizes service lines → plain objects |
 | EP-PROJECTS-05 | DELETE | /api/data/projects/:id | permission:`projects.delete` | param | ok | archive | done | soft archive |
 | EP-PROJECTS-06 | POST | /api/data/projects/:id/rfp | permission:`projects.edit` | multipart `file` | rfp meta | uploadRfp | done | |
 | EP-PROJECTS-07 | POST | /api/data/projects/:id/images | permission:`projects.edit` | multipart `files` | images[] | uploadImages | done | |
