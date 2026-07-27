@@ -21,7 +21,7 @@
 - Notes:
   - Reuse Creative constants/i18n; competitors payload `[{ url }]`; description required
   - Navigates to `/proposals/:id/view` with stepper; primary AI proposal creation path
-  - Shopify-like form cards (hairline border, no heavy shadow); full-width responsive grids
+  - Card chrome is global (`styles.css` / `PG-UI-CARD-01`); full-width responsive grids
 
 ### Project Workspace `PG-PROJECTS-03`
 - Route: `/projects/:id`

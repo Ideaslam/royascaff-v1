@@ -5,6 +5,7 @@
 | Module | File | Route prefix | Status | Done/Total | Purpose |
 |--------|------|--------------|--------|-----------|---------|
 | Auth | `auth.md` | `/login` … | partial | 4/4 | login/register/verify/reset; MainLayout authGuard disabled (REQ-R) |
+| Global UI | `global-cards.md` | — | done | 1/1 | Shared `p-card` chrome (Create Project look) |
 | Dashboard | `dashboard.md` | `/dashboard` | done | 1/1 | KPIs / charts |
 | Proposals | `proposals.md` | `/proposals`, `/proposal` | done | 7/7 | list/view/edit + wizard + v3 stepper/actions + stuck Continue |
 | Projects | `projects.md` | `/projects` | done | 3/3 | list / create wizard (Creative parity) / workspace |

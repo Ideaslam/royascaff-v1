@@ -10,7 +10,7 @@
 - **part**: —
 - **depends-on**: —
 - **blocks**: —
-- **pack-status**: drafted
+- **pack-status**: merged
 
 ## Scope
 - Module(s): Shared UI / global styles (PrimeNG `p-card`)

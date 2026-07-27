@@ -8,10 +8,10 @@ _Last updated: 2026-07-27_
 
 | pack-status | Count |
 |-------------|------:|
-| drafted | 3 |
+| drafted | 2 |
 | in-progress | 0 |
 | verified | 1 |
-| merged | 12 |
+| merged | 13 |
 | cancelled | 0 |
 | blocked | 1 |
 
@@ -19,7 +19,6 @@ _Last updated: 2026-07-27_
 
 | # | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |---|------|------|---------|------------|-------------|----------------|-------|--------|
-| 017 | 2026-07-27 | polish | — | — | drafted | 0/1 | Global p-card style = Create Project form cards | `change-017-polish-global-card-style/` |
 | 014 | 2026-07-26 | modify-feature | REQ-PROP-V3 | — | verified | 3/3 | Project edit/delete + DNA page + breadcrumbs | `change-014-project-control-dna-breadcrumbs/` |
 | 001 | 2026-07-26 | bug-fix | REQ-R | — | drafted | 0/1 | Enable MainLayout authGuard | `change-001-r-enable-web-auth-guard/` |
 | 002 | 2026-07-26 | bug-fix | REQ-R | change-001 | blocked | 0/2 | API PermissionGuard parity w/ seed+FE | `change-002-r-api-permission-parity/` |
@@ -29,6 +28,7 @@ _Last updated: 2026-07-27_
 
 | # | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |---|------|------|---------|-------------|-------|--------|--------|
+| 017 | 2026-07-27 | polish | — | merged | Global p-card style = Create Project form cards | `change-017-polish-global-card-style/` | 2026-07-27 |
 | 016 | 2026-07-27 | bug-fix | REQ-PROP-V3 | merged | Resume/Continue after assemble-export fail | `change-016-bug-fix-resume-after-assemble-fail/` | 2026-07-27 |
 | 015 | 2026-07-27 | bug-fix | REQ-PROP-V3 | merged | Durable pipeline resume after app/Redis stop | `change-015-pipeline-durable-resume/` | 2026-07-27 |
 | 013 | 2026-07-26 | modify-feature | REQ-PROP-V3 | merged | v3 creative dual docs (tech+financial) per language | `change-013-prop-v3-creative-dual-docs/` | 2026-07-26 |
