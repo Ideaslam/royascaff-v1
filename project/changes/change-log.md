@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-28_
 
-> Next change number: 027
+> Next change number: 028
 
 ## Summary
 
@@ -11,7 +11,7 @@ _Last updated: 2026-07-28_
 | drafted | 3 |
 | in-progress | 0 |
 | verified | 1 |
-| merged | 21 |
+| merged | 22 |
 | cancelled | 0 |
 | blocked | 1 |
 
@@ -19,7 +19,7 @@ _Last updated: 2026-07-28_
 
 | # | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |---|------|------|---------|------------|-------------|----------------|-------|--------|
-| 024 | 2026-07-27 | modify-feature | REQ-PROP-V3 | — | verified | 3/3 | Soft maxLength (15%) + length-focused section prompts | `change-024-section-length-validation-tolerance/` |
+| 024 | 2026-07-27 | modify-feature | REQ-PROP-V3 | — | verified | 3/3 | Aim 90% + soft 10% + clamp-to-max length validation | `change-024-section-length-validation-tolerance/` |
 | 001 | 2026-07-26 | bug-fix | REQ-R | — | drafted | 0/1 | Enable MainLayout authGuard | `change-001-r-enable-web-auth-guard/` |
 | 002 | 2026-07-26 | bug-fix | REQ-R | change-001 | blocked | 0/2 | API PermissionGuard parity w/ seed+FE | `change-002-r-api-permission-parity/` |
 | 003 | 2026-07-26 | general | REQ-R | — | drafted | 0/1 | API .env.example | `change-003-r-env-example/` |
@@ -28,6 +28,7 @@ _Last updated: 2026-07-28_
 
 | # | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |---|------|------|---------|-------------|-------|--------|--------|
+| 027 | 2026-07-28 | modify-feature | REQ-PROP-V3 | merged | AI Requests stats + call-type/step filters + fast pagination | `change-027-ai-requests-stats-filters-perf/` | 2026-07-28 |
 | 026 | 2026-07-27 | new-feature | REQ-DNA-VER | merged | DNA versions collection + list/edit/generate/delete + proposal picker | `change-026-dna-versions/` | 2026-07-28 |
 | 025 | 2026-07-27 | modify-feature | REQ-PALETTE | merged | DNA color roles + pitch-landscape primary-led theme | `change-025-pitch-branding-color-roles/` | 2026-07-27 |
 | 023 | 2026-07-27 | new-feature | REQ-TEMPLATE | merged | `website-template` landing + shared `testimonial` | `change-023-website-template/` | 2026-07-27 |

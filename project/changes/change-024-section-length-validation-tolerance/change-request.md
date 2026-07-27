@@ -27,19 +27,25 @@ Two improvements:
 
 1. **Prompts** — Make length budgets first-class: instruct the model to stay within each field’s `minLength`/`maxLength`, prefer ~85–90% of max, and treat overshoot as a hard failure risk. Inject a compact per-field length budget summary (not only the raw JSON schema) into the section user payload where practical.
 
-2. **Validation** — Soften strict AJV `maxLength` with a **15% ratio** (aligned with legacy creative-pipeline `maxWords * 1.15`): soft max = `ceil(maxLength * 1.15)`. Example: catalog max 40 → accept ≤ 46. Keep hard fail beyond soft max; `minLength` and other schema errors stay strict. Same soft max for section generate + translate via `validateSectionContent`. Catalog maxima remain prompt targets; tolerance is validation-only. **No truncate** on soft-pass (preserve meaning; prompts keep most outputs under hard max).
+2. **Validation (aim → soft-accept → clamp)** — For catalog `max` 100:
+   - Prompt **aim = 90** (`SECTION_LENGTH_AIM_RATIO = 0.9`)
+   - Soft-accept ≤ **110** (`SECTION_MAX_LENGTH_TOLERANCE = 0.10`)
+   - On soft-pass, **clamp** stored strings back to catalog `max` (100) so deck layout never receives overshoot
+   - Beyond soft max → hard fail → existing repair/retry
+   - `minLength` and non-length schema errors stay strict
+   - Shared by section generate + translate via `validateAndNormalizeSectionContent`
 
-Out of scope: changing catalog limits themselves, frontend UI, richness min-depth gate, creative-pipeline (legacy already has word overshoot).
+Out of scope: changing catalog limits themselves, frontend UI, richness min-depth gate, creative-pipeline.
 
 ## Acceptance Criteria
-1. Section prompts (generic + research + translate at minimum) explicitly teach field length budgets and prefer writing under max (target ~85–90% of maxLength).
-2. `validateSectionContent` accepts strings whose length is `≤ ceil(maxLength * 1.15)` (`SECTION_MAX_LENGTH_TOLERANCE = 0.15`).
-3. Strings longer than the soft max still fail validation and still trigger the existing repair/retry loop.
-4. `minLength` and non-length schema errors remain strict (no soft under-length).
-5. Unit test covers: exact max → pass; at soft max (+15%) → pass; soft max + 1 → fail.
-6. User payload includes compact `lengthBudgets` derived from `contentSchema`.
+1. Section prompts insist writers **stick to `aim`** and never exceed `max` (character count).
+2. Soft accept at `max + ceil(max * 0.10)`; hard fail above that.
+3. Soft-pass content is clamped to catalog `maxLength` before save (layout-safe).
+4. `minLength` and non-length schema errors remain strict.
+5. Unit tests: exact max pass; +10% soft-pass + clamp; soft+1 fail; nested clamp.
+6. User payload includes `lengthBudgets` with `min` / `max` / `aim` / `softMax`.
 7. No API contract or frontend changes required.
 
 ## Notes (optional)
-- **Confirmed practice**: 15% soft max, no truncate — best cost (fewer Claude retries) with acceptable layout risk; prompts are the primary length control.
-- Depth-contracts must not push writers to ignore maxLength.
+- **Confirmed practice (v2)**: 10% soft + clamp-to-max — saves retry cost without page clipping. Prompts are primary control (aim 90%).
+- Prior 15%/no-truncate caused layout cut-off; superseded.

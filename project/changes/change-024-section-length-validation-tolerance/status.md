@@ -9,9 +9,9 @@
 
 | ID / Name | Layer | Status | Notes |
 |-----------|-------|--------|-------|
-| Soft maxLength validation (15%) | service | done | `section-schema.ts` |
-| Section/translate length prompts | prompt | done | generic + research + translate + depth-contracts + lengthBudgets payload |
-| Soft-max unit tests | test | done | 5/5 PASS |
+| Soft maxLength + clamp (10%) | service | done | aim 90% → soft 10% → clamp to catalog max |
+| Section/translate length prompts | prompt | done | stick-to-aim HARD rules + lengthBudgets |
+| Soft-max unit tests | test | done | 7/7 PASS |
 
 ## Blockers
 

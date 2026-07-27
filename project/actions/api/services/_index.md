@@ -19,7 +19,7 @@
 | AI | `ai.md` | SVC-AI-01..04 | partial | 3/4 | Claude/chat; OpenAI stub |
 | AI Jobs | `ai-jobs.md` | SVC-AIJOBS-01..03 | done | 3/3 | jobs, creative pipeline, poller |
 | Pipeline v3 Foundations | `pipeline-v3-foundations.md` | SVC-PIPEV3-01..07 | done | 8/8 | BullMQ, repos, traces, schemas, prompts, PDF |
-| Pipeline Traces | `pipeline-traces.md` | SVC-TRACES-01..02 | done | 2/2 | proposal + workspace cost aggregates |
+| Pipeline Traces | `pipeline-traces.md` | SVC-TRACES-00..03 | done | 4/4 | list+stats; Mongo aggregates (proposal/cost/filter) |
 | Pipeline Analyze + Map | `pipeline-analyze-map.md` | SVC-PIPE-AM-01..07 | partial | 6/7 | Steps 1–2; full 8 research options; vision 1b partial |
 | Pipeline Sections + Engine | `pipeline-sections-engine.md` | SVC-PIPE-S3-01..09 | done | 9/9 | Steps 3–5 + assemble colorRoles→themeOverrides; reconciler |
 | Pipeline Regen + Translate | `pipeline-regen-translate.md` | SVC-PIPE-RT-01..06 | done | 6/6 | regen, translate, sibling, formal seed |

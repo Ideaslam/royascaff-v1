@@ -16,7 +16,7 @@
 | Service Categories | `service-categories.md` | `/service-categories` | done | 1/1 | categories |
 | AI | `ai.md` | `/ai` | done | 1/1 | AI playground |
 | AI Jobs | `ai-jobs.md` | `/ai-jobs` | done | 2/2 | jobs list + details |
-| AI Requests | `ai-requests.md` | `/ai-requests` | done | 3/3 | pipeline traces list / detail / cost |
+| AI Requests | `ai-requests.md` | `/ai-requests` | done | 3/3 | projects KPIs + names; filtered list/stats; detail |
 | Users | `users.md` | `/users` | done | 1/1 | team members |
 | Profile | `profile.md` | `/profile` | done | 1/1 | self profile |
 | Roles | `roles.md` | `/roles-permissions` | done | 1/1 | roles & permissions UI |

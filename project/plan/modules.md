@@ -201,10 +201,10 @@
 ### Features
 1. **AI call / action tracing** [backend-only] — full parsed I/O, tokens, cost
 2. **Cost util** [backend-only] — `computeCost(model, usage)`
-3. **Trace list/detail API** [backend-only] — workspace-scoped thin reads
-4. **Proposal trace summary** [backend-only] — totals for one proposal (calls, tokens, cost, duration)
-5. **Workspace cost summary** [backend-only] — by day / model / project for date range
-6. **AI Requests page** [frontend-only] — table + filters + detail dialog + summary card + cost charts
+3. **Trace list/detail API** [backend-only] — workspace-scoped Mongo filters; list embeds filter `stats`; `callType` ai/non-ai
+4. **Proposal trace summary** [backend-only] — Mongo aggregate totals (+ `totalTokens`)
+5. **Workspace cost summary** [backend-only] — `$facet` by day / model / project (project rows include token totals)
+6. **AI Requests page** [frontend-only] — projects overview with KPI cards + token/cost columns + project names; requests view with callType/step filters + filter stats; detail dialog
 7. **Nav entry** [frontend-only] — `/ai-requests` when `pipeline-traces.read`
 
 ## 15. PDF Export

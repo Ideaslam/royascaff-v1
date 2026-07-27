@@ -528,7 +528,8 @@ Purpose: every Pipeline v3 AI call/action with full parsed JSON I/O, tokens, cos
 | `startedAt` / `finishedAt` / `createdAt` / `updatedAt` | Date | — | — |
 | `sectionInstanceId` / `sectionKey` / `researchModuleKey` / `language` | String | optional | — |
 
-Indexes: `{ proposalId, seq }`, `{ runId, seq }`, `{ workspaceId, createdAt }`, `{ workspaceId, action, status }`, `{ "ai.model", createdAt }`, `{ proposalId, step, action }`.  
+Indexes: `{ proposalId, seq }`, `{ runId, seq }`, `{ workspaceId, createdAt }`, `{ workspaceId, projectId, createdAt }`, `{ workspaceId, proposalId, createdAt }`, `{ workspaceId, step, createdAt }`, `{ workspaceId, action, createdAt }`, `{ workspaceId, status, createdAt }`, `{ workspaceId, action, status }`, `{ "ai.model", createdAt }`, `{ proposalId, step, action }`.  
+Query rules: every list/count/aggregate `$match` includes `workspaceId`; date range on `createdAt`; `callType=ai|non-ai` maps to `action`; list uses lean projection; totals via Mongo `$group`/`$facet`.  
 Files: `mongodb-pipeline-traces.repository.ts`, `pipeline-trace.service.ts`
 
 ---

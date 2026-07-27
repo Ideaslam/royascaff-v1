@@ -5,23 +5,23 @@
 
 | ID | Method | Route | Auth | Input | Return | Service | Status | Notes |
 |----|--------|-------|------|-------|--------|---------|--------|-------|
-| EP-TRACES-01 | GET | /api/data/pipeline-traces | permission:`pipeline-traces.read` | `?proposalId,projectId,step,action,status,from,to,page,limit` | `200` paginated summary list | `PipelineTraceService.getWorkspaceTraces` | done | workspace-scoped |
+| EP-TRACES-01 | GET | /api/data/pipeline-traces | permission:`pipeline-traces.read` | `?proposalId,projectId,step,callType,action,status,from,to,page,pageSize\|limit` | `200` `{ items, total, page, pageSize, stats }` | `PipelineTraceService.getWorkspaceTraces` | done | `callType`: `ai` \| `non-ai`; Mongo `workspaceId`; pageSize max 100 |
 | EP-TRACES-02 | GET | /api/data/pipeline-traces/:id | permission:`pipeline-traces.read` | `param: id` | `200` detail + full input/output | `PipelineTraceService.getById` | done | strip stack in prod |
-| EP-TRACES-03 | GET | /api/data/pipeline-traces/proposals/:proposalId/summary | permission:`pipeline-traces.read` | param | totals object | `getProposalSummary` | done | workspace-scoped |
-| EP-TRACES-04 | GET | /api/data/pipeline-traces/cost-summary | permission:`pipeline-traces.read` | `?from,to` | `{ byDay, byModel, byProject, totals }` | `getCostSummary` | done | workspace-scoped |
+| EP-TRACES-03 | GET | /api/data/pipeline-traces/proposals/:proposalId/summary | permission:`pipeline-traces.read` | param | totals (+ `totalTokens`) | `getProposalSummary` | done | Mongo `$group` aggregate |
+| EP-TRACES-04 | GET | /api/data/pipeline-traces/cost-summary | permission:`pipeline-traces.read` | `?from,to` | `{ from, to, totals, byDay, byModel, byProject }` | `getCostSummary` | done | Mongo `$facet`; byProject includes token fields |
 
-## Summary response
+## List stats (`EP-TRACES-01.stats` / summary totals)
 
 ```jsonc
 {
-  "proposalId": "…",
-  "calls": 12,
-  "inputTokens": 100000,
-  "outputTokens": 40000,
-  "inputCost": 1.2,
-  "outputCost": 0.8,
-  "totalCost": 2.0,
-  "durationMs": 180000
+  "calls": 0,
+  "inputTokens": 0,
+  "outputTokens": 0,
+  "totalTokens": 0,
+  "inputCost": 0,
+  "outputCost": 0,
+  "totalCost": 0,
+  "durationMs": 0
 }
 ```
 
@@ -31,10 +31,17 @@
 {
   "from": "ISO",
   "to": "ISO",
-  "totals": { "calls": 40, "totalCost": 12.5, "inputTokens": 0, "outputTokens": 0 },
+  "totals": { "calls": 40, "totalCost": 12.5, "inputTokens": 0, "outputTokens": 0, "totalTokens": 0 },
   "byDay": [{ "date": "2026-07-26", "totalCost": 3.1, "calls": 8 }],
   "byModel": [{ "model": "claude-…", "totalCost": 10, "calls": 30 }],
-  "byProject": [{ "projectId": "…", "totalCost": 5, "calls": 15 }]
+  "byProject": [{
+    "projectId": "…",
+    "calls": 15,
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "totalTokens": 0,
+    "totalCost": 5
+  }]
 }
 ```
 
