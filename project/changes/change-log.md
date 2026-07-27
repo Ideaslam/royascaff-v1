@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-27_
 
-> Next change number: 023
+> Next change number: 024
 
 ## Summary
 
@@ -10,7 +10,7 @@ _Last updated: 2026-07-27_
 |-------------|------:|
 | drafted | 3 |
 | in-progress | 0 |
-| verified | 0 |
+| verified | 1 |
 | merged | 18 |
 | cancelled | 0 |
 | blocked | 1 |
@@ -19,6 +19,7 @@ _Last updated: 2026-07-27_
 
 | # | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |---|------|------|---------|------------|-------------|----------------|-------|--------|
+| 023 | 2026-07-27 | new-feature | REQ-TEMPLATE | — | verified | 4/4 | New `website-template` + shared `testimonial` section | `change-023-website-template/` |
 | 001 | 2026-07-26 | bug-fix | REQ-R | — | drafted | 0/1 | Enable MainLayout authGuard | `change-001-r-enable-web-auth-guard/` |
 | 002 | 2026-07-26 | bug-fix | REQ-R | change-001 | blocked | 0/2 | API PermissionGuard parity w/ seed+FE | `change-002-r-api-permission-parity/` |
 | 003 | 2026-07-26 | general | REQ-R | — | drafted | 0/1 | API .env.example | `change-003-r-env-example/` |
