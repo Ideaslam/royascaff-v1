@@ -16,7 +16,9 @@
 - Components: VisualEditor / HTML preview (legacy); **v3 branch** PipelineStepper + server PDF/HTML + Retry/Translate/sibling/Regenerate + **Continue when stuck**
 - Service: AppDataService → EP-PROPOSALS-05; v3 → EP-PROP-PIPE-01,03,04,05,06,08 + EP-PROJECTS-10
 - Guard: layout
-- Notes: branch on `pipelineVersion === "3"` / `generation` / `projectId`
+- Notes:
+  - Branch on `pipelineVersion === "3"` / `generation` / `projectId`
+  - Breadcrumb when `projectId` present: `Projects → {projectName} → {proposal title}` (links to `/projects` + `/projects/:id`); no project → keep header / optional `Proposals → {title}`; degrade labels if project fetch fails
 
 ### Proposal Edit `PG-PROPOSALS-03`
 - Route: `/proposals/:id/edit`

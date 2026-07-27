@@ -10,7 +10,7 @@
 - **part**: —
 - **depends-on**: —
 - **blocks**: —
-- **pack-status**: drafted
+- **pack-status**: merged
 
 ## Scope
 - Module(s): Workspace Settings

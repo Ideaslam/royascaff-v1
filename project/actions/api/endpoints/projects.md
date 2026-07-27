@@ -10,7 +10,8 @@
 | EP-PROJECTS-04 | PATCH | /api/data/projects/:id | permission:`projects.edit` | PatchProjectDto (incl. `clientId?`, nested services) | project | update | done | normalizes service lines → plain objects |
 | EP-PROJECTS-05 | DELETE | /api/data/projects/:id | permission:`projects.delete` | param | ok | archive | done | soft archive |
 | EP-PROJECTS-06 | POST | /api/data/projects/:id/rfp | permission:`projects.edit` | multipart `file` | rfp meta | uploadRfp | done | |
-| EP-PROJECTS-07 | POST | /api/data/projects/:id/images | permission:`projects.edit` | multipart `files` | images[] | uploadImages | done | |
+| EP-PROJECTS-07 | POST | /api/data/projects/:id/images | permission:`projects.edit` | multipart `files` (required); optional parallel `purposes` / `notes` | images[] | uploadImages | done | purpose default `other`; invalid purpose → 400 |
 | EP-PROJECTS-08 | GET | /api/data/projects/:id/dna | permission:`projects.view` | param | dna \| 404 | getDna | done | |
 | EP-PROJECTS-09 | POST | /api/data/projects/:id/regenerate-dna | permission:`projects.edit` | — | `{ projectId, runId }` | enqueueRegenerateDna | done | bumps dna.version; does not auto-rebuild proposals |
 | EP-PROJECTS-10 | POST | /api/data/projects/:id/proposals | permission:`projects.create` | `{ templateKey, language, themeOverrides?, fromStep?, sourceProposalId? }` | proposal + generation | createProposalFromProject | done | sibling = new doc; map-only if DNA; pins dnaVersion |
+| EP-PROJECTS-11 | PATCH | /api/data/projects/:id/images | permission:`projects.edit` | `{ images: { id, purpose?, userNote? }[] }` | images[] | patchImages | done | metadata only; unknown id → 404 |

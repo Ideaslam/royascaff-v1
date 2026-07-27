@@ -83,7 +83,7 @@
 8. **Map worker (Step 2)** [backend-only] — `map.v1` + research coverage gate (all 8 primaries; competitor ×N); `maxSections` 28; store `proposal.sectionMap`
 9. **Prompt packs (dna/research/map/section/translate)** [backend-only] — production packs under `pipeline-v3/prompts/` including full research set
 10. **Section fan-out (Step 3)** [backend-only] — parallel `pipeline.section`; AJV contentSchema + richness; per-section fail/retry
-11. **Assemble (Step 4)** [backend-only] — Handlebars + financial inject + overflow guard + PDF (no AI); uses `generation.language`
+11. **Assemble (Step 4)** [backend-only] — Handlebars + financial inject + workspace/client branding (`workspace_*` from Settings, `client_logo` from first `purpose: client_logo` image) + overflow guard + PDF (no AI); uses `generation.language`
 12. **Export (Step 5)** [backend-only] — S3 HTML/PDF → `renderedByLang`; `ready` / `partially_failed`
 13. **Orchestration engine** [backend-only] — Mongo fan-in after sections; idempotent workers; reconciler ~60s; durable resume from Mongo checkpoints when Redis/app interrupted
 14. **Workspace v3 feature flag** [both] — `settings.pipelineV3Enabled` default **true**; gates create-from-project + regen/translate/rerender + FE Projects create; soft-blocks new creative jobs
@@ -121,10 +121,11 @@
 - Type: infrastructure
 
 ### Features
-1. **Workspace Settings** [both] — company/integration/financial/theme (schema-driven)
+1. **Workspace Settings** [both] — company/integration/financial/theme (schema-driven) + company logo upload/remove
 2. **Global Config Bundle** [both] — designStyles, themes, aiProviders for FE
 3. **Maintenance Mode** [both] — public status flag + FE guards
 4. **Pipeline v3 feature flag** [both] — `pipelineV3Enabled` (default **true**); patch via settings; FE gates Projects create; false = legacy creative escape hatch
+5. **Workspace Logo** [both] — upload/delete to R2; Settings Company preview; sidebar uses `logoUrl` with Safqa brand fallback
 
 ## 10. Admin
 - Scope: BE `modules/admin` (+ data/admin reset)
@@ -162,23 +163,23 @@
 ### Features
 1. **Project CRUD** [both] — create/list/get/patch/archive; competitors ≤3; researchOptions full 8 keys; financials code-computed
 2. **RFP upload + parse** [both] — multipart → S3 + extracted text (pdf-parse / mammoth / txt)
-3. **Image upload** [both] — multipart → S3 URLs on `images[]`
-4. **DNA get / regenerate** [both] — read `projects.dna`; bump `dna.version` + clear data + enqueue `pipeline.analyze` (does not auto-rebuild proposals)
+3. **Image upload** [both] — multipart → S3 URLs on `images[]` with **purpose** + optional userNote; PATCH metadata for existing images
+4. **DNA get / regenerate** [both] — read `projects.dna`; bump `dna.version` + clear data + enqueue `pipeline.analyze` (does not auto-rebuild proposals); DNA images include purpose
 5. **Sibling proposal / template switch** [both] — new proposal, same DNA, different `templateKey`; map-only when DNA present; pin `dnaVersion`
-6. **Project list / create wizard / workspace (FE)** [frontend-only] — `/projects`, `/projects/new`, `/projects/:id`; template gallery → create proposal
+6. **Project list / create / workspace / edit / DNA (FE)** [frontend-only] — `/projects`, `/projects/new`, `/projects/:id`, `/projects/:id/edit`, `/projects/:id/dna`; edit/delete/View DNA; shared breadcrumbs; template gallery → create proposal; Create/Edit **Project images** card (shared field, purpose + note)
 
 ## 13. Templates
 - Scope: BE `src/pipeline-v3/templates/*` + disk `templates/pitch-landscape/v1/` + `templates` collection + FE gallery
 - Audience: system / gallery; ops smoke via fixture-render
 - Entities: `templates`
-- Depends on: PDF Export (PdfRenderService)
+- Depends on: PDF Export (PdfRenderService); Settings (workspace logo/name for pitch branding)
 
 ### Features
 1. **Disk TemplateAssetResolver** [backend-only] — layout, CSS, partials from `assets.basePath`
-2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; zero AI
-3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; Roya tokens; RTL/LTR; design-first disk edits affect render
+2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; root branding vars `workspace_*` / `client_*`; zero AI
+3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; Roya tokens; RTL/LTR; design-first disk edits affect render; **no** hardcoded Safqa / رويا صفقة — cover/footer/brand-marks use workspace/client vars
 4. **Section catalog** [backend-only] — 19 keys (commercial + all 8 research primaries incl. market_trends/benchmarks/case_studies/social_audit/action_plan); abstract + contentSchema; active v1 seed; `maxSections` 28
-5. **Fixture render API** [backend-only] — `POST /api/data/templates/pitch-landscape/fixture-render` (html|pdf)
+5. **Fixture render API** [backend-only] — `POST /api/data/templates/pitch-landscape/fixture-render` (html|pdf); fixtures supply sample workspace branding
 6. **pitch-landscape-formal** [backend-only] — active catalog sibling; formal theme tokens; shares pitch-landscape disk assets (partial design)
 7. **Active template list API** [backend-only] — `GET /api/data/templates` slim DTO for gallery
 8. **Template gallery UI** [frontend-only] — pick template during project create / sibling

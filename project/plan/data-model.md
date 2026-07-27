@@ -327,6 +327,7 @@ Purpose: per-workspace company + integration settings (Claude key encrypted)
 | `apiKeyEncrypted` | String | AES-256-GCM | — |
 | `apiKeyMask` | String | UI mask | — |
 | `companyName` / `email` / `phone` / `address` | String | | — |
+| `logoUrl` | String | S3/R2 public URL; optional; set via logo upload/delete only (not PATCH) | — |
 | `tax` / `currency` / `validity` | Mixed | financial | — |
 | `model` | String | default Claude model | — |
 | `defaultColor` / `defaultFont` | String | theme | — |
@@ -406,7 +407,7 @@ Purpose: container for one client engagement — raw `info`, services/financials
 | `services` | Object[] | snapshot; source of truth for money; line items may override catalog name/price/qty | — |
 | `financial` | Object | code-computed subtotal/tax/grandTotal/currency | — |
 | `rfp` | Object\|null | `fileKey`, `extractedTextKey`, `status` parsed\|failed | S3 |
-| `images` | Object[] | id, url, name, userNote | S3 |
+| `images` | Object[] | id, url, key?, name, **purpose** (`client_logo`\|`product`\|`reference`\|`other`, default `other`), userNote? | S3; DNA mirrors purpose + userNote; missing purpose → `other` at read/assemble |
 | `dna` | Object\|null | `schemaVersion: dna.v2`, `version` (number), `data`, `generatedAt`, `runId`, `regenerating?` | AJV fail-closed; version bumps on regenerate-dna |
 | `status` | Enum | active\|archived | — |
 | `createdAt` / `updatedAt` | Date | auto | — |

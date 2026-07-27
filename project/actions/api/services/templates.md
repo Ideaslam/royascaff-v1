@@ -14,7 +14,11 @@
 - Methods: `renderProposalHtml`, `renderFixtureHtml`, `renderFixturePdf`
 - Deps: TemplateAssetResolver, TemplatesRepository, PdfRenderService, handlebars
 - Side effects: browser when PDF
-- Rules: helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; financials code-owned; assert page contract
+- Rules:
+  - helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; financials code-owned; assert page contract
+  - Input `branding?` merged onto **root** context for every partial + layout: `workspace_name`, `workspace_logo`, `workspace_email`, `workspace_phone`, `workspace_address`, `client_name`, `client_logo`
+  - pitch-landscape disk: cover/footer/section brand-marks use workspace/client vars — **no** hardcoded Safqa / رويا صفقة / Roya Safqa
+  - Fixtures supply sample workspace branding strings
 
 ### SVC-TPL-03 · page-contract / overflow CSS [domain, internal, Templates]
 - Status: done

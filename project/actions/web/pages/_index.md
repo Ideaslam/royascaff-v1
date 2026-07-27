@@ -8,7 +8,7 @@
 | Global UI | `global-cards.md` | — | done | 1/1 | Shared `p-card` chrome (Create Project look) |
 | Dashboard | `dashboard.md` | `/dashboard` | done | 1/1 | KPIs / charts |
 | Proposals | `proposals.md` | `/proposals`, `/proposal` | done | 7/7 | list/view/edit + wizard + v3 stepper/actions + stuck Continue |
-| Projects | `projects.md` | `/projects` | done | 4/4 | list / create / workspace / edit (revenue-type overrides) |
+| Projects | `projects.md` | `/projects` | done | 5/5 | list / create / workspace / edit(+images) / DNA + shared images field |
 | Creative | `creative.md` | `/creative`, `/creative/output` | done | 2/2 | legacy creative; soft-retired when v3 on |
 | Contracts | `contracts.md` | `/contracts` | done | 2/2 | list + edit |
 | Clients | `clients.md` | `/clients` | done | 1/1 | client CRM |
@@ -20,6 +20,7 @@
 | Users | `users.md` | `/users` | done | 1/1 | team members |
 | Profile | `profile.md` | `/profile` | done | 1/1 | self profile |
 | Roles | `roles.md` | `/roles-permissions` | done | 1/1 | roles & permissions UI |
-| Settings | `settings.md` | `/settings` | done | 1/1 | workspace settings |
+| Settings | `settings.md` | `/settings` | done | 1/1 | workspace settings + company logo |
+| Layout | `layout.md` | shell | done | 1/1 | sidebar workspace logo |
 | Public | `public.md` | `/client/proposals/:id` | done | 1/1 | public proposal view |
 | Maintenance | `maintenance.md` | `/maintenance` | done | 1/1 | maintenance page |

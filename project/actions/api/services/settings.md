@@ -2,9 +2,10 @@
 
 ### SVC-SETTINGS-01 · SettingsDataService [domain, internal, Settings]
 - Status: done
-- Methods: get/patch workspace settings (schema-validated, secrets encrypted)
-- Deps: SettingsRepository, ConfigRepository, EncryptionService
-- Side effects: none
+- Methods: get/patch workspace settings (schema-validated, secrets encrypted); upload/delete workspace logo
+- Deps: SettingsRepository, ConfigRepository, EncryptionService, S3Service
+- Side effects: file (R2 logo upload/delete under `workspaces/{workspaceId}/`)
+- Rules: logo JPEG/PNG/WebP/SVG max 2MB; `logoUrl` not settable via patch whitelist
 
 ### SVC-SETTINGS-02 · SettingsService [infrastructure, internal, Settings]
 - Status: done

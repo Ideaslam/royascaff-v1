@@ -1,13 +1,13 @@
 # Project Status
 
-_Last updated: 2026-07-27 — after change-019 revenue-type-as-unit merge_
+_Last updated: 2026-07-27 — after change-021 project-image-purpose-pitch-branding merge_
 
 ## Snapshot
 
 | App | Services | Endpoints | Pages/Views | Overall |
 |-----|----------|-----------|-------------|---------|
-| api | 82/84 | 121/122 | — | partial |
-| web | — | — | 33/33 | partial |
+| api | 82/84 | 126/127 | — | partial |
+| web | — | — | 35/35 | partial |
 
 > Web overall `partial` (MainLayout authGuard). **REQ-PROP-V3 parts 1–8/8 merged** (soft cutover; hard delete of v2 poller deferred).
 
@@ -21,7 +21,7 @@ _Last updated: 2026-07-27 — after change-019 revenue-type-as-unit merge_
 | Services | 1/1 | 6/6 | 2/2 | done |
 | Service Categories | 1/1 | 6/6 | 1/1 | done |
 | Proposals | 6/6 | 20/20 | 6/6 | done |
-| Projects | 4/4 | 10/10 | 4/4 | done |
+| Projects | 4/4 | 11/11 | 5/5 | done |
 | Creative / AI Jobs | 3/3 | 5/5 | 2/2 | done |
 | Pipeline v3 Foundations | 8/8 | 2/2 | — | done |
 | Pipeline Analyze + Map | 6/7 | — | — | partial |
@@ -34,7 +34,8 @@ _Last updated: 2026-07-27 — after change-019 revenue-type-as-unit merge_
 | Contracts | 1/1 | 9/9 | 2/2 | done |
 | Roles | 1/1 | 7/7 | 1/1 | done |
 | Permissions | 2/2 | 6/6 | (w/ roles) | done |
-| Settings | 3/3 | 2/2 | 1/1 | done |
+| Settings | 3/3 | 4/4 | 1/1 | done |
+| Layout | — | — | 1/1 | done |
 | Config | — | 1/1 | — | done |
 | Public | 1/1 | 2/2 | 1/1 | done |
 | Admin | 2/2 | 11/11 | — | done |

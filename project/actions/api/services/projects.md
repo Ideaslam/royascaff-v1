@@ -20,13 +20,14 @@
 - Side effects: file (S3)
 - Rules: no 8k truncation; on parse fail set `rfp.status=failed` with message
 
-### SVC-PROJECTS-03 · ProjectImagesService (via ProjectsDataService.uploadImages) [domain, internal, Projects]
+### SVC-PROJECTS-03 · ProjectImagesService (via ProjectsDataService) [domain, internal, Projects]
 - Status: done
 - Methods:
-  - `uploadImages` — S3 `projects/{id}/images/` → append `images[]` with ids/urls
-- Deps: S3Service
-- Side effects: file (S3)
-- Rules: no dataURLs in later AI payloads
+  - `uploadImages(workspaceId, projectId, files, meta?)` — S3 `projects/{id}/images/` → append `images[]` with `{ id, url, key, name, purpose, userNote }`; parallel `purposes`/`notes` (default purpose `other`)
+  - `patchImages(workspaceId, projectId, updates[])` — merge purpose/userNote by id; 404 unknown id
+- Deps: S3Service, ProjectsRepository
+- Side effects: file (S3) on upload only
+- Rules: purpose enum `client_logo`\|`product`\|`reference`\|`other`; invalid → 400; no dataURLs in later AI payloads; multiple `client_logo` allowed (assemble uses first)
 
 ### SVC-PROJECTS-04 · ProjectDnaService (via ProjectsDataService) [domain, internal, Projects]
 - Status: done
@@ -36,4 +37,4 @@
 - Deps: ProjectsRepository, PipelineQueueService
 - Side effects: async
 - Rules: fail-closed analyze (no stub DNA written on failure); does not mutate existing proposals until explicit regenerate
-- Notes: `buildDnaSkeleton` / reconcile map `info` → DNA (`digitalPresence`, competitor urls, summaryUser, kpis seed, budget/duration)
+- Notes: `buildDnaSkeleton` / reconcile map `info` → DNA (`digitalPresence`, competitor urls, summaryUser, kpis seed, budget/duration); skeleton `images[]` includes `purpose` + `userNote`

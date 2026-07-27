@@ -1,6 +1,6 @@
 # Pack Status — change-014-project-control-dna-breadcrumbs
 
-- **pack-status**: verified
+- **pack-status**: merged
 - **request-id**: REQ-PROP-V3
 - **depends-on**: —
 - **Artifacts done**: 3/3
@@ -9,9 +9,9 @@
 
 | ID / Name | Layer | Status | Notes |
 |-----------|-------|--------|-------|
-| PG-PROJECTS-03..05 | page | done | edit, DNA, workspace actions |
-| PG proposal crumbs | page | done | project trail on view |
-| FE ProjectsService | service | done | patch / delete / getDna |
+| PG-PROJECTS-03..05 | page | done | merged |
+| PG proposal crumbs | page | done | merged |
+| FE ProjectsService | service | done | merged |
 
 ## Blockers
 
@@ -19,4 +19,4 @@
 
 ## Next action
 
-- Await merge confirmation gate (Step 5.6)
+- Pack complete
