@@ -19,6 +19,6 @@
 | AI | `ai.md` | `/api/ai` · EP-AI-01..04 | partial | 3/4 | Claude/chat; OpenAI stub |
 | AI Jobs | `ai-jobs.md` | `/api/ai-jobs` · EP-AIJOBS-01..05 | done | 5/5 | jobs + stream |
 | Pipeline Traces | `pipeline-traces.md` | `/api/data/pipeline-traces` · EP-TRACES-01..04 | done | 4/4 | list/detail + proposal/cost summaries |
-| Projects | `projects.md` | `/api/data/projects` · EP-PROJECTS-01..11 | done | 11/11 | CRUD + RFP/images purpose + DNA + create proposal |
+| Projects | `projects.md` | `/api/data/projects` · EP-PROJECTS-01..11 | done | 11/11 | CRUD + colorPalette + RFP/images purpose + DNA + create proposal |
 | Templates | `templates.md` | `/api/data/templates` · EP-TPL-01..02 | done | 2/2 | list active + pitch-landscape fixture render |
 | Admin | `admin.md` | `/api/admin` + `/api/data/admin` · EP-ADMIN-01..11 | done | 11/11 | admin ops + reset |

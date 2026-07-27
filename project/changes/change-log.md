@@ -19,7 +19,6 @@ _Last updated: 2026-07-27_
 
 | # | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |---|------|------|---------|------------|-------------|----------------|-------|--------|
-| 022 | 2026-07-27 | new-feature | REQ-PALETTE | change-021 | verified | 6/6 | Project color palette + DNA branding + pitch CSS | `change-022-project-color-palette/` |
 | 001 | 2026-07-26 | bug-fix | REQ-R | — | drafted | 0/1 | Enable MainLayout authGuard | `change-001-r-enable-web-auth-guard/` |
 | 002 | 2026-07-26 | bug-fix | REQ-R | change-001 | blocked | 0/2 | API PermissionGuard parity w/ seed+FE | `change-002-r-api-permission-parity/` |
 | 003 | 2026-07-26 | general | REQ-R | — | drafted | 0/1 | API .env.example | `change-003-r-env-example/` |
@@ -28,6 +27,7 @@ _Last updated: 2026-07-27_
 
 | # | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |---|------|------|---------|-------------|-------|--------|--------|
+| 022 | 2026-07-27 | new-feature | REQ-PALETTE | merged | Project color palette + DNA branding + pitch CSS | `change-022-project-color-palette/` | 2026-07-27 |
 | 021 | 2026-07-27 | modify-feature | REQ-PROP-V3 | merged | Project image purpose + pitch workspace/client branding | `change-021-project-image-purpose-pitch-branding/` | 2026-07-27 |
 | 014 | 2026-07-26 | modify-feature | REQ-PROP-V3 | merged | Project edit/delete + DNA page + breadcrumbs | `change-014-project-control-dna-breadcrumbs/` | 2026-07-27 |
 | 020 | 2026-07-27 | new-feature | REQ-SETTINGS-LOGO | merged | Workspace logo upload (Settings + sidebar) | `change-020-workspace-logo-upload/` | 2026-07-27 |

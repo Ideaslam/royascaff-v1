@@ -408,6 +408,7 @@ Purpose: container for one client engagement — raw `info`, services/financials
 | `financial` | Object | code-computed subtotal/tax/grandTotal/currency | — |
 | `rfp` | Object\|null | `fileKey`, `extractedTextKey`, `status` parsed\|failed | S3 |
 | `images` | Object[] | id, url, key?, name, **purpose** (`client_logo`\|`product`\|`reference`\|`other`, default `other`), userNote? | S3; DNA mirrors purpose + userNote; missing purpose → `other` at read/assemble |
+| `colorPalette` | `string[]` \| null/absent | optional; when set length **1–5**; each `#RRGGBB` (normalized) | User project palette; empty/absent → DNA branding fallback chain |
 | `dna` | Object\|null | `schemaVersion: dna.v2`, `version` (number), `data`, `generatedAt`, `runId`, `regenerating?` | AJV fail-closed; version bumps on regenerate-dna |
 | `status` | Enum | active\|archived | — |
 | `createdAt` / `updatedAt` | Date | auto | — |
@@ -423,10 +424,20 @@ Purpose: container for one client engagement — raw `info`, services/financials
 | `budget` / `duration` | String \| Object | select values from Creative options | → `dna.project.budget` / `duration` |
 | `researchOptions` | String[] | market\|competitor\|audience\|trends\|benchmarks\|case-studies\|social-analysis\|action-plan | → `dna.research.selectedOptions` |
 
+### `dna.data.branding` (Analyze inject)
+
+| Field | Type | Constraints | Notes |
+|-------|------|-------------|--------|
+| `colors` | `string[]` | 1–5 hex `#RRGGBB` when present | Precedence: `project.colorPalette` → derive from first `client_logo` → Roya defaults (`#47B5E6`, `#114261`, `#2C8DBE`) |
+| `source` | Enum string (optional) | `palette` \| `client_logo` \| `roya_default` | Traceability; force-reconciled after AI merge so Claude cannot drop/overwrite |
+| *(other)* | Mixed | optional | Open object; may hold more later |
+
+AJV `dna.v2`: `branding` remains an object; `colors` / `source` documented here (strict schema optional). Assemble maps `colors[0|1|2]` → `themeOverrides.primary|secondary|accent` for pitch-landscape.
+
 Relations: one project → many proposals (v3 create-from-project; proposals get `type: 'creative'`).  
 Indexes: `{ workspaceId: 1, updatedAt: -1 }`; `{ workspaceId: 1, clientId: 1 }`.  
-Files: `mongodb-projects.repository.ts`, `services/data/projects.data.service.ts`, `modules/data/projects.controller.ts`, `pipeline-v3/analyze/dna-passthrough.ts`  
-Rules: Redis jobs are work; Mongo `projects.dna` + `proposal.sectionMap` + `generation` are truth; never invent competitor/social URLs.
+Files: `mongodb-projects.repository.ts`, `services/data/projects.data.service.ts`, `modules/data/projects.controller.ts`, `pipeline-v3/analyze/dna-passthrough.ts`, `pipeline-v3/analyze/branding-colors.ts`  
+Rules: Redis jobs are work; Mongo `projects.dna` + `proposal.sectionMap` + `generation` are truth; never invent competitor/social URLs; generate must not fail solely for missing palette/logo.
 
 ---
 

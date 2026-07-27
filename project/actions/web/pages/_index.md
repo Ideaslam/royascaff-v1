@@ -8,7 +8,7 @@
 | Global UI | `global-cards.md` | — | done | 1/1 | Shared `p-card` chrome (Create Project look) |
 | Dashboard | `dashboard.md` | `/dashboard` | done | 1/1 | KPIs / charts |
 | Proposals | `proposals.md` | `/proposals`, `/proposal` | done | 7/7 | list/view/edit + wizard + v3 stepper/actions + stuck Continue |
-| Projects | `projects.md` | `/projects` | done | 5/5 | list / create / workspace / edit(+images) / DNA + shared images field |
+| Projects | `projects.md` | `/projects` | done | 5/5 | list / create / workspace / edit(+images+branding) / DNA + palette + images field |
 | Creative | `creative.md` | `/creative`, `/creative/output` | done | 2/2 | legacy creative; soft-retired when v3 on |
 | Contracts | `contracts.md` | `/contracts` | done | 2/2 | list + edit |
 | Clients | `clients.md` | `/clients` | done | 1/1 | client CRM |

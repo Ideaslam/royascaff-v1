@@ -51,7 +51,7 @@
 ### SVC-PIPE-S3-05 · AssembleService [domain, internal, PipelineV3]
 - Status: done
 - Methods:
-  - `runAssemble(job)` — load ready (+ optionally skip failed) sections; inject financials/dates/client; load workspace Settings + resolve branding; `TemplateRenderService.renderProposalHtml` with root branding; overflow guard (Puppeteer measure `.page`, shrink steps); PDF via PdfRenderService; stash buffers/keys temp or pass to export job payload via Mongo staging fields; set `steps.assembly` done; enqueue export
+  - `runAssemble(job)` — load ready (+ optionally skip failed) sections; inject financials/dates/client; load workspace Settings + resolve branding; map DNA `branding.colors` → `themeOverrides`; `TemplateRenderService.renderProposalHtml` with root branding + theme; overflow guard (Puppeteer measure `.page`, shrink steps); PDF via PdfRenderService; stash buffers/keys temp or pass to export job payload via Mongo staging fields; set `steps.assembly` done; enqueue export
 - Branding resolution (root Handlebars):
   | Key | Source |
   |-----|--------|
@@ -60,6 +60,14 @@
   | `workspace_email` / `workspace_phone` / `workspace_address` | settings |
   | `client_name` | proposal/project clientName |
   | `client_logo` | first `project.images` with `purpose === 'client_logo'` |
+- Theme colors (`themeOverrides` → `--color-primary|secondary|accent`):
+  | Index | theme key | Source |
+  |------:|-----------|--------|
+  | 0 | `primary` | `dna.data.branding.colors[0]` |
+  | 1 | `secondary` | `dna.data.branding.colors[1]` |
+  | 2 | `accent` | `dna.data.branding.colors[2]` |
+  - Missing slots → catalog / Roya fallbacks in TemplateRenderService
+  - Precedence: DNA colors fill slots; explicit non-empty `proposal.themeOverrides` key wins; surface/text stay catalog unless overridden
 - Deps: TemplateRenderService, PdfRenderService, ProposalsRepository, ProjectsRepository, SettingsDataService
 - Side effects: CPU, browser
 - Rules: no AI; missing logos → empty string (templates `{{#if}}`); never inject product “Safqa” fallback; failed sections omitted from deck (Ready with gaps); if none ready → fail without export

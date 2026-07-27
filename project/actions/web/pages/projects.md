@@ -15,7 +15,7 @@
 - Status: done
 - Components:
   - Multi-step info → services → files → template gallery → generate
-  - Creative-parity step cards: client select + Add client dialog; digital presence (6); 3 competitor URL fields; project details (name*, type, description*, KPIs, budget/duration selects); research checkboxes; catalog services
+  - Creative-parity step cards: client select + Add client dialog; digital presence (6); 3 competitor URL fields; project details (name*, type, description*, KPIs, budget/duration selects); **Branding** card (`app-color-palette`); research checkboxes; catalog services
   - Files step: **separate cards** — RFP upload; **Project images** via shared `app-project-images-field` (row: preview · purpose · note; drop zones)
   - Selected-service overrides: **name | revenue type `p-select` | price | qty | delete** + totals
 - Service: EP-PROJECTS-01,06,07,10; EP-TPL-02; AppDataService clients/services catalog
@@ -23,7 +23,7 @@
 - Notes:
   - Reuse Creative constants/i18n (`REVENUE_TYPE_OPTIONS`); competitors payload `[{ url }]`; description required
   - On catalog select: seed `revenueType` + derived `unit` (label); override re-derives `unit`
-  - Submit payload: `name`, `price`, `qty`, `revenueType`, `unit` (derived)
+  - Submit payload: `name`, `price`, `qty`, `revenueType`, `unit` (derived); `colorPalette` when length 1–5 (omit/null when empty)
   - Images upload sends parallel `purposes` / `notes` (purpose enum; default `other`)
   - Price display: `SAR / {unit or revenueType label}`; `ratio` → `(n%)`
   - Navigates to `/proposals/:id/view` with stepper; primary AI proposal creation path
@@ -35,23 +35,24 @@
 - Components:
   - Breadcrumb: `Projects → {name}`
   - Header actions (permission-gated): **Edit** → `/projects/:id/edit` (`projects.edit`); **View DNA** → `/projects/:id/dna` (`projects.view`); **Delete** → confirm → soft archive (`projects.delete`) → `/projects`
-  - DNA summary card (links to DNA page); proposals table; New proposal (sibling); Regenerate DNA; optional facts strip
+  - DNA summary card (links to DNA page); proposals table; New proposal (sibling); Regenerate DNA (stale badge/dot when `dnaStale` for projectId); optional facts strip
 - Service: EP-PROJECTS-03,05,09,10; proposals search filter by projectId
 - Guard: `projects.view`
-- Notes: ConfirmDialog for delete; soft archive only
+- Notes: ConfirmDialog for delete; soft archive only; clear `dnaStale` after successful regenerateDna
 
 ### Project Edit `PG-PROJECTS-04`
 - Route: `/projects/:id/edit`
 - Status: done
 - Components:
   - Breadcrumb: `Projects → {name} → Edit`
-  - Same info/services fields as create (no generate/template step); selected overrides **name | revenue type | price | qty**
+  - Same info/services fields as create (no generate/template step); **Branding** card (`app-color-palette`); selected overrides **name | revenue type | price | qty**
   - **Project images** card (`app-project-images-field`): load purpose/note; dirty meta → EP-PROJECTS-11; new files → EP-PROJECTS-07
 - Service: ProjectsService.patch → EP-PROJECTS-03,04; uploadImages / patchImages → EP-PROJECTS-07,11
 - Guard: `projects.edit`
 - Notes:
-  - Load binds revenue-type select; skips invalid/empty service rows (legacy `[[]]` corruption)
-  - Save payload mirrors Create service fields; Cancel → workspace; does not start proposal generation
+  - Load binds revenue-type select + `colorPalette`; skips invalid/empty service rows (legacy `[[]]` corruption)
+  - Save payload mirrors Create service fields incl. `colorPalette`; Cancel → workspace; does not start proposal generation
+  - Successful save → mark `dnaStale` for projectId (FE localStorage); leave without save → no badge
   - Server images not deletable from UI yet (no delete endpoint); trash only for newly added locals
 
 ### Project DNA / Facts `PG-PROJECTS-05`
@@ -63,12 +64,19 @@
   - Actions: Regenerate DNA (`projects.edit`); Back to workspace
 - Service: ProjectsService.get + getDna → EP-PROJECTS-03,08,09
 - Guard: `projects.view`
+- Notes: successful regenerateDna clears `dnaStale` for projectId
 
 ### Shared · ProjectImagesField `CMP-PROJECT-IMAGES-01`
 - Status: done
 - Location: `shared/project-images-field/`
 - Used by: Create + Edit Project
 - Behavior: empty drop zone; list rows (preview | purpose | note); compact add-more drop; client_logo hint; en/ar + RTL-safe
+
+### Shared · ColorPaletteChooser `CMP-PALETTE-01`
+- Status: done
+- Location: `shared/color-palette/`
+- Used by: Create + Edit Project (Branding card)
+- Behavior: empty Add/Random CTAs; swatches (hex, drag reorder, lock, edit, delete); undo/redo; edit popover (hex + SV pad + hue + RGB); max 5; cannot delete last; invalid hex reject; no “Copy link” / “Get color palette”; en/ar + RTL-safe
 
 ### Shared breadcrumb (projects + proposal view)
 - Lightweight trail: `{ label, routerLink? }`; current page not a link; muted separators; RTL-safe
@@ -77,4 +85,5 @@
 ### FE ProjectsService (web)
 - Status: done
 - Methods: `patch` → EP-PROJECTS-04; `delete`/`archive` → EP-PROJECTS-05; `getDna` → EP-PROJECTS-08; `uploadImages` (files + purposes/notes); `patchImages` → EP-PROJECTS-11; `regenerateDna` → EP-PROJECTS-09
+- Model: `Project.colorPalette?: string[] | null` on create/patch bodies
 - Rules: FE gates with `*appHasPermission`; server enforces `projects.*`

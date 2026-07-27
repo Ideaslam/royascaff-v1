@@ -161,12 +161,12 @@
 - Depends on: Clients, Services Catalog, Integrations (S3), Pipeline v3 (analyze enqueue)
 
 ### Features
-1. **Project CRUD** [both] — create/list/get/patch/archive; competitors ≤3; researchOptions full 8 keys; financials code-computed
+1. **Project CRUD** [both] — create/list/get/patch/archive; competitors ≤3; researchOptions full 8 keys; optional `colorPalette` (1–5 hex); financials code-computed
 2. **RFP upload + parse** [both] — multipart → S3 + extracted text (pdf-parse / mammoth / txt)
 3. **Image upload** [both] — multipart → S3 URLs on `images[]` with **purpose** + optional userNote; PATCH metadata for existing images
-4. **DNA get / regenerate** [both] — read `projects.dna`; bump `dna.version` + clear data + enqueue `pipeline.analyze` (does not auto-rebuild proposals); DNA images include purpose
+4. **DNA get / regenerate** [both] — read `projects.dna`; bump `dna.version` + clear data + enqueue `pipeline.analyze` (does not auto-rebuild proposals); DNA images include purpose; inject `dna.branding.colors` (palette → client_logo → Roya defaults) + force-reconcile
 5. **Sibling proposal / template switch** [both] — new proposal, same DNA, different `templateKey`; map-only when DNA present; pin `dnaVersion`
-6. **Project list / create / workspace / edit / DNA (FE)** [frontend-only] — `/projects`, `/projects/new`, `/projects/:id`, `/projects/:id/edit`, `/projects/:id/dna`; edit/delete/View DNA; shared breadcrumbs; template gallery → create proposal; Create/Edit **Project images** card (shared field, purpose + note)
+6. **Project list / create / workspace / edit / DNA (FE)** [frontend-only] — `/projects`, `/projects/new`, `/projects/:id`, `/projects/:id/edit`, `/projects/:id/dna`; edit/delete/View DNA; shared breadcrumbs; template gallery → create proposal; Create/Edit **Project images** card + **Branding** card (`CMP-PALETTE-01`); Workspace DNA-stale badge on Regenerate after Edit save
 
 ## 13. Templates
 - Scope: BE `src/pipeline-v3/templates/*` + disk `templates/pitch-landscape/v1/` + `templates` collection + FE gallery
@@ -176,8 +176,8 @@
 
 ### Features
 1. **Disk TemplateAssetResolver** [backend-only] — layout, CSS, partials from `assets.basePath`
-2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; root branding vars `workspace_*` / `client_*`; zero AI
-3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; Roya tokens; RTL/LTR; design-first disk edits affect render; **no** hardcoded Safqa / رويا صفقة — cover/footer/brand-marks use workspace/client vars
+2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; root branding vars `workspace_*` / `client_*`; theme CSS vars from `themeOverrides` (Assemble maps DNA `branding.colors`); zero AI
+3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; Roya tokens / DNA palette; RTL/LTR; design-first disk edits affect render; **no** hardcoded Safqa / رويا صفقة — cover/footer/brand-marks use workspace/client vars
 4. **Section catalog** [backend-only] — 19 keys (commercial + all 8 research primaries incl. market_trends/benchmarks/case_studies/social_audit/action_plan); abstract + contentSchema; active v1 seed; `maxSections` 28
 5. **Fixture render API** [backend-only] — `POST /api/data/templates/pitch-landscape/fixture-render` (html|pdf); fixtures supply sample workspace branding
 6. **pitch-landscape-formal** [backend-only] — active catalog sibling; formal theme tokens; shares pitch-landscape disk assets (partial design)

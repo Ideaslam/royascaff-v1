@@ -1,6 +1,6 @@
 # Pack Status — change-022-project-color-palette
 
-- **pack-status**: verified
+- **pack-status**: merged
 - **request-id**: REQ-PALETTE
 - **depends-on**: change-021 (merged)
 - **Artifacts done**: 6/6
@@ -9,12 +9,12 @@
 
 | ID / Name | Layer | Status | Notes |
 |-----------|-------|--------|-------|
-| projects.colorPalette; dna.branding.colors | data-model | done | |
-| Color palette + DNA theme | modules | done | |
-| SVC-PROJECTS create/patch + DNA inject | service | done | |
-| SVC-PIPE-S3-05 theme map | service | done | |
-| EP-PROJECTS-01,04 | endpoint | done | |
-| CMP-PALETTE-01; PG-02/03/04 | page | done | |
+| projects.colorPalette; dna.branding.colors | data-model | done | merged |
+| Color palette + DNA theme | modules | done | merged |
+| SVC-PROJECTS create/patch + DNA inject | service | done | merged |
+| SVC-PIPE-S3-05 theme map | service | done | merged |
+| EP-PROJECTS-01,04 | endpoint | done | merged |
+| CMP-PALETTE-01; PG-02/03/04 | page | done | merged |
 
 ## Blockers
 
@@ -22,4 +22,4 @@
 
 ## Next action
 
-- Await Step 5.6 merge confirmation → merge pack blueprint into main `project/`
+- Pack complete. Further work = new packs.

@@ -3,9 +3,9 @@
 ### SVC-PROJECTS-01 · ProjectsDataService [domain, internal, Projects]
 - Status: done
 - Methods:
-  - `create(workspaceId, userId, dto)` — richer `info` (digitalPresence, summary, kpis, budget, duration); normalize competitors to `{ url }` (max 3); `normalizeServiceLines` → plain objects then compute financials; default status active
-  - `list(workspaceId, query)`, `get(workspaceId, id)`, `update(workspaceId, id, patch)`, `archive(workspaceId, id)` — update re-normalizes competitors + service lines
-  - DTO: `ProjectServiceLineDto` + `@ValidateNested`/`@Type` on create/patch so `enableImplicitConversion` does not turn service objects into empty arrays
+  - `create(workspaceId, userId, dto)` — richer `info` (digitalPresence, summary, kpis, budget, duration); optional `colorPalette` (normalize/validate 1–5 `#RRGGBB`, empty → null); normalize competitors to `{ url }` (max 3); `normalizeServiceLines` → plain objects then compute financials; default status active
+  - `list(workspaceId, query)`, `get(workspaceId, id)`, `update(workspaceId, id, patch)`, `archive(workspaceId, id)` — update re-normalizes competitors + service lines; same `colorPalette` rules on patch
+  - DTO: `ProjectServiceLineDto` + `@ValidateNested`/`@Type` on create/patch so `enableImplicitConversion` does not turn service objects into empty arrays; `colorPalette?: string[]` (`ArrayMaxSize(5)`)
   - `createProposalFromProject(..., { templateKey, language, themeOverrides?, fromStep?, sourceProposalId? })` — active template; pin dnaVersion; sibling/map-only when DNA; **`type: 'creative'`** (not `project.type`)
   - `getProposalGenerationStatus(...)`, `regenerateProposal`, `translateProposal`, `rerenderProposal`
 - Deps: ProjectsRepository, ClientsRepository, ProposalsRepository, TemplatesRepository, S3Service, RfpParseService, PipelineQueueService, regen/translate services
@@ -37,4 +37,4 @@
 - Deps: ProjectsRepository, PipelineQueueService
 - Side effects: async
 - Rules: fail-closed analyze (no stub DNA written on failure); does not mutate existing proposals until explicit regenerate
-- Notes: `buildDnaSkeleton` / reconcile map `info` → DNA (`digitalPresence`, competitor urls, summaryUser, kpis seed, budget/duration); skeleton `images[]` includes `purpose` + `userNote`
+- Notes: `buildDnaSkeleton` / reconcile map `info` → DNA (`digitalPresence`, competitor urls, summaryUser, kpis seed, budget/duration); skeleton `images[]` includes `purpose` + `userNote`; `resolveBrandingColors` → `dna.branding.colors` + `source` (palette → client_logo URL derive → Roya defaults); force-reconcile after AI merge so branding colors cannot be dropped

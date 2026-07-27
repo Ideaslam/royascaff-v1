@@ -10,7 +10,7 @@
 - **part**: —
 - **depends-on**: change-021 (merged — `purpose: client_logo` for AI color fallback)
 - **blocks**: —
-- **pack-status**: verified
+- **pack-status**: merged
 
 ## Scope
 - Module(s): Projects; Pipeline v3 DNA / branding; Template render (`pitch-landscape`)

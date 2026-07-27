@@ -38,4 +38,5 @@
 ## Notes
 - Logo-derived colors are deterministic HSL from URL string (no pixel sampling lib) — acceptable for v1 fallback.
 - Runtime smoke (save palette → regen DNA → assemble HTML CSS vars) not run in this verify; wiring reviewed statically.
-- Main blueprint merge still pending (Step 5.6).
+- Post-verify UX polish: SV pad `backgroundColor` (keep gradients); popover clamps into viewport.
+- Main blueprint merge completed 2026-07-27 (Step 5.6).
