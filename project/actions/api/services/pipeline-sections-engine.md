@@ -51,7 +51,7 @@
 ### SVC-PIPE-S3-05 · AssembleService [domain, internal, PipelineV3]
 - Status: done
 - Methods:
-  - `runAssemble(job)` — load ready (+ optionally skip failed) sections; inject financials/dates/client; load workspace Settings + resolve branding; map DNA `branding.colors` → `themeOverrides`; `TemplateRenderService.renderProposalHtml` with root branding + theme; overflow guard (Puppeteer measure `.page`, shrink steps); PDF via PdfRenderService; stash buffers/keys temp or pass to export job payload via Mongo staging fields; set `steps.assembly` done; enqueue export
+  - `runAssemble(job)` — load ready (+ optionally skip failed) sections; inject financials/dates/client; load workspace Settings + resolve branding; map DNA `branding.colorRoles` (or derive from `branding.colors[]`) → `themeOverrides`; `TemplateRenderService.renderProposalHtml` with root branding + theme; overflow guard (Puppeteer measure `.page`, shrink steps); PDF via PdfRenderService; stash buffers/keys temp or pass to export job payload via Mongo staging fields; set `steps.assembly` done; enqueue export
 - Branding resolution (root Handlebars):
   | Key | Source |
   |-----|--------|
@@ -60,14 +60,17 @@
   | `workspace_email` / `workspace_phone` / `workspace_address` | settings |
   | `client_name` | proposal/project clientName |
   | `client_logo` | first `project.images` with `purpose === 'client_logo'` |
-- Theme colors (`themeOverrides` → `--color-primary|secondary|accent`):
-  | Index | theme key | Source |
-  |------:|-----------|--------|
-  | 0 | `primary` | `dna.data.branding.colors[0]` |
-  | 1 | `secondary` | `dna.data.branding.colors[1]` |
-  | 2 | `accent` | `dna.data.branding.colors[2]` |
-  - Missing slots → catalog / Roya fallbacks in TemplateRenderService
-  - Precedence: DNA colors fill slots; explicit non-empty `proposal.themeOverrides` key wins; surface/text stay catalog unless overridden
+- Theme colors (`themeOverrides` → `--color-primary|secondary|accent|surface|text`):
+  | theme key | Source |
+  |-----------|--------|
+  | `primary` | `dna.data.branding.colorRoles.primary` (= `colors[0]`) |
+  | `secondary` | `colorRoles.secondary` (`colors[1]` or darken primary) |
+  | `accent` | `colorRoles.accent` (`colors[2]` or lighten primary) |
+  | `surface` | `colorRoles.surface` (`colors[3]` or `#FFFFFF`) |
+  | `text` | `colorRoles.text` (`colors[4]` or `#1A1A2E`) |
+  - Legacy DNA without `colorRoles` → derive at assemble from `colors[]` + `source`
+  - When source is palette/logo, missing secondary/accent never fall back to Roya navy/sky
+  - Precedence: DNA roles fill all five slots; explicit non-empty `proposal.themeOverrides` key wins
 - Deps: TemplateRenderService, PdfRenderService, ProposalsRepository, ProjectsRepository, SettingsDataService
 - Side effects: CPU, browser
 - Rules: no AI; missing logos → empty string (templates `{{#if}}`); never inject product “Safqa” fallback; failed sections omitted from deck (Ready with gaps); if none ready → fail without export

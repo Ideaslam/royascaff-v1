@@ -37,4 +37,4 @@
 - Deps: ProjectsRepository, PipelineQueueService
 - Side effects: async
 - Rules: fail-closed analyze (no stub DNA written on failure); does not mutate existing proposals until explicit regenerate
-- Notes: `buildDnaSkeleton` / reconcile map `info` → DNA (`digitalPresence`, competitor urls, summaryUser, kpis seed, budget/duration); skeleton `images[]` includes `purpose` + `userNote`; `resolveBrandingColors` → `dna.branding.colors` + `source` (palette → client_logo URL derive → Roya defaults); force-reconcile after AI merge so branding colors cannot be dropped
+- Notes: `buildDnaSkeleton` / reconcile map `info` → DNA (`digitalPresence`, competitor urls, summaryUser, kpis seed, budget/duration); skeleton `images[]` includes `purpose` + `userNote`; `resolveBrandingColors` → `dna.branding.colors` + `colorRoles` + `source` (palette → client_logo URL derive → Roya defaults; missing secondary/accent derive from primary when not `roya_default`; surface/text default white / near-black); force-reconcile after AI merge so branding colors/roles cannot be dropped

@@ -164,7 +164,7 @@
 1. **Project CRUD** [both] — create/list/get/patch/archive; competitors ≤3; researchOptions full 8 keys; optional `colorPalette` (1–5 hex); financials code-computed
 2. **RFP upload + parse** [both] — multipart → S3 + extracted text (pdf-parse / mammoth / txt)
 3. **Image upload** [both] — multipart → S3 URLs on `images[]` with **purpose** + optional userNote; PATCH metadata for existing images
-4. **DNA get / regenerate** [both] — read `projects.dna`; bump `dna.version` + clear data + enqueue `pipeline.analyze` (does not auto-rebuild proposals); DNA images include purpose; inject `dna.branding.colors` (palette → client_logo → Roya defaults) + force-reconcile
+4. **DNA get / regenerate** [both] — read `projects.dna`; bump `dna.version` + clear data + enqueue `pipeline.analyze` (does not auto-rebuild proposals); DNA images include purpose; inject `dna.branding.colors` + `colorRoles` (palette → client_logo → Roya defaults; derive missing roles from primary / white+near-black) + force-reconcile
 5. **Sibling proposal / template switch** [both] — new proposal, same DNA, different `templateKey`; map-only when DNA present; pin `dnaVersion`
 6. **Project list / create / workspace / edit / DNA (FE)** [frontend-only] — `/projects`, `/projects/new`, `/projects/:id`, `/projects/:id/edit`, `/projects/:id/dna`; edit/delete/View DNA; shared breadcrumbs; template gallery → create proposal; Create/Edit **Project images** card + **Branding** card (`CMP-PALETTE-01`); Workspace DNA-stale badge on Regenerate after Edit save
 
@@ -176,8 +176,8 @@
 
 ### Features
 1. **Disk TemplateAssetResolver** [backend-only] — layout, CSS, partials from `assets.basePath`
-2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; root branding vars `workspace_*` / `client_*`; theme CSS vars from `themeOverrides` (Assemble maps DNA `branding.colors`); presentation vs landing render contracts; zero AI
-3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; Roya tokens / DNA palette; RTL/LTR; design-first disk edits affect render; **no** hardcoded Safqa / رويا صفقة — cover/footer/brand-marks use workspace/client vars; includes `testimonial.hbs`
+2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; root branding vars `workspace_*` / `client_*`; theme CSS vars from `themeOverrides` (Assemble maps DNA `branding.colorRoles` → primary…text); presentation vs landing render contracts; zero AI
+3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; primary-led DNA roles (headings/brand → primary; cards/gaps → white / soft primary tint; cover/footer/divider CSS-var gradients); RTL/LTR; design-first disk edits affect render; **no** hardcoded Safqa / رويا صفقة — cover/footer/brand-marks use workspace/client vars; includes `testimonial.hbs`
 4. **Section catalog** [backend-only] — **20** keys (commercial + research primaries + `testimonial`); abstract + contentSchema; active v1 seed; `maxSections` 28
 5. **Fixture render API** [backend-only] — `POST /api/data/templates/pitch-landscape/fixture-render` (html|pdf) with optional `templateKey`; fixtures supply sample workspace branding for all 20 sections
 6. **pitch-landscape-formal** [backend-only] — active catalog sibling; formal theme tokens; shares pitch-landscape disk assets (partial design); same 20 sections

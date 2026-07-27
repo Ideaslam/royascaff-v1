@@ -20,6 +20,8 @@
   - Landing: continuous HTML; fixture/assemble PDF uses A4 portrait
   - Presentation: landscape PDF; fixed-page contract
   - Input `branding?` merged onto **root** context for every partial + layout: `workspace_*` / `client_*`
+  - `themeOverrides` → layout `:root` `--color-primary|secondary|accent|surface|text`
+  - pitch-landscape theme: headings/brand-mark → primary; cards/stats/persona → surface / soft primary tint; accent-bar primary→accent; cover/footer/`.page--brand-band` use CSS-var gradients (no hard-coded Roya navy/sky fills)
   - No hardcoded Safqa / رويا صفقة / Roya Safqa on pitch or website disk
   - Fixtures supply sample workspace branding strings; `getFixtureProposal(lang, templateKey?)`
 

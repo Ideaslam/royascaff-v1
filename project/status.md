@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-07-27 — after change-022 project-color-palette merge_
+_Last updated: 2026-07-27 — after change-025 pitch branding color roles merge_
 
 ## Snapshot
 

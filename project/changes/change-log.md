@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-27_
 
-> Next change number: 025
+> Next change number: 026
 
 ## Summary
 
@@ -11,7 +11,7 @@ _Last updated: 2026-07-27_
 | drafted | 3 |
 | in-progress | 0 |
 | verified | 1 |
-| merged | 19 |
+| merged | 20 |
 | cancelled | 0 |
 | blocked | 1 |
 
@@ -28,6 +28,7 @@ _Last updated: 2026-07-27_
 
 | # | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |---|------|------|---------|-------------|-------|--------|--------|
+| 025 | 2026-07-27 | modify-feature | REQ-PALETTE | merged | DNA color roles + pitch-landscape primary-led theme | `change-025-pitch-branding-color-roles/` | 2026-07-27 |
 | 023 | 2026-07-27 | new-feature | REQ-TEMPLATE | merged | `website-template` landing + shared `testimonial` | `change-023-website-template/` | 2026-07-27 |
 | 022 | 2026-07-27 | new-feature | REQ-PALETTE | merged | Project color palette + DNA branding + pitch CSS | `change-022-project-color-palette/` | 2026-07-27 |
 | 021 | 2026-07-27 | modify-feature | REQ-PROP-V3 | merged | Project image purpose + pitch workspace/client branding | `change-021-project-image-purpose-pitch-branding/` | 2026-07-27 |

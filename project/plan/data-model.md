@@ -428,11 +428,24 @@ Purpose: container for one client engagement — raw `info`, services/financials
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|--------|
-| `colors` | `string[]` | 1–5 hex `#RRGGBB` when present | Precedence: `project.colorPalette` → derive from first `client_logo` → Roya defaults (`#47B5E6`, `#114261`, `#2C8DBE`) |
+| `colors` | `string[]` | 1–5 hex `#RRGGBB` when present | Ordered source; precedence: `project.colorPalette` → derive from first `client_logo` → Roya defaults (`#47B5E6`, `#114261`, `#2C8DBE`) |
+| `colorRoles` | Object | required whenever `colors` present | Semantic roles for templates (see below) |
 | `source` | Enum string (optional) | `palette` \| `client_logo` \| `roya_default` | Traceability; force-reconciled after AI merge so Claude cannot drop/overwrite |
 | *(other)* | Mixed | optional | Open object; may hold more later |
 
-AJV `dna.v2`: `branding` remains an object; `colors` / `source` documented here (strict schema optional). Assemble maps `colors[0|1|2]` → `themeOverrides.primary|secondary|accent` for pitch-landscape.
+#### `branding.colorRoles`
+
+| Role | Type | Required when colors set | Default / derive rule |
+|------|------|--------------------------|------------------------|
+| `primary` | `#RRGGBB` | yes | `colors[0]` |
+| `secondary` | `#RRGGBB` | yes | `colors[1]` if set; else darker shade of primary (**not** Roya navy when source is palette/logo) |
+| `accent` | `#RRGGBB` | yes | `colors[2]` if set; else light tint of primary |
+| `surface` | `#RRGGBB` | yes | `colors[3]` if set; else `#FFFFFF` |
+| `text` | `#RRGGBB` | yes | `colors[4]` if set; else `#1A1A2E` |
+
+When `source === 'roya_default'`, secondary/accent may keep catalog Roya blues. When `source` is `palette` or `client_logo`, missing secondary/accent always derive from primary (neutrals for surface/text).
+
+AJV `dna.v2`: `branding` remains an object; `colors` / `colorRoles` / `source` documented (strict schema optional). Assemble maps `colorRoles` → `themeOverrides.primary|secondary|accent|surface|text` (legacy DNA with only `colors[]` derives roles at assemble).
 
 Relations: one project → many proposals (v3 create-from-project; proposals get `type: 'creative'`).  
 Indexes: `{ workspaceId: 1, updatedAt: -1 }`; `{ workspaceId: 1, clientId: 1 }`.  
