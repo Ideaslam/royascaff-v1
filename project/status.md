@@ -29,7 +29,7 @@ _Last updated: 2026-07-27 — after change-022 project-color-palette merge_
 | Pipeline Regen + Translate | 6/6 | — | — | done |
 | Pipeline Traces | 2/2 | 4/4 | 3/3 | done |
 | Cutover Backfill | 1/1 | — | — | done |
-| Templates | 7/7 | 2/2 | — | done |
+| Templates | 8/8 | 2/2 | — | done |
 | AI | 3/4 | 3/4 | 1/1 | partial |
 | Contracts | 1/1 | 9/9 | 2/2 | done |
 | Roles | 1/1 | 7/7 | 1/1 | done |
@@ -68,6 +68,6 @@ _Last updated: 2026-07-27 — after change-022 project-color-palette merge_
 | Admin cross-workspace traces | api · Pipeline Traces | workspace-scoped only in v1 | later admin pack |
 | Vision 1b full | api · Pipeline | partial skip in Phase 2 | later PROP-V3 / polish pack |
 | Full formal disk theme | api · Templates | catalog tokens + shared assets | design pack |
-| Remaining §5.6 non-research keys (opportunities, swot, channel_strategy, toc, …) | api · Templates | research primaries shipped in change-018 | later template packs |
+| Remaining §5.6 non-research keys (opportunities, swot, channel_strategy, toc, …) | api · Templates | research primaries + testimonial shipped (018/023) | later template packs |
 | Structured section editor | web · Proposals | out of v1 | later PROP pack |
 | Remove unused FE pdf deps | web | investigate first | cleanup sprint |

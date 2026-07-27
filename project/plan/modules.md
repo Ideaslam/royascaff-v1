@@ -169,20 +169,28 @@
 6. **Project list / create / workspace / edit / DNA (FE)** [frontend-only] — `/projects`, `/projects/new`, `/projects/:id`, `/projects/:id/edit`, `/projects/:id/dna`; edit/delete/View DNA; shared breadcrumbs; template gallery → create proposal; Create/Edit **Project images** card + **Branding** card (`CMP-PALETTE-01`); Workspace DNA-stale badge on Regenerate after Edit save
 
 ## 13. Templates
-- Scope: BE `src/pipeline-v3/templates/*` + disk `templates/pitch-landscape/v1/` + `templates` collection + FE gallery
+- Scope: BE `src/pipeline-v3/templates/*` + disk `templates/pitch-landscape/v1/` + `templates/website-template/v1/` + `templates` collection + FE gallery
 - Audience: system / gallery; ops smoke via fixture-render
 - Entities: `templates`
 - Depends on: PDF Export (PdfRenderService); Settings (workspace logo/name for pitch branding)
 
 ### Features
 1. **Disk TemplateAssetResolver** [backend-only] — layout, CSS, partials from `assets.basePath`
-2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; root branding vars `workspace_*` / `client_*`; theme CSS vars from `themeOverrides` (Assemble maps DNA `branding.colors`); zero AI
-3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; Roya tokens / DNA palette; RTL/LTR; design-first disk edits affect render; **no** hardcoded Safqa / رويا صفقة — cover/footer/brand-marks use workspace/client vars
-4. **Section catalog** [backend-only] — 19 keys (commercial + all 8 research primaries incl. market_trends/benchmarks/case_studies/social_audit/action_plan); abstract + contentSchema; active v1 seed; `maxSections` 28
-5. **Fixture render API** [backend-only] — `POST /api/data/templates/pitch-landscape/fixture-render` (html|pdf); fixtures supply sample workspace branding
-6. **pitch-landscape-formal** [backend-only] — active catalog sibling; formal theme tokens; shares pitch-landscape disk assets (partial design)
+2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; root branding vars `workspace_*` / `client_*`; theme CSS vars from `themeOverrides` (Assemble maps DNA `branding.colors`); presentation vs landing render contracts; zero AI
+3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; Roya tokens / DNA palette; RTL/LTR; design-first disk edits affect render; **no** hardcoded Safqa / رويا صفقة — cover/footer/brand-marks use workspace/client vars; includes `testimonial.hbs`
+4. **Section catalog** [backend-only] — **20** keys (commercial + research primaries + `testimonial`); abstract + contentSchema; active v1 seed; `maxSections` 28
+5. **Fixture render API** [backend-only] — `POST /api/data/templates/pitch-landscape/fixture-render` (html|pdf) with optional `templateKey`; fixtures supply sample workspace branding for all 20 sections
+6. **pitch-landscape-formal** [backend-only] — active catalog sibling; formal theme tokens; shares pitch-landscape disk assets (partial design); same 20 sections
 7. **Active template list API** [backend-only] — `GET /api/data/templates` slim DTO for gallery
 8. **Template gallery UI** [frontend-only] — pick template during project create / sibling
+9. **website-template landing** [backend-only] — key `website-template`; `type: website`, `page.renderMode: landing`; continuous scrolling HTML from `05.smart-watch` style language; own disk `templates/website-template/v1/`; same 20 schemas; HTML primary delivery; optional A4 portrait PDF; assemble skips slide overflow guard
+
+### Canonical active templates
+| key | basePath | mode |
+|-----|----------|------|
+| `pitch-landscape` | `templates/pitch-landscape/v1` | presentation 16:9 |
+| `pitch-landscape-formal` | `templates/pitch-landscape/v1` | presentation 16:9 (token variant) |
+| `website-template` | `templates/website-template/v1` | landing (fluid web) |
 
 ## 14. Pipeline Traces
 - Scope: BE `PipelineTraceService` + `pipelineTraces` + GET APIs + FE `/ai-requests`
@@ -206,5 +214,5 @@
 - Depends on: Templates
 
 ### Features
-1. **HTML → PDF render** [backend-only] — Puppeteer; fixture path via templates; production proposal artifacts in later packs
-2. **Overflow / fixed-page CSS contract** [backend-only] — `@page` 338×190mm, `.page { overflow: hidden; break-after: page }`
+1. **HTML → PDF render** [backend-only] — Puppeteer; fixture path via templates; production proposal artifacts in later packs; presentation → landscape; landing (`website-template`) → A4 portrait
+2. **Overflow / fixed-page CSS contract** [backend-only] — presentation: `@page` 338×190mm, `.page { overflow: hidden; break-after: page }`; landing: continuous web contract (no slide overflow shrink)

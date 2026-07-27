@@ -4,5 +4,5 @@
 
 | ID | Method | Route | Auth | Input | Return | Service | Status | Notes |
 |----|--------|-------|------|-------|--------|---------|--------|-------|
-| EP-TPL-01 | POST | /api/data/templates/pitch-landscape/fixture-render | permission:`settings.manage` | `body: { language?: 'ar'\|'en', format?: 'html'\|'pdf' }` | `200` `{ html }` or PDF stream | TemplateRenderService | done | no AI; verify design |
+| EP-TPL-01 | POST | /api/data/templates/pitch-landscape/fixture-render | permission:`settings.manage` | `body: { language?: 'ar'\|'en', format?: 'html'\|'pdf', templateKey?: 'pitch-landscape'\|'pitch-landscape-formal'\|'website-template' }` | `200` `{ language, templateKey, html }` or PDF stream | TemplateRenderService | done | route path kept for compat; `templateKey` selects catalog + disk; invalid/inactive → 400 |
 | EP-TPL-02 | GET | /api/data/templates | authenticated | — | `{ items: [{ key, version, name, orientation, type, assets }] }` | TemplatesRepository.listActive | done | gallery; latest version per key; strips sections |

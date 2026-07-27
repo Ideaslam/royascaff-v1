@@ -35,5 +35,6 @@
 ## Notes
 - Mongo upsert not executed in this verify environment; run API boot or `npm run seed:templates` to activate in DB.
 - PDF Chromium path not exercised; HTML page-contract verified.
-- **Post-verify redesign (2026-07-27):** `website-template` disk rebuilt from `05.smart-watch` landing HTML/CSS (hero, section-title, feature/approach/fact/testimonial/footer patterns) — no longer pitch-landscape chrome with mint paint. Smoke re-checked: landing classes present; pitch `page-chrome`/`accent-bar` absent.
+- **Post-verify redesign (2026-07-27):** First pass used fixed 16:9 pages; user required a real website.
+- **Landing rewrite:** `type: website`, `page.renderMode: landing`, continuous scroll HTML (sticky header, hero, ticker, stacked `lp-section`s). Presentation page-contract skipped; assemble uses A4 portrait PDF optionally. Smoke: landing contract PASS; no 338×190mm slide CSS.
 - Main blueprint merge pending Step 5.6 confirmation.

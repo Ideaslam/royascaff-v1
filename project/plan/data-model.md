@@ -201,7 +201,7 @@ Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), ge
 | `emailSent` / send meta | Mixed | [INFERRED] ProposalEmailSentMeta | — |
 | `createdBy` | String | | → `user` |
 | `projectId` | String \| null | set for Pipeline v3 create-from-project | → `projects` |
-| `templateKey` | String \| null | e.g. `pitch-landscape` \| `pitch-landscape-formal` | → `templates.key` |
+| `templateKey` | String \| null | e.g. `pitch-landscape` \| `pitch-landscape-formal` \| `website-template` | → `templates.key` |
 | `templateVersion` | Number \| null | pinned | — |
 | `language` | String \| null | `ar` \| `en` (primary / source language) | — |
 | `pipelineVersion` | String \| null | `"3"` for v3 runs | — |
@@ -447,20 +447,20 @@ Purpose: catalog metadata for hand-crafted proposal templates; disk assets under
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | `_id` | String | PK | — |
-| `key` | String | required | e.g. `pitch-landscape`, `pitch-landscape-formal` |
+| `key` | String | required | e.g. `pitch-landscape`, `pitch-landscape-formal`, `website-template` |
 | `version` | Number | required; proposals pin later | — |
 | `status` | Enum | active\|draft\|deprecated | — |
-| `name` | Object | `{ ar, en }` | — |
+| `name` | Object | `{ ar, en }` | website: `{ ar: "موقع — صفحة هبوط", en: "Website — Landing" }` |
 | `engine` | String | `handlebars.v1` | — |
-| `type` / `orientation` | String | launch: presentation / landscape | — |
-| `page` / `theme` / `assets` / `rules` | Object | geometry, tokens, disk paths | — |
-| `sections` | Object[] | Section Definitions (abstract + contentSchema); pitch-landscape v1 has 19 keys; `rules.maxSections` 28 | — |
+| `type` / `orientation` | String | presentation/landscape **or** website/portrait | — |
+| `page` / `theme` / `assets` / `rules` | Object | geometry or `renderMode: landing` + fluid; tokens; disk paths | — |
+| `sections` | Object[] | Section Definitions (abstract + contentSchema); shared catalog **20** keys; `rules.maxSections` 28 | — |
 | `createdAt` / `updatedAt` | Date | auto | — |
 
 Indexes: unique `{ key: 1, version: 1 }`; `{ status: 1 }`.  
-Files: `mongodb-templates.repository.ts`, `pitch-landscape.catalog.ts`, disk `templates/pitch-landscape/v1/` (not tenant-isolated — global catalog). Formal catalog reuses the same disk `basePath` with distinct theme tokens.
+Files: `mongodb-templates.repository.ts`, `pitch-landscape.catalog.ts`, disk `templates/pitch-landscape/v1/` + `templates/website-template/v1/` (not tenant-isolated — global catalog). Formal reuses pitch disk `basePath` with distinct theme tokens. Website is continuous landing HTML (`page.renderMode: landing`).
 
-**pitch-landscape / formal v1 section keys:** cover, executive_summary, client_context, objectives_kpis, services, methodology, timeline, insights_divider, market_analysis, competitor_analysis, audience_insights, market_trends, benchmarks, case_studies, social_audit, action_plan, financial, next_steps, footer.
+**Shared v1 section keys (20):** cover, executive_summary, client_context, objectives_kpis, services, methodology, timeline, insights_divider, market_analysis, competitor_analysis, audience_insights, market_trends, benchmarks, case_studies, **testimonial**, social_audit, action_plan, financial, next_steps, footer.
 
 ---
 
