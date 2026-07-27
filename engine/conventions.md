@@ -41,6 +41,8 @@ IDs are stable cross-references across services, endpoints, and pages/views.
 |----------|---------|---------|
 | Service | `SVC-<MODULE>-NN` | `SVC-USERS-01` |
 | Endpoint | `EP-<MODULE>-NN` | `EP-USERS-01` |
+| Page | `PG-<MODULE>-NN` | `PG-USERS-01` |
+| View | `VW-<MODULE>-NN` | `VW-USERS-01` |
 | Custom rule | `RULE-<AREA>-NN` | `RULE-AUTH-01` |
 
 - `<MODULE>` — short uppercase token from the module name (`Auth` → `AUTH`, `Users` → `USERS`).
@@ -104,10 +106,18 @@ Rules:
 
 | Layer | What it tracks | When it updates |
 |-------|----------------|-----------------|
-| **Main** `project/plan`, `project/actions`, `project/status.md` | **Implemented / merged** reality only | After change/polish pack **merge** (or Initial Build / Phase R) |
-| **Pack** `changes/change-<NNN>-…/blueprint/` + `status.md` | In-flight specs + per-artifact `planned`/`partial`/`done` | While drafting and implementing a change |
+| **Main** `project/plan`, `project/actions`, `project/status.md` | Roadmap + implemented reality (see exception) | Phase 0–2 / Phase R write; pack **merge** updates status |
+| **Pack** `changes/change-<NNN>-…/blueprint/` + `status.md` | In-flight specs + per-artifact status | While drafting and implementing |
 | **Index** `changes/change-log.md` | Every pack's `pack-status` + Artifacts done | On every pack-status transition |
+| **Build program** `changes/build-program.md` | Ordered REQ-INIT / REQ-R pack queue | Initial Build 3.0 / Phase R.Done.2 |
 | **Bugs index** `bugs/bug-log.md` | `PENDING` · `DONE` · `ESCALATED` | On every bug transition |
+
+### Exception — planned specs on main
+
+**Initial Build Phase 2** may write full action specs to main with status `planned` (product intent / backlog).  
+**Phase R** may write main with `done` / `partial` / `planned` reflecting the existing codebase.
+
+That does **not** allow editing main during implementation. While a pack is in flight, change only the pack `blueprint/`; at **merge**, update main artifact status (`planned`→`done`/`partial`) and any after-state gap fill.
 
 ### Pack-status (change-log + change-request metadata)
 
@@ -124,4 +134,5 @@ Rules:
 
 - Never edit main plan/actions for in-flight work — use the pack `blueprint/`.
 - Never leave `change-log.md` stale relative to pack `status.md`.
-- Resume change/polish work from `change-log.md` first; resume merged build state from `project/status.md`.
+- Greenfield implementation = REQ-INIT packs (not a monolith Phase 3). Phase R gaps = REQ-R packs.
+- Resume from `change-log.md` (+ `build-program.md` if present); merged overview from `project/status.md`.

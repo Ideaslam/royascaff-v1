@@ -451,8 +451,9 @@ produce a reconciliation report with actionable recommendations.
   12. **Code Layering Compliance** — BE: controller → service → repository; FE: page → frontend service → endpoint; no business logic in controllers/components; integration providers isolated
   13. **Frontend Third-Party Isolation** — every HTTP call targets configured `apiUrl`; no hardcoded external URLs; no direct third-party calls from frontend — zero tolerance
   14. **Self-Contained Blueprint** — no `engine/` file contains system-specific data; `project/` docs reference only other `project/` docs and `engine/rules/`; copying `project/` alone is enough to rebuild
+  15. **Build Status Coverage** — every service/endpoint/page/view carries a status; each `_index.md` rollup + `Done/Total` matches the per-artifact statuses; anything not `done` is either `planned`, `partial`, or `deferred` (with a reason). Code that exists but is spec'd as `planned` is a drift — fix the status.
 
-- **Done when**: All 14 checks evaluated and findings recorded.
+- **Done when**: All 15 checks evaluated and findings recorded.
 
 ---
 
@@ -611,51 +612,63 @@ produce a reconciliation report with actionable recommendations.
 
 ## Phase R.Done — Handoff
 
+Phase R documents existing code on **main** (correct). It does **not** implement fixes in a giant loop. Incomplete work and drift become work packs under `request-id: REQ-R`, same isolation as Phase 5.
+
 ### Step R.Done.1 — Generate the Status Dashboard
 
 - **Template**: `engine/templates/status-template.md`
 - **Output**: `project/status.md`
-- **Actions**: Roll up the per-artifact statuses recorded in R.1 (and the incomplete-feature findings
-  from R.3) into the system dashboard: per-app snapshot, per-module table, **In Progress** (`partial`
-  artifacts), **Next Up** (unfinished work in build order), and **Deferred** (with reasons). This gives
-  the team — and any future model — a single view of what is built vs. still pending in the inherited
-  codebase.
-- **Done when**: `project/status.md` exists and its counts match every `_index.md`.
+- **Actions**: Roll up per-artifact statuses from R.1 + incomplete findings from R.3: Snapshot, By Module, **In Progress** (`partial`), **Next Up**, **Deferred**.
+- **Done when**: `project/status.md` exists and counts match every `_index.md`.
+
+### Step R.Done.2 — Create REQ-R Build Program (gaps + drift)
+
+- **Input**: `project/status.md`, drift/reconciliation report, `partial`/`planned` artifacts on main
+- **Template**: `engine/templates/build-program-template.md`
+- **Output**: `project/changes/build-program.md` (`request-id: REQ-R`) + pack folders + `change-log.md` rows
+
+#### Actions
+
+1. Create `change-log.md` if missing.
+2. From incomplete features (`partial` / missing code) and drift items marked **fix in code** / **add to plan then implement**:
+   - Create one pack per coherent slice (prefer vertical module slice; group tiny fixes if tightly related)
+   - `change-type`: `bug-fix` | `modify-*` | `new-feature` as appropriate
+   - Folder pattern: `change-<NNN>-r-<slug>/`
+   - Slice pack `blueprint/` from main for owned artifacts; register `drafted` or `blocked`
+3. Write `build-program.md` with ordered packs, Progress, and **Next pack**.
+4. **Do not** implement packs inside Phase R. Never “fix all drift now” in one session.
+5. Present handoff: documentation complete; implementation continues via Phase 5 packs in change-log / build-program.
+
+- **Done when**: REQ-R program exists (or explicitly empty if codebase is clean with no gaps); user knows the next pack or that none are needed.
 
 ### Summary
 
-When all phases complete, the reverse-engineer flow has produced:
-
 | Document | Path | Source |
 |----------|------|--------|
-| System profile | `project/profile.md` | R.0 — auto-detected from configs, packages, env files |
-| Product description | `project/description.md` | R.2.4 — synthesized from README + code analysis |
-| Modules & features | `project/plan/modules.md` | R.2.1 — modules from folder structure; features inline |
-| Data model | `project/plan/data-model.md` | R.1.1 — parsed from schema/model files |
-| Roles & authorization | `project/plan/roles-and-authorization.md` | R.2.2 — detected from guards, decorators, role checks |
-| Custom rules | `project/rules.md` | R.2.3 — detected from code patterns |
-| Services (per module) | `project/actions/<api-app>/services/<module>.md` + `_index.md` | R.1.2 — read from service files |
-| Endpoints (per module) | `project/actions/<api-app>/endpoints/<module>.md` + `_index.md` | R.1.3 — read from controller/route files |
-| Pages (per module) | `project/actions/<web-app>/pages/<module>.md` | R.1.4 — read from page/component files |
-| Views (per module) | `project/actions/<mobile-app>/views/<module>.md` | R.1.4 — read from screen/component files |
-| Status dashboard | `project/status.md` | R.Done.1 — rolled up from per-artifact statuses |
-| Drift report | `project/verify/reverse-engineer-report.md` | R.3 — code vs blueprint comparison |
+| System profile | `project/profile.md` | R.0 |
+| Product description | `project/description.md` | R.2.4 |
+| Modules & features | `project/plan/modules.md` | R.2.1 |
+| Data model | `project/plan/data-model.md` | R.1.1 |
+| Roles & authorization | `project/plan/roles-and-authorization.md` | R.2.2 |
+| Custom rules | `project/rules.md` | R.2.3 |
+| Services / endpoints / pages / views | `project/actions/…` | R.1.* |
+| Status dashboard | `project/status.md` | R.Done.1 |
+| Drift report | `project/verify/reverse-engineer-report.md` | R.3 |
+| Build program (gaps) | `project/changes/build-program.md` | R.Done.2 (`REQ-R`) |
 
 ### Handoff to other flows
 
-The `project/` blueprint is now complete. From this point forward:
-
-- **To add a feature or make a change** → use **Phase 5** (`engine/flows/change-mode.md`)
-- **To fix a bug** → use **Phase 6** (`engine/flows/bug-fix.md`)
-- **To rebuild or regenerate code** → use **Phase 3 (Build)** from `engine/flows/initial-build.md`
+- **Complete a REQ-R pack** → Phase 5 from Step 5.4 on that pack (`engine/flows/change-mode.md`)
+- **New feature** → Phase 5 (new pack)
+- **Bug** → Phase 6 (`engine/flows/bug-fix.md`)
+- **UI polish only** → Phase P (`engine/flows/polish.md`)
+- Do **not** re-run Phase R unless onboarding a different codebase
 
 ### TBDs and Open Items
 
 - Sections marked `[INFERRED]` in `description.md` that need team confirmation
-- Drift items marked as "Investigate" in the report
-- Undocumented code items where the recommendation is unclear
-- Missing documentation that code alone could not reveal (business rules, product decisions,
-  user personas, brand guidelines)
+- Drift items marked "Investigate" (may become packs after decision)
+- Missing product facts code alone could not reveal
 
 ---
 
@@ -855,7 +868,6 @@ project/actions/
   <mobile-app-key>/
     views/
       <module-name>.md
-  README.md
 ```
 
 **Rules**:
@@ -876,6 +888,6 @@ project/actions/
 | **R.1** | R.1.1 – R.1.4 | Deep-scan code: schemas, services, endpoints, pages | `data-model.md`, `services/` + `_index.md`, `endpoints/` + `_index.md`, `pages/` |
 | **R.2** | R.2.1 – R.2.4 | Synthesize modules+features, roles, rules, description | `modules.md`, `roles-and-authorization.md`, `rules.md`, `description.md` |
 | **R.3** | R.3.1 – R.3.3 | Drift analysis, consistency checks, reconciliation | `reverse-engineer-report.md` |
-| **R.Done** | R.Done.1 | Status dashboard, handoff summary, TBDs, link to change-mode / bug-fix | `status.md` |
+| **R.Done** | R.Done.1–2 | Status dashboard + REQ-R build program / packs; handoff to Phase 5 | `status.md`, `changes/build-program.md` |
 
 ---

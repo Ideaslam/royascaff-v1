@@ -21,14 +21,14 @@ The product ships **`engine/` only**. There is no pre-seeded `project/` folder a
 
 ---
 
-## Isolation invariant (Phase 5 / P / 6 Path A)
+## Isolation invariant (implementation)
 
-**Main blueprint = implemented reality only.**
+**During implementation, edit packs — not main.** Main receives updates at **merge** (after verify PASS).
 
 - In-flight work lives only inside a **change work pack** under `project/changes/change-<NNN>-<slug>/`.
-- Do **not** edit `project/plan/`, `project/actions/`, `project/rules.md`, `project/profile.md`, or `project/description.md` until **merge** (after verify PASS).
-- Main files may be **read** for existing context while drafting/implementing a pack.
-- `project/status.md` reflects **merged** artifacts only. In-flight work is tracked in `project/changes/change-log.md` + the pack's `status.md`.
+- Do **not** edit main plan/actions/rules/profile/description while a pack is in flight.
+- Main files may be **read** for context; Phase 2 / Phase R may **write** the roadmap to main (`planned` / `partial` / `done` — see `engine/conventions.md`).
+- In-flight progress: `project/changes/change-log.md` + pack `status.md` (+ `build-program.md` for REQ-INIT / REQ-R).
 
 ---
 
@@ -66,7 +66,7 @@ project/
   profile.md
   description.md
   rules.md
-  status.md                  # MERGED build-state only
+  status.md                  # build-state dashboard (done + planned backlog)
   plan/
     modules.md
     data-model.md
@@ -81,6 +81,7 @@ project/
       views/_index.md + <module>.md
   changes/
     change-log.md            # LIVE INDEX — all changes + pack-status
+    build-program.md         # REQ-INIT / REQ-R ordered pack queue
     change-<NNN>-<slug>/     # work pack (see below)
   bugs/
     bug-log.md               # LIVE INDEX — PENDING | DONE | ESCALATED
@@ -152,6 +153,16 @@ project/changes/change-<NNN>-<slug>/
 
 Flat folders with shared `request-id` in metadata (e.g. `REQ-7`). Optional `depends-on: change-014`. Each part has its own pack and its own change-log row. Independent parts may run in parallel; dependent parts stay `blocked` until deps are `verified`/`merged`.
 
+### Build programs (Initial Build + Phase R handoff)
+
+| request-id | Created by | Purpose |
+|------------|------------|---------|
+| `REQ-INIT` | Initial Build Step 3.0 | Slice Phase 2 planned main into ordered init packs |
+| `REQ-R` | Phase R.Done.2 | Gaps / drift-fix items after reverse-engineer |
+
+File: `project/changes/build-program.md` — template `engine/templates/build-program-template.md`.  
+Pack folders: `change-<NNN>-init-<slug>/` or `change-<NNN>-r-<slug>/`. Implement via Change Mode from Step 5.4 — never a monolith Phase 3.
+
 ---
 
 ## When each path is created
@@ -164,8 +175,9 @@ Flat folders with shared `request-id` in metadata (e.g. `REQ-7`). Optional `depe
 | `plan/*`, `rules.md` | Phase 1 / R | modules / data-model / custom-feature-rules |
 | `actions/<key>/…` | Phase 2 / R | services / endpoints / pages / views + index |
 | `status.md` | Phase 2+ / R.Done / **after merge** | `status-template.md` |
-| `changes/change-log.md` | First Phase 5 / P / 6 Path A | `change-log-template.md` |
-| `changes/change-<NNN>-…/` | Phase 5 / P / 6 Path A | change-request, impact, change-status, blueprint index, merge-report |
+| `changes/change-log.md` | First Phase 5 / P / 6 Path A / Build 3.0 / R.Done.2 | `change-log-template.md` |
+| `changes/build-program.md` | Initial Build 3.0 / Phase R.Done.2 | `build-program-template.md` |
+| `changes/change-<NNN>-…/` | Phase 5 / P / 6 Path A / Build 3.0 / R.Done.2 | change-request, impact, change-status, blueprint index, merge-report |
 | `bugs/…` | Phase 6 | `bug-report-template.md` |
 | `verify/…` | Phase 4 / R.3 | `verification-template.md` |
 
@@ -181,7 +193,7 @@ Flat folders with shared `request-id` in metadata (e.g. `REQ-7`). Optional `depe
 
 **Call chain:** `pages/*` or `views/*` → `endpoints/*` → `services/*` → repositories / providers
 
-**IDs:** `SVC-<MODULE>-NN` / `EP-<MODULE>-NN` (see `engine/conventions.md`).
+**IDs:** `SVC-<MODULE>-NN` / `EP-<MODULE>-NN` / `PG-<MODULE>-NN` / `VW-<MODULE>-NN` (see `engine/conventions.md`).
 
 ---
 

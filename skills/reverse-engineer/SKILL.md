@@ -1,69 +1,42 @@
 ---
 name: reverse-engineer
 description: >-
-  Activates Phase R (Reverse-Engineer Flow) of the AI-Control Engine — reads an
-  existing codebase and auto-generates the full project/ blueprint. Use when the
-  user types /reverse-engineer, is onboarding a legacy codebase, inherits a
-  project with no blueprint, or needs to generate project/ documentation from
-  existing code.
+  Activates Phase R (Reverse-Engineer Flow) — reads an existing codebase and
+  generates the project/ blueprint, then creates REQ-R work packs for gaps and
+  drift fixes. Use when the user types /reverse-engineer or onboards legacy code.
 ---
 
 # Reverse-Engineer — Phase R
 
 ## First Action
 
-1. Read `engine/project-layout.md` (bootstrap gate — create `project/` dirs if missing; no placeholder READMEs).
-2. Read `engine/flows/reverse-engineer.md` in full before doing anything else.
+1. Read `engine/project-layout.md` (bootstrap gate).
+2. Read `engine/flows/reverse-engineer.md` in full.
 
 ## When to Use
 
-- Existing codebase has no `project/` blueprint yet (`project/` is never shipped empty)
-- Legacy system being onboarded into the AI-Control framework
-- Team inherits a codebase and needs documentation before making changes
+- Existing codebase has no `project/` blueprint
+- Legacy onboarding / inherited codebase needing documentation before changes
 
 ## Phase Summary
 
 | Phase | Goal | Key Output |
 |-------|------|------------|
-| **Bootstrap** | Create blueprint root | `project/` directories only |
-| **R.0** | Workspace scan + system profile | `project/profile.md` |
-| **R.1** | Reverse-engineer description + modules + data model | `project/description.md`, `project/plan/modules.md`, `project/plan/data-model.md` |
-| **R.2** | Reverse-engineer services, endpoints, pages, rules | `project/actions/`, `project/rules.md`, `project/plan/roles-and-authorization.md` |
-| **R.3** | Drift analysis — blueprint vs actual code | `project/verify/drift-report.md` |
-
-## Key References (load on every spec-generating step)
-
-- `engine/conventions.md` — global defaults; only document deviations
-- `engine/rules/backend-rule.md` — architectural layering standard
-- `engine/rules/frontend-rule.md` — frontend isolation standard
+| **Bootstrap** | Blueprint root | `project/` dirs |
+| **R.0** | Workspace scan + profile | `profile.md` |
+| **R.1–R.2** | Extract + synthesize blueprint on main | `plan/`, `actions/`, `rules.md` |
+| **R.3** | Drift analysis | `verify/reverse-engineer-report.md` |
+| **R.Done.1** | Status dashboard | `status.md` |
+| **R.Done.2** | REQ-R build program + packs for gaps/drift | `changes/build-program.md`, pack folders |
 
 ## Mandatory Rules
 
-- Follow phases **in order**.
-- Never put system-specific data in `engine/` — all concrete facts belong in `project/`.
-- Specs inherit `engine/conventions.md` defaults — only document values that deviate.
-- This flow does **not** generate new code — it generates documentation from existing code.
-- After Phase R completes, use **Phase 5** (`/change-mode`) or **Phase 6** (`/bug-fix`) for all future work. Do not re-run this flow.
-
-## Output Artifacts
-
-```
-project/
-  profile.md
-  description.md
-  rules.md
-  plan/
-    modules.md
-    data-model.md
-    roles-and-authorization.md
-  actions/
-    <api-app>/services/   (_index.md + per-module files)
-    <api-app>/endpoints/  (_index.md + per-module files)
-    <web-app>/pages/      (per-module files)
-  verify/
-    drift-report.md       ← Phase R.3 output
-```
+- Follow phases in order.
+- Phase R **documents** existing code on main — it does **not** implement all fixes in one loop.
+- Incomplete / drift-fix items → REQ-R packs; implement via `/change-mode` (Step 5.4+).
+- Never put system-specific data in `engine/`.
 
 ## Done
 
-Phase R is complete when `project/verify/drift-report.md` is generated and all `project/` documents are populated. Switch to `/change-mode` or `/bug-fix` for all future work.
+Blueprint populated + status dashboard + REQ-R program created (or empty if clean).
+Switch to `/change-mode` for packs, `/bug-fix` for bugs, `/polish` for UI-only.

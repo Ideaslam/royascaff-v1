@@ -20,11 +20,11 @@ There is no empty `project/` skeleton and no placeholder folder READMEs. The eng
 - `engine/project-layout.md` — blueprint layout, bootstrap gate, **change work-pack** contract.
 - `engine/conventions.md` — global defaults + main vs pack vs index status rules.
 - `engine/flows/` — phase workflows:
-  - `initial-build.md` — Phases 0–4 (greenfield)
+  - `initial-build.md` — Phases 0–4 (design on main; implement via REQ-INIT packs)
   - `change-mode.md` — Phase 5 (features; isolated work packs → merge)
   - `polish.md` — Phase P (visual/style/copy only)
   - `bug-fix.md` — Phase 6
-  - `reverse-engineer.md` — Phase R (onboard existing code → generate `project/`)
+  - `reverse-engineer.md` — Phase R (document code on main; REQ-R packs for gaps)
 - `engine/templates/` — document templates. Verbose guidance in `templates/references/`.
 - `engine/rules/` — generic backend and frontend conventions.
 
@@ -39,16 +39,17 @@ Created on demand. After merges, copying `project/` alone must rebuild the **imp
 Typical contents (see `engine/project-layout.md`):
 
 - `project/profile.md`, `description.md`, `plan/`, `actions/`, `rules.md`
-- `project/status.md` — **merged** build-state dashboard
-- `project/changes/change-log.md` — **live index** of all change/polish packs + `pack-status`
+- `project/status.md` — build-state dashboard (`done` + `planned` backlog)
+- `project/changes/change-log.md` — **live index** of packs + `pack-status`
+- `project/changes/build-program.md` — ordered REQ-INIT / REQ-R pack queue
 - `project/changes/change-<NNN>-<slug>/` — work packs (`blueprint/`, status, verify, merge-report)
 - `project/bugs/bug-log.md` — bug index (`PENDING` · `DONE` · `ESCALATED`)
 
 ## Change isolation
 
-In Phase 5 / P / 6 Path A, in-flight specs live in the change pack `blueprint/`. Main
-`project/plan` and `project/actions` are updated only at **merge** (after verify PASS). Resume
-from `change-log.md` so another chat or teammate can implement without prior context.
+Phase 0–2 (and Phase R extract) may write the roadmap to main. **Implementation** always goes
+through work packs: in-flight specs in `blueprint/`; main status updates at **merge**. Greenfield
+code is REQ-INIT packs (not a monolith Phase 3). Resume from `change-log.md` / `build-program.md`.
 
 ## Build status
 
@@ -60,5 +61,6 @@ Details: `engine/conventions.md` → **Build Status** and **Main vs pack vs inde
 ## How to use
 
 1. Open `engine/flow.md`.
-2. **New build**: Phase 0 → 4. **Legacy code**: Phase R.
-3. **Features**: Phase 5 (`/change-mode`). **UI polish only**: Phase P (`/polish`). **Bugs**: Phase 6 (`/bug-fix`).
+2. **New build**: Phase 0–2 design, then REQ-INIT packs (Phase 3.x), then Phase 4 when ready.
+3. **Legacy code**: Phase R (document + REQ-R packs for gaps).
+4. **Features**: `/change-mode`. **UI polish**: `/polish`. **Bugs**: `/bug-fix`.
