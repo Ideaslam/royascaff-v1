@@ -1,6 +1,6 @@
 # Pack Status — change-012-project-create-form-parity
 
-- **pack-status**: verified
+- **pack-status**: merged
 - **request-id**: REQ-PROP-V3
 - **depends-on**: —
 - **Artifacts done**: 3/3
@@ -19,5 +19,5 @@
 
 ## Next action
 
-- Await merge confirmation gate (Step 5.6) → merge pack blueprint into main
+- none (merged)
 

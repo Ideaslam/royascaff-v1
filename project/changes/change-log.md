@@ -2,16 +2,16 @@
 
 _Last updated: 2026-07-26_
 
-> Next change number: 013
+> Next change number: 015
 
 ## Summary
 
 | pack-status | Count |
 |-------------|------:|
 | drafted | 2 |
-| in-progress | 1 |
-| verified | 0 |
-| merged | 8 |
+| in-progress | 0 |
+| verified | 1 |
+| merged | 10 |
 | cancelled | 0 |
 | blocked | 1 |
 
@@ -19,7 +19,7 @@ _Last updated: 2026-07-26_
 
 | # | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |---|------|------|---------|------------|-------------|----------------|-------|--------|
-| 012 | 2026-07-26 | modify-feature | REQ-PROP-V3 | — | verified | 3/3 | Create Project form parity w/ Creative + DNA | `change-012-project-create-form-parity/` |
+| 014 | 2026-07-26 | modify-feature | REQ-PROP-V3 | — | verified | 3/3 | Project edit/delete + DNA page + breadcrumbs | `change-014-project-control-dna-breadcrumbs/` |
 | 001 | 2026-07-26 | bug-fix | REQ-R | — | drafted | 0/1 | Enable MainLayout authGuard | `change-001-r-enable-web-auth-guard/` |
 | 002 | 2026-07-26 | bug-fix | REQ-R | change-001 | blocked | 0/2 | API PermissionGuard parity w/ seed+FE | `change-002-r-api-permission-parity/` |
 | 003 | 2026-07-26 | general | REQ-R | — | drafted | 0/1 | API .env.example | `change-003-r-env-example/` |
@@ -28,6 +28,8 @@ _Last updated: 2026-07-26_
 
 | # | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |---|------|------|---------|-------------|-------|--------|--------|
+| 013 | 2026-07-26 | modify-feature | REQ-PROP-V3 | merged | v3 creative dual docs (tech+financial) per language | `change-013-prop-v3-creative-dual-docs/` | 2026-07-26 |
+| 012 | 2026-07-26 | modify-feature | REQ-PROP-V3 | merged | Create Project form parity w/ Creative + DNA | `change-012-project-create-form-parity/` | 2026-07-26 |
 | 011 | 2026-07-26 | new-feature | REQ-PROP-V3 | merged | Pipeline v3 Phase 6 cutover / soft-retire v2 | `change-011-prop-v3-cutover/` | 2026-07-26 |
 | 010 | 2026-07-26 | new-feature | REQ-PROP-V3 | merged | Pipeline v3 AI Requests / cost dashboard UI | `change-010-prop-v3-ai-requests-ui/` | 2026-07-26 |
 | 009 | 2026-07-26 | new-feature | REQ-PROP-V3 | merged | Pipeline v3 Phase 5 FE create / gallery / stepper / PDF | `change-009-prop-v3-fe-create-stepper/` | 2026-07-26 |

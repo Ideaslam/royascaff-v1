@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-07-26 — after REQ-PROP-V3 change-011 merge (Phase 6 soft cutover)_
+_Last updated: 2026-07-26 — after REQ-PROP-V3 change-012 + change-013 merge_
 
 ## Snapshot
 

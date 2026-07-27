@@ -59,10 +59,10 @@
 ### SVC-PIPE-S3-06 · ExportService [domain, internal, PipelineV3]
 - Status: done
 - Methods:
-  - `runExport(job)` — upload HTML+PDF to S3; write `renderedByLang[lang]`; set status `ready` or `partially_failed` based on section failures
-- Deps: S3Service, ProposalsRepository
+  - `runExport(job)` — promote assemble staging into `renderedByLang[lang]`; upload standalone **financial.html** (builder from proposal/project services+totals); upsert `technical*Url*` + `financial*Url*` for that lang; set `type: 'creative'`; status `ready` or `partially_failed`
+- Deps: S3Service, ProposalsRepository, ProjectsRepository, `financial-html.builder`
 - Side effects: file (S3)
-- Rules: retryable independently; do not re-run assemble on export retry unless artifacts missing
+- Rules: retryable independently; do not re-run assemble on export retry unless artifacts missing; merge URL maps per-lang (do not wipe other languages); financial upload required for creative list/send parity
 
 ### SVC-PIPE-S3-07 · PipelineReconciler [infrastructure, internal, PipelineV3]
 - Status: done

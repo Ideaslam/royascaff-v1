@@ -185,7 +185,7 @@ Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), ge
 | `projectName` | String | | — |
 | `title` | String | | — |
 | `date` | String | | — |
-| `type` | String | | — |
+| `type` | String | Pipeline v3 create-from-project → always `'creative'`; legacy may vary | — |
 | `status` | Enum | `pending` \| `sent` \| `endorsed` \| `won` \| `lost` | — |
 | `total` / `tax` / `grandTotal` | Number | | — |
 | `services` | Mixed | line items | — |
@@ -195,9 +195,9 @@ Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), ge
 | `issuer` | Object | | — |
 | `technical` / `financial` | String | HTML bodies (legacy) | — |
 | `technicalAr` / `technicalEn` / `financialAr` / `financialEn` | String | | — |
-| `technicalUrlByLang` / `financialUrlByLang` | Object | `{ar,en}` S3 URLs | — |
-| `technicalHtmlUrl` / `financialHtmlUrl` | String | | — |
-| `technicalHtmlUrlByLang` / `financialHtmlUrlByLang` | Object | | — |
+| `technicalUrlByLang` / `financialUrlByLang` | Object | `{ar,en}` S3 URLs; v3 export fills technical (= deck) + financial (standalone) per lang | — |
+| `technicalHtmlUrl` / `financialHtmlUrl` | String | latest flat mirrors for send/list | — |
+| `technicalHtmlUrlByLang` / `financialHtmlUrlByLang` | Object | mirrors for FE helpers | — |
 | `emailSent` / send meta | Mixed | [INFERRED] ProposalEmailSentMeta | — |
 | `createdBy` | String | | → `user` |
 | `projectId` | String \| null | set for Pipeline v3 create-from-project | → `projects` |
@@ -210,7 +210,7 @@ Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), ge
 | `revisions` | Object[] \| null | last **5** archives (newest first) | regen/translate |
 | `sectionMap` | Object \| null | `schemaVersion: map.v1` + `sections[]` | Step 2 output |
 | `sections` | Object[] \| null | Step 3 content rows (`contentByLang`, status) | — |
-| `renderedByLang` | Object \| null | `{ ar\|en: { htmlUrl, pdfUrl, … } }` | Steps 4–5 |
+| `renderedByLang` | Object \| null | `{ ar\|en: { htmlUrl, pdfUrl, … } }` pitch deck; export also mirrors html into technical URL maps | Steps 4–5 |
 | `generation` | Object \| null | pipeline truth (see below) | Redis = work |
 
 ### `sections[]` (Step 3)
@@ -241,9 +241,15 @@ Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), ge
   "language": "ar",
   "sectionMap": { /* optional snapshot */ },
   "sections": [ /* prior sections */ ],
-  "renderedByLang": { /* prior artifacts */ }
+  "renderedByLang": { /* prior artifacts */ },
+  "technicalUrlByLang": { /* optional */ },
+  "financialUrlByLang": { /* optional */ },
+  "technicalHtmlUrlByLang": { /* optional */ },
+  "financialHtmlUrlByLang": { /* optional */ }
 }
 ```
+
+**v3 dual-doc / language rules:** Export for language `L` upserts `renderedByLang[L]` + technical/financial URL keys for `L` only. Translate keeps source lang keys. Regenerate clears only the regenerated language keys (does not null entire maps).
 
 ### `generation` (Pipeline v3 — through export)
 
@@ -396,8 +402,8 @@ Purpose: container for one client engagement — raw `info`, services/financials
 | `clientName` | String | denormalized | — |
 | `name` | String | required | — |
 | `type` | Enum/string | branding\|campaign\|social\|…\|other | — |
-| `info` | Object | raw create-form input (competitors max 3; researchOptions) | — |
-| `services` | Object[] | snapshot; source of truth for money | — |
+| `info` | Object | create-form facts (see below) | — |
+| `services` | Object[] | snapshot; source of truth for money; line items may override catalog name/price/qty | — |
 | `financial` | Object | code-computed subtotal/tax/grandTotal/currency | — |
 | `rfp` | Object\|null | `fileKey`, `extractedTextKey`, `status` parsed\|failed | S3 |
 | `images` | Object[] | id, url, name, userNote | S3 |
@@ -405,10 +411,21 @@ Purpose: container for one client engagement — raw `info`, services/financials
 | `status` | Enum | active\|archived | — |
 | `createdAt` / `updatedAt` | Date | auto | — |
 
-Relations: one project → many proposals (v3 create-from-project).  
+### `projects.info` (create / DNA passthrough)
+
+| Field | Type | Constraints | DNA mapping |
+|-------|------|-------------|-------------|
+| `digitalPresence` | Object | website, instagram, twitter, linkedin, tiktok, snapchat (optional) | → `dna.digitalPresence` |
+| `competitors` | Array≤3 | `{ url }` required (name/platform optional); normalize strings → `{ url }` | → `dna.competitors` |
+| `summary` | String | required on create (project description) | → `dna.project.summaryUser` |
+| `kpis` | String \| Array | optional; string seeds one KPI | → `dna.project.kpis` |
+| `budget` / `duration` | String \| Object | select values from Creative options | → `dna.project.budget` / `duration` |
+| `researchOptions` | String[] | launch subset market\|competitor\|audience | → `dna.research.selectedOptions` |
+
+Relations: one project → many proposals (v3 create-from-project; proposals get `type: 'creative'`).  
 Indexes: `{ workspaceId: 1, updatedAt: -1 }`; `{ workspaceId: 1, clientId: 1 }`.  
-Files: `mongodb-projects.repository.ts`, `services/data/projects.data.service.ts`, `modules/data/projects.controller.ts`  
-Rules: Redis jobs are work; Mongo `projects.dna` + `proposal.sectionMap` + `generation` are truth.
+Files: `mongodb-projects.repository.ts`, `services/data/projects.data.service.ts`, `modules/data/projects.controller.ts`, `pipeline-v3/analyze/dna-passthrough.ts`  
+Rules: Redis jobs are work; Mongo `projects.dna` + `proposal.sectionMap` + `generation` are truth; never invent competitor/social URLs.
 
 ---
 

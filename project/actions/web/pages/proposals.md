@@ -3,10 +3,12 @@
 ### Proposals List `PG-PROPOSALS-01`
 - Route: `/proposals`
 - Status: done
-- Components: table/filters
+- Components: table/filters; Technical / Financial + language dialog
 - Service: AppDataService → EP-PROPOSALS-01/02/08
 - Guard: layout (authGuard commented)
-- Notes: paginated list
+- Notes:
+  - Paginated list
+  - Pipeline v3 project proposals are `type: creative` with dual URL maps; list opens tech/fin per language via `getTechnicalUrl` / `getFinancialUrl` (technical may fall back to `renderedByLang`)
 
 ### Proposal View `PG-PROPOSALS-02`
 - Route: `/proposals/:id/view`
@@ -41,6 +43,7 @@
 ### Proposal View v3 actions `PG-PROP-V3-02`
 - Route: `/proposals/:id/view` (v3 branch)
 - Status: done
-- Components: lang tabs, Download PDF, Open HTML, Retry, Translate, New template, Regenerate
+- Components: lang tabs (from `renderedByLang`), Download PDF, Open HTML, Retry, Translate, New template, Regenerate
 - Service: EP-PROP-PIPE-03..06; EP-PROJECTS-10
 - Guard: projects.edit / projects.create as noted
+- Notes: translate adds a language without wiping source; list still opens standalone financial per lang after export

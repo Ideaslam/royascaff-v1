@@ -7,7 +7,7 @@
 | Auth | `auth.md` | `/login` … | partial | 4/4 | login/register/verify/reset; MainLayout authGuard disabled (REQ-R) |
 | Dashboard | `dashboard.md` | `/dashboard` | done | 1/1 | KPIs / charts |
 | Proposals | `proposals.md` | `/proposals`, `/proposal` | done | 6/6 | list/view/edit + wizard + v3 stepper/actions |
-| Projects | `projects.md` | `/projects` | done | 3/3 | list / create wizard / workspace |
+| Projects | `projects.md` | `/projects` | done | 3/3 | list / create wizard (Creative parity) / workspace |
 | Creative | `creative.md` | `/creative`, `/creative/output` | done | 2/2 | legacy creative; soft-retired when v3 on |
 | Contracts | `contracts.md` | `/contracts` | done | 2/2 | list + edit |
 | Clients | `clients.md` | `/clients` | done | 1/1 | client CRM |

@@ -3,9 +3,9 @@
 ### SVC-PROJECTS-01 · ProjectsDataService [domain, internal, Projects]
 - Status: done
 - Methods:
-  - `create(workspaceId, userId, dto)` — validate competitors ≤3; compute financials in code from services; default status active
-  - `list(workspaceId, query)`, `get(workspaceId, id)`, `update(workspaceId, id, patch)`, `archive(workspaceId, id)`
-  - `createProposalFromProject(..., { templateKey, language, themeOverrides?, fromStep?, sourceProposalId? })` — active template; pin dnaVersion; sibling/map-only when DNA
+  - `create(workspaceId, userId, dto)` — richer `info` (digitalPresence, summary, kpis, budget, duration); normalize competitors to `{ url }` (max 3); compute financials in code from services; default status active
+  - `list(workspaceId, query)`, `get(workspaceId, id)`, `update(workspaceId, id, patch)`, `archive(workspaceId, id)` — update re-normalizes competitors
+  - `createProposalFromProject(..., { templateKey, language, themeOverrides?, fromStep?, sourceProposalId? })` — active template; pin dnaVersion; sibling/map-only when DNA; **`type: 'creative'`** (not `project.type`)
   - `getProposalGenerationStatus(...)`, `regenerateProposal`, `translateProposal`, `rerenderProposal`
 - Deps: ProjectsRepository, ClientsRepository, ProposalsRepository, TemplatesRepository, S3Service, RfpParseService, PipelineQueueService, regen/translate services
 - Side effects: async (enqueue), file (S3 via RFP/images helpers)
@@ -35,3 +35,4 @@
 - Deps: ProjectsRepository, PipelineQueueService
 - Side effects: async
 - Rules: fail-closed analyze (no stub DNA written on failure); does not mutate existing proposals until explicit regenerate
+- Notes: `buildDnaSkeleton` / reconcile map `info` → DNA (`digitalPresence`, competitor urls, summaryUser, kpis seed, budget/duration)
