@@ -21,7 +21,7 @@
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-DATA-09 | POST | /api/v1/data/connections | JWT | `CreateConnectionDto` { name, sourceType, credentials } | 201 `ConnectionDto` | SVC-DATA-CONN.create() | **Test must pass before persist**; auth-only credentials encrypted; never returned; rate-limited *(change-059)* |
+| EP-DATA-09 | POST | /api/v1/data/connections | JWT | `CreateConnectionDto` { name, sourceType, credentials } | 201 `ConnectionDto` | SVC-DATA-CONN.create() | **Test must pass before persist**; rejects inactive/coming-soon `sourceType` (400) *(change-072)*; auth-only credentials encrypted; never returned; rate-limited *(change-059)* |
 | EP-DATA-10 | GET | /api/v1/data/connections | JWT | query: page, limit, search, sourceType, sort | 200 `Paginated<ConnectionListItemDto>` | SVC-DATA-CONN.list() | No credentials; optional `dataSourceCount` *(change-059)* |
 | EP-DATA-11 | GET | /api/v1/data/connections/:id | JWT | `:id` | 200 `ConnectionDto` | SVC-DATA-CONN.get() | Safe display fields only |
 | EP-DATA-12 | PATCH | /api/v1/data/connections/:id | JWT | `:id` · `UpdateConnectionDto` { name?, credentials?, status? } | 200 `ConnectionDto` | SVC-DATA-CONN.update() | Credential changes require successful test; rename/disable/enable |
@@ -35,7 +35,7 @@
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-DATA-51 | POST | /api/v1/data/sources | JWT | `CreateDataSourceDto` { name, connectionId?, sourceType, scope? } | 201 `DataSourceDto` | SVC-DATA-SOURCE.create() | `connectionId` required except CSV; `connectionId` immutable after create |
+| EP-DATA-51 | POST | /api/v1/data/sources | JWT | `CreateDataSourceDto` { name, sourceType, connectionId?, scope? } | 201 `DataSourceDto` | SVC-DATA-SOURCE.create() | `connectionId` required except CSV; rejects inactive/coming-soon `sourceType` (400) *(change-072)*; `connectionId` immutable after create |
 | EP-DATA-52 | GET | /api/v1/data/sources | JWT | query: page, limit, search, sourceType, sort | 200 `Paginated<DataSourceListItemDto>` | SVC-DATA-SOURCE.list() | Powers Data Sources home (table counts) |
 | EP-DATA-53 | GET | /api/v1/data/sources/:id | JWT | `:id` | 200 `DataSourceDto` | SVC-DATA-SOURCE.get() | Includes Connection summary (no secrets) |
 | EP-DATA-54 | PATCH | /api/v1/data/sources/:id | JWT | `:id` · `UpdateDataSourceDto` { name?, scope?, status? } | 200 `DataSourceDto` | SVC-DATA-SOURCE.update() | Rename / scope only — no rebind |
@@ -198,18 +198,19 @@
 
 ---
 
-### Data Source Type Metadata Endpoints *(change-048)*
+### Data Source Type Metadata Endpoints *(change-048, change-072)*
 
 `@Controller('data')` (customer) · `@Controller('admin')` (admin CRUD)
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-DATA-47 | GET | /api/v1/data/source-types | JWT (any role) | — | 200 `DatasourceTypeMetaDto[]` | SVC-DSTYPE.findAll(activeOnly=true) | Returns only `isActive = true` entries; used by customer portal to build picker and display labels/logos |
-| EP-DSTYPE-01 | GET | /api/v1/admin/data-source-types | JWT + admin | — | 200 `DatasourceTypeMetaDto[]` | SVC-DSTYPE.findAll() | Returns all 7 entries including inactive |
+| EP-DATA-47 | GET | /api/v1/data/source-types | JWT (any role) | — | 200 `DatasourceTypeMetaDto[]` (incl. `comingSoon`) | SVC-DSTYPE.findAll(activeOnly=true) | Returns only `isActive = true` entries **including** coming-soon; used by customer portal picker/labels |
+| EP-DSTYPE-01 | GET | /api/v1/admin/data-source-types | JWT + admin | — | 200 `DatasourceTypeMetaDto[]` | SVC-DSTYPE.findAll() | Returns all entries including inactive |
 | EP-DSTYPE-02 | GET | /api/v1/admin/data-source-types/:type | JWT + admin | `:type` (DataSourceType string) | 200 `DatasourceTypeMetaDto` | SVC-DSTYPE.findOne() | Single type; 404 if unknown |
-| EP-DSTYPE-03 | PATCH | /api/v1/admin/data-source-types/:type | JWT + admin | `:type` · `UpdateDatasourceTypeMetaDto` { titleEn?, titleAr?, logoUrl?, instructionEn?, instructionAr? } | 200 `DatasourceTypeMetaDto` | SVC-DSTYPE.update() | Partial update; non-admin returns 403 |
+| EP-DSTYPE-03 | PATCH | /api/v1/admin/data-source-types/:type | JWT + admin | `:type` · `UpdateDatasourceTypeMetaDto` { titleEn?, titleAr?, logoUrl?, instructionEn?, instructionAr?, comingSoon? } | 200 `DatasourceTypeMetaDto` | SVC-DSTYPE.update() | Partial update; Coming soon toggle uses this with `{ comingSoon }` *(change-072)*; non-admin returns 403 |
 | EP-DSTYPE-04 | PATCH | /api/v1/admin/data-source-types/:type/toggle | JWT + admin | `:type` | 200 `DatasourceTypeMetaDto` | SVC-DSTYPE.toggleActive() | Flips `isActive`; immediate effect on customer portal picker |
 
-- [EP-DATA-47] Authenticated (any JWT role). Returns only active types so the customer portal picker does not show disabled types. Falls back gracefully — if the collection is empty (before seeding), returns an empty array and the frontend falls back to registry icons/labels.
-- [EP-DSTYPE-01..04] Admin-only (role guard). No create/delete endpoints — the set of 7 types is fixed to the `DataSourceType` enum. PATCH is partial (undefined fields are not updated).
+- [EP-DATA-47] Authenticated (any JWT role). Returns active types (incl. `comingSoon = true`) so the picker can show Coming soon badges. Falls back gracefully — if the collection is empty (before seeding), returns an empty array and the frontend falls back to registry icons/labels.
+- [EP-DSTYPE-01..04] Admin-only (role guard). No create/delete endpoints — the set of types is fixed to the `DataSourceType` enum. PATCH is partial (undefined fields are not updated).
+- OAuth authorize-start endpoints for connector types call `SVC-DSTYPE.assertConnectable` and return 400 when the type is inactive or coming soon *(change-072)*.
 

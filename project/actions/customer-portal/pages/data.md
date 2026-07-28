@@ -1,16 +1,16 @@
 ## Module: Data (Multi-Source Data Management)
 
-### Data Sources Home Page *(change-022, change-038, change-045, change-059, change-066)*
+### Data Sources Home Page *(change-022, change-038, change-045, change-059, change-066, change-072)*
 - Route: `/app/data`
-- Components: DataSourcesPage — **integration-style tiles** per Data Source: bordered icon + status badge (table count / syncing / error), **title**, 3-line **description** (registry or DB instruction), footer with **status toggle** (read-only) + **Details** / **Manage** buttons → source detail. Compact grid (~3 columns). **"Connect Source"** opens side drawer (type picker) *(change-057)* → `/app/data/connect/:type`. Link to **Connections** (`/app/data/connections`). List uses **`projection=lite`**. Distinct from Connections **row** layout.
-- Service: `GET /api/v1/data/sources` (EP-DATA-52); table counts via list aggregation
+- Components: DataSourcesPage — **integration-style tiles** per Data Source: bordered icon + status badge (table count / syncing / error), **title**, 3-line **description** (registry or DB instruction), footer with **status toggle** (read-only) + **Details** / **Manage** buttons → source detail. Compact grid (~3 columns). **"Connect Source"** opens side drawer (type picker) *(change-057)* → `/app/data/connect/:type`. Type picker uses EP-DATA-47: when DB meta is loaded, show only returned (active) types; types with `comingSoon = true` render a bilingual **Coming soon** tag/note and are **not selectable** *(change-072)*. Link to **Connections** (`/app/data/connections`). List uses **`projection=lite`**. Distinct from Connections **row** layout.
+- Service: `GET /api/v1/data/sources` (EP-DATA-52); `GET /api/v1/data/source-types` (EP-DATA-47); table counts via list aggregation
 - Guard: authGuard + onboardingGuard
 - States: loading skeleton tiles · empty state · error toast
 
-### Connections List Page *(change-059, change-066)*
+### Connections List Page *(change-059, change-066, change-072)*
 - Route: `/app/data/connections`
-- Components: ConnectionsPage — **compact horizontal rows** (left accent, inline meta — distinct from Data Source tiles). Breadcrumbs: Data Sources → Connections. Row click → **detail side drawer** (full connection + linked sources). **Add connection** → type-picker drawer → credentials/OAuth. Shared `ConnectionCardComponent` in wizard choose-connection step. **`projection=lite`** list.
-- Service: EP-DATA-09..14, EP-DATA-50; EN/AR i18n
+- Components: ConnectionsPage — **compact horizontal rows** (left accent, inline meta — distinct from Data Source tiles). Breadcrumbs: Data Sources → Connections. Row click → **detail side drawer** (full connection + linked sources). **Add connection** → type-picker drawer → credentials/OAuth. Type picker matches Data Sources: coming-soon types visible with badge, not selectable *(change-072)*. Shared `ConnectionCardComponent` in wizard choose-connection step. **`projection=lite`** list.
+- Service: EP-DATA-09..14, EP-DATA-50; EP-DATA-47; EN/AR i18n
 - Guard: authGuard + onboardingGuard
 - States: loading · empty · error · delete 409 toast
 

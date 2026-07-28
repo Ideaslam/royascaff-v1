@@ -23,7 +23,7 @@ Manages CSV file uploads (direct and presigned), AI-analysis kickoff, column met
 Manages **auth-only** Connection credentials; encrypts/decrypts; test-before-save; re-auth. (Formerly DataConnectionService conflating source + auth.)
 
 **Methods:**
-- `create(dto: CreateConnectionDto, userId, workspaceSlug)` — validates sourceType (non-CSV), runs real `testConnection` with plaintext creds (**must pass**), then encrypts auth-only credentials and creates record
+- `create(dto: CreateConnectionDto, userId, workspaceSlug)` — calls `SVC-DSTYPE.assertConnectable(sourceType)` *(change-072)*; validates sourceType (non-CSV), runs real `testConnection` with plaintext creds (**must pass**), then encrypts auth-only credentials and creates record
 - `list(workspaceSlug, filters)` — paginated searchable/filterable/sortable list; credentials never returned; optional `dataSourceCount`
 - `get(id, workspaceSlug)` — connection metadata (no secrets); may include safe display fields (host, shop domain) without passwords/tokens
 - `update(id, dto, workspaceSlug)` — rename and/or re-encrypt credentials if changed; credential updates require successful test first; does not change linked Data Sources
@@ -42,7 +42,7 @@ Manages **auth-only** Connection credentials; encrypts/decrypts; test-before-sav
 Manages Data Sources (name + connectionId + scope); cascade delete; dashboard usage guard.
 
 **Methods:**
-- `create(dto: CreateDataSourceDto, userId, workspaceSlug)` — validates `connectionId` exists and `sourceType` matches (or CSV with null connection); stores scope; no rebind later
+- `create(dto: CreateDataSourceDto, userId, workspaceSlug)` — calls `SVC-DSTYPE.assertConnectable(sourceType)` *(change-072)*; validates `connectionId` exists and `sourceType` matches (or CSV with null connection); stores scope; no rebind later
 - `list(workspaceSlug, filters)` — paginated list with table counts; powers Data Sources home
 - `get(id, workspaceSlug)` — metadata + linked Connection summary (no secrets)
 - `update(id, dto, workspaceSlug)` — rename and/or update **scope** only; `connectionId` immutable
@@ -141,17 +141,18 @@ Compares the **stored** `Dataset.schema` (from last discovery) against a freshly
 
 ---
 
-### SVC-DSTYPE · DatasourceTypeMetaService [internal, application, Data] *(change-048)*
-Global lookup table service for data source type display metadata (title, logo, instructions, active flag). One document per `DataSourceType` enum value; not workspace-scoped.
+### SVC-DSTYPE · DatasourceTypeMetaService [internal, application, Data] *(change-048, change-072)*
+Global lookup table service for data source type display metadata (title, logo, instructions, active flag, coming-soon flag). One document per `DataSourceType` enum value; not workspace-scoped.
 
 **Methods:**
-- `findAll(activeOnly?: boolean): Promise<DatasourceTypeMeta[]>` — returns all 7 type records; when `activeOnly = true` returns only `isActive = true` entries (used by customer endpoint)
+- `findAll(activeOnly?: boolean): Promise<DatasourceTypeMeta[]>` — returns all type records; when `activeOnly = true` returns only `isActive = true` entries including `comingSoon = true` (used by customer endpoint)
 - `findOne(sourceType: string): Promise<DatasourceTypeMeta>` — returns single record; throws 404 if unknown type
-- `update(sourceType: string, dto: UpdateDatasourceTypeMetaDto): Promise<DatasourceTypeMeta>` — admin-only; updates `titleEn`, `titleAr`, `logoUrl`, `instructionEn`, `instructionAr` in-place
+- `update(sourceType: string, dto: UpdateDatasourceTypeMetaDto): Promise<DatasourceTypeMeta>` — admin-only; updates `titleEn`, `titleAr`, `logoUrl`, `instructionEn`, `instructionAr`, `comingSoon` in-place
 - `toggleActive(sourceType: string): Promise<DatasourceTypeMeta>` — admin-only; flips `isActive` and returns updated record
+- `assertConnectable(sourceType: string): Promise<void>` — throws 400 if type unknown, `isActive = false`, or `comingSoon = true`; used by connection/source create and OAuth authorize starts *(change-072)*
 
 **Deps:** DatasourceTypeMetaRepository
-**Rules:** Collection is seeded via manual script; never created/deleted via API · `sourceType` is the natural primary key (unique string) — no ObjectId param on public read · `isActive = false` hides the type from the customer portal source picker only; existing `DataConnection` records for disabled types remain functional
+**Rules:** Collection is seeded via manual script; never created/deleted via API · `sourceType` is the natural primary key (unique string) — no ObjectId param on public read · `isActive = false` hides the type from the customer portal source picker · `comingSoon = true` keeps the type visible but non-selectable; create/OAuth-start rejected · existing `DataConnection` / `DataSource` records for disabled or coming-soon types remain functional (sync/reauth allowed)
 
 ---
 

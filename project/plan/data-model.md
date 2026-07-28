@@ -580,26 +580,27 @@ One collection per uploaded CSV file. `{fileId}` is the 24-char hex string of `c
 
 ---
 
-## datasource_type_meta *(change-048)*
+## datasource_type_meta *(change-048, change-072)*
 Purpose: global lookup table for data source type display metadata — one document per `DataSourceType` enum value. Seeded via manual script. Managed by admins; consumed by the customer portal.
 Collection: `datasource_type_meta` (global — not workspace-scoped)
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | `_id` | ObjectId | PK | — |
-| `sourceType` | String | required, unique; enum: `csv \| google_sheets \| shopify \| salla \| zid \| sql_server \| mongodb_atlas` | — |
+| `sourceType` | String | required, unique; enum: `csv \| google_sheets \| shopify \| salla \| zid \| sql_server \| mongodb_atlas \| google_ads \| meta_ads` | — |
 | `titleEn` | String | required; English display name (e.g. "CSV File") | — |
 | `titleAr` | String | required, default: `''`; Arabic display name | — |
 | `logoUrl` | String | nullable, default: null; absolute URL to logo image; null = frontend falls back to registry icon | — |
 | `instructionEn` | String | required, default: `''`; setup guide / description (English) | — |
 | `instructionAr` | String | required, default: `''`; setup guide / description (Arabic) | — |
 | `isActive` | Boolean | required, default: true; false hides type from customer portal source picker | — |
+| `comingSoon` | Boolean | required, default: false; when true (and `isActive`), type is shown in picker with Coming soon badge but is not selectable; create/OAuth-start rejected | — |
 | `createdAt` | Date | auto | — |
 | `updatedAt` | Date | auto | — |
 
-**Indexes:** `{ sourceType: 1 }` unique (natural PK for upserts)
-**Seed:** idempotent upsert by `sourceType`; script: `npm run seed:datasource-types` (manual, not run on app start)
-**Rules:** No create/delete API endpoints — the set of types is fixed to the `DataSourceType` enum · Admin can update all display fields + `isActive` via PATCH · `isActive = false` hides the type from the customer portal picker; existing Connection / DataSource records for disabled types are unaffected
+**Indexes:** `{ sourceType: 1 }` unique (natural PK for upserts) · `{ isActive: 1 }`
+**Seed:** idempotent upsert by `sourceType`; script: `npm run seed:datasource-types` (manual, not run on app start); seeds set `comingSoon: false`
+**Rules:** No create/delete API endpoints — the set of types is fixed to the `DataSourceType` enum · Admin can update all display fields + `isActive` + `comingSoon` via PATCH · `isActive = false` hides the type from the customer portal picker · `isActive = true` + `comingSoon = true` shows the type as non-selectable with a Coming soon badge · existing Connection / DataSource records for disabled or coming-soon types remain usable (guards apply to new create / OAuth start only)
 
 ---
 
