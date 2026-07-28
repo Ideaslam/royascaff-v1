@@ -172,28 +172,30 @@
 6. **Project list / create / workspace / DNA form (FE)** [frontend-only] — `/projects`, `/projects/new`, `/projects/:id` (DNA versions table + proposal picker), `/projects/:id/dna/new`, `/projects/:id/dna/:vid` (form); `/edit` legacy; shared breadcrumbs; Branding + images cards; dialog selects `appendTo="body"`
 
 ## 13. Templates
-- Scope: BE `src/pipeline-v3/templates/*` + disk `templates/pitch-landscape/v1/` + `templates/website-template/v1/` + `templates` collection + FE gallery
+- Scope: BE `src/pipeline-v3/templates/*` + disk `templates/pitch-landscape/v1/` + `templates/website-template/v1/` + `templates/roya-presentation/v1/` + `templates` collection + FE gallery
 - Audience: system / gallery; ops smoke via fixture-render
 - Entities: `templates`
 - Depends on: PDF Export (PdfRenderService); Settings (workspace logo/name for pitch branding)
 
 ### Features
 1. **Disk TemplateAssetResolver** [backend-only] — layout, CSS, partials from `assets.basePath`
-2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; root branding vars `workspace_*` / `client_*`; theme CSS vars from `themeOverrides` (Assemble maps DNA `branding.colorRoles` → primary…text); presentation vs landing render contracts; zero AI
+2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; root branding vars `workspace_*` / `client_*`; theme CSS vars from `themeOverrides` (Assemble maps DNA `branding.colorRoles` → primary…text, unless `theme.lockPalette`); presentation vs landing render contracts; zero AI
 3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; primary-led DNA roles (headings/brand → primary; cards/gaps → white / soft primary tint; cover/footer/divider CSS-var gradients); RTL/LTR; design-first disk edits affect render; **no** hardcoded Safqa / رويا صفقة — cover/footer/brand-marks use workspace/client vars; includes `testimonial.hbs`
-4. **Section catalog (per template)** [backend-only] — **20** shared keys; each template owns `contentSchema` / length budgets under `src/pipeline-v3/templates/<templateKey>/`; registry `getSectionDef(key, templateKey)`; seed via `buildAllTemplateDocs()`; `maxSections` 28
-5. **Fixture render API** [backend-only] — `POST /api/data/templates/pitch-landscape/fixture-render` (html|pdf) with optional `templateKey`; fixtures supply sample workspace branding for all 20 sections
+4. **Section catalog (per template)** [backend-only] — shared base **21** keys (incl. `testimonial`, `about_workspace`); each template owns `contentSchema` / length budgets under `src/pipeline-v3/templates/<templateKey>/`; registry `getSectionDef(key, templateKey)`; seed via `buildAllTemplateDocs()`; `maxSections` 28; `roya-presentation` adds local `team` + `risks` (**23**)
+5. **Fixture render API** [backend-only] — `POST /api/data/templates/pitch-landscape/fixture-render` (html|pdf) with optional `templateKey` (`pitch-landscape` \| `pitch-landscape-formal` \| `website-template` \| `roya-presentation`); fixtures include sample branding; roya fixtures include `team`/`risks`
 6. **pitch-landscape-formal** [backend-only] — own catalog file; formal theme tokens; shares pitch-landscape disk assets; currently same lengths as pitch (may diverge)
 7. **Active template list API** [backend-only] — `GET /api/data/templates` slim DTO for gallery
 8. **Template gallery UI** [frontend-only] — pick template during project create / sibling
 9. **website-template landing** [backend-only] — key `website-template`; `type: website`, `page.renderMode: landing`; continuous scrolling HTML from `05.smart-watch` style language; own disk `templates/website-template/v1/`; **own** section length schemas (tighter cards vs pitch); HTML primary delivery; optional A4 portrait PDF; assemble skips slide overflow guard
+10. **roya-presentation** [backend-only] — key `roya-presentation`; name `{ ar: "عرض تقديمي — رويا", en: "Roya Presentation" }`; presentation landscape 16:9; own disk `templates/roya-presentation/v1/` with HAIA-from-scratch compositions (not recolored pitch); `theme.lockPalette: true` (DNA / proposal color overrides skipped at assemble); local sections `team` + `risks`
 
 ### Canonical active templates
-| key | basePath | mode |
-|-----|----------|------|
-| `pitch-landscape` | `templates/pitch-landscape/v1` | presentation 16:9 |
-| `pitch-landscape-formal` | `templates/pitch-landscape/v1` | presentation 16:9 (token variant) |
-| `website-template` | `templates/website-template/v1` | landing (fluid web) |
+| key | basePath | mode | sections |
+|-----|----------|------|----------|
+| `pitch-landscape` | `templates/pitch-landscape/v1` | presentation 16:9 | 21 |
+| `pitch-landscape-formal` | `templates/pitch-landscape/v1` | presentation 16:9 (token variant) | 21 |
+| `website-template` | `templates/website-template/v1` | landing (fluid web) | 21 |
+| `roya-presentation` | `templates/roya-presentation/v1` | presentation 16:9 (HAIA; locked palette) | 23 |
 
 ## 14. Pipeline Traces
 - Scope: BE `PipelineTraceService` + `pipelineTraces` + GET APIs + FE `/ai-requests`

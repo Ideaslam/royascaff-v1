@@ -207,7 +207,7 @@ Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), ge
 | `emailSent` / send meta | Mixed | [INFERRED] ProposalEmailSentMeta | — |
 | `createdBy` | String | | → `user` |
 | `projectId` | String \| null | shared shell; required on new v2+v3 creates → `projects` | → `projects` |
-| `templateKey` | String \| null | e.g. `pitch-landscape` \| `pitch-landscape-formal` \| `website-template` | → `templates.key` |
+| `templateKey` | String \| null | e.g. `pitch-landscape` \| `pitch-landscape-formal` \| `website-template` \| `roya-presentation` | → `templates.key` |
 | `templateVersion` | Number \| null | pinned | — |
 | `language` | String \| null | `ar` \| `en` (primary / source language); list summary includes | — |
 | `pipelineVersion` | String \| null | `"2"` \| `"3"`; list summary includes | — |
@@ -523,20 +523,22 @@ Purpose: catalog metadata for hand-crafted proposal templates; disk assets under
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | `_id` | String | PK | — |
-| `key` | String | required | e.g. `pitch-landscape`, `pitch-landscape-formal`, `website-template` |
+| `key` | String | required | e.g. `pitch-landscape`, `pitch-landscape-formal`, `website-template`, `roya-presentation` |
 | `version` | Number | required; proposals pin later | — |
 | `status` | Enum | active\|draft\|deprecated | — |
-| `name` | Object | `{ ar, en }` | website: `{ ar: "موقع — صفحة هبوط", en: "Website — Landing" }` |
+| `name` | Object | `{ ar, en }` | website: `{ ar: "موقع — صفحة هبوط", en: "Website — Landing" }`; roya: `{ ar: "عرض تقديمي — رويا", en: "Roya Presentation" }` |
 | `engine` | String | `handlebars.v1` | — |
 | `type` / `orientation` | String | presentation/landscape **or** website/portrait | — |
-| `page` / `theme` / `assets` / `rules` | Object | geometry or `renderMode: landing` + fluid; tokens; disk paths | — |
-| `sections` | Object[] | Section Definitions (abstract + contentSchema); shared catalog **20** keys; `rules.maxSections` 28 | — |
+| `page` / `theme` / `assets` / `rules` | Object | geometry or `renderMode: landing` + fluid; tokens; optional `theme.lockPalette`; disk paths | — |
+| `sections` | Object[] | Section Definitions (abstract + contentSchema); shared base **21** keys; `roya-presentation` **23** (+ `team`, `risks`); `rules.maxSections` 28 | — |
 | `createdAt` / `updatedAt` | Date | auto | — |
 
 Indexes: unique `{ key: 1, version: 1 }`; `{ status: 1 }`.  
-Files: `mongodb-templates.repository.ts`, `pitch-landscape.catalog.ts`, disk `templates/pitch-landscape/v1/` + `templates/website-template/v1/` (not tenant-isolated — global catalog). Formal reuses pitch disk `basePath` with distinct theme tokens. Website is continuous landing HTML (`page.renderMode: landing`).
+Files: `mongodb-templates.repository.ts`, per-template catalogs under `src/pipeline-v3/templates/<key>/`, disk `templates/pitch-landscape/v1/` + `templates/website-template/v1/` + `templates/roya-presentation/v1/` (not tenant-isolated — global catalog). Formal reuses pitch disk `basePath` with distinct theme tokens. Website is continuous landing HTML (`page.renderMode: landing`). Roya-presentation is HAIA-from-scratch 16:9 with `theme.lockPalette: true`.
 
-**Shared v1 section keys (20):** cover, executive_summary, client_context, objectives_kpis, services, methodology, timeline, insights_divider, market_analysis, competitor_analysis, audience_insights, market_trends, benchmarks, case_studies, **testimonial**, social_audit, action_plan, financial, next_steps, footer.
+**Shared v1 section keys (21):** cover, executive_summary, client_context, objectives_kpis, services, methodology, timeline, insights_divider, market_analysis, competitor_analysis, audience_insights, market_trends, benchmarks, case_studies, **testimonial**, social_audit, action_plan, financial, next_steps, **about_workspace**, footer.
+
+**Roya-presentation local extras:** `team`, `risks` (optional; not in `SHARED_SECTION_KEYS`).
 
 ---
 

@@ -68,7 +68,7 @@
 ### SVC-PIPE-S3-05 · AssembleService [domain, internal, PipelineV3]
 - Status: done
 - Methods:
-  - `runAssemble(job)` — load ready (+ optionally skip failed) sections; inject financials/dates/client; load workspace Settings + resolve branding; map DNA `branding.colorRoles` (or derive from `branding.colors[]`) → `themeOverrides`; `TemplateRenderService.renderProposalHtml` with root branding + theme; overflow guard (Puppeteer measure `.page`, shrink steps); PDF via PdfRenderService; stash buffers/keys temp or pass to export job payload via Mongo staging fields; set `steps.assembly` done; enqueue export
+  - `runAssemble(job)` — load ready (+ optionally skip failed) sections; inject financials/dates/client; load workspace Settings + resolve branding; map DNA `branding.colorRoles` (or derive from `branding.colors[]`) → `themeOverrides` **unless** template `theme.lockPalette` (then omit DNA + `proposal.themeOverrides` so catalog tokens win); `TemplateRenderService.renderProposalHtml` with root branding + theme; overflow guard (Puppeteer measure `.page`, shrink steps); PDF via PdfRenderService; stash buffers/keys temp or pass to export job payload via Mongo staging fields; set `steps.assembly` done; enqueue export
 - Branding resolution (root Handlebars):
   | Key | Source |
   |-----|--------|
@@ -88,7 +88,8 @@
   - Legacy DNA without `colorRoles` → derive at assemble from `colors[]` + `source`
   - When source is palette/logo, missing secondary/accent never fall back to Roya navy/sky
   - Precedence: DNA roles fill all five slots; explicit non-empty `proposal.themeOverrides` key wins
-- Deps: TemplateRenderService, PdfRenderService, ProposalsRepository, ProjectsRepository, SettingsDataService
+  - **Palette lock:** if `tplDoc.theme.lockPalette === true` (e.g. `roya-presentation`), skip DNA + proposal theme overrides entirely (future pack may selectively inject DNA colors)
+- Deps: TemplateRenderService, PdfRenderService, ProposalsRepository, ProjectsRepository, SettingsDataService, TemplatesRepository
 - Side effects: CPU, browser
 - Rules: no AI; missing logos → empty string (templates `{{#if}}`); never inject product “Safqa” fallback; failed sections omitted from deck (Ready with gaps); if none ready → fail without export
 

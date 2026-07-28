@@ -1,12 +1,12 @@
 # Project Status
 
-_Last updated: 2026-07-28 — after change-002 API PermissionGuard parity (REQ-R complete)_
+_Last updated: 2026-07-28 — after change-037 `roya-presentation` template merge_
 
 ## Snapshot
 
 | App | Services | Endpoints | Pages/Views | Overall |
 |-----|----------|-----------|-------------|---------|
-| api | 86/88 | 138/139 | — | partial |
+| api | 87/89 | 138/139 | — | partial |
 | web | — | — | 36/36 | partial |
 
 > Web overall `partial` only for remaining product gaps (AI stubs / vision). **REQ-R 3/3**, **REQ-PROP-V3**, **REQ-PROP-UNIFY** merged.
@@ -29,7 +29,7 @@ _Last updated: 2026-07-28 — after change-002 API PermissionGuard parity (REQ-R
 | Pipeline Regen + Translate | 6/6 | — | — | done |
 | Pipeline Traces | 2/2 | 4/4 | 3/3 | done |
 | Cutover Backfill | 1/1 | — | — | done |
-| Templates | 9/9 | 2/2 | — | done |
+| Templates | 10/10 | 2/2 | — | done |
 | AI | 3/4 | 3/4 | 1/1 | partial |
 | Contracts | 1/1 | 9/9 | 2/2 | done |
 | Roles | 1/1 | 7/7 | 1/1 | done |
