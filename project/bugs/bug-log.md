@@ -1,9 +1,10 @@
 # Bug Log
 
-> Next bug number: 012
+> Next bug number: 013
 
 | # | Date | Severity | Area | Summary | Status | File / Change pack |
 |---|------|----------|------|---------|--------|--------------------|
+| 012 | 2026-07-28 | high | Pipeline v2 financials | Financials still fails: Arabic comma / bidi marks | PENDING | `bug-012-financials-arabic-comma-validation.md` |
 | 011 | 2026-07-28 | high | Creative Pipeline v2 | HTML repair uses non-stream Claude; fails on >10min | FIXED (await confirm) | `bug-011-creative-v2-html-repair-timeout.md` |
 | 010 | 2026-07-28 | high | Pipeline v2 financials | Section batch fails: grand total validation too strict | DONE | `bug-010-financials-grand-total-validation.md` |
 | 009 | 2026-07-28 | high | Projects + pipeline DNA | Selected 8 research options filtered to 3 on generate | DONE | `bug-009-research-options-filtered-to-three.md` |
