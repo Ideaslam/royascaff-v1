@@ -204,7 +204,7 @@ Wait for explicit confirmation. Silence ≠ confirmation.
 - **Template**: `engine/templates/build-program-template.md`
 - **Output**:
   - `project/changes/build-program.md` with `request-id: REQ-INIT`
-  - Pack folders `change-<NNN>-init-<slug>/` materialized
+  - Pack folders `change-<ID>-init-<slug>/` materialized
   - Rows in `project/changes/change-log.md`
 
 #### Actions
@@ -216,8 +216,8 @@ Wait for explicit confirmation. Silence ≠ confirmation.
    - **Auth** next
    - Remaining modules by dependency from `modules.md`
    - Cross-cutting (jobs, integrations) last
-4. For each pack, create `project/changes/change-<NNN>-init-<slug>/`:
-   - `change-request.md` — `change-type: new-module` or `new-feature`; `request-id: REQ-INIT`; `part: N/M`; `depends-on`; `pack-status: drafted` or `blocked`
+4. For each pack, mint a unique datetime `<ID>` (`YYYYMMDD-HHMMSS`; see `project-layout.md` — never sequential numbers) and create `project/changes/change-<ID>-init-<slug>/`:
+   - `change-request.md` — `change-type: new-module` or `new-feature`; `request-id: REQ-INIT`; `part: N/M`; `depends-on` (peer ID/folder); `pack-status: drafted` or `blocked`
    - `blueprint/` — copy/slice **only** that module’s specs from main (`plan/` excerpts + `actions/.../<module>.md`)
    - `status.md` + `blueprint/_index.md` (artifacts start `planned`)
    - `impact.md` — abbreviated create list for code files

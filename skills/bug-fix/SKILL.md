@@ -27,7 +27,7 @@ description: >-
 
 ### Path A — Change work pack
 
-- bug-log → `ESCALATED` + link to `change-<NNN>-bug-fix-<slug>/`
+- bug-log → `ESCALATED` + link to `change-<ID>-bug-fix-<slug>/`
 - Follow `/change-mode` isolation (blueprint in pack; merge at 5.6)
 - bug-log → `DONE` when pack is `merged`
 
@@ -35,7 +35,7 @@ description: >-
 
 | Step | Action |
 |------|--------|
-| 6.1 | Create `bug-<NNN>-<slug>.md`, bug-log `PENDING` |
+| 6.1 | Create `bug-<ID>-<slug>.md`, bug-log `PENDING` |
 | 6.2 | Root cause (no code yet) |
 | 6.3 | ⛔ Pre-fix gate |
 | 6.4 | Implement minimal fix |

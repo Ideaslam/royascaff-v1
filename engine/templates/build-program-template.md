@@ -27,9 +27,9 @@ Each row becomes (or links to) a change work pack under `project/changes/`. Pack
 
 | Part | Pack folder | Module / scope | Depends on | Target apps | Pack status | Notes |
 |------|-------------|----------------|------------|-------------|-------------|-------|
-| 1/N | `change-001-init-foundation/` | foundation | — | backend, portal | drafted | app shell, shared config |
-| 2/N | `change-002-init-auth/` | Auth | change-001 | backend, portal | blocked | |
-| 3/N | `change-003-init-users/` | Users | change-002 | backend, portal | blocked | |
+| 1/N | `change-20260729-100001-init-foundation/` | foundation | — | backend, portal | drafted | app shell, shared config |
+| 2/N | `change-20260729-100002-init-auth/` | Auth | change-20260729-100001 | backend, portal | blocked | |
+| 3/N | `change-20260729-100003-init-users/` | Users | change-20260729-100002 | backend, portal | blocked | |
 
 ## Progress
 
@@ -49,7 +49,7 @@ Each row becomes (or links to) a change work pack under `project/changes/`. Pack
 
 ## Materializing packs
 
-For each row, create `project/changes/change-<NNN>-init-<slug>/` (or `…-r-<slug>/` for REQ-R):
+For each row, create `project/changes/change-<ID>-init-<slug>/` (or `…-r-<slug>/` for REQ-R):
 
 1. `change-request.md` — `request-id` from this program; `part: N/M`; `depends-on`; `pack-status: drafted` or `blocked`
 2. `blueprint/` — slice from **main** specs for that module only (plan + actions)

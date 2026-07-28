@@ -7,7 +7,7 @@
 Each change keeps its reports in its own folder:
 
 ```
-project/changes/change-<NNN>-<slug>/
+project/changes/change-<ID>-<slug>/
 ├── change-request.md
 ├── recon.md           ← impact analysis (Step 5.0b)
 ├── verify-plan.md     ← pre-build (optional for fast-track)

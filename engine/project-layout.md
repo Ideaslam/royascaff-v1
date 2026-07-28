@@ -25,10 +25,37 @@ The product ships **`engine/` only**. There is no pre-seeded `project/` folder a
 
 **During implementation, edit packs — not main.** Main receives updates at **merge** (after verify PASS).
 
-- In-flight work lives only inside a **change work pack** under `project/changes/change-<NNN>-<slug>/`.
+- In-flight work lives only inside a **change work pack** under `project/changes/change-<ID>-<slug>/`.
 - Do **not** edit main plan/actions/rules/profile/description while a pack is in flight.
 - Main files may be **read** for context; Phase 2 / Phase R may **write** the roadmap to main (`planned` / `partial` / `done` — see `engine/conventions.md`).
 - In-flight progress: `project/changes/change-log.md` + pack `status.md` (+ `build-program.md` for REQ-INIT / REQ-R).
+
+---
+
+## Pack and bug IDs (mandatory)
+
+**Never use sequential counters** (`001`, `002`, `change-02`, `bug-01`). Parallel branches allocate the same next number and collide on merge.
+
+### Format
+
+| Kind | Path pattern | Example |
+|------|--------------|---------|
+| Change / polish / escalate pack | `changes/change-<ID>[-<kind>]-<slug>/` | `change-20260729-125201-billing-api/` |
+| Init / reverse-engineer pack | `changes/change-<ID>-init-<slug>/` or `…-r-<slug>/` | `change-20260729-125205-init-auth/` |
+| Direct bug report (Path B) | `bugs/bug-<ID>-<slug>.md` | `bug-20260729-130044-login-500.md` |
+
+`<ID>` = **local datetime** `YYYYMMDD-HHMMSS` at creation time (e.g. `20260729-125201`).
+
+Why datetime (not a short hash): lexicographically sortable, human-readable, and unique across branches without a shared counter.
+
+### Generation rules
+
+1. Compute `<ID>` from the machine's local clock as `YYYYMMDD-HHMMSS`.
+2. If that path already exists (same-second collision, including batch create), append `-` + 4 lowercase hex chars to the ID: `20260729-125201-a3f2`.
+3. When creating several packs in one session, each pack/bug gets its **own** unique ID (do not reuse).
+4. **Never** read “next number” from change-log / bug-log — those counters are removed.
+5. `depends-on` / `blocks` reference the peer by folder stem or ID, e.g. `change-20260729-125201` or full `change-20260729-125201-init-auth`.
+6. **Legacy:** existing `change-<NNN>-*` / `bug-<NNN>-*` folders stay valid; do not renumber. New work always uses datetime IDs.
 
 ---
 
@@ -82,10 +109,10 @@ project/
   changes/
     change-log.md            # LIVE INDEX — all changes + pack-status
     build-program.md         # REQ-INIT / REQ-R ordered pack queue
-    change-<NNN>-<slug>/     # work pack (see below)
+    change-<ID>-<slug>/      # work pack (datetime ID — see above)
   bugs/
     bug-log.md               # LIVE INDEX — PENDING | DONE | ESCALATED
-    bug-<NNN>-<slug>.md      # Path B direct fixes
+    bug-<ID>-<slug>.md       # Path B direct fixes
   verify/
     verification-report.md
     reverse-engineer-report.md
@@ -97,7 +124,7 @@ project/
 ## Change work pack layout
 
 ```text
-project/changes/change-<NNN>-<slug>/
+project/changes/change-<ID>-<slug>/
   change-request.md      # metadata, acceptance criteria, request-id, depends-on, pack-status
   impact.md
   status.md              # pack dashboard: per-artifact planned/partial/done
@@ -151,7 +178,7 @@ project/changes/change-<NNN>-<slug>/
 
 ### Multi-part features
 
-Flat folders with shared `request-id` in metadata (e.g. `REQ-7`). Optional `depends-on: change-014`. Each part has its own pack and its own change-log row. Independent parts may run in parallel; dependent parts stay `blocked` until deps are `verified`/`merged`.
+Flat folders with shared `request-id` in metadata (e.g. `REQ-7`). Optional `depends-on: change-20260729-125201`. Each part has its own pack and its own change-log row. Independent parts may run in parallel; dependent parts stay `blocked` until deps are `verified`/`merged`.
 
 ### Build programs (Initial Build + Phase R handoff)
 
@@ -161,7 +188,7 @@ Flat folders with shared `request-id` in metadata (e.g. `REQ-7`). Optional `depe
 | `REQ-R` | Phase R.Done.2 | Gaps / drift-fix items after reverse-engineer |
 
 File: `project/changes/build-program.md` — template `engine/templates/build-program-template.md`.  
-Pack folders: `change-<NNN>-init-<slug>/` or `change-<NNN>-r-<slug>/`. Implement via Change Mode from Step 5.4 — never a monolith Phase 3.
+Pack folders: `change-<ID>-init-<slug>/` or `change-<ID>-r-<slug>/` (unique datetime ID per pack). Implement via Change Mode from Step 5.4 — never a monolith Phase 3.
 
 ---
 
@@ -177,7 +204,7 @@ Pack folders: `change-<NNN>-init-<slug>/` or `change-<NNN>-r-<slug>/`. Implement
 | `status.md` | Phase 2+ / R.Done / **after merge** | `status-template.md` |
 | `changes/change-log.md` | First Phase 5 / P / 6 Path A / Build 3.0 / R.Done.2 | `change-log-template.md` |
 | `changes/build-program.md` | Initial Build 3.0 / Phase R.Done.2 | `build-program-template.md` |
-| `changes/change-<NNN>-…/` | Phase 5 / P / 6 Path A / Build 3.0 / R.Done.2 | change-request, impact, change-status, blueprint index, merge-report |
+| `changes/change-<ID>-…/` | Phase 5 / P / 6 Path A / Build 3.0 / R.Done.2 | change-request, impact, change-status, blueprint index, merge-report |
 | `bugs/…` | Phase 6 | `bug-report-template.md` |
 | `verify/…` | Phase 4 / R.3 | `verification-template.md` |
 
@@ -202,7 +229,7 @@ Pack folders: `change-<NNN>-init-<slug>/` or `change-<NNN>-r-<slug>/`. Implement
 ### `project/bugs/`
 
 - `bug-log.md` — live index: `PENDING` · `DONE` · `ESCALATED` (+ link to change folder when escalated)
-- `bug-<NNN>-<slug>.md` — Path B direct fixes (no main plan edits)
+- `bug-<ID>-<slug>.md` — Path B direct fixes (no main plan edits); same datetime ID rules as packs
 - Path A escalates to a change work pack (`change-type: bug-fix`); main untouched until that pack merges
 
 ---

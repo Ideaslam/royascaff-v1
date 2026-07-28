@@ -1,6 +1,6 @@
 # Change Pack Status Template
 
-Per-pack dashboard. Lives at `project/changes/change-<NNN>-<slug>/status.md`.
+Per-pack dashboard. Lives at `project/changes/change-<ID>-<slug>/status.md`.
 
 Artifact statuses: `planned` · `partial` · `done` · `deferred` (see `engine/conventions.md`).
 Pack-level status also lives in `change-request.md` metadata and **must** match `project/changes/change-log.md`.
@@ -8,7 +8,7 @@ Pack-level status also lives in `change-request.md` metadata and **must** match 
 ## Schema
 
 ```md
-# Pack Status — change-<NNN>-<slug>
+# Pack Status — change-<ID>-<slug>
 
 - **pack-status**: drafted | in-progress | verified | merged | cancelled | blocked
 - **request-id**: REQ-N | —

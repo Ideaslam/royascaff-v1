@@ -61,7 +61,7 @@ See `engine/conventions.md` for defaults that specs inherit (route prefix, auth 
 - **Planning (main)**: `project/plan/modules.md`, `data-model.md`, `roles-and-authorization.md`
 - **Business rules**: `project/rules.md`
 - **Backend / client specs (main)**: `project/actions/<app>/…`
-- **Work packs**: `project/changes/change-<NNN>-<slug>/` (see `project-layout.md`)
+- **Work packs**: `project/changes/change-<ID>-<slug>/` (see `project-layout.md`)
 - **Bugs index**: `project/bugs/bug-log.md`
 - **Layout contract**: `engine/project-layout.md`
 - **Templates**: `engine/templates/`

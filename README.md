@@ -42,8 +42,11 @@ Typical contents (see `engine/project-layout.md`):
 - `project/status.md` — build-state dashboard (`done` + `planned` backlog)
 - `project/changes/change-log.md` — **live index** of packs + `pack-status`
 - `project/changes/build-program.md` — ordered REQ-INIT / REQ-R pack queue
-- `project/changes/change-<NNN>-<slug>/` — work packs (`blueprint/`, status, verify, merge-report)
+- `project/changes/change-<ID>-<slug>/` — work packs (`blueprint/`, status, verify, merge-report)
 - `project/bugs/bug-log.md` — bug index (`PENDING` · `DONE` · `ESCALATED`)
+
+Pack/bug `<ID>` is a local datetime `YYYYMMDD-HHMMSS` (not a sequential counter), so parallel
+branches do not collide on merge. See `engine/project-layout.md` → Pack and bug IDs.
 
 ## Change isolation
 

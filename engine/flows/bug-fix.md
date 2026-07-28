@@ -17,22 +17,22 @@
 ```md
 # Bug Log
 
-> Next bug number: NNN
-
-| # | Date | Severity | Area | Summary | Status | File / Change pack |
-|---|------|----------|------|---------|--------|--------------------|
-| 001 | 2026-07-26 | high | auth | login 500 | PENDING | `bug-001-login-500.md` |
-| 002 | 2026-07-26 | medium | billing | wrong total | ESCALATED | `change-014-bug-fix-billing-total/` (pack-status: in-progress) |
+| ID | Date | Severity | Area | Summary | Status | File / Change pack |
+|----|------|----------|------|---------|--------|--------------------|
+| 20260726-093015 | 2026-07-26 | high | auth | login 500 | PENDING | `bug-20260726-093015-login-500.md` |
+| 20260726-101122 | 2026-07-26 | medium | billing | wrong total | ESCALATED | `change-20260726-101122-bug-fix-billing-total/` (pack-status: in-progress) |
 ```
 
 Statuses: `PENDING` · `DONE` · `ESCALATED`. Keep the row updated on every transition. For `ESCALATED`, link the change pack folder and optionally note its `pack-status` from `change-log.md`.
+
+IDs use local datetime `YYYYMMDD-HHMMSS` (same rules as change packs — see `engine/project-layout.md` → Pack and bug IDs). **Never** allocate sequential bug numbers.
 
 ---
 
 ## Entry Point
 
 1. **Plain language** — user describes the bug  
-2. **Bug report file** — `project/bugs/bug-<NNN>-<slug>.md` from `engine/templates/bug-report-template.md`
+2. **Bug report file** — `project/bugs/bug-<ID>-<slug>.md` from `engine/templates/bug-report-template.md`
 
 Start **Step 6.0**.
 
@@ -64,8 +64,8 @@ Schema changes, data transformations, backfill → **YES → Path A**. Otherwise
 
 When any question answers YES:
 
-1. Create/update row in `bug-log.md` with Status **`ESCALATED`** (create `bug-<NNN>-…md` stub optional; at minimum the log row).
-2. Create work pack `project/changes/change-<NNN>-bug-fix-<slug>/` (next number from `change-log.md`).
+1. Create/update row in `bug-log.md` with Status **`ESCALATED`** (create `bug-<ID>-…md` stub optional; at minimum the log row).
+2. Create work pack `project/changes/change-<ID>-bug-fix-<slug>/` (mint a new datetime `<ID>` — see `project-layout.md`).
 3. Set `change-type: bug-fix` in `change-request.md`; `pack-status: drafted`; register in `change-log.md`.
 4. Link bug-log **File / Change pack** column to that folder.
 5. Proceed with **Phase 5** (`engine/flows/change-mode.md`) from Step 5.0 — **isolation applies**: main plan/actions untouched until pack **merge** (Step 5.6).
@@ -81,7 +81,7 @@ When all questions answer NO (no blueprint impact). **Do not** edit main `projec
 
 ### Step 6.1 — Create Bug Log Entry
 
-- **Output**: `project/bugs/bug-<NNN>-<slug>.md` + bug-log row `PENDING`
+- **Output**: `project/bugs/bug-<ID>-<slug>.md` + bug-log row `PENDING`
 - Use `engine/templates/bug-report-template.md`.
 - **Done when**: File exists; bug-log has the row.
 
@@ -119,7 +119,7 @@ Ask: **"Can you confirm this resolves the issue so I can mark it as DONE?"**
 
 | Decision | Path | Outputs |
 |----------|------|---------|
-| Needs blueprint change, multi-module, or migration | **A — Change pack** | `change-<NNN>-bug-fix-<slug>/` + change-log; bug-log `ESCALATED`→`DONE` after merge |
-| Isolated code fix | **B — Direct fix** | `bug-<NNN>-<slug>.md`; bug-log `PENDING`→`DONE`; no main plan edits |
+| Needs blueprint change, multi-module, or migration | **A — Change pack** | `change-<ID>-bug-fix-<slug>/` + change-log; bug-log `ESCALATED`→`DONE` after merge |
+| Isolated code fix | **B — Direct fix** | `bug-<ID>-<slug>.md`; bug-log `PENDING`→`DONE`; no main plan edits |
 
 **Key principle**: Bugs that touch the plan become isolated change packs. Pure code corrections stay on Path B.

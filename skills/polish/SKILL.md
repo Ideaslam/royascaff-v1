@@ -32,7 +32,7 @@ description: >-
 | Step | Goal | Key output |
 |------|------|------------|
 | P.0 | Triage (confirm polish) | Decision |
-| P.1 | Pack + change-log row | `change-<NNN>-polish-<slug>/`, `drafted` |
+| P.1 | Pack + change-log row | `change-<ID>-polish-<slug>/`, `drafted` |
 | P.2 | Minimal page/view blueprint | `blueprint/actions/.../pages\|views/` |
 | P.3 | Implement styles/markup | `in-progress` |
 | P.4 | Verify | `verified` |

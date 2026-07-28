@@ -45,7 +45,7 @@ _Last updated: {YYYY-MM-DD} — after {change/build reference}_
 ```md
 # Project Status
 
-_Last updated: 2026-07-02 — after change-003 (billing endpoints)_
+_Last updated: 2026-07-02 — after change-20260702-141530 (billing endpoints)_
 
 ## Snapshot
 

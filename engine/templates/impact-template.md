@@ -40,7 +40,7 @@ Feature state: none | partial | complete
 - [ID/name] → planned | partial | done | deferred (reason if deferred)
 
 ## Dependencies
-- depends-on: [change-NNN or —] — current pack-status of dep: …
+- depends-on: [change-<ID> or —] — current pack-status of dep: …
 ```
 
 `State` (none/partial/complete) maps to artifact **status** in the pack: `none`→`planned`, `partial`→`partial`, `complete`→`done` after implement. See `engine/conventions.md`.
