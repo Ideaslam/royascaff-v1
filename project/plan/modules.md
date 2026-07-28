@@ -81,10 +81,10 @@
 5. **Multi-provider AI** [backend-only] — OpenAI/Gemini stubs partial
 6. **Pipeline v3 foundations** [backend-only] — BullMQ queues (`pipeline.analyze|map|section|assemble|export`), AJV contracts (`dna.v2`, `map.v1`, slots), prompt packs, model-by-request-type resolver
 7. **Analyze worker (Step 1)** [backend-only] — 1a + 1d for all 8 research options (market/competitor/audience/trends/benchmarks/case-studies/social-analysis/action-plan); AJV `dna.v2` fail-closed; traces; vision 1b partial
-8. **Map worker (Step 2)** [backend-only] — `map.v1` + research coverage gate (all 8 primaries; competitor ×N); `maxSections` 28; store `proposal.sectionMap`
+8. **Map worker (Step 2)** [backend-only] — `map.v1` + research coverage gate (all 8 primaries; competitor ×N); require/inject `about_workspace` before footer; `maxSections` 28; store `proposal.sectionMap`
 9. **Prompt packs (dna/research/map/section/translate)** [backend-only] — production packs under `pipeline-v3/prompts/` including full research set
 10. **Section fan-out (Step 3)** [backend-only] — parallel `pipeline.section`; template-scoped contentSchema + `lengthBudgets` (aim 90%); clamp-first + soft max (+10%) AJV + richness; per-section fail/retry (length-only overshoots clamp, no retry)
-11. **Assemble (Step 4)** [backend-only] — Handlebars + financial inject + workspace/client branding (`workspace_*` from Settings, `client_logo` from first `purpose: client_logo` image) + overflow guard + PDF (no AI); uses `generation.language`
+11. **Assemble (Step 4)** [backend-only] — Handlebars + financial inject + branding + overflow guard + PDF (no AI); uses `generation.language`. `workspace_*` from Settings; `client_logo` = first DNA/project `purpose: client_logo` → else `clients.logoUrl`; **client-first** placement (cover/body client; workspace in `about_workspace` + footer)
 12. **Export (Step 5)** [backend-only] — S3 HTML/PDF → `renderedByLang`; `ready` / `partially_failed`; standalone `financial.html` uses the **v2 commercial template** (API-ported `financial_template.html`); pitch-deck `financial.hbs` unchanged; totals code-computed
 13. **Orchestration engine** [backend-only] — Mongo fan-in after sections; idempotent workers; reconciler ~60s; durable resume from Mongo checkpoints when Redis/app interrupted
 14. **Workspace v3 feature flag** [both] — `settings.pipelineV3Enabled` default **true**; gates create-from-project + regen/translate/rerender + FE Projects create; soft-blocks new creative **aiJobs** (unified v2 create remains available)
@@ -164,7 +164,7 @@
 - Depends on: Clients, Services Catalog, Integrations (S3), Pipeline v3 (analyze enqueue)
 
 ### Features
-1. **Project shell CRUD** [both] — create/list/get/patch/archive; create also inserts first DNA version (inputs may mirror on project during transition)
+1. **Project shell CRUD** [both] — create/list/get/patch/archive; create also inserts first DNA version (inputs may mirror on project during transition); when Clients.`logoUrl` set and no `client_logo` image, seed `{ purpose: client_logo, url }` into project + DNA `images[]`
 2. **DNA versions CRUD** [both] — list/create (blank\|copyFrom)/get/patch inputs/rename/hard-delete; title required; duplicates OK; no max; zero versions allowed
 3. **DNA generate (per version)** [both] — enqueue analyze for that version’s inputs; confirmOverwrite if ready; 409 if regenerating; branding inject/force-reconcile; PUT content AJV `dna.v2`
 4. **RFP / images (version-scoped)** [both] — multipart + purpose/notes on DNA version; legacy project-level routes remain as shim/mirror
@@ -180,7 +180,7 @@
 ### Features
 1. **Disk TemplateAssetResolver** [backend-only] — layout, CSS, partials from `assets.basePath`
 2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; root branding vars `workspace_*` / `client_*`; theme CSS vars from `themeOverrides` (Assemble maps DNA `branding.colorRoles` → primary…text, unless `theme.lockPalette`); presentation vs landing render contracts; zero AI
-3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; primary-led DNA roles (headings/brand → primary; cards/gaps → white / soft primary tint; cover/footer/divider CSS-var gradients); RTL/LTR; design-first disk edits affect render; **no** hardcoded Safqa / رويا صفقة — cover/footer/brand-marks use workspace/client vars; includes `testimonial.hbs`
+3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; primary-led DNA roles; RTL/LTR; **client-first**: cover + interior chrome use `client_*` (no per-page workspace brand-mark); workspace logo/name in `about_workspace` + footer only; website sticky header uses client branding; includes `testimonial.hbs` + `about_workspace.hbs`
 4. **Section catalog (per template)** [backend-only] — shared base **21** keys (incl. `testimonial`, `about_workspace`); each template owns `contentSchema` / length budgets under `src/pipeline-v3/templates/<templateKey>/`; registry `getSectionDef(key, templateKey)`; seed via `buildAllTemplateDocs()`; `maxSections` 28; `roya-presentation` adds local `team` + `risks` (**23**)
 5. **Fixture render API** [backend-only] — `POST /api/data/templates/pitch-landscape/fixture-render` (html|pdf) with optional `templateKey` (`pitch-landscape` \| `pitch-landscape-formal` \| `website-template` \| `roya-presentation`); fixtures include sample branding; roya fixtures include `team`/`risks`
 6. **pitch-landscape-formal** [backend-only] — own catalog file; formal theme tokens; shares pitch-landscape disk assets; currently same lengths as pitch (may diverge)

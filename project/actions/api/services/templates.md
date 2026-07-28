@@ -21,10 +21,11 @@
   - Presentation: landscape PDF; fixed-page contract
   - Input `branding?` merged onto **root** context for every partial + layout: `workspace_*` / `client_*`
   - `themeOverrides` → layout `:root` `--color-primary|secondary|accent|surface|text` (omitted when template `theme.lockPalette`)
-  - pitch-landscape theme: headings/brand-mark → primary; cards/stats/persona → surface / soft primary tint; accent-bar primary→accent; cover/footer/`.page--brand-band` use CSS-var gradients (no hard-coded Roya navy/sky fills)
+  - **Client-first placement:** cover + interior chrome use `client_*`; workspace logo/name only in `about_workspace` + footer; website sticky header uses client branding
+  - pitch-landscape theme: headings/brand → primary; cards/stats/persona → surface / soft primary tint; accent-bar primary→accent; cover/footer/`.page--brand-band` use CSS-var gradients (no hard-coded Roya navy/sky fills)
   - roya-presentation: HAIA compositions (`.hp-*`); locked catalog tokens win
   - No hardcoded Safqa / رويا صفقة / Roya Safqa on pitch / website / roya disk
-  - Fixtures supply sample workspace branding strings; `getFixtureProposal(lang, templateKey?)`; roya includes `team` + `risks`
+  - Fixtures supply sample workspace + client branding; include `about_workspace`; `getFixtureProposal(lang, templateKey?)`; roya includes `team` + `risks`
 
 ### SVC-TPL-03 · Render contracts [domain, internal, Templates]
 - Status: done
@@ -54,7 +55,7 @@
 - Methods: `buildPitchLandscapeFormalTemplateDoc` + bootstrap upsert
 - Deps: TemplatesRepository; `.../pitch-landscape-formal/pitch-landscape-formal.catalog.ts`
 - Side effects: Mongo upsert on boot
-- Rules: active; shares pitch-landscape disk `basePath`; own catalog file (lengths currently match pitch); formal theme tokens
+- Rules: active; shares pitch-landscape disk `basePath`; own catalog file (lengths currently match pitch); formal theme tokens; `requiredKeys` include `about_workspace`
 
 ### SVC-TPL-07 · List active templates [domain, internal, Templates]
 - Status: done
@@ -74,6 +75,7 @@
   - Continuous scrolling landing HTML from `05.smart-watch` style language (not 16:9 slides)
   - **Own** section `contentSchema` lengths (tighter research/card fields vs pitch)
   - Tokens black/mint/gray; Mona Sans + Cairo/Tajawal
+  - `requiredKeys` include `about_workspace`; sticky header = client branding; footer = workspace
   - Canonical keep-list includes website (bootstrap + `seed-templates.js` via `buildAllTemplateDocs`)
 
 ### SVC-TPL-09 · Catalog registry [domain, internal, Templates]

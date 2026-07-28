@@ -10,8 +10,8 @@ _Last updated: 2026-07-28_
 |-------------|------:|
 | drafted | 0 |
 | in-progress | 0 |
-| verified | 4 |
-| merged | 32 |
+| verified | 3 |
+| merged | 33 |
 | cancelled | 0 |
 | blocked | 0 |
 
@@ -19,7 +19,6 @@ _Last updated: 2026-07-28_
 
 | # | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |---|------|------|---------|------------|-------------|----------------|-------|--------|
-| 036 | 2026-07-28 | modify-feature | REQ-PROP-V3 | — | verified | 5/5 | Client-first pitch branding + workspace intro (bug-014) | `change-036-client-first-pitch-branding/` |
 | 034 | 2026-07-28 | polish | — | — | verified | 1/1 | Proposal View action toolbar redesign | `change-034-polish-proposal-view-actions/` |
 | 029 | 2026-07-28 | polish | — | — | verified | 2/2 | Status tag colors + AI Requests `retrying`→`inprogress` label | `change-029-polish-status-tag-colors/` |
 | 028 | 2026-07-28 | modify-feature | REQ-MODEL-ROUTE | — | verified | 5/5 | Pipeline v3 model routing via DB config + seed | `change-028-pipeline-model-routing-config/` |
@@ -28,6 +27,7 @@ _Last updated: 2026-07-28_
 
 | # | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |---|------|------|---------|-------------|-------|--------|--------|
+| 036 | 2026-07-28 | modify-feature | REQ-PROP-V3 | merged | Client-first pitch branding + workspace intro (bug-014) | `change-036-client-first-pitch-branding/` | 2026-07-28 |
 | 037 | 2026-07-28 | new-feature | REQ-TEMPLATE | merged | `roya-presentation` HAIA-from-scratch + locked palette + team/risks | `change-037-roya-presentation-template/` | 2026-07-28 |
 | 035 | 2026-07-28 | modify-feature | REQ-FIN-UNIFY | merged | Unify v3 standalone financial HTML with v2 commercial design | `change-035-unify-financial-v2-design/` | 2026-07-28 |
 | 002 | 2026-07-26 | bug-fix | REQ-R | merged | API PermissionGuard parity w/ seed+FE | `change-002-r-api-permission-parity/` | 2026-07-28 |

@@ -4,7 +4,7 @@
 
 | # | Date | Severity | Area | Summary | Status | File / Change pack |
 |---|------|----------|------|---------|--------|--------------------|
-| 014 | 2026-07-28 | high | Pipeline v3 assemble / branding | Zid proposal cover shows PayUp (workspace) not client logo | ESCALATED | `change-036-client-first-pitch-branding/` (pack-status: verified) |
+| 014 | 2026-07-28 | high | Pipeline v3 assemble / branding | Zid proposal cover shows PayUp (workspace) not client logo | DONE | `change-036-client-first-pitch-branding/` (merged 2026-07-28) |
 | 013 | 2026-07-28 | high | Proposal View | v2 technical blank; financial OK (rendered-only resolve) | DONE | `bug-013-v2-technical-missing-on-view.md` |
 | 012 | 2026-07-28 | high | Pipeline v2 financials | Financials still fails: Arabic comma / bidi marks | PENDING | `bug-012-financials-arabic-comma-validation.md` |
 | 011 | 2026-07-28 | high | Creative Pipeline v2 | HTML repair uses non-stream Claude; fails on >10min | FIXED (await confirm) | `bug-011-creative-v2-html-repair-timeout.md` |

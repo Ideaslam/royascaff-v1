@@ -21,10 +21,10 @@
 ### SVC-PIPE-AM-03 · MapOrchestrator [domain, internal, PipelineV3]
 - Status: done
 - Methods:
-  - `runMap(job)` — DNA + abstract catalog; AI map; validate map.v1 + researchCoverageGate; inject/repair; write `proposal.sectionMap`; status `mapped`
+  - `runMap(job)` — DNA + abstract catalog; AI map; validate map.v1 + researchCoverageGate; inject/repair; **ensure `about_workspace`** before footer; write `proposal.sectionMap`; status `mapped`
 - Deps: ProposalsRepository, ProjectsRepository, catalog, Claude, traces
 - Side effects: async, external API
-- Rules: cover first, footer last, financial present; competitor → N instances; max 28 sections; fail closed on template gap
+- Rules: cover first, footer last, financial + **about_workspace** present (inject if AI omits); competitor → N instances; max 28 sections; fail closed on template gap
 
 ### SVC-PIPE-AM-04 · ResearchCoverageGate [domain, internal, PipelineV3]
 - Status: done

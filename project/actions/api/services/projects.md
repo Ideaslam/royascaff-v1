@@ -3,7 +3,8 @@
 ### SVC-PROJECTS-01 · ProjectsDataService [domain, internal, Projects]
 - Status: done
 - Methods:
-  - `create` — project + **first DNA version** (`dnaTitle` or `DNA v1`); returns project with `dnaVersion`
+  - `create` — project + **first DNA version** (`dnaTitle` or `DNA v1`); seed Clients.`logoUrl` as `purpose: client_logo` image when missing; returns project with `dnaVersion`
+  - `createDnaVersion` / internal — same logo seed when images lack `client_logo`
   - `list` / `get` / `update` / `archive` / `updateShell`
   - `createProposalFromProject` — resolve `dnaVersionId` (or latest ready); pin `dnaVersionId` + `dnaSnapshot`; services from version; enqueue analyze (with `dnaVersionId`) or map
   - DNA versions: `listDnaVersions`, `getDnaVersion`, `createDnaVersion` (blank|copyFrom), `updateDnaVersionInputs`, `renameDnaVersion`, `deleteDnaVersion` (hard; 409 if generating), `enqueueGenerateDnaVersion` (confirmOverwrite / 409), `putDnaVersionContent` (AJV dna.v2)

@@ -1,11 +1,10 @@
 # Bug #014 — Zid proposal shows PayUp name/logo on cover
 
 ## Status
-**ESCALATED** — Template redesign + client logo wiring → change pack (Path A)
+**DONE** — Resolved via `change-036-client-first-pitch-branding/` (merged 2026-07-28)
 
 ## Escalation
-Product direction: client-first pitch design (workspace intro section + footer only for agency), plus ensure `client_logo` / DNA images actually render.  
-Change pack: [`change-036-client-first-pitch-branding/`](../changes/change-036-client-first-pitch-branding/) (`pack-status: drafted`).
+Path A → [`change-036-client-first-pitch-branding/`](../changes/change-036-client-first-pitch-branding/) (`merged`)
 
 ## Reported
 - **Date**: 2026-07-28
@@ -16,9 +15,9 @@ Change pack: [`change-036-client-first-pitch-branding/`](../changes/change-036-c
 Creating a proposal for project **Zid Test Ecommerce** (client Zid) shows **PayUp** logo + name on the technical proposal cover. User expects client/DNA logo (Zid), not PayUp.
 
 ## Expected Behavior
-- Cover **agency brand-mark** may show workspace company from Settings (selling company).
-- Cover **client row** must show the proposal client name + logo from DNA/project `purpose: client_logo`, falling back to the Clients record `logoUrl` when no DNA/project logo image exists.
-- PayUp client CRM data must not replace Zid on a Zid proposal.
+- Cover and body focus on the **client** (name + logo).
+- Workspace (agency) appears in `about_workspace` + footer only.
+- Client logo from DNA/project `purpose: client_logo`, falling back to Clients.`logoUrl`.
 
 ## Steps to Reproduce (if applicable)
 1. Workspace Settings → Company name/logo set to PayUp (demo/agency).
@@ -27,23 +26,20 @@ Creating a proposal for project **Zid Test Ecommerce** (client Zid) shows **PayU
 4. Cover top brand-mark shows PayUp logo + “PayUp”.
 
 ## Root Cause
-PayUp is **not** leaking from another client’s proposal. It is the **workspace Settings** company (`companyName` / `logoUrl`) injected as `workspace_name` / `workspace_logo` on every pitch page (change-021). In Arabic RTL the brand-mark sits top-right, which reads as “the client.”
-
-Amplifying gap: `client_logo` is resolved only from DNA/project images with `purpose === "client_logo"`. **`clients.logoUrl` is never used** at assemble, and project/DNA create seeds `images: []`, so Zid’s client logo often never appears — only the PayUp workspace mark is visible.
+PayUp was **workspace Settings** branding injected on every pitch page brand-mark. Client logo often missing because assemble ignored `clients.logoUrl` and project/DNA create seeded `images: []`.
 
 ## Fix Applied
-_(pending Step 6.4)_
+Client-first templates (cover/body); new `about_workspace` section; footer keeps workspace contacts; assemble `clients.logoUrl` fallback; project/DNA logo seed; map require/inject `about_workspace`.
 
 ## Verification
-- [ ] Fix implemented in code
-- [ ] No regressions introduced
-- [ ] User confirmed fix resolves the issue
+- [x] Fix implemented in code
+- [x] No regressions introduced
+- [x] User confirmed verify PASS / merge
 
 ## Related Files
 - `roya-sales-ai-api-v2/src/pipeline-v3/assemble/assemble.service.ts`
-- `roya-sales-ai-api-v2/src/services/data/projects.data.service.ts` (optional seed)
-- `roya-sales-ai-api-v2/src/services/data/clients.data.service.ts` / clients repository
-
-## Triage
-- **Path B** — isolated assemble (+ optional project-create seed); no migration; no multi-app plan rewrite required.
-- Plan note: main blueprint still says `client_logo` from purpose image only; fix extends with Clients.logoUrl fallback without editing main plan (Path B rule). Escalate to Path A only if product wants to remove/hide workspace branding entirely.
+- `roya-sales-ai-api-v2/src/services/data/projects.data.service.ts`
+- `roya-sales-ai-api-v2/src/pipeline-v3/map/map-orchestrator.service.ts`
+- `roya-sales-ai-api-v2/templates/pitch-landscape/v1/partials/*`
+- `roya-sales-ai-api-v2/templates/website-template/v1/*`
+- Catalogs + fixtures under `pipeline-v3/templates/`

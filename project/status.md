@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-07-28 — after change-037 `roya-presentation` template merge_
+_Last updated: 2026-07-28 — after change-036 client-first pitch branding merge (bug-014 DONE)_
 
 ## Snapshot
 

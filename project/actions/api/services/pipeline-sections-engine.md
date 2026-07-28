@@ -76,7 +76,8 @@
   | `workspace_logo` | settings.logoUrl |
   | `workspace_email` / `workspace_phone` / `workspace_address` | settings |
   | `client_name` | proposal/project clientName |
-  | `client_logo` | first `project.images` with `purpose === 'client_logo'` |
+  | `client_logo` | (1) first DNA/project image `purpose === 'client_logo'` → (2) else Clients.`logoUrl` for proposal/project `clientId` → (3) `""` |
+- Placement (disk templates): cover + interior = **client-first** (no per-page workspace brand-mark); workspace chrome in `about_workspace` + footer; website sticky header uses client branding
 - Theme colors (`themeOverrides` → `--color-primary|secondary|accent|surface|text`):
   | theme key | Source |
   |-----------|--------|
@@ -89,9 +90,9 @@
   - When source is palette/logo, missing secondary/accent never fall back to Roya navy/sky
   - Precedence: DNA roles fill all five slots; explicit non-empty `proposal.themeOverrides` key wins
   - **Palette lock:** if `tplDoc.theme.lockPalette === true` (e.g. `roya-presentation`), skip DNA + proposal theme overrides entirely (future pack may selectively inject DNA colors)
-- Deps: TemplateRenderService, PdfRenderService, ProposalsRepository, ProjectsRepository, SettingsDataService, TemplatesRepository
+- Deps: TemplateRenderService, PdfRenderService, ProposalsRepository, ProjectsRepository, ProjectDnaVersionsRepository, SettingsDataService, TemplatesRepository, **ClientsRepository**
 - Side effects: CPU, browser
-- Rules: no AI; missing logos → empty string (templates `{{#if}}`); never inject product “Safqa” fallback; failed sections omitted from deck (Ready with gaps); if none ready → fail without export
+- Rules: no AI; missing logos → empty string (templates `{{#if}}`); Clients lookup fail → warn + empty `client_logo`; never inject product “Safqa” fallback; failed sections omitted from deck (Ready with gaps); if none ready → fail without export
 
 ### SVC-PIPE-S3-06 · ExportService [domain, internal, PipelineV3]
 - Status: done
