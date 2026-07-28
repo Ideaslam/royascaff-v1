@@ -580,8 +580,8 @@ One collection per uploaded CSV file. `{fileId}` is the 24-char hex string of `c
 
 ---
 
-## datasource_type_meta *(change-048, change-072)*
-Purpose: global lookup table for data source type display metadata — one document per `DataSourceType` enum value. Seeded via manual script. Managed by admins; consumed by the customer portal.
+## datasource_type_meta *(change-048, change-072, change-073)*
+Purpose: global lookup table for data source type display metadata — one document per `DataSourceType` enum value. Seeded insert-if-missing on API container start. Managed by admins; consumed by the customer portal.
 Collection: `datasource_type_meta` (global — not workspace-scoped)
 
 | Field | Type | Constraints | Ref |
@@ -598,8 +598,8 @@ Collection: `datasource_type_meta` (global — not workspace-scoped)
 | `createdAt` | Date | auto | — |
 | `updatedAt` | Date | auto | — |
 
-**Indexes:** `{ sourceType: 1 }` unique (natural PK for upserts) · `{ isActive: 1 }`
-**Seed:** idempotent upsert by `sourceType`; script: `npm run seed:datasource-types` (manual, not run on app start); seeds set `comingSoon: false`
+**Indexes:** `{ sourceType: 1 }` unique (natural PK for insert-if-missing) · `{ isActive: 1 }`
+**Seed:** insert-if-missing by `sourceType` (skip when row exists — never overwrites existing rows); scripts: `npm run seed:datasource-types` (local ts-node), `npm run seed:datasource-types:prod` (compiled `dist/…`); API `Dockerfile.build` runs the prod seed before `node dist/main`; seeds set `comingSoon: false`
 **Rules:** No create/delete API endpoints — the set of types is fixed to the `DataSourceType` enum · Admin can update all display fields + `isActive` + `comingSoon` via PATCH · `isActive = false` hides the type from the customer portal picker · `isActive = true` + `comingSoon = true` shows the type as non-selectable with a Coming soon badge · existing Connection / DataSource records for disabled or coming-soon types remain usable (guards apply to new create / OAuth start only)
 
 ---
