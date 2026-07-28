@@ -1,9 +1,10 @@
 # Bug Log
 
-> Next bug number: 011
+> Next bug number: 012
 
 | # | Date | Severity | Area | Summary | Status | File / Change pack |
 |---|------|----------|------|---------|--------|--------------------|
+| 011 | 2026-07-28 | high | Pipeline v2 financials | Financials still fails: Arabic comma / bidi marks | PENDING | `bug-011-financials-arabic-comma-validation.md` |
 | 010 | 2026-07-28 | high | Pipeline v2 financials | Section batch fails: grand total validation too strict | DONE | `bug-010-financials-grand-total-validation.md` |
 | 009 | 2026-07-28 | high | Projects + pipeline DNA | Selected 8 research options filtered to 3 on generate | DONE | `bug-009-research-options-filtered-to-three.md` |
 | 008 | 2026-07-28 | medium | Project workspace DNA table | DNA version rows missing View button | DONE | `bug-008-dna-row-missing-view-button.md` |
