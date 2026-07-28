@@ -1,4 +1,4 @@
-# Bug #011 — Financials validation still fails (Arabic comma / bidi marks)
+# Bug #012 — Financials validation still fails (Arabic comma / bidi marks)
 
 ## Status
 **PENDING** — Fix in progress
@@ -22,8 +22,9 @@ Accept common Arabic formatting of the same numeric totals (Arabic thousands com
 `contentContainsAmount` allowed `,` / `٬` but not Arabic comma `،` (U+060C), and did not strip bidi/zero-width characters (RLM/ZWSP) between digits — common in RTL HTML/JSON from the model.
 
 ## Fix Applied
-1. Hardened `contentContainsAmount`: strip bidi/zero-width chars; treat Arabic comma `،` (U+060C) and `_`/`/`/`-` as thousand separators. Added unit tests for Arabic-comma totals.
-2. Prompt guardrails: section + final HTML + repair instruct the model to use **Western digits only (0-9)** and copy financial amounts literally from source (no ٠-٩ / Arabic comma in numbers).
+1. Hardened `contentContainsAmount` (Arabic digits/comma/bidi) + prompt western-digit rules.
+2. **Numeric money parse** so decimals like `9,343.75` match `9343.75` / Arabic forms.
+3. **Stamp canonical western totals** from `source.services` onto financials `content` before validate — AI omit/reformat no longer fails the section batch.
 
 
 ## Verification
