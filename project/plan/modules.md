@@ -85,7 +85,7 @@
 9. **Prompt packs (dna/research/map/section/translate)** [backend-only] — production packs under `pipeline-v3/prompts/` including full research set
 10. **Section fan-out (Step 3)** [backend-only] — parallel `pipeline.section`; template-scoped contentSchema + `lengthBudgets` (aim 90%); clamp-first + soft max (+10%) AJV + richness; per-section fail/retry (length-only overshoots clamp, no retry)
 11. **Assemble (Step 4)** [backend-only] — Handlebars + financial inject + workspace/client branding (`workspace_*` from Settings, `client_logo` from first `purpose: client_logo` image) + overflow guard + PDF (no AI); uses `generation.language`
-12. **Export (Step 5)** [backend-only] — S3 HTML/PDF → `renderedByLang`; `ready` / `partially_failed`
+12. **Export (Step 5)** [backend-only] — S3 HTML/PDF → `renderedByLang`; `ready` / `partially_failed`; standalone `financial.html` uses the **v2 commercial template** (API-ported `financial_template.html`); pitch-deck `financial.hbs` unchanged; totals code-computed
 13. **Orchestration engine** [backend-only] — Mongo fan-in after sections; idempotent workers; reconciler ~60s; durable resume from Mongo checkpoints when Redis/app interrupted
 14. **Workspace v3 feature flag** [both] — `settings.pipelineV3Enabled` default **true**; gates create-from-project + regen/translate/rerender + FE Projects create; soft-blocks new creative **aiJobs** (unified v2 create remains available)
 15. **Translate section jobs** [backend-only] — fast model (`translate`); same template-scoped validate/clamp + lengthBudgets; glossary rules; fan-in → assemble/export

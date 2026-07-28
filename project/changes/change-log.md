@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-28_
 
-> Next change number: 035
+> Next change number: 036
 
 ## Summary
 
@@ -11,7 +11,7 @@ _Last updated: 2026-07-28_
 | drafted | 0 |
 | in-progress | 0 |
 | verified | 3 |
-| merged | 30 |
+| merged | 31 |
 | cancelled | 0 |
 | blocked | 0 |
 
@@ -27,6 +27,7 @@ _Last updated: 2026-07-28_
 
 | # | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |---|------|------|---------|-------------|-------|--------|--------|
+| 035 | 2026-07-28 | modify-feature | REQ-FIN-UNIFY | merged | Unify v3 standalone financial HTML with v2 commercial design | `change-035-unify-financial-v2-design/` | 2026-07-28 |
 | 002 | 2026-07-26 | bug-fix | REQ-R | merged | API PermissionGuard parity w/ seed+FE | `change-002-r-api-permission-parity/` | 2026-07-28 |
 | 001 | 2026-07-26 | bug-fix | REQ-R | merged | Enable MainLayout authGuard | `change-001-r-enable-web-auth-guard/` | 2026-07-28 |
 | 003 | 2026-07-26 | general | REQ-R | merged | API .env.example | `change-003-r-env-example/` | 2026-07-28 |

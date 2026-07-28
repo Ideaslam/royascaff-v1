@@ -95,10 +95,19 @@
 ### SVC-PIPE-S3-06 · ExportService [domain, internal, PipelineV3]
 - Status: done
 - Methods:
-  - `runExport(job)` — promote assemble staging into `renderedByLang[lang]`; upload standalone **financial.html** (builder from proposal/project services+totals); upsert `technical*Url*` + `financial*Url*` for that lang; set `type: 'creative'`; status `ready` or `partially_failed`
-- Deps: S3Service, ProposalsRepository, ProjectsRepository, `financial-html.builder`
+  - `runExport(job)` — promote assemble staging into `renderedByLang[lang]`; upload standalone **financial.html** via **v2 commercial template** (cover, services, distribution, payment phases, terms, bank/signature — API-ported `financial_template.html`); upsert `technical*Url*` + `financial*Url*` for that lang; set `type: 'creative'`; status `ready` or `partially_failed`
+- Deps: S3Service, ProposalsRepository, ProjectsRepository, SettingsDataService, `financial-html.builder` → `renderFinancialDocumentHtml`
 - Side effects: file (S3)
-- Rules: retryable independently; do not re-run assemble on export retry unless artifacts missing; merge URL maps per-lang (do not wipe other languages); financial upload required for creative list/send parity
+- Rules: retryable independently; do not re-run assemble on export retry unless artifacts missing; merge URL maps per-lang (do not wipe other languages); financial upload required for creative list/send parity; totals remain code-computed; pitch-deck `financial.hbs` unchanged; cover/fonts embedded as data URIs from `templates/financial-document/`
+
+### SVC-PIPE-FIN-DOC · Financial document renderer [domain, internal]
+- Status: done
+- Methods:
+  - `renderFinancialDocumentHtml(data)` — token-replace commercial template (AR/EN); services table, chart, 50/30/20 phases
+  - `financialTotalsFromProposal(proposal, project)` — code-computed money inputs
+- Deps: `templates/financial-document/financial_template.html` + cover/font assets
+- Side effects: none (pure string)
+- Rules: parity with FE `FinancialTemplateService`; no AI
 
 ### SVC-PIPE-S3-07 · PipelineReconciler [infrastructure, internal, PipelineV3]
 - Status: done
