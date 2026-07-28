@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-07-28 — after change-036 client-first pitch branding merge (bug-014 DONE)_
+_Last updated: 2026-07-28 — after change-20260728-000036 client-first pitch branding merge (bug-20260728-000014 DONE)_
 
 ## Snapshot
 
@@ -53,7 +53,7 @@ _Last updated: 2026-07-28 — after change-036 client-first pitch branding merge
 
 ## Next Up (roadmap, ordered)
 
-1. Optional: seed `service.*` / `contract.*` permission keys + guards (deferred from change-002)
+1. Optional: seed `service.*` / `contract.*` permission keys + guards (deferred from change-20260726-000002)
 2. Remaining deferred roadmap items (auth already restored; see Deferred table)
 
 ## Deferred (`deferred`)

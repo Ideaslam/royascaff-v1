@@ -5,7 +5,7 @@
 - **Issuance**: `POST /api/auth/login` / refresh / register flows
 - **Storage (web)**: localStorage `auth_session_v1` {`idToken`, `refreshToken`, `expiresAtMs`}; user snapshot `currentUser`
 - **Guards (API)**: `WorkspaceAuthGuard` (verify JWT, load user/workspace tenant context); `PermissionGuard('key')` mixin; `OwnershipGuard` where used
-- **Guards (Web)**: `authGuard` on MainLayout (REQ-R change-001); `authInterceptor` clears session on 401 → `/login`; `maintenanceGuard` / `maintenancePageGuard`
+- **Guards (Web)**: `authGuard` on MainLayout (REQ-R change-20260726-000001); `authInterceptor` clears session on 401 → `/login`; `maintenanceGuard` / `maintenancePageGuard`
 - **Password**: bcrypt hashes
 - **Multi-tenant**: `workspaceId` on JWT/user; Mongo tenant filter on isolated collections
 

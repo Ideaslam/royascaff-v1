@@ -32,5 +32,5 @@
 ### MainLayout shell (routing)
 - Route: `''` → `MainLayoutComponent` (all authenticated app children)
 - Status: done
-- Guard: `authGuard` (REQ-R change-001) — unauthenticated → `/login`
+- Guard: `authGuard` (REQ-R change-20260726-000001) — unauthenticated → `/login`
 - Notes: public auth + `/client/proposals/:id` + `/maintenance` stay outside this shell

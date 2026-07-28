@@ -1,6 +1,6 @@
 # Pages Registry — Safqa Web
 
-> Angular 18 routes from `app.routes.ts`. Main layout uses `canActivate: [authGuard]` (REQ-R change-001).
+> Angular 18 routes from `app.routes.ts`. Main layout uses `canActivate: [authGuard]` (REQ-R change-20260726-000001).
 
 | Module | File | Route prefix | Status | Done/Total | Purpose |
 |--------|------|--------------|--------|-----------|---------|

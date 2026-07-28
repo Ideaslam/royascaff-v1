@@ -176,7 +176,7 @@ Files: `mongodb-service-categories.repository.ts`, `lib/defaults/service-categor
 ## 9. proposals
 Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), generation linkage
 
-**Shared collection for Pipeline v2 + v3.** Archive / editor / list / send consumers use one **shared shell**; engines differ only in how content is produced and which engine-specific fields they fill (`REQ-PROP-UNIFY` / change-031).
+**Shared collection for Pipeline v2 + v3.** Archive / editor / list / send consumers use one **shared shell**; engines differ only in how content is produced and which engine-specific fields they fill (`REQ-PROP-UNIFY` / change-20260728-000031).
 
 **Shared shell** (both engines when data exists): `client*`, `projectName`/`title`, money fields, `services`, `pipelineVersion`, `projectId`, `dnaVersionId`/`dnaSnapshot`, `language`, `generationStatus`, technical/financial URL maps (+ html mirrors), `generation`.
 
@@ -426,7 +426,7 @@ Files: `mongodb-queue.gateway.ts`, `models/ai-job.model.ts` (`JobQueuePayload`)
 ---
 
 ## 15. projects
-Purpose: container for one client engagement (shell + optional legacy mirrored inputs). **Canonical inputs + DNA live on `project_dna_versions`** (change-026).
+Purpose: container for one client engagement (shell + optional legacy mirrored inputs). **Canonical inputs + DNA live on `project_dna_versions`** (change-20260727-000026).
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|

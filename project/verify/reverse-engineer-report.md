@@ -131,9 +131,9 @@
 
 | Item | Action |
 |------|--------|
-| Enable web authGuard | **Fix in code** → `change-001-r-enable-web-auth-guard` |
-| API PermissionGuard parity | **Fix in code** → `change-002-r-api-permission-parity` |
-| Add `.env.example` | **Fix in code** → `change-003-r-env-example` |
+| Enable web authGuard | **Fix in code** → `change-20260726-000001-r-enable-web-auth-guard` |
+| API PermissionGuard parity | **Fix in code** → `change-20260726-000002-r-api-permission-parity` |
+| Add `.env.example` | **Fix in code** → `change-20260726-000003-r-env-example` |
 | OpenAI/Gemini stubs | **Mark as tech debt / deferred** in status.md |
 | Server PDF / pipeline v3 | **Out of REQ-R** — use Phase 5 against `docs/refactor-proposal-generator.md` |
 | Schema-less Mongo | **Accept** (document) |
@@ -144,7 +144,7 @@
 
 ## 9. Recommended Next Steps
 
-1. Implement **REQ-R** packs in order via `/change-mode` starting with `change-001-r-enable-web-auth-guard`.
+1. Implement **REQ-R** packs in order via `/change-mode` starting with `change-20260726-000001-r-enable-web-auth-guard`.
 2. Harden API permission guards to match FE + seed keys.
 3. Add API `.env.example` for onboarding.
 4. Keep OpenAI/Gemini and server-PDF work out of emergency security packs — schedule as product changes.
