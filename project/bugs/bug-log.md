@@ -68,10 +68,11 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 | 039 | 2026-07-19 | high | customer-portal/settings/workspace | Workspace slug editable — breaks data sources and tables | DONE | [bug-039-workspace-slug-not-editable.md](./bug-039-workspace-slug-not-editable.md) |
 | 040 | 2026-07-19 | high | backend/sql-server, pipelines/streaming | SQL Server sync stops at 2000 rows | DONE | [bug-040-sql-server-sync-stops-at-2000.md](./bug-040-sql-server-sync-stops-at-2000.md) |
+| 041 | 2026-07-19 | medium | backend/pipelines, connectors, frontend/data | Sync progress not based on row counts | DONE | [bug-041-sync-progress-row-based.md](./bug-041-sync-progress-row-based.md) |
 
 ## Next Bug Number
 
-**Next**: 041
+**Next**: 042
 
 | 038 | 2026-07-15 | medium | backend/integrations/connectors, data pipeline | Dotted column names (Google Ads, Mongo) misaligned with storage schema | DONE | [bug-038-flatten-dotted-column-names.md](./bug-038-flatten-dotted-column-names.md) |
 
