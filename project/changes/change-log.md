@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-28_
 
-> Next change number: 028
+> Next change number: 029
 
 ## Summary
 
@@ -10,7 +10,7 @@ _Last updated: 2026-07-28_
 |-------------|------:|
 | drafted | 3 |
 | in-progress | 0 |
-| verified | 1 |
+| verified | 2 |
 | merged | 22 |
 | cancelled | 0 |
 | blocked | 1 |
@@ -19,6 +19,7 @@ _Last updated: 2026-07-28_
 
 | # | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |---|------|------|---------|------------|-------------|----------------|-------|--------|
+| 028 | 2026-07-28 | modify-feature | REQ-MODEL-ROUTE | — | verified | 5/5 | Pipeline v3 model routing via DB config + seed | `change-028-pipeline-model-routing-config/` |
 | 024 | 2026-07-27 | modify-feature | REQ-PROP-V3 | — | verified | 3/3 | Aim 90% + soft 10% + clamp-to-max length validation | `change-024-section-length-validation-tolerance/` |
 | 001 | 2026-07-26 | bug-fix | REQ-R | — | drafted | 0/1 | Enable MainLayout authGuard | `change-001-r-enable-web-auth-guard/` |
 | 002 | 2026-07-26 | bug-fix | REQ-R | change-001 | blocked | 0/2 | API PermissionGuard parity w/ seed+FE | `change-002-r-api-permission-parity/` |
