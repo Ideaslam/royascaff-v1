@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-28_
 
-> Next change number: 036
+> Next change number: 038
 
 ## Summary
 
@@ -10,7 +10,7 @@ _Last updated: 2026-07-28_
 |-------------|------:|
 | drafted | 0 |
 | in-progress | 0 |
-| verified | 3 |
+| verified | 5 |
 | merged | 31 |
 | cancelled | 0 |
 | blocked | 0 |
@@ -19,6 +19,8 @@ _Last updated: 2026-07-28_
 
 | # | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |---|------|------|---------|------------|-------------|----------------|-------|--------|
+| 037 | 2026-07-28 | new-feature | REQ-TEMPLATE | — | verified | 5/5 | `roya-presentation` HAIA-from-scratch layouts + locked palette + team/risks | `change-037-roya-presentation-template/` |
+| 036 | 2026-07-28 | modify-feature | REQ-PROP-V3 | — | verified | 5/5 | Client-first pitch branding + workspace intro (bug-014) | `change-036-client-first-pitch-branding/` |
 | 034 | 2026-07-28 | polish | — | — | verified | 1/1 | Proposal View action toolbar redesign | `change-034-polish-proposal-view-actions/` |
 | 029 | 2026-07-28 | polish | — | — | verified | 2/2 | Status tag colors + AI Requests `retrying`→`inprogress` label | `change-029-polish-status-tag-colors/` |
 | 028 | 2026-07-28 | modify-feature | REQ-MODEL-ROUTE | — | verified | 5/5 | Pipeline v3 model routing via DB config + seed | `change-028-pipeline-model-routing-config/` |
