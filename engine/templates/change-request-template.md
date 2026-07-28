@@ -17,8 +17,8 @@ Structured interview to capture a change request. The AI interviews the user, th
 - **priority**: [high | medium | low]
 - **request-id**: [REQ-N | —]          # shared id when a feature is split across packs
 - **part**: [N/M | —]                  # this pack's part within the request
-- **depends-on**: [change-NNN | —]     # must be verified/merged before implement
-- **blocks**: [change-NNN | —]         # optional reverse hint
+- **depends-on**: [change-<ID> | —]     # must be verified/merged before implement
+- **blocks**: [change-<ID> | —]         # optional reverse hint
 - **pack-status**: [drafted | in-progress | verified | merged | cancelled | blocked]
 
 ## Scope
@@ -63,7 +63,7 @@ Structured interview to capture a change request. The AI interviews the user, th
 
 ## Isolation reminder
 
-Specs for this change go under `change-<NNN>-<slug>/blueprint/` — **not** into main `project/plan` or `project/actions` until merge. Register the pack in `project/changes/change-log.md` immediately.
+Specs for this change go under `change-<ID>-<slug>/blueprint/` — **not** into main `project/plan` or `project/actions` until merge. Register the pack in `project/changes/change-log.md` immediately.
 
 ## Example
 
@@ -78,7 +78,7 @@ Specs for this change go under `change-<NNN>-<slug>/blueprint/` — **not** into
 - **priority**: high
 - **request-id**: REQ-3
 - **part**: 2/2
-- **depends-on**: change-010
+- **depends-on**: change-20260622-143010
 - **blocks**: —
 - **pack-status**: drafted
 

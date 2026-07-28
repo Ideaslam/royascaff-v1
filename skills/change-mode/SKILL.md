@@ -18,7 +18,7 @@ description: >-
 
 ## Isolation (critical)
 
-- Draft specs under `change-<NNN>-<slug>/blueprint/` only.
+- Draft specs under `change-<ID>-<slug>/blueprint/` only.
 - **Do not** edit main `project/plan` or `project/actions` until Step 5.6 Merge.
 - Sync `pack-status` into `change-log.md` on every transition.
 
@@ -45,7 +45,7 @@ description: >-
 
 ```text
 project/changes/change-log.md          # live index
-project/changes/change-<NNN>-<slug>/
+project/changes/change-<ID>-<slug>/
   change-request.md
   impact.md
   status.md

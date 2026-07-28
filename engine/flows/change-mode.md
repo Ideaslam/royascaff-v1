@@ -19,7 +19,7 @@ Phase 5 is independent of Phases 0–4. Use it any time after a blueprint exists
 ## Work pack layout
 
 ```text
-project/changes/change-<NNN>-<slug>/
+project/changes/change-<ID>-<slug>/
   change-request.md
   impact.md
   status.md                 # engine/templates/change-status-template.md
@@ -32,7 +32,7 @@ project/changes/change-<NNN>-<slug>/
   merge-report.md           # after merge
 ```
 
-`<NNN>` = next number from `change-log.md`. Register every pack in `change-log.md` immediately (template: `engine/templates/change-log-template.md`).
+`<ID>` = local datetime `YYYYMMDD-HHMMSS` at creation (see `engine/project-layout.md` → Pack and bug IDs). **Never** use sequential counters. Register every pack in `change-log.md` immediately (template: `engine/templates/change-log-template.md`).
 
 ---
 
@@ -107,7 +107,7 @@ Present pack blueprint + code file list. Ask: **"Can I proceed?"** Wait for expl
 
 ### Entry Point
 
-Create `project/changes/change-<NNN>-<slug>/` from `engine/templates/change-request-template.md`, or describe the change in plain language and run Step 5.0.
+Create `project/changes/change-<ID>-<slug>/` from `engine/templates/change-request-template.md`, or describe the change in plain language and run Step 5.0.
 
 ---
 
@@ -220,9 +220,9 @@ Wait for explicit confirmation.
 
 ### Step 5.3 — Draft Pack Blueprint (not main)
 
-Write specs **only** under `change-<NNN>-<slug>/blueprint/`.
+Write specs **only** under `change-<ID>-<slug>/blueprint/`.
 
-> **Never edit main plan/action files here.** Never append `change-<NNN>` sections to main files.
+> **Never edit main plan/action files here.** Never append `change-<ID>` sections to main files.
 
 - **Templates**: existing services/endpoints/pages/views/modules/data-model templates, scoped to delta content; `change-blueprint-index-template.md`; `change-status-template.md`.
 

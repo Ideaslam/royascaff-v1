@@ -1,12 +1,12 @@
 # Bug Report Template
 
-Use this template when creating a bug report file in `project/bugs/bug-<NNN>-<slug>.md`.
+Use this template when creating a bug report file in `project/bugs/bug-<ID>-<slug>.md`.
 
 Copy everything below the line into the new bug file and fill in each section.
 
 ---
 
-# Bug #<NNN> — <Short Title>
+# Bug <ID> — <Short Title>
 
 ## Status
 **PENDING** — Fix in progress, awaiting confirmation

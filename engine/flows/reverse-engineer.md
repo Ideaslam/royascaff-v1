@@ -633,7 +633,7 @@ Phase R documents existing code on **main** (correct). It does **not** implement
 2. From incomplete features (`partial` / missing code) and drift items marked **fix in code** / **add to plan then implement**:
    - Create one pack per coherent slice (prefer vertical module slice; group tiny fixes if tightly related)
    - `change-type`: `bug-fix` | `modify-*` | `new-feature` as appropriate
-   - Folder pattern: `change-<NNN>-r-<slug>/`
+   - Folder pattern: `change-<ID>-r-<slug>/` (unique datetime `<ID>` per pack — see `project-layout.md`)
    - Slice pack `blueprint/` from main for owned artifacts; register `drafted` or `blocked`
 3. Write `build-program.md` with ordered packs, Progress, and **Next pack**.
 4. **Do not** implement packs inside Phase R. Never “fix all drift now” in one session.

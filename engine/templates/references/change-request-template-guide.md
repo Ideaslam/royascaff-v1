@@ -4,7 +4,7 @@
 
 ## How to Use
 
-**Path 1 — User fills it.** Create `project/changes/change-<NNN>-<slug>/change-request.md` from the template block, replace placeholders, tell AI "Start Phase 5".
+**Path 1 — User fills it.** Create `project/changes/change-<ID>-<slug>/change-request.md` from the template block, replace placeholders, tell AI "Start Phase 5".
 
 **Path 2 — AI interviews you (default).** Describe the change in one sentence. AI runs the structured Discovery Interview, drafts `change-request.md`, and asks for confirmation before proceeding.
 

@@ -1,11 +1,11 @@
 # Merge Report Template
 
-Written at Step 5.6 / P.5 after verify PASS. Lives at `project/changes/change-<NNN>-<slug>/merge-report.md`.
+Written at Step 5.6 / P.5 after verify PASS. Lives at `project/changes/change-<ID>-<slug>/merge-report.md`.
 
 ## Schema
 
 ```md
-# Merge Report — change-<NNN>-<slug>
+# Merge Report — change-<ID>-<slug>
 
 - **Merged date**: YYYY-MM-DD
 - **pack-status**: merged

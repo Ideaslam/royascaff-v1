@@ -1,13 +1,13 @@
 # Change Blueprint Index Template
 
-Registry of everything this work pack owns. Lives at `project/changes/change-<NNN>-<slug>/blueprint/_index.md`.
+Registry of everything this work pack owns. Lives at `project/changes/change-<ID>-<slug>/blueprint/_index.md`.
 
 Load this first inside the pack; then open only the listed blueprint files. Do not edit main `project/plan` or `project/actions` until merge.
 
 ## Schema
 
 ```md
-# Blueprint Index — change-<NNN>-<slug>
+# Blueprint Index — change-<ID>-<slug>
 
 > Pack owns only the artifacts below. Status: `planned` · `partial` · `done` · `deferred`.
 

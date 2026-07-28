@@ -32,7 +32,7 @@ Polish is **not** a bug (nothing is broken) and **not** a full feature change. I
 ## Pack layout
 
 ```text
-project/changes/change-<NNN>-polish-<slug>/
+project/changes/change-<ID>-polish-<slug>/
   change-request.md      # change-type: polish
   impact.md              # abbreviated — pages/components/files only
   status.md
@@ -60,9 +60,9 @@ Register in `change-log.md` with Type `polish`. Sync pack-status on every transi
 
 ## P.1 — Create pack + index row
 
-- **Output**: `change-<NNN>-polish-<slug>/change-request.md` + `change-log.md` row
+- **Output**: `change-<ID>-polish-<slug>/change-request.md` + `change-log.md` row
 - **Actions**:
-  1. Next number from change-log (create log from `change-log-template.md` if missing).
+  1. Mint datetime `<ID>` (`YYYYMMDD-HHMMSS`; see `project-layout.md`). Create log from `change-log-template.md` if missing.
   2. Fill metadata: `change-type: polish`, `pack-status: drafted`, scope = pages/views only.
   3. Acceptance criteria = observable visual outcomes (e.g. "primary CTA uses brand token", "form fields aligned").
   4. Optional: screenshot / Figma links in Notes.
@@ -119,4 +119,4 @@ Ask: **"Verify PASS. Merge polish notes into main page/view specs?"**
 
 ## Phase P — Done
 
-Polish pack merged (or left `verified` if user deferred merge). For another polish, create the next `change-<NNN>-polish-<slug>/` pack.
+Polish pack merged (or left `verified` if user deferred merge). For another polish, create the next `change-<ID>-polish-<slug>/` pack.

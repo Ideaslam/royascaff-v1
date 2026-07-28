@@ -107,7 +107,7 @@ Rules:
 | Layer | What it tracks | When it updates |
 |-------|----------------|-----------------|
 | **Main** `project/plan`, `project/actions`, `project/status.md` | Roadmap + implemented reality (see exception) | Phase 0–2 / Phase R write; pack **merge** updates status |
-| **Pack** `changes/change-<NNN>-…/blueprint/` + `status.md` | In-flight specs + per-artifact status | While drafting and implementing |
+| **Pack** `changes/change-<ID>-…/blueprint/` + `status.md` | In-flight specs + per-artifact status (`<ID>` = `YYYYMMDD-HHMMSS`, never sequential) | While drafting and implementing |
 | **Index** `changes/change-log.md` | Every pack's `pack-status` + Artifacts done | On every pack-status transition |
 | **Build program** `changes/build-program.md` | Ordered REQ-INIT / REQ-R pack queue | Initial Build 3.0 / Phase R.Done.2 |
 | **Bugs index** `bugs/bug-log.md` | `PENDING` · `DONE` · `ESCALATED` | On every bug transition |
