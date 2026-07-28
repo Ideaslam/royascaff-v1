@@ -1,9 +1,10 @@
 # Bug Log
 
-> Next bug number: 013
+> Next bug number: 014
 
 | # | Date | Severity | Area | Summary | Status | File / Change pack |
 |---|------|----------|------|---------|--------|--------------------|
+| 013 | 2026-07-28 | high | Proposal View | v2 technical blank; financial OK (rendered-only resolve) | PENDING | `bug-013-v2-technical-missing-on-view.md` |
 | 012 | 2026-07-28 | high | Pipeline v2 financials | Financials still fails: Arabic comma / bidi marks | PENDING | `bug-012-financials-arabic-comma-validation.md` |
 | 011 | 2026-07-28 | high | Creative Pipeline v2 | HTML repair uses non-stream Claude; fails on >10min | FIXED (await confirm) | `bug-011-creative-v2-html-repair-timeout.md` |
 | 010 | 2026-07-28 | high | Pipeline v2 financials | Section batch fails: grand total validation too strict | DONE | `bug-010-financials-grand-total-validation.md` |

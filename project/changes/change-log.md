@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-28_
 
-> Next change number: 034
+> Next change number: 035
 
 ## Summary
 
@@ -10,7 +10,7 @@ _Last updated: 2026-07-28_
 |-------------|------:|
 | drafted | 0 |
 | in-progress | 0 |
-| verified | 2 |
+| verified | 3 |
 | merged | 30 |
 | cancelled | 0 |
 | blocked | 0 |
@@ -19,6 +19,7 @@ _Last updated: 2026-07-28_
 
 | # | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |---|------|------|---------|------------|-------------|----------------|-------|--------|
+| 034 | 2026-07-28 | polish | — | — | verified | 1/1 | Proposal View action toolbar redesign | `change-034-polish-proposal-view-actions/` |
 | 029 | 2026-07-28 | polish | — | — | verified | 2/2 | Status tag colors + AI Requests `retrying`→`inprogress` label | `change-029-polish-status-tag-colors/` |
 | 028 | 2026-07-28 | modify-feature | REQ-MODEL-ROUTE | — | verified | 5/5 | Pipeline v3 model routing via DB config + seed | `change-028-pipeline-model-routing-config/` |
 
