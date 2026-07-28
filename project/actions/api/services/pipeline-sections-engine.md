@@ -1,7 +1,7 @@
 # Services — Safqa API · Pipeline Sections + Engine (Phase 3)
 
 > Under `src/pipeline-v3/section/`, `assemble/`, `export/`, `reconciler/`.
-> Reuse: TemplateRenderService, PdfRenderService, S3Service, callClaudeJsonTraced, ModelResolver, PipelineTraceService, pitch-landscape catalog, PipelineQueueService.
+> Reuse: TemplateRenderService, PdfRenderService, S3Service, callClaudeJsonTraced, ModelResolver, PipelineTraceService, per-template catalog registry (`getSectionDef(key, templateKey)`), PipelineQueueService.
 
 ## Delta
 
@@ -16,12 +16,13 @@
 ### SVC-PIPE-S3-01 · SectionOrchestrator [domain, internal, PipelineV3]
 - Status: done
 - Methods:
-  - `runSection(job: { workspaceId, proposalId, projectId, runId, instanceId, language })` — load map entry + catalog contentSchema + DNA slice; AI call; AJV + richness; repair ≤2; write `proposal.sections[i]`; update `generation.steps.sections` counters
+  - `runSection(job: { workspaceId, proposalId, projectId, runId, instanceId, language })` — load map entry + **template-scoped** contentSchema (`proposal.templateKey`) + DNA slice; AI call with `lengthBudgets`; clamp-first + soft max AJV + richness; repair ≤2; write `proposal.sections[i]`; update `generation.steps.sections` counters
   - `enqueueAllSections(proposalId)` — create pending section rows from sectionMap; enqueue N `pipeline.section` jobs; set status `generating_sections`
-- Deps: ProposalsRepository, ProjectsRepository, catalog, Claude, traces, Schema compile from contentSchema
+- Deps: ProposalsRepository, ProjectsRepository, catalog registry, Claude, traces, Schema compile from template contentSchema
 - Side effects: async, external API
 - Rules:
   - Research keys get full `research.modules.*`; others get headlines only
+  - Length budgets / validate / clamp use `(templateKey × sectionKey)` — pitch ≠ website
   - Financial: AI fills non-money slots only; strip/ignore money table from AI
   - Failed section does not fail siblings; concurrency via worker concurrency (6–8)
   - Trace every AI + validation/richness

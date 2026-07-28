@@ -29,7 +29,7 @@ _Last updated: 2026-07-28 — after change-026 DNA versions merge_
 | Pipeline Regen + Translate | 6/6 | — | — | done |
 | Pipeline Traces | 2/2 | 4/4 | 3/3 | done |
 | Cutover Backfill | 1/1 | — | — | done |
-| Templates | 8/8 | 2/2 | — | done |
+| Templates | 9/9 | 2/2 | — | done |
 | AI | 3/4 | 3/4 | 1/1 | partial |
 | Contracts | 1/1 | 9/9 | 2/2 | done |
 | Roles | 1/1 | 7/7 | 1/1 | done |

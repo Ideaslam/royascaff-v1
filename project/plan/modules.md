@@ -178,12 +178,12 @@
 1. **Disk TemplateAssetResolver** [backend-only] — layout, CSS, partials from `assets.basePath`
 2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; root branding vars `workspace_*` / `client_*`; theme CSS vars from `themeOverrides` (Assemble maps DNA `branding.colorRoles` → primary…text); presentation vs landing render contracts; zero AI
 3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; primary-led DNA roles (headings/brand → primary; cards/gaps → white / soft primary tint; cover/footer/divider CSS-var gradients); RTL/LTR; design-first disk edits affect render; **no** hardcoded Safqa / رويا صفقة — cover/footer/brand-marks use workspace/client vars; includes `testimonial.hbs`
-4. **Section catalog** [backend-only] — **20** keys (commercial + research primaries + `testimonial`); abstract + contentSchema; active v1 seed; `maxSections` 28
+4. **Section catalog (per template)** [backend-only] — **20** shared keys; each template owns `contentSchema` / length budgets under `src/pipeline-v3/templates/<templateKey>/`; registry `getSectionDef(key, templateKey)`; seed via `buildAllTemplateDocs()`; `maxSections` 28
 5. **Fixture render API** [backend-only] — `POST /api/data/templates/pitch-landscape/fixture-render` (html|pdf) with optional `templateKey`; fixtures supply sample workspace branding for all 20 sections
-6. **pitch-landscape-formal** [backend-only] — active catalog sibling; formal theme tokens; shares pitch-landscape disk assets (partial design); same 20 sections
+6. **pitch-landscape-formal** [backend-only] — own catalog file; formal theme tokens; shares pitch-landscape disk assets; currently same lengths as pitch (may diverge)
 7. **Active template list API** [backend-only] — `GET /api/data/templates` slim DTO for gallery
 8. **Template gallery UI** [frontend-only] — pick template during project create / sibling
-9. **website-template landing** [backend-only] — key `website-template`; `type: website`, `page.renderMode: landing`; continuous scrolling HTML from `05.smart-watch` style language; own disk `templates/website-template/v1/`; same 20 schemas; HTML primary delivery; optional A4 portrait PDF; assemble skips slide overflow guard
+9. **website-template landing** [backend-only] — key `website-template`; `type: website`, `page.renderMode: landing`; continuous scrolling HTML from `05.smart-watch` style language; own disk `templates/website-template/v1/`; **own** section length schemas (tighter cards vs pitch); HTML primary delivery; optional A4 portrait PDF; assemble skips slide overflow guard
 
 ### Canonical active templates
 | key | basePath | mode |

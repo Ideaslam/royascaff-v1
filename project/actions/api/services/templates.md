@@ -37,9 +37,9 @@
 ### SVC-TPL-04 · pitch-landscape catalog seed [domain, internal, Templates]
 - Status: done
 - Methods: `buildPitchLandscapeTemplateDoc` + bootstrap upsert
-- Deps: TemplatesRepository
+- Deps: TemplatesRepository; `src/pipeline-v3/templates/pitch-landscape/pitch-landscape.catalog.ts`
 - Side effects: Mongo upsert on boot
-- Rules: `status: active`; **20** section defs (incl. `testimonial`); `maxSections` 28; requiredKeys cover/financial/footer; shared `PITCH_LANDSCAPE_SECTIONS` for map/AJV
+- Rules: `status: active`; **20** section defs (incl. `testimonial`); `maxSections` 28; requiredKeys cover/financial/footer; **owns** pitch `contentSchema` lengths
 
 ### SVC-TPL-05 · Fixture render [domain, internal, Templates]
 - Status: done
@@ -51,9 +51,9 @@
 ### SVC-TPL-06 · pitch-landscape-formal catalog seed [domain, internal, Templates]
 - Status: done
 - Methods: `buildPitchLandscapeFormalTemplateDoc` + bootstrap upsert
-- Deps: TemplatesRepository
+- Deps: TemplatesRepository; `.../pitch-landscape-formal/pitch-landscape-formal.catalog.ts`
 - Side effects: Mongo upsert on boot
-- Rules: active; shares pitch-landscape disk `basePath` + same **20** section list; formal theme tokens
+- Rules: active; shares pitch-landscape disk `basePath`; own catalog file (lengths currently match pitch); formal theme tokens
 
 ### SVC-TPL-07 · List active templates [domain, internal, Templates]
 - Status: done
@@ -65,11 +65,19 @@
 ### SVC-TPL-08 · website-template catalog + landing disk [domain, internal, Templates]
 - Status: done
 - Methods: `buildWebsiteTemplateDoc` + `isLandingTemplate` + bootstrap/seed upsert
-- Deps: TemplatesRepository; disk `templates/website-template/v1/`
+- Deps: TemplatesRepository; disk `templates/website-template/v1/`; `.../website-template/website-template.catalog.ts`
 - Side effects: Mongo upsert on boot
 - Rules:
   - key `website-template`; name `{ ar: "موقع — صفحة هبوط", en: "Website — Landing" }`
   - `type: website`, `orientation: portrait`, `page.renderMode: landing` (fluid)
   - Continuous scrolling landing HTML from `05.smart-watch` style language (not 16:9 slides)
-  - Same 20 section schemas; tokens black/mint/gray; Mona Sans + Cairo/Tajawal
-  - Canonical keep-list includes website (bootstrap + `seed-templates.js`)
+  - **Own** section `contentSchema` lengths (tighter research/card fields vs pitch)
+  - Tokens black/mint/gray; Mona Sans + Cairo/Tajawal
+  - Canonical keep-list includes website (bootstrap + `seed-templates.js` via `buildAllTemplateDocs`)
+
+### SVC-TPL-09 · Catalog registry [domain, internal, Templates]
+- Status: done
+- Methods: `getSectionDef(key, templateKey)`, `getTemplateSections`, `normalizeTemplateKey`, `buildAllTemplateDocs`
+- Deps: per-template catalogs under `src/pipeline-v3/templates/<templateKey>/`
+- Side effects: none
+- Rules: default `pitch-landscape`; unknown templateKey falls back to pitch; section gen/translate/map resolve schemas by `proposal.templateKey`
