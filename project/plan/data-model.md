@@ -176,6 +176,12 @@ Files: `mongodb-service-categories.repository.ts`, `lib/defaults/service-categor
 ## 9. proposals
 Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), generation linkage
 
+**Shared collection for Pipeline v2 + v3.** Archive / editor / list / send consumers use one **shared shell**; engines differ only in how content is produced and which engine-specific fields they fill (`REQ-PROP-UNIFY` / change-031).
+
+**Shared shell** (both engines when data exists): `client*`, `projectName`/`title`, money fields, `services`, `pipelineVersion`, `projectId`, `dnaVersionId`/`dnaSnapshot`, `language`, `generationStatus`, technical/financial URL maps (+ html mirrors), `generation`.
+
+**Engine-specific (nullable):** v2 — `creativeOptions`, inline `technical`/`financial`/`*Ar`/`*En`, `generation.creativePipeline` / batch ids. v3 — `templateKey`/`templateVersion`, `sectionMap`, `sections[]`, `renderedByLang`, `generation.steps`. Legacy: `jobId` → `aiJobs` (new creative creates set `jobId: null`).
+
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | `_id` | String | PK | — |
@@ -185,26 +191,26 @@ Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), ge
 | `projectName` | String | | — |
 | `title` | String | | — |
 | `date` | String | | — |
-| `type` | String | Pipeline v3 create-from-project → always `'creative'`; legacy may vary | — |
+| `type` | String | Pipeline v3 create-from-project → always `'creative'`; v2 unified create also `'creative'`; legacy may vary | — |
 | `status` | Enum | `pending` \| `sent` \| `endorsed` \| `won` \| `lost` | — |
 | `total` / `tax` / `grandTotal` | Number | | — |
-| `services` | Mixed | line items | — |
-| `creativeOptions` | Mixed | generation inputs | — |
-| `jobId` | String \| null | | → `aiJobs` |
+| `services` | Mixed | object line items preferred `{ id, name, price, qty, … }`; string IDs accepted for legacy v2; **contracts create** unwraps `{ id }` and prefers snapshot name/price/qty | — |
+| `creativeOptions` | Mixed | v2 wizard inputs (nullable for v3) | — |
+| `jobId` | String \| null | **null** on new unified v2 creates; legacy rows may still point → `aiJobs` | → `aiJobs` |
 | `generationStatus` | Enum | `pending` \| `completed` | — |
 | `issuer` | Object | | — |
-| `technical` / `financial` | String | HTML bodies (legacy) | — |
+| `technical` / `financial` | String | HTML bodies (legacy / edit cache) | — |
 | `technicalAr` / `technicalEn` / `financialAr` / `financialEn` | String | | — |
 | `technicalUrlByLang` / `financialUrlByLang` | Object | `{ar,en}` S3 URLs; v3 export fills technical (= deck) + financial (standalone) per lang | — |
 | `technicalHtmlUrl` / `financialHtmlUrl` | String | latest flat mirrors for send/list | — |
 | `technicalHtmlUrlByLang` / `financialHtmlUrlByLang` | Object | mirrors for FE helpers | — |
 | `emailSent` / send meta | Mixed | [INFERRED] ProposalEmailSentMeta | — |
 | `createdBy` | String | | → `user` |
-| `projectId` | String \| null | set for Pipeline v3 create-from-project | → `projects` |
+| `projectId` | String \| null | shared shell; required on new v2+v3 creates → `projects` | → `projects` |
 | `templateKey` | String \| null | e.g. `pitch-landscape` \| `pitch-landscape-formal` \| `website-template` | → `templates.key` |
 | `templateVersion` | Number \| null | pinned | — |
-| `language` | String \| null | `ar` \| `en` (primary / source language) | — |
-| `pipelineVersion` | String \| null | `"3"` for v3 runs | — |
+| `language` | String \| null | `ar` \| `en` (primary / source language); list summary includes | — |
+| `pipelineVersion` | String \| null | `"2"` \| `"3"`; list summary includes | — |
 | `dnaVersionId` | String \| null | → `project_dna_versions._id` | preferred pin at create |
 | `dnaSnapshot` | Object \| null | immutable copy of version DNA + inputs at create | workers prefer snapshot first |
 | `dnaVersion` | Number \| null | legacy numeric pin; optional keep | prefer `dnaVersionId` + snapshot |
@@ -212,8 +218,10 @@ Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), ge
 | `revisions` | Object[] \| null | last **5** archives (newest first) | regen/translate |
 | `sectionMap` | Object \| null | `schemaVersion: map.v1` + `sections[]` | Step 2 output |
 | `sections` | Object[] \| null | Step 3 content rows (`contentByLang`, status) | — |
-| `renderedByLang` | Object \| null | `{ ar\|en: { htmlUrl, pdfUrl, … } }` pitch deck; export also mirrors html into technical URL maps | Steps 4–5 |
+| `renderedByLang` | Object \| null | `{ ar\|en: { htmlUrl, pdfUrl, … } }` pitch deck; export mirrors into technical URL maps; technical editor save syncs `htmlUrl` | Steps 4–5 + archive edit |
 | `generation` | Object \| null | pipeline truth (see below) | Redis = work |
+
+**List summary projection** (`SUMMARY_PROJECTION`): money/status/URL maps + `pipelineVersion`, `projectId`, `language` (no HTML bodies / `sections[]`).
 
 ### `sections[]` (Step 3)
 
@@ -253,6 +261,26 @@ Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), ge
 
 **v3 dual-doc / language rules:** Export for language `L` upserts `renderedByLang[L]` + technical/financial URL keys for `L` only. Translate keeps source lang keys. Regenerate clears only the regenerated language keys (does not null entire maps).
 
+### `generation` (Pipeline v2 — creative section→HTML)
+
+```jsonc
+{
+  "pipelineVersion": "2",
+  "status": "queued" | "sections_batch_submitted" | "sections_ready"
+         | "final_render_submitted" | "assembling" | "ready" | "failed",
+  "language": "ar" | "en",
+  "runId": "uuid",
+  "batchId": null, // optional active Claude batch id
+  "creativePipeline": { /* CreativePipelineState — phases, batch ids, theme, trace ids */ },
+  "progress": 0,
+  "stepName": null,
+  "error": null | { "code", "message" },
+  "updatedAt": "ISO"
+}
+```
+
+Pending v2 batch poller: `pipelineVersion: "2"` AND non-terminal `generation.status` AND (`generation.batchId` OR `creativePipeline.sectionBatchId` / `htmlBatchId`). AI observability → `pipelineTraces` (`step: creative_v2`, labels e.g. `creative_v2.sections_batch`, `creative_v2.html_batch`, validations/repair).
+
 ### `generation` (Pipeline v3 — through export)
 
 ```jsonc
@@ -287,9 +315,9 @@ Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), ge
 }
 ```
 
-**Rules:** Mongo = truth; Redis = work. Section failures with ≥1 ready → `partially_failed` after export. Financial money injected at assemble from services — never from AI. `generation.language` = language for the active run (translate/rerender). DNA pin: `regenerate-dna` bumps project version only; proposals remapped only on explicit regenerate.
+**Rules:** Mongo = truth; Redis = work (v3). Section failures with ≥1 ready → `partially_failed` after export. Financial money injected at assemble from services — never from AI. `generation.language` = language for the active run (translate/rerender). DNA pin: `regenerate-dna` bumps project version only; proposals remapped only on explicit regenerate. v2 batch wait uses Claude Message Batches + dual poller (proposals + legacy aiJobs).
 
-Relations: client, aiJob, contracts, project (v3)
+Relations: client, contracts, project (v2+v3); legacy `jobId` → aiJobs optional
 Indexes: list sort fields mapped in repo; clientId filter supports string/number legacy
 Files: `mongodb-proposals.repository.ts`, `dtos/data/proposals.dto.ts`
 
@@ -312,10 +340,12 @@ Purpose: legal contracts derived from proposals
 | `signed` | Boolean | | — |
 | `signedAt` / `sentAt` | String/Date | | — |
 | `signedContract` | String | signed PDF/URL | — |
-| `serviceIds` | Mixed | | → `services` |
+| `serviceIds` | String[] | clean catalog/service ids only (from string or object `.id` on proposal.services); never `"[object Object]"` | → `services` |
 | `createdBy` | String | | → `user` |
 
-Files: `mongodb-legal-contracts.repository.ts`, `dtos/data/contracts.dto.ts`
+**Create-from-proposal:** resolve SOW/financial from proposal line-item snapshots merged with catalog by id; legacy `creativeOptions.services.selectedServiceIds` still supported. Financial line amount = `price × (qty || 1)`.
+
+Files: `mongodb-legal-contracts.repository.ts`, `dtos/data/contracts.dto.ts`, `contracts.data.service.ts`
 
 ---
 
@@ -355,7 +385,9 @@ Files: `mongodb-config.repository.ts`, `mongodb-maintenance.repository.ts`, `scr
 ---
 
 ## 13. aiJobs
-Purpose: async AI job records (creative pipeline + chat)
+Purpose: legacy async AI job records (in-flight creative + chat)
+
+**Rules (REQ-PROP-UNIFY part 2):** No **new** creative rows from unified `/creative` create. Chat / non-creative unchanged. In-flight creative rows remain readable/processable via dual poller until drained. Hard-delete deferred.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
@@ -370,7 +402,7 @@ Purpose: async AI job records (creative pipeline + chat)
 | `error` | String \| null | | — |
 | `responseType` | Enum \| null | `stream` \| `batch` | — |
 | `batchId` | String \| null | Claude batch id | — |
-| `creativePipeline` | Object \| null | CreativePipelineState | — |
+| `creativePipeline` | Object \| null | CreativePipelineState (legacy; new v2 uses `proposal.generation.creativePipeline`) | — |
 | `createdAt` / `updatedAt` | Date/String | | — |
 
 Files: `models/ai-job.model.ts`, `mongodb-ai-jobs.repository.ts`

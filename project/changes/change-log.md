@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-28_
 
-> Next change number: 031
+> Next change number: 034
 
 ## Summary
 
@@ -11,7 +11,7 @@ _Last updated: 2026-07-28_
 | drafted | 3 |
 | in-progress | 0 |
 | verified | 2 |
-| merged | 24 |
+| merged | 27 |
 | cancelled | 0 |
 | blocked | 1 |
 
@@ -29,6 +29,9 @@ _Last updated: 2026-07-28_
 
 | # | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |---|------|------|---------|-------------|-------|--------|--------|
+| 033 | 2026-07-28 | modify-feature | REQ-PROP-UNIFY | merged | Contracts + services line-item parity (object IDs / SOW) | `change-033-prop-unify-contracts-services/` | 2026-07-28 |
+| 032 | 2026-07-28 | modify-feature | REQ-PROP-UNIFY | merged | v2→project+DNA+proposal+traces; stop creative aiJobs; backfill | `change-032-prop-unify-v2-project-traces/` | 2026-07-28 |
+| 031 | 2026-07-28 | modify-feature | REQ-PROP-UNIFY | merged | Archive parity: shared proposal shell + v3 edit/financial/view | `change-031-prop-unify-archive-parity/` | 2026-07-28 |
 | 030 | 2026-07-28 | modify-feature | REQ-PROP-V3 | merged | Per-template section length schemas (pitch ≠ website) | `change-030-per-template-section-length-schemas/` | 2026-07-28 |
 | 024 | 2026-07-27 | modify-feature | REQ-PROP-V3 | merged | Aim 90% + soft 10% + clamp-to-max length validation | `change-024-section-length-validation-tolerance/` | 2026-07-28 |
 | 027 | 2026-07-28 | modify-feature | REQ-PROP-V3 | merged | AI Requests stats + call-type/step filters + fast pagination | `change-027-ai-requests-stats-filters-perf/` | 2026-07-28 |

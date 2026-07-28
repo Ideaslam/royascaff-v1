@@ -2,7 +2,7 @@
 
 > Auth default: `WorkspaceAuthGuard` (JWT Bearer + workspace). Only deviations noted.
 > Prefix: `/api` (not `/api/v1`).
-> Soft cutover: new **creative** creates blocked when `pipelineV3Enabled` (403); chat / GET / poller unchanged.
+> Soft cutover: new **creative** creates blocked when `pipelineV3Enabled` (403); use **EP-CREATIVE-V2-01** for v2 engine. Chat / GET / dual poller unchanged.
 
 | ID | Method | Route | Auth | Input | Return | Service | Status | Notes |
 |----|--------|-------|------|-------|--------|---------|--------|-------|

@@ -50,8 +50,8 @@
 - Depends on: Clients, Services, AI Jobs, Integrations, Projects (v3 create-from-project)
 
 ### Features
-1. **Proposal CRUD & Dashboard** [both] — list/search/status/dashboard charts
-2. **Technical/Financial Documents** [both] — HTML edit + S3 store by lang
+1. **Proposal CRUD & Dashboard** [both] — list/search/status/dashboard charts; list summary includes `pipelineVersion` / `projectId` / `language`
+2. **Technical/Financial Documents** [both] — HTML edit + S3 store by lang; shared shell for v2+v3; `document-html` technical falls back to `renderedByLang`; technical PUT syncs `renderedByLang.htmlUrl` for v3
 3. **Proposal Delivery** [both] — email (+ WhatsApp capability)
 4. **Public Proposal Links** [both] — unauthenticated client view
 5. **Create from project (v3)** [backend-only] — link `projectId` + templateKey/language; enqueue analyze→map→sections (gated by `pipelineV3Enabled`); sibling via `fromStep`/`sourceProposalId` + `dnaVersion` pin
@@ -63,20 +63,21 @@
 11. **Rerender (v3)** [backend-only] — assemble→export only (no AI)
 12. **Revisions archive (v3)** [backend-only] — last 5 snapshots of sections/rendered/sectionMap
 13. **Pipeline stepper UI (v3)** [frontend-only] — poll `GET …/status` 3–5s; Analyzing→…→Ready / Ready with gaps / Failed
-14. **v3 proposal view** [frontend-only] — HTML iframe + server PDF; lang tabs; Retry / Translate / New template / Regenerate
+14. **v3 proposal view** [frontend-only] — Technical/Financial doc tabs + pitch iframe + server PDF; lang tabs; Retry / Translate / New template / Regenerate; honors `?tab=financial`
+15. **Archive edit parity (v2+v3)** [frontend-only] — editor loads HTML via URL maps / `document-html` (not empty inline seeds); services accept object `{ id }` line items
 
 ## 6. Creative / AI Generation
 - Scope: BE `ai`, `ai-jobs`, `creative-pipeline`, `jobs`, `pipeline-v3` + FE creative/ai/ai-jobs
 - Audience: sales users
-- Entities: `aiJobs`, `aiJobQueue`, `proposals`; v3 also uses Redis BullMQ work + `projects` / `pipelineTraces` / `templates`
-- Depends on: Settings (Claude key + `pipelineV3Enabled`), Integrations (Claude, S3, Redis), Proposals, Projects (v3)
+- Entities: `proposals` (+ `generation`), `projects`, `project_dna_versions`, `pipelineTraces`; legacy `aiJobs` / `aiJobQueue` for chat + in-flight creative; v3 also uses Redis BullMQ + `templates`
+- Depends on: Settings (Claude key + `pipelineV3Enabled`), Integrations (Claude, S3, Redis), Proposals, Projects
 - Type: domain + integration
 
 ### Features
-1. **Creative Pipeline v2** [both] — **soft-retired** when `pipelineV3Enabled`; new creative creates rejected; poller + job reads remain; escape hatch = flag false
-2. **Legacy Stream Generation** [both] — `POST /ai-jobs/stream` one-shot (creative blocked when v3 on)
+1. **Creative Pipeline v2 (unified)** [both] — section→final HTML; create via project+DNA+proposal (`pipelineVersion: "2"`, `jobId: null`); state on `proposal.generation`; traces on `pipelineTraces`; works with `pipelineV3Enabled` true
+2. **Legacy Stream / aiJobs creative** [both] — `POST /ai-jobs` creative stays blocked when v3 on; dual poller still drains in-flight creative `aiJobs`
 3. **AI Playground** [both] — Claude chat/test endpoints
-4. **Job Monitoring** [both] — list/details progress (`/ai-jobs` kept for history)
+4. **Job Monitoring** [both] — list/details progress (`/ai-jobs` kept for history/chat)
 5. **Multi-provider AI** [backend-only] — OpenAI/Gemini stubs partial
 6. **Pipeline v3 foundations** [backend-only] — BullMQ queues (`pipeline.analyze|map|section|assemble|export`), AJV contracts (`dna.v2`, `map.v1`, slots), prompt packs, model-by-request-type resolver
 7. **Analyze worker (Step 1)** [backend-only] — 1a + 1d for all 8 research options (market/competitor/audience/trends/benchmarks/case-studies/social-analysis/action-plan); AJV `dna.v2` fail-closed; traces; vision 1b partial
@@ -86,12 +87,13 @@
 11. **Assemble (Step 4)** [backend-only] — Handlebars + financial inject + workspace/client branding (`workspace_*` from Settings, `client_logo` from first `purpose: client_logo` image) + overflow guard + PDF (no AI); uses `generation.language`
 12. **Export (Step 5)** [backend-only] — S3 HTML/PDF → `renderedByLang`; `ready` / `partially_failed`
 13. **Orchestration engine** [backend-only] — Mongo fan-in after sections; idempotent workers; reconciler ~60s; durable resume from Mongo checkpoints when Redis/app interrupted
-14. **Workspace v3 feature flag** [both] — `settings.pipelineV3Enabled` default **true**; gates create-from-project + regen/translate/rerender + FE Projects create; soft-blocks new creative jobs
+14. **Workspace v3 feature flag** [both] — `settings.pipelineV3Enabled` default **true**; gates create-from-project + regen/translate/rerender + FE Projects create; soft-blocks new creative **aiJobs** (unified v2 create remains available)
 15. **Translate section jobs** [backend-only] — fast model (`translate`); same template-scoped validate/clamp + lengthBudgets; glossary rules; fan-in → assemble/export
 16. **Regen orchestrator** [backend-only] — ProposalRegenerateService wires map/section/assemble/export queues
-17. **Primary path (FE)** [frontend-only] — Projects primary when flag on (default); Creative nav hidden; `/ai-jobs` for history; Creative deep link escape when flag off
-18. **Legacy proposal backfill** [backend-only] — ops script wraps proposals missing `projectId` into projects
+17. **Primary paths (FE)** [frontend-only] — Projects = v3 templates; `/creative` = v2 final HTML (unified API); `/ai-jobs` for history/chat
+18. **Legacy proposal backfill** [backend-only] — ops scripts: wrap missing `projectId` + DNA; set `pipelineVersion: "2"` for non-v3 shell (`backfill:v2-proposal-shell`)
 19. **Durable resume** [both] — `PipelineResumeService` status machine (Mongo = checkpoint); reconciler + `POST …/resume`; FE Continue only when stuck (idle ≥60s, no BullMQ jobs for proposal); incomplete sections only, never wipe `ready`
+20. **Dual batch poller** [backend-only] — Claude batch poll for legacy `aiJobs` + proposal-backed v2 (`generation.creativePipeline`)
 
 ## 7. Contracts
 - Scope: BE `modules/data/contracts` + FE contracts pages
@@ -101,6 +103,7 @@
 
 ### Features
 1. **Contract Lifecycle** [both] — create from proposal, edit, status, send, signed upload
+2. **Services line-item parity** [backend-only] — create-from-proposal accepts object `{ id, … }` or string ids; SOW/financial from snapshot+catalog; clean `serviceIds`
 
 ## 8. Roles & Permissions
 - Scope: BE roles/permissions + FE roles-permissions

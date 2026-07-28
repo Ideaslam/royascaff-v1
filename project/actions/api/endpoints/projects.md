@@ -4,6 +4,7 @@
 
 | ID | Method | Route | Auth | Input | Return | Service | Status | Notes |
 |----|--------|-------|------|-------|--------|---------|--------|-------|
+| EP-CREATIVE-V2-01 | POST | /api/data/projects/creative-proposals | authenticated | creative generation input (+ optional financial HTML) | `{ projectId, proposalId, runId, dnaVersionId }` | CreativeV2CreateService | done | unified v2 create; no aiJobs; works with v3 flag on |
 | EP-PROJECTS-01 | POST | /api/data/projects | permission:`projects.create` | UpsertProjectDto (+ optional `dnaTitle`) | project + `dnaVersion` | create | done | creates project + first DNA version |
 | EP-PROJECTS-02 | GET | /api/data/projects | permission:`projects.view` | list query | page | list | done | |
 | EP-PROJECTS-03 | GET | /api/data/projects/:id | permission:`projects.view` | param | project | get | done | |

@@ -17,7 +17,8 @@
 | Settings | `settings.md` | SVC-SETTINGS-01..03 | done | 3/3 | workspace settings + logo upload + schema + v3 flag (default true) |
 | Cutover Backfill | `cutover-backfill.md` | SVC-CUTOVER-01 | done | 1/1 | legacy proposals → projects ops script |
 | AI | `ai.md` | SVC-AI-01..04 | partial | 3/4 | Claude/chat; OpenAI stub |
-| AI Jobs | `ai-jobs.md` | SVC-AIJOBS-01..03 | done | 3/3 | jobs, creative pipeline, poller |
+| AI Jobs | `ai-jobs.md` | SVC-AIJOBS-01..03 | done | 3/3 | jobs, creative pipeline, legacy poller |
+| Creative v2 Unify | `creative-v2.md` | SVC-CREATIVE-V2-01..04 | done | 4/4 | unified create + proposal batch + dual poller + backfill |
 | Pipeline v3 Foundations | `pipeline-v3-foundations.md` | SVC-PIPEV3-01..07 | done | 8/8 | BullMQ, repos, traces, schemas, prompts, PDF |
 | Pipeline Traces | `pipeline-traces.md` | SVC-TRACES-00..03 | done | 4/4 | list+stats; Mongo aggregates (proposal/cost/filter) |
 | Pipeline Analyze + Map | `pipeline-analyze-map.md` | SVC-PIPE-AM-01..07 | partial | 6/7 | Steps 1–2; full 8 research options; vision 1b partial |

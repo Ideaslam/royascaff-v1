@@ -1,15 +1,15 @@
 # Project Status
 
-_Last updated: 2026-07-28 — after change-026 DNA versions merge_
+_Last updated: 2026-07-28 — after change-033 contracts services parity (REQ-PROP-UNIFY 3/3)_
 
 ## Snapshot
 
 | App | Services | Endpoints | Pages/Views | Overall |
 |-----|----------|-----------|-------------|---------|
-| api | 82/84 | 137/138 | — | partial |
+| api | 86/88 | 138/139 | — | partial |
 | web | — | — | 35/35 | partial |
 
-> Web overall `partial` (MainLayout authGuard). **REQ-PROP-V3 parts 1–8/8 merged** (soft cutover; hard delete of v2 poller deferred).
+> Web overall `partial` (MainLayout authGuard). **REQ-PROP-V3 parts 1–8/8 merged** (soft cutover; hard delete of v2 poller deferred). **REQ-PROP-UNIFY 3/3 merged** (archive + v2 unify + contracts services).
 
 ## By Module
 
@@ -21,8 +21,8 @@ _Last updated: 2026-07-28 — after change-026 DNA versions merge_
 | Services | 1/1 | 6/6 | 2/2 | done |
 | Service Categories | 1/1 | 6/6 | 1/1 | done |
 | Proposals | 6/6 | 20/20 | 6/6 | done |
-| Projects | 4/4 | 22/22 | 5/5 | done |
-| Creative / AI Jobs | 3/3 | 5/5 | 2/2 | done |
+| Projects | 4/4 | 23/23 | 5/5 | done |
+| Creative / AI Jobs | 7/7 | 5/5 | 2/2 | done |
 | Pipeline v3 Foundations | 8/8 | 2/2 | — | done |
 | Pipeline Analyze + Map | 6/7 | — | — | partial |
 | Pipeline Sections + Engine | 9/9 | — | — | done |

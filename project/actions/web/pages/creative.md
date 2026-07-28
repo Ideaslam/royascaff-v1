@@ -1,19 +1,21 @@
 # Pages — Safqa Web · Creative
 
-> Soft-retired when `pipelineV3Enabled` (default true): nav hidden; page shows legacy banner + disabled generate. Escape hatch: flag false.
+> Unified v2 path (REQ-PROP-UNIFY part 2): generate works with `pipelineV3Enabled` true via EP-CREATIVE-V2-01.
 
 ### Creative Generator `PG-CREATIVE-01`
 - Route: `/creative`
 - Status: done
-- Components: creative form; legacy-disabled banner → Projects when flag on
-- Service: CreativeProposalGenerationService → EP-AIJOBS-01/02, EP-CONFIG-01
+- Components: creative form; optional note that Projects (v3 templates) vs Creative (final HTML) are both valid
+- Service: CreativeProposalGenerationService → **EP-CREATIVE-V2-01** (not `POST /ai-jobs`)
 - Guard: layout
-- Notes: deep link kept; API also rejects creative creates when v3 on
+- Notes:
+  - On success → proposal view/edit with `proposalId`
+  - Progress: poll `GET /api/data/proposals/:id` for `generation` / `generationStatus`
+  - Nav re-enabled for unified path
 
 ### Creative Output `PG-CREATIVE-02`
 - Route: `/creative/output`
 - Status: done
-- Components: OutputComponent, VisualEditor, print helpers
-- Service: job HTML + EP-PROPOSALS-13 store-s3
+- Components: output / preview shell
+- Service: proposal-centric when available
 - Guard: layout
-- Notes: for historical / in-flight jobs; PDF via window.print (v2); v3 uses server PDF on proposal view

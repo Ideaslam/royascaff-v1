@@ -19,6 +19,6 @@
 | AI | `ai.md` | `/api/ai` · EP-AI-01..04 | partial | 3/4 | Claude/chat; OpenAI stub |
 | AI Jobs | `ai-jobs.md` | `/api/ai-jobs` · EP-AIJOBS-01..05 | done | 5/5 | jobs + stream |
 | Pipeline Traces | `pipeline-traces.md` | `/api/data/pipeline-traces` · EP-TRACES-01..04 | done | 4/4 | list+stats/callType; detail; Mongo proposal/cost summaries |
-| Projects | `projects.md` | `/api/data/projects` · EP-PROJECTS-01..22 | done | 22/22 | CRUD + DNA versions CRUD/generate/content + create proposal pin |
+| Projects | `projects.md` | `/api/data/projects` · EP-PROJECTS-01..22 + EP-CREATIVE-V2-01 | done | 23/23 | CRUD + DNA versions + create proposal pin + unified creative-proposals |
 | Templates | `templates.md` | `/api/data/templates` · EP-TPL-01..02 | done | 2/2 | list active + fixture render (`templateKey`) |
 | Admin | `admin.md` | `/api/admin` + `/api/data/admin` · EP-ADMIN-01..11 | done | 11/11 | admin ops + reset |

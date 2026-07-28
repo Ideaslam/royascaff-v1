@@ -8,7 +8,7 @@
 | EP-CONTRACTS-01 | GET | /api/data/contracts | authenticated | list query | paginated | ContractsDataService | done | |
 | EP-CONTRACTS-02 | GET | /api/data/contracts/search | authenticated | search | paginated | ContractsDataService | done | |
 | EP-CONTRACTS-03 | GET | /api/data/contracts/:id | authenticated | param | contract | ContractsDataService | done | |
-| EP-CONTRACTS-04 | POST | /api/data/contracts | authenticated | body: CreateContractDto | created | ContractsDataService | done | |
+| EP-CONTRACTS-04 | POST | /api/data/contracts | authenticated | body: CreateContractDto | created | ContractsDataService | done | create-from-proposal: `proposal.services` string ids **or** `{ id, … }` line items → SOW/financial |
 | EP-CONTRACTS-05 | PATCH | /api/data/contracts/:id | authenticated | body | updated | ContractsDataService | done | |
 | EP-CONTRACTS-06 | DELETE | /api/data/contracts/:id | authenticated | param | ok | ContractsDataService | done | |
 | EP-CONTRACTS-07 | POST | /api/data/contracts/:id/send | authenticated | — | ok | ContractsDataService | done | email |

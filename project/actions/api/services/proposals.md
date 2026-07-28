@@ -2,16 +2,22 @@
 
 ### SVC-PROPOSALS-01 · ProposalsDataService [domain, internal, Proposals]
 - Status: done
-- Methods: list/search/lite/dashboard/get/create/patch/delete; dashboard aggregations
+- Methods: list/search/lite/dashboard/get/create/patch/delete; dashboard aggregations; `patchProposalDocument`
 - Deps: ProposalsRepository, S3Service
 - Side effects: file
-- Rules: status enum pending|sent|endorsed|won|lost
+- Rules:
+  - status enum pending|sent|endorsed|won|lost
+  - list `SUMMARY_PROJECTION` includes `pipelineVersion`, `projectId`, `language` (+ URL maps / money / status)
+  - `patchProposalDocument(technical)` also merges `renderedByLang[lang].htmlUrl` when `pipelineVersion === "3"` or `renderedByLang` present (preserve `pdfUrl`)
 
 ### SVC-PROPOSALS-02 · ProposalsService [domain, internal, Proposals]
 - Status: done
 - Methods: patch info; put technical/financial HTML; fetch document HTML; store HTML to S3
-- Deps: ProposalsRepository, S3Service
+- Deps: ProposalsRepository, S3Service, ProposalsDataService (`patchProposalDocument`)
 - Side effects: file
+- Rules:
+  - `document-html` URL resolve: `*UrlByLang` → `*HtmlUrlByLang` → flat `*HtmlUrl`; technical also falls back to `renderedByLang[lang].htmlUrl`
+  - financial has no deck fallback
 
 ### SVC-PROPOSALS-03 · ProposalSendingService [domain, internal, Proposals]
 - Status: done
