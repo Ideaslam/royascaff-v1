@@ -1,7 +1,7 @@
 # Bug #013 — v2 technical blank on Proposal View (financial OK)
 
 ## Status
-**PENDING** — Fix applied; awaiting user confirmation
+**DONE** — Confirmed 2026-07-28
 
 ## Reported
 - **Date**: 2026-07-28
@@ -36,7 +36,7 @@ v2 export fills `technicalUrlByLang` / `technicalHtmlUrl`, not `renderedByLang`.
 ## Verification
 - [x] Fix implemented in code
 - [x] No regressions introduced
-- [ ] User confirmed fix resolves the issue
+- [x] User confirmed fix resolves the issue
 
 ## Related Files
 - `roya-sales-ai-frontend/src/app/pages/proposals/proposal-view/proposal-view.component.ts`
