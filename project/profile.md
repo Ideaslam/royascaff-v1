@@ -59,9 +59,9 @@ Defined in: `web` → `core/constants/brand.constants.ts`, `core/theme/roya.pres
 | development | `https://sales-api.vnod.net` | Angular `development` fileReplacements |
 | production | `https://sales-api.roya.marketing` | Angular `production`; k8s/Jenkins deploy |
 
-**API config**: `dotenv` + `src/config/environment.ts` (not Nest ConfigModule). No `.env.example` in repo.
+**API config**: `dotenv` + `src/config/environment.ts` (not Nest ConfigModule). Committed template: `roya-sales-ai-api-v2/.env.example` (copy → `.env`; README documents setup).
 
-**Key env vars (names only)**: `PORT`, `NODE_ENV`, `JWT_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`, `APP_URL`, `ALLOWED_ORIGINS`, `MONGODB_URI`, `REDIS_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_S3_BUCKET`, `AWS_S3_ENDPOINT`, `AWS_S3_PUBLIC_URL`, `AWS_S3_BASE_FOLDER`, `AWS_S3_APP_FOLDER`, `MAILJET_API_KEY`, `MAILJET_SECRET_KEY`, `MAILJET_FROM_EMAIL`, `MAILJET_FROM_NAME`, `META_WHATSAPP_*`, `SETTINGS_ENCRYPTION_KEY`, `CREATIVE_SECTION_MAX_TOKENS`, `CREATIVE_SECTION_TEMPERATURE`.
+**Key env vars (names only)**: `PORT`, `NODE_ENV`, `JWT_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`, `APP_URL`, `ALLOWED_ORIGINS`, `MONGODB_URI`, `REDIS_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_S3_BUCKET`, `AWS_S3_ENDPOINT`, `AWS_S3_PUBLIC_URL`, `AWS_S3_BASE_FOLDER`, `AWS_S3_APP_FOLDER`, `MAILJET_API_KEY`, `MAILJET_SECRET_KEY`, `MAILJET_FROM_EMAIL`, `MAILJET_FROM_NAME`, `META_WHATSAPP_*`, `SETTINGS_ENCRYPTION_KEY`, `CREATIVE_SECTION_MAX_TOKENS`, `CREATIVE_SECTION_TEMPERATURE`, `PIPELINE_WORKER_CONCURRENCY`, `PUPPETEER_EXECUTABLE_PATH` / `CHROME_PATH`.
 
 **Claude API key**: stored encrypted in workspace settings (not env).
 

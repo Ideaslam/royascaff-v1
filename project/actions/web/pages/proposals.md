@@ -5,7 +5,7 @@
 - Status: done
 - Components: table/filters; Technical / Financial + language dialog
 - Service: AppDataService → EP-PROPOSALS-01/02/08
-- Guard: layout (authGuard commented)
+- Guard: MainLayout `authGuard`
 - Notes:
   - Paginated list; rows include `pipelineVersion`, `projectId`, `language`
   - Pipeline v3 project proposals are `type: creative` with dual URL maps; list opens tech/fin per language via `getTechnicalUrl` / `getFinancialUrl` (technical may fall back to `renderedByLang`)

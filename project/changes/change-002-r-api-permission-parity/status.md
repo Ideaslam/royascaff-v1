@@ -1,21 +1,10 @@
 # Pack Status — change-002-r-api-permission-parity
 
-- **pack-status**: blocked
+- **pack-status**: merged
 - **request-id**: REQ-R
-- **depends-on**: change-001
-- **Artifacts done**: 0/2
-
-## Artifacts
-
-| ID / Name | Layer | Status | Notes |
-|-----------|-------|--------|-------|
-| Endpoint Auth columns | endpoint | planned | PermissionGuard on mutations |
-| roles-and-authorization | plan | planned | document server enforcement |
-
-## Blockers
-
-- Program order: change-001 (can lift if implementing in parallel)
+- **depends-on**: change-001 (merged)
+- **Artifacts done**: 3/3
 
 ## Next action
 
-- After change-001 verified/merged (or unblock intentionally), implement guards via /change-mode
+- **REQ-R complete** (001 + 002 + 003). Further work = new packs.

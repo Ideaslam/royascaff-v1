@@ -4,6 +4,6 @@
 
 | Layer | File (under blueprint/) | IDs / Names | Status | Done/Total | Purpose |
 |-------|-------------------------|-------------|--------|-----------|---------|
-| page | `actions/web/pages/auth.md` | MainLayout guard | planned | 0/1 | enable authGuard |
+| page | `actions/web/pages/auth.md` | MainLayout guard | done | 1/1 | enable authGuard |
 
-**Pack Done/Total**: 0/1
+**Pack Done/Total**: 1/1

@@ -1,5 +1,7 @@
 # Endpoints — Safqa API · Clients (delta)
 
+Status: **done**
+
 ## Delta — Auth column after-state for mutations
 
 | ID | Method | Route | Auth (after) | Notes |

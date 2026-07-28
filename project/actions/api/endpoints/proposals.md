@@ -17,12 +17,12 @@
 | EP-PROP-PIPE-06 | POST | /api/data/proposals/:id/translate | permission:`projects.edit` | `{ lang }` | `{ proposalId, runId, lang }` | TranslateOrchestrator | done | flag gated |
 | EP-PROP-PIPE-07 | POST | /api/data/proposals/:id/rerender | permission:`projects.edit` | `{ lang? }` | `{ proposalId, runId }` | ProposalRegenerateService | done | flag gated |
 | EP-PROP-PIPE-08 | POST | /api/data/proposals/:id/resume | permission:`projects.edit` | — | `202` `{ proposalId, runId, status, enqueued }` | PipelineResumeService | done | durable resume; flag gated |
-| EP-PROPOSALS-06 | POST | /api/data/proposals | authenticated | body | created | ProposalsDataService | done | |
-| EP-PROPOSALS-07 | PATCH | /api/data/proposals/:id | authenticated | body | updated | ProposalsDataService | done | |
-| EP-PROPOSALS-08 | DELETE | /api/data/proposals/:id | authenticated | param | ok | ProposalsDataService | done | |
-| EP-PROPOSALS-09 | PATCH | /api/proposals/:id/info | authenticated | body | updated | ProposalsService | done | basic fields |
-| EP-PROPOSALS-10 | PUT | /api/proposals/:id/technical | authenticated | body HTML/lang | updated | ProposalsService | done | syncs `renderedByLang[lang].htmlUrl` for v3 |
-| EP-PROPOSALS-11 | PUT | /api/proposals/:id/financial | authenticated | body HTML/lang | updated | ProposalsService | done | URL maps only |
+| EP-PROPOSALS-06 | POST | /api/data/proposals | permission:`proposal.create` | body | created | ProposalsDataService | done | |
+| EP-PROPOSALS-07 | PATCH | /api/data/proposals/:id | permission:`proposal.edit` + ownership | body | updated | ProposalsDataService | done | |
+| EP-PROPOSALS-08 | DELETE | /api/data/proposals/:id | permission:`proposal.delete` + ownership | param | ok | ProposalsDataService | done | |
+| EP-PROPOSALS-09 | PATCH | /api/proposals/:id/info | permission:`proposal.edit` | body | updated | ProposalsService | done | basic fields |
+| EP-PROPOSALS-10 | PUT | /api/proposals/:id/technical | permission:`proposal.edit` | body HTML/lang | updated | ProposalsService | done | syncs `renderedByLang[lang].htmlUrl` for v3 |
+| EP-PROPOSALS-11 | PUT | /api/proposals/:id/financial | permission:`proposal.edit` | body HTML/lang | updated | ProposalsService | done | URL maps only |
 | EP-PROPOSALS-12 | GET | /api/proposals/document-html | authenticated | query | html | ProposalsService | done | technical falls back to `renderedByLang` |
-| EP-PROPOSALS-13 | POST | /api/proposals/store-s3 | authenticated | body html | {htmlUrl} | ProposalsService | done | |
-| EP-PROPOSALS-14 | POST | /api/proposals/send-email | authenticated | body | ok | ProposalSendingService | done | |
+| EP-PROPOSALS-13 | POST | /api/proposals/store-s3 | permission:`proposal.edit` | body html | {htmlUrl} | ProposalsService | done | |
+| EP-PROPOSALS-14 | POST | /api/proposals/send-email | permission:`proposal.edit` | body | ok | ProposalSendingService | done | |

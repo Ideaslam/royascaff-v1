@@ -1,21 +1,21 @@
 # Project Status
 
-_Last updated: 2026-07-28 — after change-033 contracts services parity (REQ-PROP-UNIFY 3/3)_
+_Last updated: 2026-07-28 — after change-002 API PermissionGuard parity (REQ-R complete)_
 
 ## Snapshot
 
 | App | Services | Endpoints | Pages/Views | Overall |
 |-----|----------|-----------|-------------|---------|
 | api | 86/88 | 138/139 | — | partial |
-| web | — | — | 35/35 | partial |
+| web | — | — | 36/36 | partial |
 
-> Web overall `partial` (MainLayout authGuard). **REQ-PROP-V3 parts 1–8/8 merged** (soft cutover; hard delete of v2 poller deferred). **REQ-PROP-UNIFY 3/3 merged** (archive + v2 unify + contracts services).
+> Web overall `partial` only for remaining product gaps (AI stubs / vision). **REQ-R 3/3**, **REQ-PROP-V3**, **REQ-PROP-UNIFY** merged.
 
 ## By Module
 
 | Module | Services | Endpoints | Pages/Views | Status |
 |--------|----------|-----------|-------------|--------|
-| Auth | 9/9 | 13/13 | 4/4 | partial |
+| Auth | 9/9 | 13/13 | 5/5 | done |
 | Users | 1/1 | 7/7 | 1/1 | done |
 | Clients | 1/1 | 8/8 | 1/1 | done |
 | Services | 1/1 | 6/6 | 2/2 | done |
@@ -49,15 +49,12 @@ _Last updated: 2026-07-28 — after change-033 contracts services parity (REQ-PR
 ## In Progress (`partial`)
 
 - api · AI · SVC-AI-04 / EP-AI-02 — OpenAI stub throws "not configured"
-- web · Auth · MainLayout — `authGuard` commented out (REQ-R change-001)
-- api · Clients/Proposals/Roles/… — FE permission keys not fully enforced server-side (REQ-R change-002)
 - api · Pipeline Analyze + Map · SVC-PIPE-AM-07 — vision 1b partial (traced skip)
 
 ## Next Up (roadmap, ordered)
 
-1. **REQ-R** `change-001-r-enable-web-auth-guard` — restore route protection
-2. **REQ-R** `change-002-r-api-permission-parity` — PermissionGuard on data mutations
-3. **REQ-R** `change-003-r-env-example` — API env template
+1. Optional: seed `service.*` / `contract.*` permission keys + guards (deferred from change-002)
+2. Remaining deferred roadmap items (auth already restored; see Deferred table)
 
 ## Deferred (`deferred`)
 

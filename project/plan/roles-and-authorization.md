@@ -5,7 +5,7 @@
 - **Issuance**: `POST /api/auth/login` / refresh / register flows
 - **Storage (web)**: localStorage `auth_session_v1` {`idToken`, `refreshToken`, `expiresAtMs`}; user snapshot `currentUser`
 - **Guards (API)**: `WorkspaceAuthGuard` (verify JWT, load user/workspace tenant context); `PermissionGuard('key')` mixin; `OwnershipGuard` where used
-- **Guards (Web)**: `authGuard` exists but **commented out** on MainLayout; `authInterceptor` clears session on 401 → `/login`; `maintenanceGuard` / `maintenancePageGuard`
+- **Guards (Web)**: `authGuard` on MainLayout (REQ-R change-001); `authInterceptor` clears session on 401 → `/login`; `maintenanceGuard` / `maintenancePageGuard`
 - **Password**: bcrypt hashes
 - **Multi-tenant**: `workspaceId` on JWT/user; Mongo tenant filter on isolated collections
 
@@ -37,14 +37,19 @@ Also referenced in code: `workspace_owner` (roles repository default; includes p
 | `/api/auth/*` login/register/reset/verify/refresh/logout | public |
 | `/api/auth/bootstrap|profile*` | authenticated |
 | `/api/public/*` | public |
-| Most `/api/data/*` and `/api/proposals/*`, `/api/ai*` | authenticated (WorkspaceAuthGuard) |
-| User mutate | permission:user.create/edit/delete |
-| Settings PATCH | permission:settings.manage |
-| Pipeline traces GET | permission:pipeline-traces.read |
+| Client mutations | permission:`client.create/edit/delete` (+ ownership on edit/delete/logo) |
+| Proposal data mutations | permission:`proposal.create/edit/delete` (+ ownership on edit/delete) |
+| Proposal ops (info/docs/s3/send) | permission:`proposal.edit` |
+| Roles / permissions catalog mutations | permission:`roles.manage` |
+| User mutate | permission:`user.create/edit/delete` |
+| Settings PATCH | permission:`settings.manage` |
+| Projects / pipeline v3 mutate | permission:`projects.*` |
+| Pipeline traces GET | permission:`pipeline-traces.read` |
+| Services / contracts / service-categories | authenticated (+ ownership where applied); **no** dedicated seed keys yet |
 | Admin seed-config / admin users | matching PermissionGuard keys |
 | Admin reset | admin role or settings.manage (service check) |
 
-Note: many data CRUD routes are only `authenticated` at controller level; finer permission checks may be FE-only or OwnershipGuard — **drift risk**.
+Unauthorized missing permission → **403**.
 
 ## Page access (summary)
 
@@ -53,7 +58,7 @@ Note: many data CRUD routes are only `authenticated` at controller level; finer 
 | login/register/verify/reset | public (+ maintenanceGuard) |
 | `/client/proposals/:id` | public |
 | `/maintenance` | maintenancePageGuard |
-| All MainLayout children | intended authenticated; **authGuard currently disabled** |
+| All MainLayout children | `authGuard` (session required) |
 
 ## Ownership / scoping
 - Workspace isolation enforced in Mongo generic repository for tenant collections

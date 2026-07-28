@@ -5,5 +5,5 @@
 - Status: done
 - Components: charts (ng2-charts), KPI widgets
 - Service: AppDataService → EP-PROPOSALS-04 (dashboard)
-- Guard: none on layout (authGuard commented) — partial protection
+- Guard: MainLayout `authGuard`
 - Notes: loading/empty via component state

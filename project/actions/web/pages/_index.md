@@ -1,10 +1,10 @@
 # Pages Registry — Safqa Web
 
-> Angular 18 routes from `app.routes.ts`. Main layout `authGuard` is **commented out** — route protection relies on API + interceptor (partial).
+> Angular 18 routes from `app.routes.ts`. Main layout uses `canActivate: [authGuard]` (REQ-R change-001).
 
 | Module | File | Route prefix | Status | Done/Total | Purpose |
 |--------|------|--------------|--------|-----------|---------|
-| Auth | `auth.md` | `/login` … | partial | 4/4 | login/register/verify/reset; MainLayout authGuard disabled (REQ-R) |
+| Auth | `auth.md` | `/login` … + MainLayout shell | done | 5/5 | login/register/verify/reset + authGuard on app shell |
 | Global UI | `global-cards.md` | — | done | 1/1 | Shared `p-card` chrome (Create Project look) |
 | Dashboard | `dashboard.md` | `/dashboard` | done | 1/1 | KPIs / charts |
 | Proposals | `proposals.md` | `/proposals`, `/proposal` | done | 7/7 | list/view/edit + wizard + v3 stepper/actions + stuck Continue |

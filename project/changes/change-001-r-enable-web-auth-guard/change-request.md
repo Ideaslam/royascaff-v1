@@ -10,7 +10,7 @@
 - **part**: 1/3
 - **depends-on**: —
 - **blocks**: change-002
-- **pack-status**: drafted
+- **pack-status**: merged
 
 ## Scope
 - Module(s): Auth

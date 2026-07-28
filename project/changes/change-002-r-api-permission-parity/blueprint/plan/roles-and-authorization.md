@@ -13,4 +13,4 @@ Server-side `PermissionGuard` must match seeded keys for mutations on clients, p
 | contracts | proposal.edit or authenticated | same | same | send/upload — document choice in impl |
 
 ## Note on services/contracts
-Seed has no `service.*` / `contract.*` keys. Implementation must pick: (a) leave authenticated-only, or (b) add new permission keys + seed + FE. Prefer (a) unless product asks for (b); focus pack on client/proposal/roles where keys already exist.
+Seed has no `service.*` / `contract.*` keys. **Choice (a):** leave authenticated-only (+ ownership where present). Focus pack on client / proposal / roles.manage.

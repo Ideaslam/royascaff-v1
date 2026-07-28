@@ -8,12 +8,12 @@ _Last updated: 2026-07-28_
 
 | pack-status | Count |
 |-------------|------:|
-| drafted | 3 |
+| drafted | 0 |
 | in-progress | 0 |
 | verified | 2 |
-| merged | 27 |
+| merged | 30 |
 | cancelled | 0 |
-| blocked | 1 |
+| blocked | 0 |
 
 ## In flight (not merged)
 
@@ -21,14 +21,14 @@ _Last updated: 2026-07-28_
 |---|------|------|---------|------------|-------------|----------------|-------|--------|
 | 029 | 2026-07-28 | polish | — | — | verified | 2/2 | Status tag colors + AI Requests `retrying`→`inprogress` label | `change-029-polish-status-tag-colors/` |
 | 028 | 2026-07-28 | modify-feature | REQ-MODEL-ROUTE | — | verified | 5/5 | Pipeline v3 model routing via DB config + seed | `change-028-pipeline-model-routing-config/` |
-| 001 | 2026-07-26 | bug-fix | REQ-R | — | drafted | 0/1 | Enable MainLayout authGuard | `change-001-r-enable-web-auth-guard/` |
-| 002 | 2026-07-26 | bug-fix | REQ-R | change-001 | blocked | 0/2 | API PermissionGuard parity w/ seed+FE | `change-002-r-api-permission-parity/` |
-| 003 | 2026-07-26 | general | REQ-R | — | drafted | 0/1 | API .env.example | `change-003-r-env-example/` |
 
 ## Completed
 
 | # | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |---|------|------|---------|-------------|-------|--------|--------|
+| 002 | 2026-07-26 | bug-fix | REQ-R | merged | API PermissionGuard parity w/ seed+FE | `change-002-r-api-permission-parity/` | 2026-07-28 |
+| 001 | 2026-07-26 | bug-fix | REQ-R | merged | Enable MainLayout authGuard | `change-001-r-enable-web-auth-guard/` | 2026-07-28 |
+| 003 | 2026-07-26 | general | REQ-R | merged | API .env.example | `change-003-r-env-example/` | 2026-07-28 |
 | 033 | 2026-07-28 | modify-feature | REQ-PROP-UNIFY | merged | Contracts + services line-item parity (object IDs / SOW) | `change-033-prop-unify-contracts-services/` | 2026-07-28 |
 | 032 | 2026-07-28 | modify-feature | REQ-PROP-UNIFY | merged | v2→project+DNA+proposal+traces; stop creative aiJobs; backfill | `change-032-prop-unify-v2-project-traces/` | 2026-07-28 |
 | 031 | 2026-07-28 | modify-feature | REQ-PROP-UNIFY | merged | Archive parity: shared proposal shell + v3 edit/financial/view | `change-031-prop-unify-archive-parity/` | 2026-07-28 |
@@ -62,4 +62,4 @@ _Last updated: 2026-07-28_
 
 | # | Pack status | Reason | Folder |
 |---|-------------|--------|--------|
-| 002 | blocked | waits on change-001 verified/merged (optional soft dep — can parallelize if desired) | `change-002-r-api-permission-parity/` |
+| — | — | — | — |

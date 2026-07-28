@@ -10,7 +10,7 @@
 - **part**: 2/3
 - **depends-on**: change-001
 - **blocks**: —
-- **pack-status**: blocked
+- **pack-status**: merged
 
 ## Scope
 - Module(s): Clients, Proposals, Roles, Permissions, Services, Contracts (mutations)

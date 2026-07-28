@@ -8,6 +8,6 @@
 | EP-PERMS-01 | GET | /api/data/permissions | authenticated | list query | paginated | PermissionsDataService | done | |
 | EP-PERMS-02 | GET | /api/data/permissions/by-key/:key | authenticated | param | permission | PermissionsDataService | done | |
 | EP-PERMS-03 | GET | /api/data/permissions/:id | authenticated | param | permission | PermissionsDataService | done | |
-| EP-PERMS-04 | POST | /api/data/permissions | authenticated | body | created | PermissionsDataService | done | |
-| EP-PERMS-05 | PATCH | /api/data/permissions/:id | authenticated | body | updated | PermissionsDataService | done | |
-| EP-PERMS-06 | DELETE | /api/data/permissions/:id | authenticated | param | ok | PermissionsDataService | done | |
+| EP-PERMS-04 | POST | /api/data/permissions | permission:`roles.manage` | body | created | PermissionsDataService | done | |
+| EP-PERMS-05 | PATCH | /api/data/permissions/:id | permission:`roles.manage` | body | updated | PermissionsDataService | done | |
+| EP-PERMS-06 | DELETE | /api/data/permissions/:id | permission:`roles.manage` | param | ok | PermissionsDataService | done | |

@@ -5,6 +5,6 @@ Enable MainLayout route guard.
 
 ### MainLayout shell (routing)
 - Route: `''` → `MainLayoutComponent`
-- Status: planned → done after change
-- Guard: `authGuard` (**must be active** — not commented)
+- Status: done
+- Guard: `authGuard` (active)
 - Notes: children inherit; public auth + client proposal + maintenance routes stay outside

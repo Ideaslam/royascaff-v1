@@ -1,16 +1,16 @@
 # Pack Status — change-003-r-env-example
 
-- **pack-status**: drafted
+- **pack-status**: merged
 - **request-id**: REQ-R
 - **depends-on**: —
-- **Artifacts done**: 0/1
+- **Artifacts done**: 1/1
 
 ## Artifacts
 
 | ID / Name | Layer | Status | Notes |
 |-----------|-------|--------|-------|
-| .env.example | config | planned | names only |
+| .env.example | config | done | merged |
 
 ## Next action
 
-- Add file under api repo via /change-mode
+- REQ-R remaining: change-001 (authGuard), then change-002 (PermissionGuard).

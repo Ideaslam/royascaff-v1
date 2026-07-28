@@ -28,3 +28,9 @@
 - Components: AuthShell
 - Service: AuthService → EP-AUTH-07, EP-AUTH-08
 - Guard: maintenanceGuard
+
+### MainLayout shell (routing)
+- Route: `''` → `MainLayoutComponent` (all authenticated app children)
+- Status: done
+- Guard: `authGuard` (REQ-R change-001) — unauthenticated → `/login`
+- Notes: public auth + `/client/proposals/:id` + `/maintenance` stay outside this shell
