@@ -26,6 +26,20 @@
 - Provider: stubs in seed (`aiProviders`) — OpenAI throws not configured
 - Must not: pretend multi-provider is production-ready
 
+## Module: Pipeline v3 · Sections
+
+### Feature: Section length budgets + soft validate
+- Type: AI, Business Logic
+- Must:
+  - inject `lengthBudgets` (`min` / `max` / `aim` / `softMax`) from template-scoped `contentSchema`
+  - prompt writers to target `aim` (~90% of max) and never exceed catalog `max`
+  - soft-accept up to +10% over max for AJV, then **clamp-first** to catalog max before persist
+  - share the same path for section generate + translate
+- Must not:
+  - burn Claude retries for length-only overshoots that clamp can fix
+  - store strings longer than catalog `maxLength` (layout clips)
+  - let depth-contracts override maxLength
+
 ## Module: Proposals
 
 ### Feature: Proposal Delivery Notification

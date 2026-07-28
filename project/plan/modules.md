@@ -82,12 +82,12 @@
 7. **Analyze worker (Step 1)** [backend-only] — 1a + 1d for all 8 research options (market/competitor/audience/trends/benchmarks/case-studies/social-analysis/action-plan); AJV `dna.v2` fail-closed; traces; vision 1b partial
 8. **Map worker (Step 2)** [backend-only] — `map.v1` + research coverage gate (all 8 primaries; competitor ×N); `maxSections` 28; store `proposal.sectionMap`
 9. **Prompt packs (dna/research/map/section/translate)** [backend-only] — production packs under `pipeline-v3/prompts/` including full research set
-10. **Section fan-out (Step 3)** [backend-only] — parallel `pipeline.section`; AJV contentSchema + richness; per-section fail/retry
+10. **Section fan-out (Step 3)** [backend-only] — parallel `pipeline.section`; template-scoped contentSchema + `lengthBudgets` (aim 90%); clamp-first + soft max (+10%) AJV + richness; per-section fail/retry (length-only overshoots clamp, no retry)
 11. **Assemble (Step 4)** [backend-only] — Handlebars + financial inject + workspace/client branding (`workspace_*` from Settings, `client_logo` from first `purpose: client_logo` image) + overflow guard + PDF (no AI); uses `generation.language`
 12. **Export (Step 5)** [backend-only] — S3 HTML/PDF → `renderedByLang`; `ready` / `partially_failed`
 13. **Orchestration engine** [backend-only] — Mongo fan-in after sections; idempotent workers; reconciler ~60s; durable resume from Mongo checkpoints when Redis/app interrupted
 14. **Workspace v3 feature flag** [both] — `settings.pipelineV3Enabled` default **true**; gates create-from-project + regen/translate/rerender + FE Projects create; soft-blocks new creative jobs
-15. **Translate section jobs** [backend-only] — fast model (`translate`); schema-validated; glossary rules; fan-in → assemble/export
+15. **Translate section jobs** [backend-only] — fast model (`translate`); same template-scoped validate/clamp + lengthBudgets; glossary rules; fan-in → assemble/export
 16. **Regen orchestrator** [backend-only] — ProposalRegenerateService wires map/section/assemble/export queues
 17. **Primary path (FE)** [frontend-only] — Projects primary when flag on (default); Creative nav hidden; `/ai-jobs` for history; Creative deep link escape when flag off
 18. **Legacy proposal backfill** [backend-only] — ops script wraps proposals missing `projectId` into projects

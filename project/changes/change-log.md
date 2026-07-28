@@ -10,8 +10,8 @@ _Last updated: 2026-07-28_
 |-------------|------:|
 | drafted | 3 |
 | in-progress | 0 |
-| verified | 3 |
-| merged | 23 |
+| verified | 2 |
+| merged | 24 |
 | cancelled | 0 |
 | blocked | 1 |
 
@@ -21,7 +21,6 @@ _Last updated: 2026-07-28_
 |---|------|------|---------|------------|-------------|----------------|-------|--------|
 | 029 | 2026-07-28 | polish | — | — | verified | 2/2 | Status tag colors + AI Requests `retrying`→`inprogress` label | `change-029-polish-status-tag-colors/` |
 | 028 | 2026-07-28 | modify-feature | REQ-MODEL-ROUTE | — | verified | 5/5 | Pipeline v3 model routing via DB config + seed | `change-028-pipeline-model-routing-config/` |
-| 024 | 2026-07-27 | modify-feature | REQ-PROP-V3 | — | verified | 3/3 | Aim 90% + soft 10% + clamp-to-max length validation | `change-024-section-length-validation-tolerance/` |
 | 001 | 2026-07-26 | bug-fix | REQ-R | — | drafted | 0/1 | Enable MainLayout authGuard | `change-001-r-enable-web-auth-guard/` |
 | 002 | 2026-07-26 | bug-fix | REQ-R | change-001 | blocked | 0/2 | API PermissionGuard parity w/ seed+FE | `change-002-r-api-permission-parity/` |
 | 003 | 2026-07-26 | general | REQ-R | — | drafted | 0/1 | API .env.example | `change-003-r-env-example/` |
@@ -31,6 +30,7 @@ _Last updated: 2026-07-28_
 | # | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |---|------|------|---------|-------------|-------|--------|--------|
 | 030 | 2026-07-28 | modify-feature | REQ-PROP-V3 | merged | Per-template section length schemas (pitch ≠ website) | `change-030-per-template-section-length-schemas/` | 2026-07-28 |
+| 024 | 2026-07-27 | modify-feature | REQ-PROP-V3 | merged | Aim 90% + soft 10% + clamp-to-max length validation | `change-024-section-length-validation-tolerance/` | 2026-07-28 |
 | 027 | 2026-07-28 | modify-feature | REQ-PROP-V3 | merged | AI Requests stats + call-type/step filters + fast pagination | `change-027-ai-requests-stats-filters-perf/` | 2026-07-28 |
 | 026 | 2026-07-27 | new-feature | REQ-DNA-VER | merged | DNA versions collection + list/edit/generate/delete + proposal picker | `change-026-dna-versions/` | 2026-07-28 |
 | 025 | 2026-07-27 | modify-feature | REQ-PALETTE | merged | DNA color roles + pitch-landscape primary-led theme | `change-025-pitch-branding-color-roles/` | 2026-07-27 |

@@ -41,6 +41,22 @@
 - Side effects: none
 - Rules: min lengths on primary text slots; fail closed → repair path
 
+### SVC-PIPE-S3-03b · SectionSchemaValidateNormalize [domain, internal, PipelineV3]
+- Status: done
+- Methods:
+  - `extractLengthBudgets(contentSchema)` → `{ min?, max, aim, softMax }` per field path (`aim = floor(max * 0.9)`)
+  - `validateSectionContent(key, content, templateKey?)` — soft AJV (`maxLength` +10%)
+  - `validateAndNormalizeSectionContent(key, content, templateKey?)` — **clamp to catalog max first**, then soft-validate
+  - `clampContentToCatalogMax(schema, content)`
+- Deps: template catalog registry; AJV
+- Side effects: none
+- Rules:
+  - Prompt targets = catalog max; writer aim ≈ 90%
+  - Soft tolerance `SECTION_MAX_LENGTH_TOLERANCE = 0.10` (integer-safe)
+  - Clamp-first so large overshoots do not burn Claude retries; stored content always ≤ catalog max (layout-safe)
+  - `minLength` / shape errors remain strict → repair/retry
+  - Used by section generate + translate
+
 ### SVC-PIPE-S3-04 · SectionFanInCoordinator [domain, internal, PipelineV3]
 - Status: done
 - Methods:
@@ -105,6 +121,10 @@
 ### SVC-PIPE-S3-09 · Section prompt packs [domain, internal, PipelineV3]
 - Status: done
 - Methods: N/A — files
-- Deps: `section.generic.v1.md`, `section.research.v1.md`, shared anti-hallucination/depth/voice
+- Deps: `section.generic.v1.md`, `section.research.v1.md`, `section.translate.v1.md`, shared anti-hallucination/depth/voice
 - Side effects: none
-- Rules: Role/Mission/Grounding/Output-contract; research presentation expands module, no new facts
+- Rules:
+  - Role/Mission/Grounding/Output-contract; research presentation expands module, no new facts
+  - **Length HARD**: stick to `lengthBudgets.aim` (~90% of max); never exceed `max`; count characters (AR+EN)
+  - Depth must fit inside maxLength — denser evidence, not longer prose
+  - User payload: `dnaSlice` then `lengthBudgets` + rules last (recency)
