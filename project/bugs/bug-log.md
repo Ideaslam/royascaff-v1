@@ -1,9 +1,10 @@
 # Bug Log
 
-> Next bug number: 010
+> Next bug number: 011
 
 | # | Date | Severity | Area | Summary | Status | File / Change pack |
 |---|------|----------|------|---------|--------|--------------------|
+| 010 | 2026-07-28 | high | Pipeline v2 financials | Section batch fails: grand total validation too strict | DONE | `bug-010-financials-grand-total-validation.md` |
 | 009 | 2026-07-28 | high | Projects + pipeline DNA | Selected 8 research options filtered to 3 on generate | DONE | `bug-009-research-options-filtered-to-three.md` |
 | 008 | 2026-07-28 | medium | Project workspace DNA table | DNA version rows missing View button | DONE | `bug-008-dna-row-missing-view-button.md` |
 | 007 | 2026-07-27 | high | Pipeline v3 sections | Always stuck at Writing 15/16; Continue finishes | DONE | `bug-007-stuck-at-15-of-16-sections.md` |
