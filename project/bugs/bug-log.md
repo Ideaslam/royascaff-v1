@@ -3,6 +3,7 @@
 
 | ID | Date | Severity | Area | Summary | Status | File / Change pack |
 |----|------|----------|------|---------|--------|--------------------|
+| 20260729-125821 | 2026-07-29 | high | Templates + emails + section AI | Roya hardcodes instead of workspace Settings brand | DONE | `change-20260729-125821-bug-fix-workspace-branding/` (merged 2026-07-29) · `bug-20260729-125821-workspace-not-roya-branding.md` |
 | 20260728-000014 | 2026-07-28 | high | Pipeline v3 assemble / branding | Zid proposal cover shows PayUp (workspace) not client logo | DONE | `change-20260728-000036-client-first-pitch-branding/` (merged 2026-07-28) · `bug-20260728-000014-zid-proposal-shows-payup-branding.md` |
 | 20260728-000013 | 2026-07-28 | high | Proposal View | v2 technical blank; financial OK (rendered-only resolve) | DONE | `bug-20260728-000013-v2-technical-missing-on-view.md` |
 | 20260728-000012 | 2026-07-28 | high | Pipeline v2 financials | Financials still fails: Arabic comma / bidi marks | PENDING | `bug-20260728-000012-financials-arabic-comma-validation.md` |

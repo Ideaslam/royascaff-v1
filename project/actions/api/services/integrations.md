@@ -11,6 +11,11 @@
 - Methods: send transactional emails (verify, reset, proposal, contract)
 - Deps: axios + Mailjet HTTP API
 - Side effects: email
+- Rules (proposal email):
+  - `ProposalTemplateData` includes `workspace_name` / `workspace_logo` / `workspace_email` / `workspace_phone` / `workspace_address` (+ client + URLs)
+  - Templates `proposals.template.{en,ar}.md` use Settings-backed vars (logo img, about heading, signature, footer) — no hardcoded Roya Marketing Solution / `media.roya.marketing/roya.png` / `roya.marketing`
+  - Subject fallback: client name → workspace name → generic “Your proposal documents” (never `'Roya'`)
+  - Mailjet From remains env `MAILJET_FROM_*` (not per-workspace SMTP)
 
 ### SVC-INT-03 · MetaWhatsAppService [integration, external, Messaging]
 - Status: done

@@ -10,7 +10,7 @@ _Last updated: 2026-07-29_
 | drafted | 0 |
 | in-progress | 0 |
 | verified | 4 |
-| merged | 34 |
+| merged | 35 |
 | cancelled | 0 |
 | blocked | 0 |
 
@@ -27,6 +27,7 @@ _Last updated: 2026-07-29_
 
 | ID | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |----|------|------|---------|-------------|-------|--------|--------|
+| 20260729-125821 | 2026-07-29 | bug-fix | REQ-PROP-V3 | merged | Workspace Settings brand (not Roya) in templates + emails + about AI | `change-20260729-125821-bug-fix-workspace-branding/` | 2026-07-29 |
 | 20260729-113947 | 2026-07-29 | new-feature | REQ-TEMPLATE | merged | Template-local banner / full-bleed / images_gallery on all templates | `change-20260729-113947-banner-gallery-sections/` | 2026-07-29 |
 | 20260728-000036 | 2026-07-28 | modify-feature | REQ-PROP-V3 | merged | Client-first pitch branding + workspace intro (bug-20260728-000014) | `change-20260728-000036-client-first-pitch-branding/` | 2026-07-28 |
 | 20260728-000037 | 2026-07-28 | new-feature | REQ-TEMPLATE | merged | `roya-presentation` HAIA-from-scratch + locked palette + team/risks | `change-20260728-000037-roya-presentation-template/` | 2026-07-28 |

@@ -16,9 +16,9 @@
 ### SVC-PIPE-S3-01 · SectionOrchestrator [domain, internal, PipelineV3]
 - Status: done
 - Methods:
-  - `runSection(job: { workspaceId, proposalId, projectId, runId, instanceId, language })` — load map entry + **template-scoped** contentSchema (`proposal.templateKey`) + DNA slice; AI call with `lengthBudgets`; clamp-first + soft max AJV + richness; repair ≤2; write `proposal.sections[i]`; update `generation.steps.sections` counters
+  - `runSection(job: { workspaceId, proposalId, projectId, runId, instanceId, language })` — load map entry + **template-scoped** contentSchema (`proposal.templateKey`) + DNA slice; load public Settings seller; AI call with `lengthBudgets`; clamp-first + soft max AJV + richness; repair ≤2; write `proposal.sections[i]`; update `generation.steps.sections` counters
   - `enqueueAllSections(proposalId)` — create pending section rows from sectionMap; enqueue N `pipeline.section` jobs; set status `generating_sections`
-- Deps: ProposalsRepository, ProjectsRepository, catalog registry, Claude, traces, Schema compile from template contentSchema
+- Deps: ProposalsRepository, ProjectsRepository, catalog registry, Claude, traces, Schema compile from template contentSchema, **SettingsDataService**
 - Side effects: async, external API
 - Rules:
   - Research keys get full `research.modules.*`; others get headlines only
@@ -27,6 +27,9 @@
   - Financial: AI fills non-money slots only; strip/ignore money table from AI
   - Failed section does not fail siblings; concurrency via worker concurrency (6–8)
   - Trace every AI + validation/richness
+  - User JSON includes **`workspace`** seller from Settings (`name`←companyName, `logoUrl`, `email`, `phone`, `address` — omit empties); Settings load fail → warn + `{}`
+  - For `about_workspace`: `workspace` is authoritative selling company — never invent Roya/Safqa as the agency
+  - Prompts: `dna.core.v1` / `section.generic.v1` ground seller identity in `workspace`, not product brand
 
 ### SVC-PIPE-S3-02 · DnaSliceBuilder [domain, internal, PipelineV3]
 - Status: done

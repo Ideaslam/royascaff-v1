@@ -22,8 +22,9 @@
 ### SVC-PROPOSALS-03 · ProposalSendingService [domain, internal, Proposals]
 - Status: done
 - Methods: send proposal via email / WhatsApp where wired
-- Deps: MailjetService, MetaWhatsAppService, ProposalsRepository
+- Deps: MailjetService, MetaWhatsAppService, ProposalsRepository, **SettingsDataService**
 - Side effects: email, external API
+- Rules: on email send, load `getPublicSettings(workspaceId)` and pass `workspace_name` / `workspace_logo` / `workspace_email` / `workspace_phone` / `workspace_address` into Mailjet templateData (empty when missing; never hardcode Roya agency brand)
 
 ### SVC-PROPOSALS-04 · Proposal pipeline status (v3) [domain, internal, Proposals]
 - Status: done

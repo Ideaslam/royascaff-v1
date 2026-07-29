@@ -23,9 +23,9 @@
   - `themeOverrides` → layout `:root` `--color-primary|secondary|accent|surface|text` (omitted when template `theme.lockPalette`)
   - **Client-first placement:** cover + interior chrome use `client_*`; workspace logo/name only in `about_workspace` + footer; website sticky header uses client branding
   - pitch-landscape theme: headings/brand → primary; cards/stats/persona → surface / soft primary tint; accent-bar primary→accent; cover/footer/`.page--brand-band` use CSS-var gradients (no hard-coded Roya navy/sky fills)
-  - roya-presentation: HAIA compositions (`.hp-*`); locked catalog tokens win
-  - No hardcoded Safqa / رويا صفقة / Roya Safqa on pitch / website / roya disk
-  - Fixtures supply sample workspace + client branding; include `about_workspace`; `getFixtureProposal(lang, templateKey?)`; all templates include visual sections + `images` map; roya also includes `team` + `risks`
+  - roya-presentation: HAIA compositions (`.hp-*`); locked catalog tokens win; interior chrome = `client_name` (no product fallback); `about_workspace` chrome = `About {{workspace_name}}` / “About us” when empty
+  - No hardcoded Safqa / رويا صفقة / Roya Safqa / **Roya** agency fallbacks (`{{else}}Roya`) on pitch / website / roya disk — missing name → omit, never invent a default brand
+  - Fixtures supply sample workspace + client branding (Example Agency — not Roya Safqa); include `about_workspace`; `getFixtureProposal(lang, templateKey?)`; all templates include visual sections + `images` map; roya also includes `team` + `risks`
   - Visual partials: `banner` / `full_bleed_banner` / `images_gallery` on pitch / website / roya disks (formal shares pitch)
 
 ### SVC-TPL-03 · Render contracts [domain, internal, Templates]
