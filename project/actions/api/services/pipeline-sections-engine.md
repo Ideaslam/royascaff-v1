@@ -23,6 +23,7 @@
 - Rules:
   - Research keys get full `research.modules.*`; others get headlines only
   - Length budgets / validate / clamp use `(templateKey × sectionKey)` — pitch ≠ website
+  - Visual keys: pass `availableImageIds` from DNA slice images; `imageRef` / `images[]` must be known ids
   - Financial: AI fills non-money slots only; strip/ignore money table from AI
   - Failed section does not fail siblings; concurrency via worker concurrency (6–8)
   - Trace every AI + validation/richness
@@ -46,16 +47,18 @@
 - Methods:
   - `extractLengthBudgets(contentSchema)` → `{ min?, max, aim, softMax }` per field path (`aim = floor(max * 0.9)`)
   - `validateSectionContent(key, content, templateKey?)` — soft AJV (`maxLength` +10%)
-  - `validateAndNormalizeSectionContent(key, content, templateKey?)` — **clamp to catalog max first**, then soft-validate
+  - `validateAndNormalizeSectionContent(key, content, templateKey?, availableImageIds?)` — **clamp to catalog max first**, then soft-validate, then visual `imageRef` gate
+  - `assertImageRefsAllowed(sectionKey, content, availableImageIds)` / `collectVisualImageRefs`
   - `clampContentToCatalogMax(schema, content)`
-- Deps: template catalog registry; AJV
+- Deps: template catalog registry; AJV; `visual-sections` key set
 - Side effects: none
 - Rules:
   - Prompt targets = catalog max; writer aim ≈ 90%
   - Soft tolerance `SECTION_MAX_LENGTH_TOLERANCE = 0.10` (integer-safe)
   - Clamp-first so large overshoots do not burn Claude retries; stored content always ≤ catalog max (layout-safe)
   - `minLength` / shape errors remain strict → repair/retry
-  - Used by section generate + translate
+  - Visual keys fail closed if ids missing/unknown or no available images
+  - Used by section generate + translate (translate reuses source image ids as allowed set)
 
 ### SVC-PIPE-S3-04 · SectionFanInCoordinator [domain, internal, PipelineV3]
 - Status: done

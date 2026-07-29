@@ -530,13 +530,15 @@ Purpose: catalog metadata for hand-crafted proposal templates; disk assets under
 | `engine` | String | `handlebars.v1` | — |
 | `type` / `orientation` | String | presentation/landscape **or** website/portrait | — |
 | `page` / `theme` / `assets` / `rules` | Object | geometry or `renderMode: landing` + fluid; tokens; optional `theme.lockPalette`; disk paths | — |
-| `sections` | Object[] | Section Definitions (abstract + contentSchema); shared base **21** keys; `roya-presentation` **23** (+ `team`, `risks`); `rules.maxSections` 28 | — |
+| `sections` | Object[] | Section Definitions (abstract + contentSchema); shared base **21** keys; each template + local `banner`/`full_bleed_banner`/`images_gallery` (**24**); `roya-presentation` **26** (+ `team`, `risks`); `rules.maxSections` **32** | — |
 | `createdAt` / `updatedAt` | Date | auto | — |
 
 Indexes: unique `{ key: 1, version: 1 }`; `{ status: 1 }`.  
 Files: `mongodb-templates.repository.ts`, per-template catalogs under `src/pipeline-v3/templates/<key>/`, disk `templates/pitch-landscape/v1/` + `templates/website-template/v1/` + `templates/roya-presentation/v1/` (not tenant-isolated — global catalog). Formal reuses pitch disk `basePath` with distinct theme tokens. Website is continuous landing HTML (`page.renderMode: landing`). Roya-presentation is HAIA-from-scratch 16:9 with `theme.lockPalette: true`.
 
 **Shared v1 section keys (21):** cover, executive_summary, client_context, objectives_kpis, services, methodology, timeline, insights_divider, market_analysis, competitor_analysis, audience_insights, market_trends, benchmarks, case_studies, **testimonial**, social_audit, action_plan, financial, next_steps, **about_workspace**, footer.
+
+**Template-local visual keys (all four templates, not in SHARED):** `banner` (`imageRef`), `full_bleed_banner` (`title`, `subtitle?`, `imageRef`), `images_gallery` (`title`, `intro?`, `images[2..6]` of image ids). Repeatable; optional. Formal reuses pitch disk partials.
 
 **Roya-presentation local extras:** `team`, `risks` (optional; not in `SHARED_SECTION_KEYS`).
 

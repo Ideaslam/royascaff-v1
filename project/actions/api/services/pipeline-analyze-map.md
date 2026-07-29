@@ -21,10 +21,10 @@
 ### SVC-PIPE-AM-03 · MapOrchestrator [domain, internal, PipelineV3]
 - Status: done
 - Methods:
-  - `runMap(job)` — DNA + abstract catalog; AI map; validate map.v1 + researchCoverageGate; inject/repair; **ensure `about_workspace`** before footer; write `proposal.sectionMap`; status `mapped`
+  - `runMap(job)` — DNA + abstract catalog; AI map; validate map.v1 + researchCoverageGate; inject/repair; **ensure `about_workspace`** before footer; **strip visual keys** when usable images insufficient; write `proposal.sectionMap`; status `mapped`
 - Deps: ProposalsRepository, ProjectsRepository, catalog, Claude, traces
 - Side effects: async, external API
-- Rules: cover first, footer last, financial + **about_workspace** present (inject if AI omits); competitor → N instances; max 28 sections; fail closed on template gap
+- Rules: cover first, footer last, financial + **about_workspace** present (inject if AI omits); competitor → N instances; max **32** sections; pass `availableImages` (id/purpose) into map AI; omit/strip `banner` / `full_bleed_banner` / `images_gallery` when usable image count &lt; 1 (banner/full-bleed) or &lt; 2 (gallery); fail closed on template gap
 
 ### SVC-PIPE-AM-04 · ResearchCoverageGate [domain, internal, PipelineV3]
 - Status: done
@@ -44,7 +44,7 @@
 ### SVC-PIPE-AM-05 · Prompt packs (files) [domain, internal, PipelineV3]
 - Status: done
 - Methods: N/A — file content via `loadPipelinePrompt`
-- Deps: `dna.core.v1.md`, `research.*.v1.md` (all 8), `map.plan.v1.md`, shared voice/anti-hallucination/depth
+- Deps: `dna.core.v1.md`, `research.*.v1.md` (all 8), `map.plan.v1.md` (visual dividers + max 32 + `availableImages`), shared voice/anti-hallucination/depth
 - Side effects: none
 
 ### SVC-PIPE-AM-06 · Queue processors + ProposalPipelineService [domain, internal, PipelineV3]

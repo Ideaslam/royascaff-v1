@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-07-28 — after change-20260728-000036 client-first pitch branding merge (bug-20260728-000014 DONE)_
+_Last updated: 2026-07-29 — after change-20260729-113947 banner/gallery visual sections merge_
 
 ## Snapshot
 
@@ -67,6 +67,6 @@ _Last updated: 2026-07-28 — after change-20260728-000036 client-first pitch br
 | Admin cross-workspace traces | api · Pipeline Traces | workspace-scoped only in v1 | later admin pack |
 | Vision 1b full | api · Pipeline | partial skip in Phase 2 | later PROP-V3 / polish pack |
 | Full formal disk theme | api · Templates | catalog tokens + shared assets | design pack |
-| Remaining §5.6 non-research keys (opportunities, swot, channel_strategy, toc, …) | api · Templates | research primaries + testimonial shipped (018/023) | later template packs |
+| Remaining §5.6 non-research keys (opportunities, swot, channel_strategy, toc, …) | api · Templates | research + testimonial + visual banner/gallery shipped | later template packs |
 | Structured section editor | web · Proposals | out of v1 | later PROP pack |
 | Remove unused FE pdf deps | web | investigate first | cleanup sprint |

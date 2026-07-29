@@ -81,9 +81,9 @@
 5. **Multi-provider AI** [backend-only] — OpenAI/Gemini stubs partial
 6. **Pipeline v3 foundations** [backend-only] — BullMQ queues (`pipeline.analyze|map|section|assemble|export`), AJV contracts (`dna.v2`, `map.v1`, slots), prompt packs, model-by-request-type resolver
 7. **Analyze worker (Step 1)** [backend-only] — 1a + 1d for all 8 research options (market/competitor/audience/trends/benchmarks/case-studies/social-analysis/action-plan); AJV `dna.v2` fail-closed; traces; vision 1b partial
-8. **Map worker (Step 2)** [backend-only] — `map.v1` + research coverage gate (all 8 primaries; competitor ×N); require/inject `about_workspace` before footer; `maxSections` 28; store `proposal.sectionMap`
+8. **Map worker (Step 2)** [backend-only] — `map.v1` + research coverage gate (all 8 primaries; competitor ×N); require/inject `about_workspace` before footer; `maxSections` **32**; strip `banner` / `full_bleed_banner` / `images_gallery` when usable project/DNA images insufficient; optional map `imageRefs`; store `proposal.sectionMap`
 9. **Prompt packs (dna/research/map/section/translate)** [backend-only] — production packs under `pipeline-v3/prompts/` including full research set
-10. **Section fan-out (Step 3)** [backend-only] — parallel `pipeline.section`; template-scoped contentSchema + `lengthBudgets` (aim 90%); clamp-first + soft max (+10%) AJV + richness; per-section fail/retry (length-only overshoots clamp, no retry)
+10. **Section fan-out (Step 3)** [backend-only] — parallel `pipeline.section`; template-scoped contentSchema + `lengthBudgets` (aim 90%); clamp-first + soft max (+10%) AJV + richness; visual keys require `imageRef` / `images[]` ∈ available DNA/project image ids; per-section fail/retry (length-only overshoots clamp, no retry)
 11. **Assemble (Step 4)** [backend-only] — Handlebars + financial inject + branding + overflow guard + PDF (no AI); uses `generation.language`. `workspace_*` from Settings; `client_logo` = first DNA/project `purpose: client_logo` → else `clients.logoUrl`; **client-first** placement (cover/body client; workspace in `about_workspace` + footer)
 12. **Export (Step 5)** [backend-only] — S3 HTML/PDF → `renderedByLang`; `ready` / `partially_failed`; standalone `financial.html` uses the **v2 commercial template** (API-ported `financial_template.html`); pitch-deck `financial.hbs` unchanged; totals code-computed
 13. **Orchestration engine** [backend-only] — Mongo fan-in after sections; idempotent workers; reconciler ~60s; durable resume from Mongo checkpoints when Redis/app interrupted
@@ -181,21 +181,21 @@
 1. **Disk TemplateAssetResolver** [backend-only] — layout, CSS, partials from `assets.basePath`
 2. **Handlebars render engine** [backend-only] — helpers `money`, `dir`, `t`, `resolveImage`, `pageNumber`; root branding vars `workspace_*` / `client_*`; theme CSS vars from `themeOverrides` (Assemble maps DNA `branding.colorRoles` → primary…text, unless `theme.lockPalette`); presentation vs landing render contracts; zero AI
 3. **pitch-landscape design** [backend-only] — presentation landscape 16:9; primary-led DNA roles; RTL/LTR; **client-first**: cover + interior chrome use `client_*` (no per-page workspace brand-mark); workspace logo/name in `about_workspace` + footer only; website sticky header uses client branding; includes `testimonial.hbs` + `about_workspace.hbs`
-4. **Section catalog (per template)** [backend-only] — shared base **21** keys (incl. `testimonial`, `about_workspace`); each template owns `contentSchema` / length budgets under `src/pipeline-v3/templates/<templateKey>/`; registry `getSectionDef(key, templateKey)`; seed via `buildAllTemplateDocs()`; `maxSections` 28; `roya-presentation` adds local `team` + `risks` (**23**)
-5. **Fixture render API** [backend-only] — `POST /api/data/templates/pitch-landscape/fixture-render` (html|pdf) with optional `templateKey` (`pitch-landscape` \| `pitch-landscape-formal` \| `website-template` \| `roya-presentation`); fixtures include sample branding; roya fixtures include `team`/`risks`
+4. **Section catalog (per template)** [backend-only] — shared base **21** keys in `SHARED_SECTION_KEYS` (incl. `testimonial`, `about_workspace`); each template owns `contentSchema` / length budgets under `src/pipeline-v3/templates/<templateKey>/`; registry `getSectionDef(key, templateKey)`; seed via `buildAllTemplateDocs()`; each template adds local `banner` + `full_bleed_banner` + `images_gallery` (**24** pitch/formal/website; **26** roya = +`team`+`risks`); `maxSections` **32**; visual keys repeatable, not required
+5. **Fixture render API** [backend-only] — `POST /api/data/templates/pitch-landscape/fixture-render` (html|pdf) with optional `templateKey` (`pitch-landscape` \| `pitch-landscape-formal` \| `website-template` \| `roya-presentation`); fixtures include sample branding + `images` map + visual sections; roya also includes `team`/`risks`
 6. **pitch-landscape-formal** [backend-only] — own catalog file; formal theme tokens; shares pitch-landscape disk assets; currently same lengths as pitch (may diverge)
 7. **Active template list API** [backend-only] — `GET /api/data/templates` slim DTO for gallery
 8. **Template gallery UI** [frontend-only] — pick template during project create / sibling
 9. **website-template landing** [backend-only] — key `website-template`; `type: website`, `page.renderMode: landing`; continuous scrolling HTML from `05.smart-watch` style language; own disk `templates/website-template/v1/`; **own** section length schemas (tighter cards vs pitch); HTML primary delivery; optional A4 portrait PDF; assemble skips slide overflow guard
-10. **roya-presentation** [backend-only] — key `roya-presentation`; name `{ ar: "عرض تقديمي — رويا", en: "Roya Presentation" }`; presentation landscape 16:9; own disk `templates/roya-presentation/v1/` with HAIA-from-scratch compositions (not recolored pitch); `theme.lockPalette: true` (DNA / proposal color overrides skipped at assemble); local sections `team` + `risks`
+10. **roya-presentation** [backend-only] — key `roya-presentation`; name `{ ar: "عرض تقديمي — رويا", en: "Roya Presentation" }`; presentation landscape 16:9; own disk `templates/roya-presentation/v1/` with HAIA-from-scratch compositions (not recolored pitch); `theme.lockPalette: true` (DNA / proposal color overrides skipped at assemble); local sections `team` + `risks` + visual dividers
 
 ### Canonical active templates
 | key | basePath | mode | sections |
 |-----|----------|------|----------|
-| `pitch-landscape` | `templates/pitch-landscape/v1` | presentation 16:9 | 21 |
-| `pitch-landscape-formal` | `templates/pitch-landscape/v1` | presentation 16:9 (token variant) | 21 |
-| `website-template` | `templates/website-template/v1` | landing (fluid web) | 21 |
-| `roya-presentation` | `templates/roya-presentation/v1` | presentation 16:9 (HAIA; locked palette) | 23 |
+| `pitch-landscape` | `templates/pitch-landscape/v1` | presentation 16:9 | 24 |
+| `pitch-landscape-formal` | `templates/pitch-landscape/v1` | presentation 16:9 (token variant) | 24 |
+| `website-template` | `templates/website-template/v1` | landing (fluid web) | 24 |
+| `roya-presentation` | `templates/roya-presentation/v1` | presentation 16:9 (HAIA; locked palette) | 26 |
 
 ## 14. Pipeline Traces
 - Scope: BE `PipelineTraceService` + `pipelineTraces` + GET APIs + FE `/ai-requests`
