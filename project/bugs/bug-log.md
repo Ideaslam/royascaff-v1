@@ -3,6 +3,7 @@
 
 | ID | Date | Severity | Area | Summary | Status | File / Change pack |
 |----|------|----------|------|---------|--------|--------------------|
+| 20260730-131000 | 2026-07-30 | medium | Assemble financial / services | Catalog service description missing on financial slide | DONE | `bug-20260730-131000-financial-service-description-missing.md` |
 | 20260730-130700 | 2026-07-30 | high | Proposal editor / view artifacts | Archive save updates HTML but PDF (and cached HTML) stay on last assemble | DONE | `bug-20260730-130700-editor-save-html-pdf-desync.md` |
 | 20260729-193800 | 2026-07-29 | low | web list tables | Rows-per-page dropdown only offers 5; need 5,10,25,50 | DONE | `bug-20260729-193800-pagination-rows-per-page-options.md` |
 | 20260729-193600 | 2026-07-29 | high | Pipeline v3 sections | Visual `imageRef` fails richness (ID too short / thin) | DONE | `bug-20260729-193600-visual-imageRef-richness-too-thin.md` |
