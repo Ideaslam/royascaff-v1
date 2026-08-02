@@ -1,6 +1,6 @@
 # Change Log
 
-_Last updated: 2026-07-30_
+_Last updated: 2026-08-02_
 
 
 ## Summary
@@ -9,7 +9,7 @@ _Last updated: 2026-07-30_
 |-------------|------:|
 | drafted | 0 |
 | in-progress | 0 |
-| verified | 5 |
+| verified | 6 |
 | merged | 35 |
 | cancelled | 0 |
 | blocked | 0 |
@@ -18,6 +18,7 @@ _Last updated: 2026-07-30_
 
 | ID | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |----|------|------|---------|------------|-------------|----------------|-------|--------|
+| 20260802-173135 | 2026-08-02 | modify-feature | REQ-PROP-V3 | — | verified | 8/8 | Financial ratio → `%` via assign code + shared RevenueType enum; exclude ratio from totals | `change-20260802-173135-financial-ratio-revenue-enum/` |
 | 20260730-134031 | 2026-07-30 | modify-feature | REQ-PROP-V3 | — | verified | 2/2 | Generic catalog-driven section repeat (any key, not just timeline/action_plan/services); enabled `social_audit` | `change-20260730-134031-generic-section-repeat/` |
 | 20260729-122650 | 2026-07-29 | modify-feature | REQ-PROP-V3 | — | verified | 5/5 | PDF list section split (map N + financial_part/full) | `change-20260729-122650-pdf-list-section-split/` |
 | 20260728-000034 | 2026-07-28 | polish | — | — | verified | 1/1 | Proposal View action toolbar redesign | `change-20260728-000034-polish-proposal-view-actions/` |
