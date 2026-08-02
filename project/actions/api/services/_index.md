@@ -22,7 +22,7 @@
 | Pipeline v3 Foundations | `pipeline-v3-foundations.md` | SVC-PIPEV3-01..07 | done | 8/8 | BullMQ, repos, traces, schemas, prompts, PDF |
 | Pipeline Traces | `pipeline-traces.md` | SVC-TRACES-00..03 | done | 4/4 | list+stats; Mongo aggregates (proposal/cost/filter) |
 | Pipeline Analyze + Map | `pipeline-analyze-map.md` | SVC-PIPE-AM-01..07 | partial | 6/7 | Steps 1–2; full 8 research options; vision 1b partial |
-| Pipeline Sections + Engine | `pipeline-sections-engine.md` | SVC-PIPE-S3-01..09 | done | 9/9 | Steps 3–5 + assemble colorRoles→themeOverrides; reconciler |
+| Pipeline Sections + Engine | `pipeline-sections-engine.md` | SVC-PIPE-S3-01..09, FIN-DOC, REV-TYPE-01 | done | 11/11 | Assemble/export ratio `%` + `computeServicesFinancial`; RevenueType enum |
 | Pipeline Regen + Translate | `pipeline-regen-translate.md` | SVC-PIPE-RT-01..06 | done | 6/6 | regen, translate, sibling, formal seed |
 | Pipeline Durable Resume | `pipeline-resume.md` | SVC-PIPE-RESUME-01..04 | done | 4/4 | resume helper, incomplete sections, reconciler, fan-in |
 | Projects | `projects.md` | SVC-PROJECTS-01..04 | done | 4/4 | CRUD + DNA versions + snapshot pin + RFP/images (version+legacy) |

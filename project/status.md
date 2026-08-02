@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-07-29 — after change-20260729-113947 banner/gallery visual sections merge_
+_Last updated: 2026-08-02 — after change-20260802-173135 financial ratio RevenueType merge_
 
 ## Snapshot
 
@@ -25,7 +25,7 @@ _Last updated: 2026-07-29 — after change-20260729-113947 banner/gallery visual
 | Creative / AI Jobs | 7/7 | 5/5 | 2/2 | done |
 | Pipeline v3 Foundations | 8/8 | 2/2 | — | done |
 | Pipeline Analyze + Map | 6/7 | — | — | partial |
-| Pipeline Sections + Engine | 9/9 | — | — | done |
+| Pipeline Sections + Engine | 11/11 | — | — | done |
 | Pipeline Regen + Translate | 6/6 | — | — | done |
 | Pipeline Traces | 2/2 | 4/4 | 3/3 | done |
 | Cutover Backfill | 1/1 | — | — | done |

@@ -10,7 +10,7 @@
 - **part**: —
 - **depends-on**: —
 - **blocks**: —
-- **pack-status**: verified
+- **pack-status**: merged
 
 ## Scope
 - Module(s): Pipeline v3 assemble/export financial assignment; Services revenue-type constants

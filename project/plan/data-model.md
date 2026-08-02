@@ -145,7 +145,7 @@ Purpose: sellable service catalog (pricing + bilingual copy)
 | `price` | Number | | — |
 | `unit` | String | | — |
 | `category` | String | category key | → `service-categories.key` |
-| `revenueType` | String | | — |
+| `revenueType` | String | enum wire: `project`\|`recurring`\|`retainer`\|`one-time`\|`hourly`\|`ratio` (`RevenueType`) | — |
 | `definition` | String | | — |
 | `scope_of_work` / `scopeOfWork` | String | dual naming | — |
 | `execution_and_delivery` / `executionAndDelivery` | String | | — |

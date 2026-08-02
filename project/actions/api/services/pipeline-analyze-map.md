@@ -10,6 +10,7 @@
 - Deps: ProjectsRepository, ClientsRepository, Claude, ModelResolver, PipelineTraceService, SchemaRegistry, S3
 - Side effects: async, external API, file read
 - Rules: research full 8 options; never invent URLs/money; fail-closed; trace AI + validation
+  - **DNA `services.financial` is code-owned:** `buildDnaSkeleton` / `reconcileDnaPassthrough` set totals via `computeServicesFinancial` (excludes ratio); AI merge cannot keep invented money totals
 
 ### SVC-PIPE-AM-02 · ResearchModuleRunner [domain, internal, PipelineV3]
 - Status: done

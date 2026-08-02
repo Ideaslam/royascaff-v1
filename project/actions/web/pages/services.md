@@ -8,7 +8,8 @@
 - Guard: layout
 - Notes:
   - Revenue type cell uses `getRevenueTypeLabel` (`creative-form-options.ts`)
-  - Price: `ratio` → `% of campaign value`; else SAR amount
+  - Price: `RevenueType.Ratio` → `N%` only; else SAR amount
+  - Option values / ratio checks use shared FE `RevenueType` enum (`core/constants/revenue-type.ts`)
 
 ### Service Edit `PG-SERVICES-02`
 - Route: `/services/new`, `/services/:id/edit`
@@ -17,6 +18,7 @@
 - Service: AppDataService → EP-SERVICES-03/04/05
 - Guard: layout
 - Notes:
-  - Options: `REVENUE_TYPE_OPTIONS`
+  - Options: `REVENUE_TYPE_OPTIONS` (values from `RevenueType.*`)
   - On save: `revenueType` = select value; `unit` = matching option **label** via `revenueTypeToUnit` (legacy consumers / PDF)
   - Select binds to `revenueType` only (free-text unit not editable)
+

@@ -75,6 +75,10 @@
 - Status: done
 - Methods:
   - `runAssemble(job)` — load ready (+ optionally skip failed) sections; inject financials/dates/client; load workspace Settings + resolve branding; map DNA `branding.colorRoles` (or derive from `branding.colors[]`) → `themeOverrides` **unless** template `theme.lockPalette` (then omit DNA + `proposal.themeOverrides` so catalog tokens win); `TemplateRenderService.renderProposalHtml` with root branding + theme; overflow guard (Puppeteer measure `.page`, shrink steps); PDF via PdfRenderService; stash buffers/keys temp or pass to export job payload via Mongo staging fields; set `steps.assembly` done; enqueue export
+  - `buildFinancial(proposal, project, language)` — assign financial section rows + money totals:
+    - each row includes `revenueType`; ratio → `unitPrice`/`lineTotal` = `formatRatioPercent(price)` (e.g. `10%`); non-ratio → numeric `price * qty`
+    - money totals via shared `computeServicesFinancial` (excludes `RevenueType.Ratio`; tax = subtotal × taxRate)
+    - do **not** edit `.hbs` financial partials; `money` helper passes through strings ending in `%`
 - Branding resolution (root Handlebars):
   | Key | Source |
   |-----|--------|
@@ -112,10 +116,17 @@
 - Status: done
 - Methods:
   - `renderFinancialDocumentHtml(data)` — token-replace commercial template (AR/EN); services table, chart, 50/30/20 phases
-  - `financialTotalsFromProposal(proposal, project)` — code-computed money inputs
-- Deps: `templates/financial-document/financial_template.html` + cover/font assets
+  - `financialTotalsFromProposal(proposal, project)` — code-computed via `computeServicesFinancial` (ratio excluded from money)
+  - `formatPriceCell` — ratio → `N%` only; else SAR / ر.س; category/bar aggregates skip ratio
+- Deps: `templates/financial-document/financial_template.html` + cover/font assets; `common/types/revenue-type.ts`
 - Side effects: none (pure string)
-- Rules: parity with FE `FinancialTemplateService`; no AI
+- Rules: parity with FE `FinancialTemplateService`; no AI; branching via `RevenueType` / `isRatioRevenueType`
+
+### SVC-REV-TYPE-01 · RevenueType shared enum [domain, internal]
+- Status: done
+- Location: `src/common/types/revenue-type.ts`
+- Exports: `RevenueType` enum (`project`|`recurring`|`retainer`|`one-time`|`hourly`|`ratio`); `isRatioRevenueType`; `formatRatioPercent`; `computeServicesFinancial`
+- Rules: wire values unchanged (no DB migration); labels stay on FE; money totals never include ratio
 
 ### SVC-PIPE-S3-07 · PipelineReconciler [infrastructure, internal, PipelineV3]
 - Status: done

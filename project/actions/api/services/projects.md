@@ -8,6 +8,7 @@
   - `list` / `get` / `update` / `archive` / `updateShell`
   - `createProposalFromProject` — resolve `dnaVersionId` (or latest ready); pin `dnaVersionId` + `dnaSnapshot`; services from version; enqueue analyze (with `dnaVersionId`) or map
   - DNA versions: `listDnaVersions`, `getDnaVersion`, `createDnaVersion` (blank|copyFrom), `updateDnaVersionInputs`, `renameDnaVersion`, `deleteDnaVersion` (hard; 409 if generating), `enqueueGenerateDnaVersion` (confirmOverwrite / 409), `putDnaVersionContent` (AJV dna.v2)
+  - `computeFinancial(services, taxRate, currency)` → `computeServicesFinancial` — **excludes** `RevenueType.Ratio` from subtotal/tax/grand; used on project create/update and DNA version create/update inputs
   - Version media: `uploadRfpForDnaVersion`, `uploadImagesForDnaVersion`, `patchImagesForDnaVersion` (mirror onto project)
   - Legacy: `getDna` (latest ready), `enqueueRegenerateDna` (ensure version → generate), project-level RFP/images
 - Deps: ProjectsRepository, **ProjectDnaVersionsRepository**, ClientsRepository, ProposalsRepository, TemplatesRepository, S3Service, PipelineQueueService, …

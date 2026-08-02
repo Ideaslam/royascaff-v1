@@ -1,6 +1,6 @@
 # Pack Status — change-20260802-173135-financial-ratio-revenue-enum
 
-- **pack-status**: verified
+- **pack-status**: merged
 - **request-id**: REQ-PROP-V3
 - **depends-on**: —
 - **Artifacts done**: 8/8
@@ -24,4 +24,4 @@
 
 ## Next action
 
-- Await merge gate: merge pack into main blueprint?
+- Pack complete. Further work = new pack.
