@@ -69,7 +69,7 @@ Scaffold the engine into your project root:
 npx royascaff init
 ```
 
-With git initialized at the project root:
+With git initialized inside `royascaff/` only (your project keeps its own git):
 
 ```bash
 npx royascaff init --git
@@ -89,8 +89,9 @@ your-app/
   .cursor/
     skills/         # /flow, /initial-build, …
   royascaff/
+    .git/           # only with --git (engine repo)
     engine/         # flows, templates, rules
-  project/          # generated later by the engine
+  project/          # generated later by the engine (uses project git)
 ```
 
 To overwrite an existing scaffold:

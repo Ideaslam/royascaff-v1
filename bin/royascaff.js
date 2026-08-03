@@ -15,7 +15,7 @@ Usage:
 
 Options:
   --force   Overwrite existing royascaff/engine/ or .cursor/skills/ if present
-  --git     Run git init at the project root (skipped if .git already exists)
+  --git     Run git init inside royascaff/ only (skipped if royascaff/.git exists)
   --help    Show this help
 
 Examples:
@@ -70,15 +70,15 @@ function copyDir(src, dest, force) {
   fs.cpSync(src, dest, { recursive: true });
 }
 
-function initGit(targetDir) {
-  const gitDir = path.join(targetDir, ".git");
+function initGit(royascaffDir) {
+  const gitDir = path.join(royascaffDir, ".git");
   if (exists(gitDir)) {
-    console.log("  git: skipped (already a git repository)");
+    console.log("  git: skipped (royascaff/ is already a git repository)");
     return;
   }
 
-  execSync("git init", { cwd: targetDir, stdio: "inherit" });
-  console.log("  git: initialized repository");
+  execSync("git init", { cwd: royascaffDir, stdio: "inherit" });
+  console.log("  git: initialized repository in royascaff/");
 }
 
 function init(targetDir, flags) {
@@ -90,7 +90,8 @@ function init(targetDir, flags) {
 
   const engineSrc = path.join(PACKAGE_ROOT, "engine");
   const skillsSrc = path.join(PACKAGE_ROOT, "skills");
-  const engineDest = path.join(resolvedTarget, "royascaff", "engine");
+  const royascaffDir = path.join(resolvedTarget, "royascaff");
+  const engineDest = path.join(royascaffDir, "engine");
   const skillsDest = path.join(resolvedTarget, ".cursor", "skills");
 
   console.log(`Scaffolding RoyaScaff into ${resolvedTarget}\n`);
@@ -104,7 +105,7 @@ function init(targetDir, flags) {
   console.log("  copied .cursor/skills/");
 
   if (flags.git) {
-    initGit(resolvedTarget);
+    initGit(royascaffDir);
   }
 
   console.log(`
