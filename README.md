@@ -113,3 +113,13 @@ npx ./royascaff-1.2.1.tgz init /tmp/test-app
 2. **New build**: Phase 0–2 design, then REQ-INIT packs (Phase 3.x), then Phase 4 when ready.
 3. **Legacy code**: Phase R (document + REQ-R packs for gaps).
 4. **Features**: `/change-mode`. **UI polish**: `/polish`. **Bugs**: `/bug-fix`.
+
+## License & contributing
+
+RoyaScaff is released under the [MIT License](LICENSE). You are free to use, modify, and
+improve it — commercially or otherwise.
+
+Source repository: [github.com/roya-tech-team/royascaffold](https://github.com/roya-tech-team/royascaffold)
+
+Contributions are welcome. Fork the repo, make your changes, and open a pull request.
+Improvements to flows, templates, rules, and skills help everyone building with AI-Control.
