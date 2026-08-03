@@ -2,7 +2,7 @@
 
 Per-module endpoint tables for one API app. Lives at `project/actions/<api-app>/endpoints/<module>.md` with a routing registry at `endpoints/_index.md`. Each endpoint has an `EP-<MODULE>-NN` ID for cross-referencing.
 
-Layout contract: `engine/project-layout.md`. ID scheme: `engine/conventions.md` → **Artifact ID Scheme**.
+Layout contract: `royascaff/engine/project-layout.md`. ID scheme: `royascaff/engine/conventions.md` → **Artifact ID Scheme**.
 
 > Verbose guidance → `references/endpoints-template-guide.md`
 
@@ -21,11 +21,11 @@ Layout contract: `engine/project-layout.md`. ID scheme: `engine/conventions.md` 
 ```
 
 Auth values: `public`, `authenticated`, `role:{role}`, `owner`.
-Status values: `planned` · `partial` · `done` · `deferred` (see `engine/conventions.md`). New endpoints default to `planned`; `deferred` states its reason in Notes.
+Status values: `planned` · `partial` · `done` · `deferred` (see `royascaff/engine/conventions.md`). New endpoints default to `planned`; `deferred` states its reason in Notes.
 
 ## Registry — `endpoints/_index.md`
 
-Use `engine/templates/index-template.md`. One row per module file; record ID ranges (e.g. `EP-USERS-01..06`).
+Use `royascaff/engine/templates/index-template.md`. One row per module file; record ID ranges (e.g. `EP-USERS-01..06`).
 
 ## Example — `endpoints/users.md`
 

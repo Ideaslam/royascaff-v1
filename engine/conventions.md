@@ -3,7 +3,7 @@
 All spec files (endpoints, services, pages, views) inherit these defaults.
 A spec only documents a value when it **deviates** from this file.
 
-**System-specific facts** (framework versions, database, queues, storage, AI/email/payment providers, brand colors, product name, repo paths) live only in generated `project/profile.md`. Never put them in `engine/`.
+**System-specific facts** (framework versions, database, queues, storage, AI/email/payment providers, brand colors, product name, repo paths) live only in generated `project/profile.md`. Never put them in `royascaff/engine/`.
 
 ---
 

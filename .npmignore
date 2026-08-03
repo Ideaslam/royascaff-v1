@@ -1,0 +1,6 @@
+.git
+.gitignore
+*.tgz
+.DS_Store
+.cursor
+node_modules

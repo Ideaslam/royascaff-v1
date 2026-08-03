@@ -2,14 +2,14 @@
 
 Every spec subdirectory (`services/`, `endpoints/`, `pages/`, `views/`) has an `_index.md` at its top. It is the **routing registry** a reader loads *first* to find which module file to open — and it doubles as the **build-status map** for that directory.
 
-> Read this before scanning a directory. Load only the module files you need. Status values and ID scheme: `engine/conventions.md`. Layout: `engine/project-layout.md`.
+> Read this before scanning a directory. Load only the module files you need. Status values and ID scheme: `royascaff/engine/conventions.md`. Layout: `royascaff/engine/project-layout.md`.
 
 ## Schema
 
 ```md
 # {Services|Endpoints|Pages|Views} Registry — {App Name}
 
-> Status: `planned` · `partial` · `done` · `deferred` — see `engine/conventions.md`. `Done/Total` counts built vs specced artifacts.
+> Status: `planned` · `partial` · `done` · `deferred` — see `royascaff/engine/conventions.md`. `Done/Total` counts built vs specced artifacts.
 
 | Module | File | IDs / Route prefix | Status | Done/Total | Purpose |
 |--------|------|--------------------|--------|-----------|---------|
@@ -19,7 +19,7 @@ Every spec subdirectory (`services/`, `endpoints/`, `pages/`, `views/`) has an `
 - **Module** — module name (must match `project/plan/modules.md`).
 - **File** — the per-module spec file in this directory.
 - **IDs / Route prefix** — ID range (`EP-<MODULE>-NN`, `SVC-<MODULE>-NN`) for backend, or route prefix for pages/views.
-- **Status** — the **rolled-up** module status (see rollup rule in `engine/conventions.md`).
+- **Status** — the **rolled-up** module status (see rollup rule in `royascaff/engine/conventions.md`).
 - **Done/Total** — count of `done` artifacts vs total specced (deferred count as not-done). Omit for page/view registries if IDs aren't used — keep the Status column.
 - **Purpose** — one line.
 
@@ -28,7 +28,7 @@ Every spec subdirectory (`services/`, `endpoints/`, `pages/`, `views/`) has an `
 ```md
 # Endpoints Registry — Backend API
 
-> Status: `planned` · `partial` · `done` · `deferred` — see `engine/conventions.md`. `Done/Total` counts built vs specced endpoints.
+> Status: `planned` · `partial` · `done` · `deferred` — see `royascaff/engine/conventions.md`. `Done/Total` counts built vs specced endpoints.
 
 | Module | File | Route prefix | Status | Done/Total | Purpose |
 |--------|------|--------------|--------|-----------|---------|
