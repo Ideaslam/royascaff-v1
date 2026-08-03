@@ -34,7 +34,7 @@ The most important section. Its **Key** column defines:
 
 ### App Key → Spec Files
 
-Per-module layout (see `engine/project-layout.md`):
+Per-module layout (see `.cursor/royascaff/engine/project-layout.md`):
 
 | Type | Folder | Spec structure |
 |------|--------|----------------|
@@ -46,7 +46,7 @@ Per-module layout (see `engine/project-layout.md`):
 Append a row with `mobile-*` Type, its own Key, repo, framework, and native UI library. Its screens are specified in `project/actions/<key>/views/<module>.md`. Mobile apps reuse the existing API — no duplicated business logic.
 
 ### Tech Stack & Brand (live here, not in engine)
-`project/profile.md` is the **only** place for concrete stack (language, framework, DB, queues, storage), integration providers, brand tokens, and product name. `engine/conventions.md` stays product-agnostic.
+`project/profile.md` is the **only** place for concrete stack (language, framework, DB, queues, storage), integration providers, brand tokens, and product name. `.cursor/royascaff/engine/conventions.md` stays product-agnostic.
 
 ### Repositories
 Include role and where each lives relative to workspace root, plus the active branch.

@@ -2,7 +2,7 @@
 
 Single source of truth for apps, repos, stack, brand, environments, integrations. Lives at `project/profile.md`.
 
-**This file holds all system-specific facts.** Tech stack, brand tokens, product name, and providers never go in `engine/` — only here.
+**This file holds all system-specific facts.** Tech stack, brand tokens, product name, and providers never go in `.cursor/royascaff/engine/` — only here.
 
 > Verbose guidance → `references/profile-template-guide.md`
 
@@ -42,7 +42,7 @@ Single source of truth for apps, repos, stack, brand, environments, integrations
 ```
 
 Key = `target-app` in changes = folder under `project/actions/`.
-Type → specs (per-module): api → `services/` + `endpoints/`; web → `pages/`; mobile-* → `views/`. See `engine/project-layout.md`.
+Type → specs (per-module): api → `services/` + `endpoints/`; web → `pages/`; mobile-* → `views/`. See `.cursor/royascaff/engine/project-layout.md`.
 
 ## Example
 

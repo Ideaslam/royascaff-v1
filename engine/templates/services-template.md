@@ -2,7 +2,7 @@
 
 Per-module service specs for one API app. Lives at `project/actions/<api-app>/services/<module>.md` with a routing registry at `services/_index.md`. Created **before** endpoints — endpoints reference services.
 
-Layout contract: `engine/project-layout.md`. ID scheme: `engine/conventions.md` → **Artifact ID Scheme**.
+Layout contract: `.cursor/royascaff/engine/project-layout.md`. ID scheme: `.cursor/royascaff/engine/conventions.md` → **Artifact ID Scheme**.
 
 > Verbose guidance → `references/services-template-guide.md`
 
@@ -21,11 +21,11 @@ Layout contract: `engine/project-layout.md`. ID scheme: `engine/conventions.md` 
 ```
 
 Type: `internal` (business logic) or `external` (third-party adapter).
-Status: `planned` · `partial` · `done` · `deferred` (see `engine/conventions.md`). New services default to `planned`; `deferred` states its reason (e.g. `deferred: waiting on provider`).
+Status: `planned` · `partial` · `done` · `deferred` (see `.cursor/royascaff/engine/conventions.md`). New services default to `planned`; `deferred` states its reason (e.g. `deferred: waiting on provider`).
 
 ## Registry — `services/_index.md`
 
-Use `engine/templates/index-template.md`. One row per module file.
+Use `.cursor/royascaff/engine/templates/index-template.md`. One row per module file.
 
 ## Example — `services/users.md`
 

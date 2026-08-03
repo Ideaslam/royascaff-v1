@@ -1,6 +1,6 @@
 # Project Layout — Blueprint Contract
 
-The product ships **`engine/` only**. There is no pre-seeded `project/` folder and no placeholder READMEs.
+The product ships **`.cursor/royascaff/engine/` only**. There is no pre-seeded `project/` folder and no placeholder READMEs.
 
 `project/` is **generated output** — the living blueprint for *this* system. The engine creates it on demand during Phase 0–4 or Phase R.
 
@@ -12,12 +12,12 @@ The product ships **`engine/` only**. There is no pre-seeded `project/` folder a
 
 | Zone | Shipped with RoyaScaff? | Role |
 |------|-------------------------|------|
-| `engine/` | **Yes** — the product | How to build (flows, templates, rules, this layout) |
+| `.cursor/royascaff/engine/` | **Yes** — the product | How to build (flows, templates, rules, this layout) |
 | `project/` | **No** — created by the engine | What this system is (SSOT blueprint) |
 
 **Rebuild test** (after merge): copying `project/` alone (main blueprint) must be enough to understand and rebuild the **implemented** app.
 
-**Engine purity**: `engine/` never contains system-specific data. Those live only in generated `project/profile.md`.
+**Engine purity**: `.cursor/royascaff/engine/` never contains system-specific data. Those live only in generated `project/profile.md`.
 
 ---
 
@@ -27,7 +27,7 @@ The product ships **`engine/` only**. There is no pre-seeded `project/` folder a
 
 - In-flight work lives only inside a **change work pack** under `project/changes/change-<ID>-<slug>/`.
 - Do **not** edit main plan/actions/rules/profile/description while a pack is in flight.
-- Main files may be **read** for context; Phase 2 / Phase R may **write** the roadmap to main (`planned` / `partial` / `done` — see `engine/conventions.md`).
+- Main files may be **read** for context; Phase 2 / Phase R may **write** the roadmap to main (`planned` / `partial` / `done` — see `.cursor/royascaff/engine/conventions.md`).
 - In-flight progress: `project/changes/change-log.md` + pack `status.md` (+ `build-program.md` for REQ-INIT / REQ-R).
 
 ---
@@ -61,12 +61,12 @@ Why datetime (not a short hash): lexicographically sortable, human-readable, and
 
 ## Bootstrap gate (run before any phase that writes blueprint files)
 
-1. Check whether `project/` exists next to `engine/` (same workspace root as RoyaScaff, or the path the user designated as the blueprint root).
+1. Check whether `project/` exists at the workspace root (or the path the user designated as the blueprint root).
 2. **If missing** — create the **root skeleton** below (directories only; no README placeholders). Then continue the active flow, creating each file from its template when that step runs.
 3. **If present** — do not recreate.
 4. **Phase 5 / P / 6** require an existing blueprint. If `project/profile.md` is missing, stop and route to Phase 0 or Phase R.
 
-Default blueprint root: `<workspace>/project/` beside `<workspace>/engine/`.
+Default blueprint root: `<workspace>/project/`.
 
 ---
 
@@ -155,7 +155,7 @@ project/changes/change-<ID>-<slug>/
 
 ## Change log index contract
 
-`project/changes/change-log.md` is a **live registry**, not a finished-work archive. Template: `engine/templates/change-log-template.md`.
+`project/changes/change-log.md` is a **live registry**, not a finished-work archive. Template: `.cursor/royascaff/engine/templates/change-log-template.md`.
 
 ### Pack-status vocabulary
 
@@ -187,7 +187,7 @@ Flat folders with shared `request-id` in metadata (e.g. `REQ-7`). Optional `depe
 | `REQ-INIT` | Initial Build Step 3.0 | Slice Phase 2 planned main into ordered init packs |
 | `REQ-R` | Phase R.Done.2 | Gaps / drift-fix items after reverse-engineer |
 
-File: `project/changes/build-program.md` — template `engine/templates/build-program-template.md`.  
+File: `project/changes/build-program.md` — template `.cursor/royascaff/engine/templates/build-program-template.md`.  
 Pack folders: `change-<ID>-init-<slug>/` or `change-<ID>-r-<slug>/` (unique datetime ID per pack). Implement via Change Mode from Step 5.4 — never a monolith Phase 3.
 
 ---
@@ -220,7 +220,7 @@ Pack folders: `change-<ID>-init-<slug>/` or `change-<ID>-r-<slug>/` (unique date
 
 **Call chain:** `pages/*` or `views/*` → `endpoints/*` → `services/*` → repositories / providers
 
-**IDs:** `SVC-<MODULE>-NN` / `EP-<MODULE>-NN` / `PG-<MODULE>-NN` / `VW-<MODULE>-NN` (see `engine/conventions.md`).
+**IDs:** `SVC-<MODULE>-NN` / `EP-<MODULE>-NN` / `PG-<MODULE>-NN` / `VW-<MODULE>-NN` (see `.cursor/royascaff/engine/conventions.md`).
 
 ---
 

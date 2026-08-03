@@ -11,9 +11,9 @@ description: >-
 
 ## First Action
 
-1. Read `engine/project-layout.md` (bootstrap gate).
+1. Read `.cursor/royascaff/engine/project-layout.md` (bootstrap gate).
 2. If resuming implementation: read `project/changes/change-log.md` + `project/changes/build-program.md` first.
-3. Read `engine/flows/initial-build.md` in full.
+3. Read `.cursor/royascaff/engine/flows/initial-build.md` in full.
 
 ## Phase Summary
 
@@ -40,8 +40,8 @@ description: >-
 
 | Output | Template |
 |--------|----------|
-| Profile / description / plan / actions | matching `engine/templates/*` |
-| Build program | `engine/templates/build-program-template.md` |
+| Profile / description / plan / actions | matching `.cursor/royascaff/engine/templates/*` |
+| Build program | `.cursor/royascaff/engine/templates/build-program-template.md` |
 | Packs | change-request, change-status, change-blueprint-index, change-log |
 
 ## Done

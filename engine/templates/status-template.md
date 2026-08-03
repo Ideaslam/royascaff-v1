@@ -2,7 +2,7 @@
 
 The single **bird's-eye view** of the whole system's build state. Lives at `project/status.md`. Any human or AI reads this first to answer **"where are we, and what is left to build?"** without scanning every spec file.
 
-> This file is a **summary**, rolled up from the per-artifact status in `project/actions/**` and the `_index.md` registries. It must always agree with them. History of *what changed* stays in `project/changes/change-log.md`; this file is the *current state + roadmap*, not the history. Status values: `planned` · `partial` · `done` · `deferred` (see `engine/conventions.md`).
+> This file is a **summary**, rolled up from the per-artifact status in `project/actions/**` and the `_index.md` registries. It must always agree with them. History of *what changed* stays in `project/changes/change-log.md`; this file is the *current state + roadmap*, not the history. Status values: `planned` · `partial` · `done` · `deferred` (see `.cursor/royascaff/engine/conventions.md`).
 
 ## Schema
 

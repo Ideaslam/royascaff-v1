@@ -7,7 +7,7 @@
 - One file per module: `project/actions/<api-app>/endpoints/<module>.md`.
 - Registry: `project/actions/<api-app>/endpoints/_index.md` (see `../index-template.md`).
 - `<api-app>` is the API app's key from the Applications table in `project/profile.md`.
-- Every endpoint must have a unique `EP-<MODULE>-NN` ID (see `engine/conventions.md` → Artifact ID Scheme).
+- Every endpoint must have a unique `EP-<MODULE>-NN` ID (see `.cursor/royascaff/engine/conventions.md` → Artifact ID Scheme).
 - Keep descriptions implementation-oriented and clear.
 - Use backend meaning, not only frontend button behavior.
 - If an endpoint is async, say so explicitly in the Notes column.
@@ -27,7 +27,7 @@
 | `Input` | Params, query, and body fields (compact) |
 | `Return` | HTTP status + DTO/shape name |
 | `Service` | `ServiceName.methodName()` — must exist in the app's `services/` specs |
-| `Status` | Build state: `planned`, `partial`, `done`, `deferred` (see `engine/conventions.md`). Defaults to `planned` when the endpoint is specced before code. |
+| `Status` | Build state: `planned`, `partial`, `done`, `deferred` (see `.cursor/royascaff/engine/conventions.md`). Defaults to `planned` when the endpoint is specced before code. |
 | `Notes` | Pagination, async, soft-delete, snapshot; **for `deferred`, the reason** (e.g. `deferred: post-MVP`) |
 
 ## Auth Values
@@ -41,7 +41,7 @@
 
 ## Envelope & Pagination
 
-Inherit from `engine/conventions.md`:
+Inherit from `.cursor/royascaff/engine/conventions.md`:
 - Success: `{ success: true, data: <payload> }`
 - Error: `{ success: false, message, statusCode, error?, errors? }`
 - Paginated lists: `{ data: T[], total, page, limit }`

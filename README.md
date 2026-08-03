@@ -61,9 +61,54 @@ code is REQ-INIT packs (not a monolith Phase 3). Resume from `change-log.md` / `
 
 Details: `engine/conventions.md` → **Build Status** and **Main vs pack vs index**.
 
+## Install
+
+Scaffold the engine into your project root:
+
+```bash
+npx royascaff init
+```
+
+With git initialized at the project root:
+
+```bash
+npx royascaff init --git
+```
+
+Target a specific directory:
+
+```bash
+npx royascaff init ./my-app --git
+```
+
+This copies `.cursor/royascaff/engine/` and `.cursor/skills/` into your project. It does **not** create
+`project/` — the engine generates that when you start Phase 0–4 or Phase R.
+
+```text
+your-app/
+  .cursor/
+    royascaff/
+      engine/       # flows, templates, rules
+    skills/         # /flow, /initial-build, …
+  project/          # generated later by the engine
+```
+
+To overwrite an existing scaffold:
+
+```bash
+npx royascaff init --force
+```
+
+### Local dry-run (before publish)
+
+```bash
+npm pack
+npx ./royascaff-1.2.1.tgz init /tmp/test-app
+```
+
 ## How to use
 
-1. Open `engine/flow.md`.
+1. Open `.cursor/royascaff/engine/flow.md`.
 2. **New build**: Phase 0–2 design, then REQ-INIT packs (Phase 3.x), then Phase 4 when ready.
 3. **Legacy code**: Phase R (document + REQ-R packs for gaps).
 4. **Features**: `/change-mode`. **UI polish**: `/polish`. **Bugs**: `/bug-fix`.

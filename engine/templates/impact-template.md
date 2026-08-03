@@ -43,7 +43,7 @@ Feature state: none | partial | complete
 - depends-on: [change-<ID> or —] — current pack-status of dep: …
 ```
 
-`State` (none/partial/complete) maps to artifact **status** in the pack: `none`→`planned`, `partial`→`partial`, `complete`→`done` after implement. See `engine/conventions.md`.
+`State` (none/partial/complete) maps to artifact **status** in the pack: `none`→`planned`, `partial`→`partial`, `complete`→`done` after implement. See `.cursor/royascaff/engine/conventions.md`.
 
 ## Example
 

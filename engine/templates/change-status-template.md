@@ -2,7 +2,7 @@
 
 Per-pack dashboard. Lives at `project/changes/change-<ID>-<slug>/status.md`.
 
-Artifact statuses: `planned` · `partial` · `done` · `deferred` (see `engine/conventions.md`).
+Artifact statuses: `planned` · `partial` · `done` · `deferred` (see `.cursor/royascaff/engine/conventions.md`).
 Pack-level status also lives in `change-request.md` metadata and **must** match `project/changes/change-log.md`.
 
 ## Schema

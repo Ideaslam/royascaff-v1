@@ -3,7 +3,7 @@
 ## Overview
 
 This flow **reverse-engineers an existing or legacy codebase** and auto-generates the full set of
-`project/` blueprint documents. It is the onboarding counterpart to `engine/flows/initial-build.md`:
+`project/` blueprint documents. It is the onboarding counterpart to `.cursor/royascaff/engine/flows/initial-build.md`:
 where Phases 0–4 assume you are *describing* a new application, this flow *reads* the code that already
 exists and produces the same artifacts.
 
@@ -13,7 +13,7 @@ exists and produces the same artifacts.
 - A team inherits a codebase and needs full documentation before making changes.
 
 **Relationship to other flows**:
-- This flow produces the same `project/` artifacts that Phases 0–4 of `engine/flows/initial-build.md`
+- This flow produces the same `project/` artifacts that Phases 0–4 of `.cursor/royascaff/engine/flows/initial-build.md`
   would produce, **plus** `plan/roles-and-authorization.md` (which initial-build does not generate
   separately — reverse-engineering adds it because auth patterns can be extracted from existing code):
   `profile.md`, `description.md`, `plan/modules.md` (includes features), `plan/data-model.md`,
@@ -21,23 +21,23 @@ exists and produces the same artifacts.
   `actions/<api-app>/services/<module>.md` + `_index.md`,
   `actions/<api-app>/endpoints/<module>.md` + `_index.md`,
   `actions/<web-app>/pages/<module>.md`, and `rules.md`.
-- After completion, use **Phase 5** (`engine/flows/change-mode.md`) or **Phase 6**
-  (`engine/flows/bug-fix.md`) for all future work. No need to re-run this flow.
+- After completion, use **Phase 5** (`.cursor/royascaff/engine/flows/change-mode.md`) or **Phase 6**
+  (`.cursor/royascaff/engine/flows/bug-fix.md`) for all future work. No need to re-run this flow.
 - This flow does **not** generate code or run the standard verification (those apply to greenfield
   builds). Instead, Phase R.3 runs a **drift analysis** that validates the generated blueprint against
   the actual code.
 
 **Key references** (load on every step that generates specs):
-- **`engine/conventions.md`** — global defaults for all specs. A spec only documents a value when it
+- **`.cursor/royascaff/engine/conventions.md`** — global defaults for all specs. A spec only documents a value when it
   **deviates** from conventions. Generated endpoint/service/page specs must inherit these defaults.
-- **`engine/rules/backend-rule.md`** — architectural layering standard. Used during scanning to
+- **`.cursor/royascaff/engine/rules/backend-rule.md`** — architectural layering standard. Used during scanning to
   identify architecture violations for the drift report.
-- **`engine/rules/frontend-rule.md`** — frontend isolation and layering standard. Same purpose.
+- **`.cursor/royascaff/engine/rules/frontend-rule.md`** — frontend isolation and layering standard. Same purpose.
 
 **Two zones still apply**:
-- **`engine/`** — this flow (`flows/reverse-engineer.md`), generic templates (`engine/templates/`),
-  and generic rules (`engine/rules/`). Reusable across any product. Layout contract:
-  `engine/project-layout.md`.
+- **`.cursor/royascaff/engine/`** — this flow (`flows/reverse-engineer.md`), generic templates (`.cursor/royascaff/engine/templates/`),
+  and generic rules (`.cursor/royascaff/engine/rules/`). Reusable across any product. Layout contract:
+  `.cursor/royascaff/engine/project-layout.md`.
 - **`project/`** — **generated** living blueprint (not shipped empty):
   `profile.md`, `description.md`, `plan/`, `actions/`, `rules.md`, `verify/`, `status.md`.
 
@@ -52,10 +52,10 @@ Follow each phase in order. Each step declares its **Input**, **Template** (opti
 
 ## Bootstrap — Create Blueprint Root
 
-- **Input**: `engine/project-layout.md`
+- **Input**: `.cursor/royascaff/engine/project-layout.md`
 - **Output**: `project/` root skeleton (directories only)
 - **Actions**:
-  1. Load `engine/project-layout.md`.
+  1. Load `.cursor/royascaff/engine/project-layout.md`.
   2. Run the **Bootstrap gate**: if `project/` is missing, create `plan/`, `actions/`, `changes/`, `bugs/`, `verify/`, `docs/`.
   3. Do **not** write placeholder READMEs. Create each real file only when its Phase R step runs.
 - **Done when**: Blueprint root exists and is ready for R.0 writes.
@@ -71,7 +71,7 @@ system profile in `project/profile.md` that the rest of the flow will reference.
 ### Step R.0.1 — Workspace Scan
 
 - **Input**: Workspace root directory (all repositories/folders)
-- **Template**: `engine/templates/profile-template.md`
+- **Template**: `.cursor/royascaff/engine/templates/profile-template.md`
 - **Output**: `project/profile.md`
 - **Actions**:
   1. Scan the workspace root for all repositories, monorepo packages, and standalone applications.
@@ -93,7 +93,7 @@ system profile in `project/profile.md` that the rest of the flow will reference.
      build tool using the detection heuristics in **Appendix A**.
   5. Identify integrations from dependencies and env vars:
      - Payment, email, storage, AI, messaging, and any other third-party SDK detected.
-  6. Populate `project/profile.md` from `engine/templates/profile-template.md`:
+  6. Populate `project/profile.md` from `.cursor/royascaff/engine/templates/profile-template.md`:
      - Fill the **Applications** table — each row defines an app **Key** (this key becomes the
        `project/actions/<key>/` folder name), name, type, framework, and repo path.
      - Fill the **Repositories**, **Tech Stack**, **Integrations**, **Environments**, and
@@ -145,21 +145,21 @@ ensures that when scanning frontend apps, the backend endpoints are already docu
 **Scope discipline**: Resolve modules from the code's folder structure. Create **one file per module**
 in the relevant subdirectory. Register every file in the subdirectory's `_index.md` registry.
 
-**Spec defaults**: All generated spec files inherit defaults from `engine/conventions.md`. Only
+**Spec defaults**: All generated spec files inherit defaults from `.cursor/royascaff/engine/conventions.md`. Only
 document values that **deviate** from conventions.
 
 **Status from code**: Because this flow reads code that already exists, every extracted artifact is
-recorded with a **status** (`engine/conventions.md`): `done` when it is fully implemented, `partial`
+recorded with a **status** (`.cursor/royascaff/engine/conventions.md`): `done` when it is fully implemented, `partial`
 when the code is incomplete (`// TODO`, `NotImplementedException`, empty method bodies, missing UI
 states). Never use `planned` here — if there is no code, there is no artifact to extract. Each
-`_index.md` records the rolled-up status + `Done/Total` (see `engine/templates/index-template.md`).
+`_index.md` records the rolled-up status + `Done/Total` (see `.cursor/royascaff/engine/templates/index-template.md`).
 
 ---
 
 ### Step R.1.1 — Schema/Model Extraction
 
 - **Input**: Backend app source code (from repo paths in `project/profile.md`), database type
-- **Template**: `engine/templates/data-model-template.md`
+- **Template**: `.cursor/royascaff/engine/templates/data-model-template.md`
 - **Output**: `project/plan/data-model.md`
 - **Actions**:
   1. Identify the schema/model directory pattern (e.g. `src/modules/*/schemas/`, `src/entities/`,
@@ -185,8 +185,8 @@ states). Never use `planned` here — if there is no code, there is no artifact 
 
 ### Step R.1.2 — Service Discovery
 
-- **Input**: Backend app source code, `project/plan/data-model.md`, `engine/rules/backend-rule.md` (as architectural reference), `engine/conventions.md` (for spec defaults)
-- **Template**: `engine/templates/services-template.md`
+- **Input**: Backend app source code, `project/plan/data-model.md`, `.cursor/royascaff/engine/rules/backend-rule.md` (as architectural reference), `.cursor/royascaff/engine/conventions.md` (for spec defaults)
+- **Template**: `.cursor/royascaff/engine/templates/services-template.md`
 - **Output**: One file per module at `project/actions/<api-app>/services/<module>.md` + `project/actions/<api-app>/services/_index.md`
 - **Actions**:
   1. Identify the service directory pattern (e.g. `src/modules/*/services/`).
@@ -197,7 +197,7 @@ states). Never use `planned` here — if there is no code, there is no artifact 
      type, purpose), dependencies (injected services, repositories, models, config), repositories
      used, external APIs called.
   5. Group services by module. Create one file per module following the template format.
-     Inherit `engine/conventions.md` defaults — only document deviations.
+     Inherit `.cursor/royascaff/engine/conventions.md` defaults — only document deviations.
   6. Create the registry: `project/actions/<api-app>/services/_index.md` — one row per module
      (module name, file link, service count, **status**, **Done/Total**, brief purpose).
   7. Set each service's **status**: `done` if fully implemented, `partial` if incomplete (TODO,
@@ -217,8 +217,8 @@ states). Never use `planned` here — if there is no code, there is no artifact 
 
 ### Step R.1.3 — Endpoint Extraction
 
-- **Input**: Backend app source code, `project/actions/<api-app>/services/_index.md`, `engine/rules/backend-rule.md` (as architectural reference), `engine/conventions.md` (for spec defaults)
-- **Template**: `engine/templates/endpoints-template.md`
+- **Input**: Backend app source code, `project/actions/<api-app>/services/_index.md`, `.cursor/royascaff/engine/rules/backend-rule.md` (as architectural reference), `.cursor/royascaff/engine/conventions.md` (for spec defaults)
+- **Template**: `.cursor/royascaff/engine/templates/endpoints-template.md`
 - **Output**: One file per module at `project/actions/<api-app>/endpoints/<module>.md` + `project/actions/<api-app>/endpoints/_index.md`
 - **Actions**:
   1. Identify the controller/route directory pattern (e.g. `src/modules/*/controllers/`).
@@ -229,7 +229,7 @@ states). Never use `planned` here — if there is no code, there is no artifact 
      middleware (rate limiting, etc.).
   4. Identify global prefixes (e.g. `app.setGlobalPrefix('api/v1')`) and versioning strategy.
   5. Group endpoints by module. Create one file per module following the template format.
-     Inherit `engine/conventions.md` defaults — only document deviations (e.g. if auth matches
+     Inherit `.cursor/royascaff/engine/conventions.md` defaults — only document deviations (e.g. if auth matches
      the global default `JwtAuthGuard + RolesGuard`, don't repeat it; only note `@Public()` or
      custom guards).
   6. Create the registry: `project/actions/<api-app>/endpoints/_index.md` — one row per module
@@ -253,8 +253,8 @@ states). Never use `planned` here — if there is no code, there is no artifact 
 Repeat this step for **each frontend application** discovered in Phase R.0. Web apps produce
 `pages/<module>.md` files; mobile apps produce `views/<module>.md` files.
 
-- **Input**: Frontend app source code, `project/actions/<api-app>/endpoints/_index.md`, `engine/rules/frontend-rule.md` (as architectural reference), `engine/conventions.md` (for spec defaults)
-- **Template**: `engine/templates/pages-template.md` (web) or `engine/templates/views-template.md` (mobile)
+- **Input**: Frontend app source code, `project/actions/<api-app>/endpoints/_index.md`, `.cursor/royascaff/engine/rules/frontend-rule.md` (as architectural reference), `.cursor/royascaff/engine/conventions.md` (for spec defaults)
+- **Template**: `.cursor/royascaff/engine/templates/pages-template.md` (web) or `.cursor/royascaff/engine/templates/views-template.md` (mobile)
 - **Output**: One file per module at `project/actions/<app-key>/pages/<module>.md`
 - **Actions**:
   1. Identify routing and page/component structure. Use detection patterns in **Appendix A**.
@@ -264,7 +264,7 @@ Repeat this step for **each frontend application** discovered in Phase R.0. Web 
   3. Identify shared/layout components (nav, sidebar, headers, footers, layout wrappers, shared
      modals/tables/forms) and frontend state management.
   4. Group pages by module. Create one file per module following the template format.
-     Inherit `engine/conventions.md` frontend defaults — only document deviations.
+     Inherit `.cursor/royascaff/engine/conventions.md` frontend defaults — only document deviations.
   5. Note any frontend isolation violations (direct HTTP calls bypassing services, direct
      external API calls, hardcoded URLs) — these feed into R.3 drift analysis.
 
@@ -293,7 +293,7 @@ Synthesize the raw extraction results from Phase R.1 into higher-level planning 
 
 - **Input**: `project/plan/data-model.md`, `project/actions/<api-app>/services/_index.md`,
   `project/actions/<api-app>/endpoints/_index.md`, all `project/actions/<web-app>/pages/`
-- **Template**: `engine/templates/modules-template.md`
+- **Template**: `.cursor/royascaff/engine/templates/modules-template.md`
 - **Output**: `project/plan/modules.md` (includes features — no separate `features.md`)
 - **Actions**:
   1. Use the **folder structure** as the primary signal for module boundaries:
@@ -347,7 +347,7 @@ Synthesize the raw extraction results from Phase R.1 into higher-level planning 
 
 - **Input**: All source code, `project/profile.md`, `project/plan/modules.md`,
   `project/plan/roles-and-authorization.md` (auth rules already captured — skip auth here)
-- **Template**: `engine/templates/custom-feature-rules-template.md`
+- **Template**: `.cursor/royascaff/engine/templates/custom-feature-rules-template.md`
 - **Output**: `project/rules.md`
 - **Actions**:
   1. **Detect integration providers** — payment, email/SMS, storage, AI/ML, push notifications.
@@ -361,7 +361,7 @@ Synthesize the raw extraction results from Phase R.1 into higher-level planning 
   6. Populate `project/rules.md`: rules grouped by category (integrations, async, security,
      observability, caching). Each rule: rule ID, module/feature reference, constraint, rationale.
      Auth rules: reference `plan/roles-and-authorization.md` — do not duplicate.
-     Generic rules remain in `engine/rules/` only.
+     Generic rules remain in `.cursor/royascaff/engine/rules/` only.
 
 - **Done when**:
   - All integration providers documented with module/feature references
@@ -369,7 +369,7 @@ Synthesize the raw extraction results from Phase R.1 into higher-level planning 
   - Security patterns documented
   - Each rule references a specific module and feature
   - Auth rules deferred to `roles-and-authorization.md` — no duplication
-  - Generic rules remain in `engine/rules/` only
+  - Generic rules remain in `.cursor/royascaff/engine/rules/` only
 
 ---
 
@@ -378,7 +378,7 @@ Synthesize the raw extraction results from Phase R.1 into higher-level planning 
 - **Input**: `project/plan/modules.md`, `project/plan/data-model.md`,
   `project/plan/roles-and-authorization.md`, `project/rules.md`, `project/profile.md`,
   README file(s) if available
-- **Template**: `engine/templates/description-template.md`
+- **Template**: `.cursor/royascaff/engine/templates/description-template.md`
 - **Output**: `project/description.md`
 - **Actions**:
   1. Read `README.md` (or equivalent) as starting point: product name, purpose, audience,
@@ -450,7 +450,7 @@ produce a reconciliation report with actionable recommendations.
   11. **Path and Naming Consistency** — no dead/stale paths; names consistent across all files and `_index.md` registries
   12. **Code Layering Compliance** — BE: controller → service → repository; FE: page → frontend service → endpoint; no business logic in controllers/components; integration providers isolated
   13. **Frontend Third-Party Isolation** — every HTTP call targets configured `apiUrl`; no hardcoded external URLs; no direct third-party calls from frontend — zero tolerance
-  14. **Self-Contained Blueprint** — no `engine/` file contains system-specific data; `project/` docs reference only other `project/` docs and `engine/rules/`; copying `project/` alone is enough to rebuild
+  14. **Self-Contained Blueprint** — no `.cursor/royascaff/engine/` file contains system-specific data; `project/` docs reference only other `project/` docs and `.cursor/royascaff/engine/rules/`; copying `project/` alone is enough to rebuild
   15. **Build Status Coverage** — every service/endpoint/page/view carries a status; each `_index.md` rollup + `Done/Total` matches the per-artifact statuses; anything not `done` is either `planned`, `partial`, or `deferred` (with a reason). Code that exists but is spec'd as `planned` is a drift — fix the status.
 
 - **Done when**: All 15 checks evaluated and findings recorded.
@@ -467,8 +467,8 @@ produce a reconciliation report with actionable recommendations.
      guards/pipes/interceptors not accounted for.
   2. **Identify incomplete features** — `// TODO`, `NotImplementedException`, empty service
      methods, placeholder pages, unused imports, dead code paths.
-  3. **Detect architecture violations** (compare against `engine/rules/backend-rule.md` and
-     `engine/rules/frontend-rule.md`) — controllers calling repos directly, frontend pages
+  3. **Detect architecture violations** (compare against `.cursor/royascaff/engine/rules/backend-rule.md` and
+     `.cursor/royascaff/engine/rules/frontend-rule.md`) — controllers calling repos directly, frontend pages
      making direct HTTP calls, frontend calling external APIs, business logic in controllers,
      circular dependencies.
   4. **Find stale/dead code** — unused exports, dead routes, stale schema fields, commented-out
@@ -593,8 +593,8 @@ produce a reconciliation report with actionable recommendations.
 - **Actions**:
   1. For each drift item, recommend one action:
      - **Add to plan** — code is valid, should be in the blueprint. Update immediately.
-     - **Fix in code** — violates `engine/rules/`. Create a Phase 5 change request
-       (`engine/flows/change-mode.md`).
+     - **Fix in code** — violates `.cursor/royascaff/engine/rules/`. Create a Phase 5 change request
+       (`.cursor/royascaff/engine/flows/change-mode.md`).
      - **Remove from code** — dead/stale. Create a Phase 5 change request.
      - **Mark as tech debt** — known but not urgent. Document in report.
   2. Present recommendations to the user.
@@ -616,7 +616,7 @@ Phase R documents existing code on **main** (correct). It does **not** implement
 
 ### Step R.Done.1 — Generate the Status Dashboard
 
-- **Template**: `engine/templates/status-template.md`
+- **Template**: `.cursor/royascaff/engine/templates/status-template.md`
 - **Output**: `project/status.md`
 - **Actions**: Roll up per-artifact statuses from R.1 + incomplete findings from R.3: Snapshot, By Module, **In Progress** (`partial`), **Next Up**, **Deferred**.
 - **Done when**: `project/status.md` exists and counts match every `_index.md`.
@@ -624,7 +624,7 @@ Phase R documents existing code on **main** (correct). It does **not** implement
 ### Step R.Done.2 — Create REQ-R Build Program (gaps + drift)
 
 - **Input**: `project/status.md`, drift/reconciliation report, `partial`/`planned` artifacts on main
-- **Template**: `engine/templates/build-program-template.md`
+- **Template**: `.cursor/royascaff/engine/templates/build-program-template.md`
 - **Output**: `project/changes/build-program.md` (`request-id: REQ-R`) + pack folders + `change-log.md` rows
 
 #### Actions
@@ -658,10 +658,10 @@ Phase R documents existing code on **main** (correct). It does **not** implement
 
 ### Handoff to other flows
 
-- **Complete a REQ-R pack** → Phase 5 from Step 5.4 on that pack (`engine/flows/change-mode.md`)
+- **Complete a REQ-R pack** → Phase 5 from Step 5.4 on that pack (`.cursor/royascaff/engine/flows/change-mode.md`)
 - **New feature** → Phase 5 (new pack)
-- **Bug** → Phase 6 (`engine/flows/bug-fix.md`)
-- **UI polish only** → Phase P (`engine/flows/polish.md`)
+- **Bug** → Phase 6 (`.cursor/royascaff/engine/flows/bug-fix.md`)
+- **UI polish only** → Phase P (`.cursor/royascaff/engine/flows/polish.md`)
 - Do **not** re-run Phase R unless onboarding a different codebase
 
 ### TBDs and Open Items

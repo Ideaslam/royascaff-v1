@@ -4,11 +4,11 @@ Incrementally add or modify features while keeping the **main** blueprint equal 
 
 Phase 5 is independent of Phases 0–4. Use it any time after a blueprint exists (after Initial Build or Phase R).
 
-**Prerequisite — blueprint must exist.** If `project/profile.md` is missing, stop. Route to Phase 0–4 or Phase R. Layout: `engine/project-layout.md`.
+**Prerequisite — blueprint must exist.** If `project/profile.md` is missing, stop. Route to Phase 0–4 or Phase R. Layout: `.cursor/royascaff/engine/project-layout.md`.
 
 **Isolation invariant:** Do **not** edit main `project/plan/`, `project/actions/`, `project/rules.md`, `project/profile.md`, or `project/description.md` until **Step 5.6 Merge**. All in-flight specs live in the change work pack under `blueprint/`.
 
-**UI polish only?** Use Phase P (`engine/flows/polish.md`) instead — not this flow.
+**UI polish only?** Use Phase P (`.cursor/royascaff/engine/flows/polish.md`) instead — not this flow.
 
 **Initial Build / Phase R packs:** Packs created under `request-id: REQ-INIT` or `REQ-R` (see `project/changes/build-program.md`) use this **same** lifecycle from Step 5.4 (implement → verify → merge). Do not invent a second implementation path.
 
@@ -22,17 +22,17 @@ Phase 5 is independent of Phases 0–4. Use it any time after a blueprint exists
 project/changes/change-<ID>-<slug>/
   change-request.md
   impact.md
-  status.md                 # engine/templates/change-status-template.md
+  status.md                 # .cursor/royascaff/engine/templates/change-status-template.md
   blueprint/
     plan/                   # touched slices only
     actions/…               # per-module delta specs
-    _index.md               # engine/templates/change-blueprint-index-template.md
+    _index.md               # .cursor/royascaff/engine/templates/change-blueprint-index-template.md
   verify-plan.md            # optional
   verify-code.md
   merge-report.md           # after merge
 ```
 
-`<ID>` = local datetime `YYYYMMDD-HHMMSS` at creation (see `engine/project-layout.md` → Pack and bug IDs). **Never** use sequential counters. Register every pack in `change-log.md` immediately (template: `engine/templates/change-log-template.md`).
+`<ID>` = local datetime `YYYYMMDD-HHMMSS` at creation (see `.cursor/royascaff/engine/project-layout.md` → Pack and bug IDs). **Never** use sequential counters. Register every pack in `change-log.md` immediately (template: `.cursor/royascaff/engine/templates/change-log-template.md`).
 
 ---
 
@@ -107,7 +107,7 @@ Present pack blueprint + code file list. Ask: **"Can I proceed?"** Wait for expl
 
 ### Entry Point
 
-Create `project/changes/change-<ID>-<slug>/` from `engine/templates/change-request-template.md`, or describe the change in plain language and run Step 5.0.
+Create `project/changes/change-<ID>-<slug>/` from `.cursor/royascaff/engine/templates/change-request-template.md`, or describe the change in plain language and run Step 5.0.
 
 ---
 
@@ -163,7 +163,7 @@ Silence ≠ confirmation.
 Runs **before** any pack blueprint is finalized. Skip recon for `change-type: new-app`.
 
 - **Input**: Scope + repos + main plan/actions (**read-only**)
-- **Template**: `engine/templates/impact-template.md`
+- **Template**: `.cursor/royascaff/engine/templates/impact-template.md`
 - **Output**: pack `impact.md`
 - **Scope rule**: Load only affected module files via main `_index.md`.
 
@@ -255,7 +255,7 @@ Present code file list + pack blueprint summary. Ask: **"Can I proceed with impl
 #### Implement
 
 - Set pack-status → `in-progress` (change-log + request + pack status).
-- Implement from **pack blueprint** + `engine/rules/*` + main `project/rules.md` (read).
+- Implement from **pack blueprint** + `.cursor/royascaff/engine/rules/*` + main `project/rules.md` (read).
 - Backend: controller → service → repository; integrations isolated.
 - Frontend: pages call app services only; no hardcoded external URLs.
 - Update **pack** artifact statuses and `blueprint/_index.md` Done/Total; mirror into change-log Artifacts done.
@@ -272,7 +272,7 @@ If screenshots submitted, check against pack page/view specs.
 ### Step 5.5 — Post-Build Code Verification
 
 - **Input**: Code + **pack** blueprint + acceptance criteria
-- **Template**: `engine/templates/verification-template.md`
+- **Template**: `.cursor/royascaff/engine/templates/verification-template.md`
 - **Output**: pack `verify-code.md`
 - **Checks** (scoped to pack):
   1. Endpoints in code match pack
@@ -298,7 +298,7 @@ Wait for explicit confirmation.
 1. Apply pack deltas **in-place** into main:
    - `project/plan/*`, `project/actions/**`, `project/rules.md`, `project/description.md`, `project/profile.md` as listed in pack
 2. Refresh main `_index.md` rollups and `project/status.md` (merged reality only).
-3. Write `merge-report.md` (`engine/templates/merge-report-template.md`).
+3. Write `merge-report.md` (`.cursor/royascaff/engine/templates/merge-report-template.md`).
 4. Set pack-status → **`merged`**; move change-log row to Completed with Merged date.
 5. Never leave appended change sections at the bottom of main files.
 

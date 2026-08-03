@@ -5,7 +5,7 @@ Lives at `project/changes/build-program.md`.
 
 Each row becomes (or links to) a change work pack under `project/changes/`. Pack lifecycle = Change Mode (implement → verify → merge). Index: `change-log.md`.
 
-> Layout: `engine/project-layout.md`. Isolation: implement from pack `blueprint/` only; update main at merge.
+> Layout: `.cursor/royascaff/engine/project-layout.md`. Isolation: implement from pack `blueprint/` only; update main at merge.
 
 ## Schema
 
