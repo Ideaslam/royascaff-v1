@@ -10,8 +10,8 @@ description: >-
 
 ## First Action
 
-1. Read `.cursor/royascaff/engine/project-layout.md` (bootstrap gate).
-2. Read `.cursor/royascaff/engine/flows/reverse-engineer.md` in full.
+1. Read `royascaff/engine/project-layout.md` (bootstrap gate).
+2. Read `royascaff/engine/flows/reverse-engineer.md` in full.
 
 ## When to Use
 
@@ -34,7 +34,7 @@ description: >-
 - Follow phases in order.
 - Phase R **documents** existing code on main — it does **not** implement all fixes in one loop.
 - Incomplete / drift-fix items → REQ-R packs; implement via `/change-mode` (Step 5.4+).
-- Never put system-specific data in `.cursor/royascaff/engine/`.
+- Never put system-specific data in `royascaff/engine/`.
 
 ## Done
 

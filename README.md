@@ -81,15 +81,15 @@ Target a specific directory:
 npx royascaff init ./my-app --git
 ```
 
-This copies `.cursor/royascaff/engine/` and `.cursor/skills/` into your project. It does **not** create
+This copies `royascaff/engine/` and `.cursor/skills/` into your project. It does **not** create
 `project/` — the engine generates that when you start Phase 0–4 or Phase R.
 
 ```text
 your-app/
   .cursor/
-    royascaff/
-      engine/       # flows, templates, rules
     skills/         # /flow, /initial-build, …
+  royascaff/
+    engine/         # flows, templates, rules
   project/          # generated later by the engine
 ```
 
@@ -108,7 +108,7 @@ npx ./royascaff-1.2.1.tgz init /tmp/test-app
 
 ## How to use
 
-1. Open `.cursor/royascaff/engine/flow.md`.
+1. Open `royascaff/engine/flow.md`.
 2. **New build**: Phase 0–2 design, then REQ-INIT packs (Phase 3.x), then Phase 4 when ready.
 3. **Legacy code**: Phase R (document + REQ-R packs for gaps).
 4. **Features**: `/change-mode`. **UI polish**: `/polish`. **Bugs**: `/bug-fix`.

@@ -2,7 +2,7 @@
 
 Per-module page specs for one web app. Lives at `project/actions/<app-key>/pages/<module>.md` with a routing registry at `pages/_index.md`. For mobile apps, use `views-template.md` instead.
 
-Layout contract: `.cursor/royascaff/engine/project-layout.md`. Each page has a `PG-<MODULE>-NN` ID. Reference endpoints by `EP-<MODULE>-NN` IDs.
+Layout contract: `royascaff/engine/project-layout.md`. Each page has a `PG-<MODULE>-NN` ID. Reference endpoints by `EP-<MODULE>-NN` IDs.
 
 > Verbose guidance → `references/pages-template-guide.md`
 
@@ -21,11 +21,11 @@ Layout contract: `.cursor/royascaff/engine/project-layout.md`. Each page has a `
 - Notes: paginated list, create via modal dialog
 ```
 
-Status: `planned` · `partial` · `done` · `deferred` (see `.cursor/royascaff/engine/conventions.md`). New pages default to `planned`; `deferred` states its reason in Notes.
+Status: `planned` · `partial` · `done` · `deferred` (see `royascaff/engine/conventions.md`). New pages default to `planned`; `deferred` states its reason in Notes.
 
 ## Registry — `pages/_index.md`
 
-Use `.cursor/royascaff/engine/templates/index-template.md`. One row per module file.
+Use `royascaff/engine/templates/index-template.md`. One row per module file.
 
 ## Example — `pages/users.md`
 

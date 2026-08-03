@@ -7,7 +7,7 @@
 - One file per module: `project/actions/<api-app>/services/<module>.md`.
 - Registry: `project/actions/<api-app>/services/_index.md` (see `../index-template.md`).
 - Create **services** for a module **before** its endpoints. Endpoints call services; client pages call endpoints.
-- Every service must have a unique `SVC-<MODULE>-NN` ID (see `.cursor/royascaff/engine/conventions.md` → Artifact ID Scheme).
+- Every service must have a unique `SVC-<MODULE>-NN` ID (see `royascaff/engine/conventions.md` → Artifact ID Scheme).
 - Group services by module using the same module names from `project/plan/modules.md`.
 - If a service is async, say so explicitly.
 - If a service triggers side effects (email, webhooks, file upload), say so explicitly.
@@ -58,4 +58,4 @@
 
 ## Status
 
-Use `planned` · `partial` · `done` · `deferred` from `.cursor/royascaff/engine/conventions.md`. New services default to `planned`. When `deferred`, state the reason on the Status line.
+Use `planned` · `partial` · `done` · `deferred` from `royascaff/engine/conventions.md`. New services default to `planned`. When `deferred`, state the reason on the Status line.

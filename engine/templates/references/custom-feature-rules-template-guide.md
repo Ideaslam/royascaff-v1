@@ -7,7 +7,7 @@
 - `project/rules.md` is created after `project/plan/modules.md` (which includes features).
 - Use the **exact module and feature names** from the modules file.
 - Put rules here only when they are **feature-specific** or **project-specific**.
-- Do not repeat generic rules already in `.cursor/royascaff/engine/rules/backend-rule.md` or `.cursor/royascaff/engine/rules/frontend-rule.md`.
+- Do not repeat generic rules already in `royascaff/engine/rules/backend-rule.md` or `royascaff/engine/rules/frontend-rule.md`.
 - One feature may have zero, one, or many custom rules.
 - If a rule applies to multiple features, document it once under the primary feature and reference others.
 - Prefer mandatory language: `must`, `must not`, `should`, `should not`.

@@ -4,7 +4,7 @@ Visual / style / copy / spacing / layout tweaks that do **not** change product b
 
 Polish is **not** a bug (nothing is broken) and **not** a full feature change. It still uses a **change work pack** and the live `change-log.md` index so work is trackable across chats.
 
-**Prerequisite:** `project/profile.md` exists. Layout: `.cursor/royascaff/engine/project-layout.md`. Isolation: main plan/actions untouched until merge.
+**Prerequisite:** `project/profile.md` exists. Layout: `royascaff/engine/project-layout.md`. Isolation: main plan/actions untouched until merge.
 
 **Resume:** Read `project/changes/change-log.md` first.
 

@@ -14,7 +14,7 @@ description: >-
 1. Require blueprint: if `project/profile.md` is missing → `/initial-build` or `/reverse-engineer`.
 2. If UI polish only (no API/data/behavior) → `/polish` instead.
 3. Read `project/changes/change-log.md` if present (resume / index).
-4. Read `.cursor/royascaff/engine/flows/change-mode.md` in full.
+4. Read `royascaff/engine/flows/change-mode.md` in full.
 
 ## Isolation (critical)
 

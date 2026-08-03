@@ -13,7 +13,7 @@ description: >-
 
 1. Check `project/profile.md` exists. If missing, stop — route to `/initial-build` or `/reverse-engineer`.
 2. Read `project/changes/change-log.md` if it exists (resume / index).
-3. Read `.cursor/royascaff/engine/flows/polish.md` in full before doing anything else.
+3. Read `royascaff/engine/flows/polish.md` in full before doing anything else.
 
 ## When to Use
 

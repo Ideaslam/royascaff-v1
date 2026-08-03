@@ -2,9 +2,9 @@
 
 **Goal**: Lightweight process for bug fixes that chooses a full change work pack (architectural impact) or a direct code fix (isolated correction).
 
-**Prerequisite — blueprint must exist.** If `project/profile.md` is missing, stop. Route to Phase 0–4 or Phase R. Create `project/bugs/` (and `bug-log.md`) as needed. Layout: `.cursor/royascaff/engine/project-layout.md`.
+**Prerequisite — blueprint must exist.** If `project/profile.md` is missing, stop. Route to Phase 0–4 or Phase R. Create `project/bugs/` (and `bug-log.md`) as needed. Layout: `royascaff/engine/project-layout.md`.
 
-**Style-only tweaks (nothing broken)?** Use Phase P (`.cursor/royascaff/engine/flows/polish.md`) — not this flow.
+**Style-only tweaks (nothing broken)?** Use Phase P (`royascaff/engine/flows/polish.md`) — not this flow.
 
 **Resume:** Read `project/bugs/bug-log.md` first; if Status is `ESCALATED`, also read `project/changes/change-log.md` and open the linked change pack.
 
@@ -25,14 +25,14 @@
 
 Statuses: `PENDING` · `DONE` · `ESCALATED`. Keep the row updated on every transition. For `ESCALATED`, link the change pack folder and optionally note its `pack-status` from `change-log.md`.
 
-IDs use local datetime `YYYYMMDD-HHMMSS` (same rules as change packs — see `.cursor/royascaff/engine/project-layout.md` → Pack and bug IDs). **Never** allocate sequential bug numbers.
+IDs use local datetime `YYYYMMDD-HHMMSS` (same rules as change packs — see `royascaff/engine/project-layout.md` → Pack and bug IDs). **Never** allocate sequential bug numbers.
 
 ---
 
 ## Entry Point
 
 1. **Plain language** — user describes the bug  
-2. **Bug report file** — `project/bugs/bug-<ID>-<slug>.md` from `.cursor/royascaff/engine/templates/bug-report-template.md`
+2. **Bug report file** — `project/bugs/bug-<ID>-<slug>.md` from `royascaff/engine/templates/bug-report-template.md`
 
 Start **Step 6.0**.
 
@@ -68,7 +68,7 @@ When any question answers YES:
 2. Create work pack `project/changes/change-<ID>-bug-fix-<slug>/` (mint a new datetime `<ID>` — see `project-layout.md`).
 3. Set `change-type: bug-fix` in `change-request.md`; `pack-status: drafted`; register in `change-log.md`.
 4. Link bug-log **File / Change pack** column to that folder.
-5. Proceed with **Phase 5** (`.cursor/royascaff/engine/flows/change-mode.md`) from Step 5.0 — **isolation applies**: main plan/actions untouched until pack **merge** (Step 5.6).
+5. Proceed with **Phase 5** (`royascaff/engine/flows/change-mode.md`) from Step 5.0 — **isolation applies**: main plan/actions untouched until pack **merge** (Step 5.6).
 6. Bug is resolved when the change pack is **`merged`** (verify PASS + merge gate). Then set bug-log Status → **`DONE`** and note Merged date.
 
 - **Done when**: bug-log `DONE` (or still `ESCALATED` while pack in flight); change-log tracks pack-status.
@@ -82,7 +82,7 @@ When all questions answer NO (no blueprint impact). **Do not** edit main `projec
 ### Step 6.1 — Create Bug Log Entry
 
 - **Output**: `project/bugs/bug-<ID>-<slug>.md` + bug-log row `PENDING`
-- Use `.cursor/royascaff/engine/templates/bug-report-template.md`.
+- Use `royascaff/engine/templates/bug-report-template.md`.
 - **Done when**: File exists; bug-log has the row.
 
 ### Step 6.2 — Investigate & Document Root Cause
@@ -97,7 +97,7 @@ Silence ≠ confirmation.
 
 ### Step 6.4 — Implement Fix
 
-- Minimal isolated fix; follow `.cursor/royascaff/engine/rules/*` + `project/rules.md`.
+- Minimal isolated fix; follow `royascaff/engine/rules/*` + `project/rules.md`.
 - Finalize Fix Applied / Related Files in the bug file.
 - **Done when**: Code fixed; basic verification passes.
 

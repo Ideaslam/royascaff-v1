@@ -2,7 +2,7 @@
 
 Per-module screen specs for one mobile app. Lives at `project/actions/<app-key>/views/<module>.md` with a routing registry at `views/_index.md`. For web apps, use `pages-template.md` instead. Mobile apps reuse the shared backend API — no duplicated business logic.
 
-Layout contract: `.cursor/royascaff/engine/project-layout.md`. Each view has a `VW-<MODULE>-NN` ID. Reference endpoints by `EP-<MODULE>-NN` IDs.
+Layout contract: `royascaff/engine/project-layout.md`. Each view has a `VW-<MODULE>-NN` ID. Reference endpoints by `EP-<MODULE>-NN` IDs.
 
 > Verbose guidance → `references/views-template-guide.md`
 
@@ -22,11 +22,11 @@ Layout contract: `.cursor/royascaff/engine/project-layout.md`. Each view has a `
 - Notes: read-only on mobile; native chart library
 ```
 
-Status: `planned` · `partial` · `done` · `deferred` (see `.cursor/royascaff/engine/conventions.md`). New screens default to `planned`; `deferred` states its reason in Notes.
+Status: `planned` · `partial` · `done` · `deferred` (see `royascaff/engine/conventions.md`). New screens default to `planned`; `deferred` states its reason in Notes.
 
 ## Registry — `views/_index.md`
 
-Use `.cursor/royascaff/engine/templates/index-template.md`. One row per module file.
+Use `royascaff/engine/templates/index-template.md`. One row per module file.
 
 ## Example — `views/dashboards.md`
 

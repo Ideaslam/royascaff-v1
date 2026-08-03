@@ -13,7 +13,7 @@ description: >-
 1. Require blueprint: if `project/profile.md` is missing → `/initial-build` or `/reverse-engineer`.
 2. If style-only and nothing broken → `/polish` instead.
 3. Read `project/bugs/bug-log.md` if present.
-4. Read `.cursor/royascaff/engine/flows/bug-fix.md` in full.
+4. Read `royascaff/engine/flows/bug-fix.md` in full.
 
 ## Flow Overview
 

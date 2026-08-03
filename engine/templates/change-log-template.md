@@ -2,7 +2,7 @@
 
 Live registry of every change / polish / escalated bug-fix pack. Lives at `project/changes/change-log.md`.
 
-**Not** an append-only archive of finished work — keep rows updated on every pack-status transition. See `.cursor/royascaff/engine/project-layout.md` → Change log index contract · Pack and bug IDs · `.cursor/royascaff/engine/conventions.md` → Main vs pack vs index.
+**Not** an append-only archive of finished work — keep rows updated on every pack-status transition. See `royascaff/engine/project-layout.md` → Change log index contract · Pack and bug IDs · `royascaff/engine/conventions.md` → Main vs pack vs index.
 
 ## Schema
 

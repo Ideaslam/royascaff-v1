@@ -14,7 +14,7 @@ Usage:
   royascaff init [targetDir] [options]
 
 Options:
-  --force   Overwrite existing .cursor/royascaff/engine/ or .cursor/skills/ if present
+  --force   Overwrite existing royascaff/engine/ or .cursor/skills/ if present
   --git     Run git init at the project root (skipped if .git already exists)
   --help    Show this help
 
@@ -90,14 +90,14 @@ function init(targetDir, flags) {
 
   const engineSrc = path.join(PACKAGE_ROOT, "engine");
   const skillsSrc = path.join(PACKAGE_ROOT, "skills");
-  const engineDest = path.join(resolvedTarget, ".cursor", "royascaff", "engine");
+  const engineDest = path.join(resolvedTarget, "royascaff", "engine");
   const skillsDest = path.join(resolvedTarget, ".cursor", "skills");
 
   console.log(`Scaffolding RoyaScaff into ${resolvedTarget}\n`);
 
   fs.mkdirSync(path.dirname(engineDest), { recursive: true });
   copyDir(engineSrc, engineDest, flags.force);
-  console.log("  copied .cursor/royascaff/engine/");
+  console.log("  copied royascaff/engine/");
 
   fs.mkdirSync(path.join(resolvedTarget, ".cursor"), { recursive: true });
   copyDir(skillsSrc, skillsDest, flags.force);
@@ -109,7 +109,7 @@ function init(targetDir, flags) {
 
   console.log(`
 Done. Next steps:
-  1. Open .cursor/royascaff/engine/flow.md
+  1. Open royascaff/engine/flow.md
   2. Run /initial-build (greenfield) or /reverse-engineer (existing code)
 `);
 }
