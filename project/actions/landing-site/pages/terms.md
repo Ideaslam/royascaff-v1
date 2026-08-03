@@ -13,7 +13,11 @@
 
 **Sections:**
 1. **Navbar** — logo (links to `/`), language toggle (EN/AR), Sign in + Get Started CTAs
-2. **Legal content** — Terms of Service title, last-updated date, structured sections (acceptance, accounts, subscriptions, acceptable use, IP, liability, termination, governing law)
+2. **Legal content** — Terms of Service (EN/AR via `terms.body` in `i18n.js`):
+   - Eligibility, accounts/workspaces, subscriptions, acceptable use
+   - Your data & connected sources: limited license to provide Service only; no generalized AI/ML training; lists all source families
+   - Google Workspace & third-party integrations (Limited Use / disconnect)
+   - IP, AI-assisted features (schema-only), availability, warranties, liability, termination, changes, governing law, contact
 3. **Footer** — copyright, Privacy + Terms links, register/login links
 
 **Visual approach:**

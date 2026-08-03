@@ -13,7 +13,14 @@
 
 **Sections:**
 1. **Navbar** — logo (links to `/`), language toggle (EN/AR), Sign in + Get Started CTAs
-2. **Legal content** — Privacy Policy title, last-updated date, structured sections (data collected, use, sharing, retention, rights, contact)
+2. **Legal content** — Privacy Policy (EN/AR via `privacy.body` in `i18n.js`):
+   - Information collected (account, all connected sources, credentials, usage, payment, technical)
+   - Purpose-limited use for workspace analytics
+   - Connected data sources purpose limitation (all sources)
+   - AI processing: schema/metadata only; not full rows for training
+   - Explicit: no retain/use of any connected data (incl. Google Workspace APIs) to develop, improve, or train generalized AI/ML models
+   - Google Workspace Limited Use + link to Google User Data Policy
+   - Sharing, retention/disconnect, security, rights, transfers, children, changes, contact
 3. **Footer** — copyright, Privacy + Terms links, register/login links
 
 **Visual approach:**
