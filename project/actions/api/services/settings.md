@@ -3,9 +3,12 @@
 ### SVC-SETTINGS-01 · SettingsDataService [domain, internal, Settings]
 - Status: done
 - Methods: get/patch workspace settings (schema-validated, secrets encrypted); upload/delete workspace logo
-- Deps: SettingsRepository, ConfigRepository, EncryptionService, S3Service
+- Theme branding:
+  - GET: `hydrateThemeBranding` → coherent `colorPalette` + `colorRoles` + `defaultColor` (= primary); legacy `defaultColor`-only rows upgrade on read
+  - PATCH: `applyThemeBrandingPatch` — prefer `colorPalette` (1–5) → derive roles; or `colorRoles`; or legacy `defaultColor`; max 5 / invalid hex → 400
+- Deps: SettingsRepository, ConfigRepository, EncryptionService, S3Service; `lib/settings-branding.ts` + branding-colors helpers
 - Side effects: file (R2 logo upload/delete under `workspaces/{workspaceId}/`)
-- Rules: logo JPEG/PNG/WebP/SVG max 2MB; `logoUrl` not settable via patch whitelist
+- Rules: logo JPEG/PNG/WebP/SVG max 2MB; `logoUrl` not settable via patch whitelist; `colorPalette`/`colorRoles` always allowed via `EXTRA_PATCH_KEYS`
 
 ### SVC-SETTINGS-02 · SettingsService [infrastructure, internal, Settings]
 - Status: done

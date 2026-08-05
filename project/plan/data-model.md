@@ -393,12 +393,14 @@ Purpose: per-workspace company + integration settings (Claude key encrypted)
 | `logoUrl` | String | S3/R2 public URL; optional; set via logo upload/delete only (not PATCH) | — |
 | `tax` / `currency` / `validity` | Mixed | financial | — |
 | `model` | String | default Claude model | — |
-| `defaultColor` / `defaultFont` | String | theme | — |
+| `defaultColor` / `defaultFont` | String | theme; `defaultColor` = alias of `colorRoles.primary` | — |
+| `colorPalette` | `string[]` \| null | 1–5 hex `#rrggbb` when set | theme |
+| `colorRoles` | Object \| null | `primary` / `secondary` / `accent` / `surface` / `text`; derived from palette (same rules as DNA) | theme |
 | `pipelineV3Enabled` | Boolean | default **`true`** (soft cutover); explicit `false` = legacy creative escape hatch | gates v3 create + soft-blocks new creative jobs |
 | `[key: string]` | Mixed | schema-driven extras | — |
 
-Note: plaintext `apiKey` decrypted at runtime only  
-Files: `models/settings.model.ts`, `mongodb-settings.repository.ts`, `lib/settings-schema.ts`, `dtos/data/settings.dto.ts`
+Note: plaintext `apiKey` decrypted at runtime only. Theme hydrate on GET: palette → roles → legacy `defaultColor`. PATCH via `applyThemeBrandingPatch` (`lib/settings-branding.ts`).  
+Files: `models/settings.model.ts`, `mongodb-settings.repository.ts`, `lib/settings-schema.ts`, `lib/settings-branding.ts`, `dtos/data/settings.dto.ts`
 
 ---
 
@@ -497,9 +499,9 @@ Rules: pipeline resolve DNA via `proposal.dnaSnapshot` → version by `dnaVersio
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|--------|
-| `colors` | `string[]` | 1–5 hex `#RRGGBB` when present | Ordered source; precedence: `project.colorPalette` → derive from first `client_logo` → Roya defaults (`#47B5E6`, `#114261`, `#2C8DBE`) |
+| `colors` | `string[]` | 1–5 hex `#RRGGBB` when present | Ordered source; precedence: `project.colorPalette` → first `client_logo` → workspace `colorPalette`/`colorRoles`/`defaultColor` → Roya defaults (`#47B5E6`, `#114261`, `#2C8DBE`) |
 | `colorRoles` | Object | required whenever `colors` present | Semantic roles for templates (see below) |
-| `source` | Enum string (optional) | `palette` \| `client_logo` \| `roya_default` | Traceability; force-reconciled after AI merge so Claude cannot drop/overwrite |
+| `source` | Enum string (optional) | `palette` \| `client_logo` \| `workspace` \| `roya_default` | Traceability; force-reconciled after AI merge so Claude cannot drop/overwrite |
 | *(other)* | Mixed | optional | Open object; may hold more later |
 
 #### `branding.colorRoles`
@@ -507,12 +509,12 @@ Rules: pipeline resolve DNA via `proposal.dnaSnapshot` → version by `dnaVersio
 | Role | Type | Required when colors set | Default / derive rule |
 |------|------|--------------------------|------------------------|
 | `primary` | `#RRGGBB` | yes | `colors[0]` |
-| `secondary` | `#RRGGBB` | yes | `colors[1]` if set; else darker shade of primary (**not** Roya navy when source is palette/logo) |
+| `secondary` | `#RRGGBB` | yes | `colors[1]` if set; else darker shade of primary (**not** Roya navy when source is palette/logo/workspace) |
 | `accent` | `#RRGGBB` | yes | `colors[2]` if set; else light tint of primary |
 | `surface` | `#RRGGBB` | yes | `colors[3]` if set; else `#FFFFFF` |
 | `text` | `#RRGGBB` | yes | `colors[4]` if set; else `#1A1A2E` |
 
-When `source === 'roya_default'`, secondary/accent may keep catalog Roya blues. When `source` is `palette` or `client_logo`, missing secondary/accent always derive from primary (neutrals for surface/text).
+When `source === 'roya_default'`, secondary/accent may keep catalog Roya blues. When `source` is `palette`, `client_logo`, or `workspace`, missing secondary/accent always derive from primary (neutrals for surface/text).
 
 AJV `dna.v2`: `branding` remains an object; `colors` / `colorRoles` / `source` documented (strict schema optional). Assemble maps `colorRoles` → `themeOverrides.primary|secondary|accent|surface|text` (legacy DNA with only `colors[]` derives roles at assemble).
 

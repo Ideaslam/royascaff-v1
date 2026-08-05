@@ -28,5 +28,6 @@
 
 ### SVC-PROJECTS-04 · ProjectDna / versions (via ProjectsDataService)
 - Status: done
-- Methods: see DNA methods on SVC-PROJECTS-01; branding resolve still via `resolveBrandingColors` on analyze write
+- Methods: see DNA methods on SVC-PROJECTS-01; branding resolve via `resolveBrandingColors(project, workspaceSettings?)` on analyze write (`buildDnaSkeleton` + AnalyzeOrchestrator loads public settings)
+- Precedence: project palette → client_logo → workspace settings palette/roles/`defaultColor` → Roya defaults (`source: workspace` when applicable)
 - Notes: `dna-version-resolve.ts` — `deriveDnaStatus`, `buildDnaSnapshot`, `resolveDnaForProposal` (snapshot → version → legacy project.dna)
