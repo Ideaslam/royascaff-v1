@@ -7,10 +7,10 @@ _Last updated: 2026-08-05_
 
 | pack-status | Count |
 |-------------|------:|
-| drafted | 1 |
+| drafted | 0 |
 | in-progress | 0 |
 | verified | 6 |
-| merged | 40 |
+| merged | 41 |
 | cancelled | 0 |
 | blocked | 0 |
 
@@ -18,7 +18,6 @@ _Last updated: 2026-08-05_
 
 | ID | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |----|------|------|---------|------------|-------------|----------------|-------|--------|
-| 20260805-134354 | 2026-08-05 | polish | — | — | drafted | 0/1 | Sidebar nav reorder + rename (IA polish) | `change-20260805-134354-polish-sidebar-nav-ia/` |
 | 20260805-130421 | 2026-08-05 | modify-feature | REQ-PROP-V2-TRACE | — | verified | 2/2 | Creative v2 full AI/phase traces (both batches + fail closes) | `change-20260805-130421-creative-v2-full-traces/` |
 | 20260730-134031 | 2026-07-30 | modify-feature | REQ-PROP-V3 | — | verified | 2/2 | Generic catalog-driven section repeat (any key, not just timeline/action_plan/services); enabled `social_audit` | `change-20260730-134031-generic-section-repeat/` |
 | 20260729-122650 | 2026-07-29 | modify-feature | REQ-PROP-V3 | — | verified | 5/5 | PDF list section split (map N + financial_part/full) | `change-20260729-122650-pdf-list-section-split/` |
@@ -30,6 +29,7 @@ _Last updated: 2026-08-05_
 
 | ID | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |----|------|------|---------|-------------|-------|--------|--------|
+| 20260805-134354 | 2026-08-05 | polish | — | merged | Sidebar nav reorder + rename (IA polish) | `change-20260805-134354-polish-sidebar-nav-ia/` | 2026-08-05 |
 | 20260805-130757 | 2026-08-05 | modify-feature | REQ-AI-OBS | merged | Proposals→AI Requests; remove AI Jobs UI+admin APIs; enrich projects overview + sort by createdAt desc | `change-20260805-130757-ai-job-to-traces-enrich-ai-requests/` | 2026-08-05 |
 | 20260805-132532 | 2026-08-05 | polish | — | merged | Roles matrix visual style (Yes/No cells; permissions×roles) | `change-20260805-132532-polish-roles-role-first/` | 2026-08-05 |
 | 20260805-132124 | 2026-08-05 | modify-feature | — | merged | Roles UI: permission catalog read-only; users manage roles+assignments only | `change-20260805-132124-roles-readonly-permission-catalog/` | 2026-08-05 |
