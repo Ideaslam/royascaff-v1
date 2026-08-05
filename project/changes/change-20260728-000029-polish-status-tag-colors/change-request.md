@@ -10,7 +10,7 @@
 - **part**: —
 - **depends-on**: —
 - **blocks**: —
-- **pack-status**: verified
+- **pack-status**: merged
 
 ## Scope
 - Module(s): Project detail (proposals table status tags); AI Requests (status labels)

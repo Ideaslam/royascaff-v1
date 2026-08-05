@@ -13,7 +13,7 @@
   - Deep-link: on init read `?projectId` / `?proposalId` → requests view with filters applied
 - Service: `PipelineTracesService.list` → EP-TRACES-01; project names via `ProjectsService`
 - Guard: `pipeline-traces.read`
-- Notes: filters refresh page 1 + stats together; traces list default sort unchanged
+- Notes: filters refresh page 1 + stats together; traces list default sort unchanged. Human-facing label for status `retrying` is **`inprogress`** (table tag + filter option label); filter `value` remains `retrying` so list API query is unchanged; severity for `retrying` stays `warn`.
 
 ### Trace Detail Dialog `PG-AIREQ-02`
 - Route: dialog on list (not separate route)

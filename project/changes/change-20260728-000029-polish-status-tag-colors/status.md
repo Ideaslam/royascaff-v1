@@ -1,6 +1,6 @@
 # Pack Status — change-20260728-000029-polish-status-tag-colors
 
-- **pack-status**: verified
+- **pack-status**: merged
 - **request-id**: —
 - **depends-on**: —
 - **Artifacts done**: 2/2
@@ -18,4 +18,4 @@
 
 ## Next action
 
-- Ask user to merge polish notes into main page specs (P.5).
+- Merged into main blueprint (2026-08-05).

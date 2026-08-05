@@ -26,6 +26,7 @@
   - Proposals table; New proposal dialog: **DNA select** + template + language (`appendTo="body"`); default latest ready
 - Service: EP-PROJECTS-03,05,12,13,16–18,10
 - Guard: `projects.view`
+- Notes: Proposal generation status `<p-tag>` uses `[severity]` from a generation-status helper (not DNA `statusSeverity` alone). Mapping: `ready`→success; in-progress stages (`queued`/`analyzing`/`mapping`/`generating_sections`/`assembling`/`exporting`)→info; `partially_failed`→warn; `failed`→danger; unknown/empty→secondary.
 
 ### Project Edit `PG-PROJECTS-04` (legacy)
 - Route: `/projects/:id/edit`
