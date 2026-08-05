@@ -347,11 +347,36 @@ Purpose: legal contracts derived from proposals
 | `signedAt` / `sentAt` | String/Date | | — |
 | `signedContract` | String | signed PDF/URL | — |
 | `serviceIds` | String[] | clean catalog/service ids only (from string or object `.id` on proposal.services); never `"[object Object]"` | → `services` |
+| `templateId` | String | id of `contract_templates` doc used to render `contract` HTML; recorded for traceability/regeneration | → `contract_templates` |
+| `notes` | String | optional free text; rendered into the template's `{{contract_notes}}` block | — |
 | `createdBy` | String | | → `user` |
 
 **Create-from-proposal:** resolve SOW/financial from proposal line-item snapshots merged with catalog by id; legacy `creativeOptions.services.selectedServiceIds` still supported. Financial line amount = `price × (qty || 1)`.
 
 Files: `mongodb-legal-contracts.repository.ts`, `dtos/data/contracts.dto.ts`, `contracts.data.service.ts`
+
+---
+
+## 10a. contract_templates
+Purpose: admin-managed, global catalog of HTML contract templates (not workspace-scoped, mirrors `templates`) with `{{lower_snake_case}}` placeholder tokens; exactly one is the system default used by "New Contract" unless overridden.
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | String | PK | — |
+| `key` | String | unique slug, e.g. `roya-default` | — |
+| `name` | String | display name (AR) | — |
+| `nameEn` | String | optional display name (EN) | — |
+| `description` | String | optional, shown in list/picker | — |
+| `content` | String | full HTML document (head+style+body) with `{{lower_snake_case}}` tokens | — |
+| `isDefault` | Boolean | exactly one `true` among `status: active` docs | — |
+| `status` | Enum | `active` \| `inactive` | — |
+| `createdAt` / `updatedAt` | String (ISO) | | — |
+
+**Rules:** setting `isDefault: true` clears it on all others; deleting the default template is blocked while other templates exist; the last remaining template cannot be deleted. Seeded with one template (`roya-default`, migrated verbatim from the legacy static `contract_template.html`) via `npm run seed:contract-templates`.
+
+**Placeholder token catalog** (authoritative — editor's clickable token picker + `renderContractHtml`): `workspace_name` / `workspace_logo` / `workspace_email` / `workspace_phone` / `workspace_address` (from `settings`), `client_name` / `client_address` / `client_cr` / `client_representative` / `client_contact_name` / `client_contact_phone`, `contract_number` / `contract_date` / `contract_duration` / `contract_notes` / `technical_appendix_number` / `ad_commission_percent`, `services` / `financial_table` (computed SOW/financial HTML), `client_signature_label`. Any other `{{token}}` is a free override key via the existing `overrides: Record<string,string>` mechanism.
+
+Files: `mongodb-contract-templates.repository.ts`, `dtos/data/contract-templates.dto.ts`, `contract-templates.data.service.ts`, seed: `scripts/seed-contract-templates.js` + `scripts/contract-templates/roya-default.html`
 
 ---
 
@@ -605,6 +630,7 @@ Files: `mongodb-pipeline-traces.repository.ts`, `pipeline-trace.service.ts`
 | service-categories | MongoServiceCategoriesRepository |
 | proposals | MongoProposalsRepository |
 | contracts | MongoLegalContractsRepository |
+| contract_templates | MongoContractTemplatesRepository |
 | settings | MongoSettingsRepository |
 | config | MongoConfigRepository / MongoMaintenanceRepository |
 | aiJobs | MongoAiJobsRepository |

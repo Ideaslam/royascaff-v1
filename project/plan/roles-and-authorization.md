@@ -29,6 +29,7 @@ Also referenced in code: `workspace_owner` (roles repository default; includes p
 | projects.create / projects.view / projects.edit / projects.delete | projects |
 | pipeline-traces.read | pipeline |
 | settings.manage / roles.manage | settings |
+| contract-template.manage | contracts |
 
 ## Endpoint access (summary)
 
@@ -46,6 +47,8 @@ Also referenced in code: `workspace_owner` (roles repository default; includes p
 | Projects / pipeline v3 mutate | permission:`projects.*` |
 | Pipeline traces GET | permission:`pipeline-traces.read` |
 | Services / contracts / service-categories | authenticated (+ ownership where applied); **no** dedicated seed keys yet |
+| Contract Templates GET (list/byId/active) | authenticated (any workspace member — needed for the create-contract template picker) |
+| Contract Templates mutate (POST/PATCH/DELETE) | permission:`contract-template.manage` |
 | Admin seed-config / admin users | matching PermissionGuard keys |
 | Admin reset | admin role or settings.manage (service check) |
 

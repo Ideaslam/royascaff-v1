@@ -11,7 +11,8 @@
 | Services | `services.md` | SVC-SERVICES-01 | done | 1/1 | service catalog |
 | Service Categories | `service-categories.md` | SVC-SVCCAT-01 | done | 1/1 | category catalog |
 | Proposals | `proposals.md` | SVC-PROPOSALS-01..06 | done | 6/6 | proposal data, ops, sending, v3 status/retry/rendered/regen |
-| Contracts | `contracts.md` | SVC-CONTRACTS-01 | done | 1/1 | legal contracts |
+| Contracts | `contracts.md` | SVC-CONTRACTS-01..02 | done | 2/2 | legal contracts + Puppeteer PDF export |
+| Contract Templates | `contract-templates.md` | SVC-CONTRACT-TEMPLATES-01 | done | 1/1 | admin-managed global template catalog |
 | Roles | `roles.md` | SVC-ROLES-01 | done | 1/1 | roles CRUD/batch |
 | Permissions | `permissions.md` | SVC-PERMS-01..SEED-01 | done | 2/2 | permission catalog + seed keys |
 | Settings | `settings.md` | SVC-SETTINGS-01..03 | done | 3/3 | workspace settings + logo upload + schema + v3 flag (default true) |

@@ -1,13 +1,13 @@
 # Project Status
 
-_Last updated: 2026-08-05 — after change-20260805-130757 AI Job→AI Requests merge_
+_Last updated: 2026-08-05 — after change-20260805-144725 Contract Template + PDF System merge_
 
 ## Snapshot
 
 | App | Services | Endpoints | Pages/Views | Overall |
 |-----|----------|-----------|-------------|---------|
-| api | 86/88 | 136/137 | — | partial |
-| web | — | — | 34/34 | partial |
+| api | 88/90 | 143/144 | — | partial |
+| web | — | — | 36/36 | partial |
 
 > Web overall `partial` only for remaining product gaps (AI stubs / vision). **REQ-R 3/3**, **REQ-PROP-V3**, **REQ-PROP-UNIFY**, **REQ-AI-OBS** merged.
 
@@ -31,7 +31,8 @@ _Last updated: 2026-08-05 — after change-20260805-130757 AI Job→AI Requests 
 | Cutover Backfill | 1/1 | — | — | done |
 | Templates | 10/10 | 2/2 | — | done |
 | AI | 3/4 | 3/4 | 1/1 | partial |
-| Contracts | 1/1 | 9/9 | 2/2 | done |
+| Contracts | 2/2 | 10/10 | 2/2 | done |
+| Contract Templates | 1/1 | 6/6 | 2/2 | done |
 | Roles | 1/1 | 7/7 | 1/1 | done |
 | Permissions | 2/2 | 6/6 | (w/ roles) | done |
 | Settings | 3/3 | 4/4 | 1/1 | done |

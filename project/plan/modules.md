@@ -104,6 +104,8 @@
 ### Features
 1. **Contract Lifecycle** [both] — create from proposal, edit, status, send, signed upload
 2. **Services line-item parity** [backend-only] — create-from-proposal accepts object `{ id, … }` or string ids; SOW/financial from snapshot+catalog; clean `serviceIds`
+3. **Contract Templates** [both, admin-only] — global catalog (`contract_templates`) of reusable HTML contract templates with dynamic `{{lower_snake_case}}` placeholder tokens; exactly one flagged system default, used automatically by "New Contract" unless the user picks another; authoring is a plain HTML textarea + categorized clickable token palette (no AI, no WYSIWYG); seeded with one template (`roya-default`) derived verbatim from the production Roya contract. Gated by permission `contract-template.manage`.
+4. **Contract PDF export** [both] — server-side render (`ContractPdfService`, reuses Pipeline v3's `PdfRenderService`/Puppeteer) of a contract's stored HTML into a downloadable PDF: repeating footer (workspace contact info + real "Page X of Y" via Puppeteer's native header/footer templates — CSS `counter(page)` is unreliable in Chromium's print-to-PDF path) and a minimal text-only repeating header; the workspace logo itself renders once, in the page-1 letterhead already baked into the template content. Complements, does not replace, the existing browser print-to-PDF fallback. Available to any user who can view/edit the contract (not admin-gated).
 
 ## 8. Roles & Permissions
 - Scope: BE roles/permissions + FE roles-permissions

@@ -10,7 +10,8 @@
 | Proposals | `proposals.md` | `/proposals`, `/proposal` | done | 7/7 | list/view/edit + wizard + v3 stepper/actions + stuck Continue |
 | Projects | `projects.md` | `/projects` | done | 5/5 | list / create / workspace DNA versions + picker / DNA form; edit legacy |
 | Creative | `creative.md` | `/creative`, `/creative/output` | done | 2/2 | unified v2 create (EP-CREATIVE-V2-01); works with v3 flag on |
-| Contracts | `contracts.md` | `/contracts` | done | 2/2 | list + edit |
+| Contracts | `contracts.md` | `/contracts` | done | 2/2 | list + edit; create dialog Template/Notes + Download PDF |
+| Contract Templates | `contract-templates.md` | `/contract-templates` | done | 2/2 | admin-only template catalog list + editor (token palette) |
 | Clients | `clients.md` | `/clients` | done | 1/1 | client CRM |
 | Services | `services.md` | `/services` | done | 2/2 | catalog list + edit; revenue type = unit |
 | Service Categories | `service-categories.md` | `/service-categories` | done | 1/1 | categories |

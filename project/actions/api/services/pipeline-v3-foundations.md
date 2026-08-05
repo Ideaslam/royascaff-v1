@@ -55,7 +55,8 @@
 
 ### SVC-PIPEV3-07 · PdfRenderService [infrastructure, external, PDF]
 - Status: done
-- Methods: `renderHtmlToPdf`, `smokeRender`
+- Methods: `renderHtmlToPdf(html, options?)`, `smokeRender`, `measurePageOverflows`
 - Deps: puppeteer-core + Chromium (`PUPPETEER_EXECUTABLE_PATH`)
 - Side effects: browser process
 - Rules: Docker image includes Chromium + Arabic fonts; smoke fixture only until assemble pack
+- `renderHtmlToPdf` options (REQ-CONTRACT-TEMPLATE, backward compatible — all optional, default `displayHeaderFooter: false` preserves original Pipeline v3 callers): `displayHeaderFooter`, `headerTemplate`, `footerTemplate`, `margin: { top?, bottom?, left?, right? }` — Puppeteer's native repeating header/footer, the only reliable way to get real page numbers in Chromium's print-to-PDF path (CSS `counter(page)` doesn't work). Consumed by `ContractPdfService` (see `contracts.md` SVC-CONTRACTS-02); Pipeline v3 proposal PDFs still render via CSS-driven fixed `.page` slides and don't set these options.

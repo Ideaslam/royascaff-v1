@@ -1,6 +1,6 @@
 # Pack Status — change-20260805-144725-contract-template-pdf-system
 
-- **pack-status**: verified
+- **pack-status**: merged
 - **request-id**: REQ-CONTRACT-TEMPLATE
 - **depends-on**: —
 - **Artifacts done**: 7/7
@@ -21,4 +21,4 @@
 - none
 
 ## Next action
-- Post-verify PDF design fixes applied and user-confirmed live. Awaiting merge gate confirmation (Step 5.6).
+- Merged into main blueprint 2026-08-05 (see `merge-report.md`). Pack complete — further work is a new change pack.
