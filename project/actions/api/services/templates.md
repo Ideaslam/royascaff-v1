@@ -19,6 +19,7 @@
   - `isLandingTemplate` → `assertRenderContract(html, 'landing'|'presentation')`
   - Landing: continuous HTML; fixture/assemble PDF uses A4 portrait
   - Presentation: landscape PDF; fixed-page contract
+  - Financial-family section context: `isFinancialSectionKey(section.key)` → `financialContextForSection(section.content, input.financial, { includeTotals: financialSectionShowsTotals(section.key) })`; `financial` / `financial_full` include totals; `financial_part` omits totals block; website `financial.hbs` unchanged (always totals)
   - Input `branding?` merged onto **root** context for every partial + layout: `workspace_*` / `client_*`
   - `themeOverrides` → layout `:root` `--color-primary|secondary|accent|surface|text` (omitted when template `theme.lockPalette`)
   - **Client-first placement:** cover + interior chrome use `client_*`; workspace logo/name only in `about_workspace` + footer; website sticky header uses client branding
@@ -43,6 +44,10 @@
 - Deps: TemplatesRepository; `src/pipeline-v3/templates/pitch-landscape/pitch-landscape.catalog.ts`
 - Side effects: Mongo upsert on boot
 - Rules: `status: active`; shared base **21** + local visual **3** = **24** section defs; `maxSections` **32**; requiredKeys cover/financial/about_workspace/footer; **owns** pitch `contentSchema` lengths; visual keys not in `SHARED_SECTION_KEYS`
+  - List-split keys: `timeline` / `action_plan` / `services` → `repeatable: true`, `pages.max: 4`
+  - `social_audit` → `repeatable: true`, `pages.max: 2` (per-instance `channels` array still `maxItems: 6`; inherited automatically by `pitch-landscape-formal.catalog.ts` and `roya-presentation.catalog.ts` which clone `PITCH_LANDSCAPE_SECTIONS`)
+  - Presentation-local financial split sections inserted via `insertFinancialSplitSections`: `financial_part` (`repeatable: true`, `pages.max: 3`, no totals block) + `financial_full` (`repeatable: false`, `pages.max: 1`, totals); pitch/formal/roya only (not website)
+  - `competitor_analysis`: `repeatable: true`, `pages.max: 3` (entity-driven, not overflow — excluded from generic clamp via `ENTITY_DRIVEN_REPEAT_KEY_SET`)
 
 ### SVC-TPL-05 · Fixture render [domain, internal, Templates]
 - Status: done
@@ -79,6 +84,7 @@
   - Tokens black/mint/gray; Mona Sans + Cairo/Tajawal
   - `requiredKeys` include `about_workspace`; sticky header = client branding; footer = workspace
   - Canonical keep-list includes website (bootstrap + `seed-templates.js` via `buildAllTemplateDocs`)
+  - **Landing lock (attribute-based):** any section with `repeatable: true` in the shared base catalog is overridden to `{ repeatable: false, pages: { min: 1, max: 1 } }` — replaces former static `PDF_LIST_SPLIT_KEY_SET` allowlist; `social_audit` and any future repeatable key is automatically locked without explicit mention; `ENTITY_DRIVEN_REPEAT_KEY_SET` keys (e.g. `competitor_analysis`) are excluded before the lock is applied; no `financial_part` / `financial_full` sections on website
 
 ### SVC-TPL-09 · Catalog registry [domain, internal, Templates]
 - Status: done
@@ -98,3 +104,13 @@
   - `theme.lockPalette: true`; locked tokens primary `#FF3B2F`, secondary `#1A1533`, accent `#C9A24B`, surface `#EFEBFB`, text `#1A1533`
   - sections = clone(pitch base) + local `team` + `risks` + visual dividers (**26**); `maxSections` **32**
   - Canonical keep-list includes roya-presentation (bootstrap + `seed-templates.js`); seed expects 24 vs 26 per key
+
+### SVC-TPL-11 · PDF list-split catalog infrastructure [domain, internal, Templates]
+- Status: done
+- Location: `src/pipeline-v3/templates/shared/pdf-list-split.ts`
+- Exports:
+  - `PDF_LIST_SPLIT_KEYS` — static allowlist `["timeline", "action_plan", "services", "financial_part"]`; kept for any surviving imports but deprecated — `MapOrchestratorService` no longer reads it after pack 5 generalization
+  - `PDF_OVERFLOW_CLAMP_KEY_SET` / `PDF_LIST_SPLIT_CAPACITY` — similarly deprecated; kept to avoid import errors unless confirmed dead
+  - `ENTITY_DRIVEN_REPEAT_KEY_SET` — keys that are `repeatable: true` for structural (DNA cardinality) reasons, NOT overflow splitting; currently `{ competitor_analysis }`; excluded from generic overflow clamp, validate, and website lock everywhere
+  - `deriveArrayCapacityHints(defs: { key: string; contentSchema?: JsonSchema }[]): Record<string, number>` — pure helper; walks each repeatable section's `contentSchema.properties` for `type: "array"` fields with `maxItems`; produces `{ "timeline.phases.maxItems": 5, "action_plan.phases.maxItems": 6, ... }`; called once per `runMap()` against loaded `catalogSections`; no I/O
+- Rules: pure module, no I/O, no side effects; `deriveArrayCapacityHints` replaces the manually maintained static `PDF_LIST_SPLIT_CAPACITY` map; static exports retained for safety until confirmed unused in non-touched files

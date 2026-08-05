@@ -7,10 +7,10 @@ _Last updated: 2026-08-05_
 
 | pack-status | Count |
 |-------------|------:|
-| drafted | 0 |
+| drafted | 1 |
 | in-progress | 0 |
-| verified | 5 |
-| merged | 45 |
+| verified | 0 |
+| merged | 50 |
 | cancelled | 0 |
 | blocked | 0 |
 
@@ -18,16 +18,17 @@ _Last updated: 2026-08-05_
 
 | ID | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |----|------|------|---------|------------|-------------|----------------|-------|--------|
-| 20260730-134031 | 2026-07-30 | modify-feature | REQ-PROP-V3 | — | verified | 2/2 | Generic catalog-driven section repeat (any key, not just timeline/action_plan/services); enabled `social_audit` | `change-20260730-134031-generic-section-repeat/` |
-| 20260729-122650 | 2026-07-29 | modify-feature | REQ-PROP-V3 | — | verified | 5/5 | PDF list section split (map N + financial_part/full) | `change-20260729-122650-pdf-list-section-split/` |
-| 20260728-000034 | 2026-07-28 | polish | — | — | verified | 1/1 | Proposal View action toolbar redesign | `change-20260728-000034-polish-proposal-view-actions/` |
-| 20260728-000029 | 2026-07-28 | polish | — | — | verified | 2/2 | Status tag colors + AI Requests `retrying`→`inprogress` label | `change-20260728-000029-polish-status-tag-colors/` |
-| 20260728-000028 | 2026-07-28 | modify-feature | REQ-MODEL-ROUTE | — | verified | 5/5 | Pipeline v3 model routing via DB config + seed | `change-20260728-000028-pipeline-model-routing-config/` |
+| 20260805-171001 | 2026-08-05 | modify-feature | REQ-CONTRACT-TEMPLATE | — | drafted | 0/5 | Contract Amiri font (workspace setting) + branded cover page + name/page watermark + restyled article layout | `change-20260805-171001-contract-template-cover-watermark-font/` |
 
 ## Completed
 
 | ID | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |----|------|------|---------|-------------|-------|--------|--------|
+| 20260730-134031 | 2026-07-30 | modify-feature | REQ-PROP-V3 | merged | Generic catalog-driven section repeat (any key, not just timeline/action_plan/services); enabled `social_audit` | `change-20260730-134031-generic-section-repeat/` | 2026-08-05 |
+| 20260729-122650 | 2026-07-29 | modify-feature | REQ-PROP-V3 | merged | PDF list section split (map N + financial_part/full) | `change-20260729-122650-pdf-list-section-split/` | 2026-08-05 |
+| 20260728-000034 | 2026-07-28 | polish | — | merged | Proposal View action toolbar redesign | `change-20260728-000034-polish-proposal-view-actions/` | 2026-08-05 |
+| 20260728-000029 | 2026-07-28 | polish | — | merged | Status tag colors + AI Requests `retrying`→`inprogress` label | `change-20260728-000029-polish-status-tag-colors/` | 2026-08-05 |
+| 20260728-000028 | 2026-07-28 | modify-feature | REQ-MODEL-ROUTE | merged | Pipeline v3 model routing via DB config + seed | `change-20260728-000028-pipeline-model-routing-config/` | 2026-08-05 |
 | 20260805-165124 | 2026-08-05 | modify-feature | REQ-SETTINGS-PALETTE | merged | Workspace Theme settings: `app-color-palette` (max 5) + persist `colorRoles` | `change-20260805-165124-workspace-settings-color-palette/` | 2026-08-05 |
 | 20260805-144725 | 2026-08-05 | new-feature | REQ-CONTRACT-TEMPLATE | merged | Contract template catalog (admin, global) + real server PDF export (logo/header/footer/page numbers) + notes-at-top + Roya contract as seeded default | `change-20260805-144725-contract-template-pdf-system/` | 2026-08-05 |
 | 20260805-130421 | 2026-08-05 | modify-feature | REQ-PROP-V2-TRACE | merged | Creative v2 full AI/phase traces (both batches + fail closes) | `change-20260805-130421-creative-v2-full-traces/` | 2026-08-05 |

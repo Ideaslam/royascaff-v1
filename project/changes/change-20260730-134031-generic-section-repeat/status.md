@@ -1,6 +1,6 @@
 # Pack Status — change-20260730-134031-generic-section-repeat
 
-- **pack-status**: verified
+- **pack-status**: merged
 - **request-id**: REQ-PROP-V3
 - **depends-on**: —
 - **Artifacts done**: 2/2
@@ -18,4 +18,4 @@
 
 ## Next action
 
-- Step 5.6 — merge gate (awaiting confirmation)
+- Merged into main blueprint (2026-08-05).

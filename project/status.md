@@ -1,12 +1,12 @@
 # Project Status
 
-_Last updated: 2026-08-05 — after change-20260805-144725 Contract Template + PDF System merge_
+_Last updated: 2026-08-05 — after merge of five verified packs (model routing, status polish, proposal actions polish, PDF list-split, generic section repeat)_
 
 ## Snapshot
 
 | App | Services | Endpoints | Pages/Views | Overall |
 |-----|----------|-----------|-------------|---------|
-| api | 88/90 | 143/144 | — | partial |
+| api | 90/92 | 143/144 | — | partial |
 | web | — | — | 36/36 | partial |
 
 > Web overall `partial` only for remaining product gaps (AI stubs / vision). **REQ-R 3/3**, **REQ-PROP-V3**, **REQ-PROP-UNIFY**, **REQ-AI-OBS** merged.
@@ -23,13 +23,13 @@ _Last updated: 2026-08-05 — after change-20260805-144725 Contract Template + P
 | Proposals | 6/6 | 20/20 | 6/6 | done |
 | Projects | 4/4 | 23/23 | 5/5 | done |
 | Creative / AI Jobs | 6/6 | 5/5 | 0/0 | done |
-| Pipeline v3 Foundations | 8/8 | 2/2 | — | done |
+| Pipeline v3 Foundations | 9/9 | 2/2 | — | done |
 | Pipeline Analyze + Map | 6/7 | — | — | partial |
 | Pipeline Sections + Engine | 11/11 | — | — | done |
 | Pipeline Regen + Translate | 6/6 | — | — | done |
 | Pipeline Traces | 4/4 | 4/4 | 3/3 | done |
 | Cutover Backfill | 1/1 | — | — | done |
-| Templates | 10/10 | 2/2 | — | done |
+| Templates | 11/11 | 2/2 | — | done |
 | AI | 3/4 | 3/4 | 1/1 | partial |
 | Contracts | 2/2 | 10/10 | 2/2 | done |
 | Contract Templates | 1/1 | 6/6 | 2/2 | done |

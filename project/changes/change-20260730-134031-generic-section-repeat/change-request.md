@@ -10,7 +10,7 @@
 - **part**: —
 - **depends-on**: —
 - **blocks**: —
-- **pack-status**: verified
+- **pack-status**: merged
 
 ## Scope
 - Module(s): Creative / AI Generation (Map worker), Templates (Section catalog per template)
