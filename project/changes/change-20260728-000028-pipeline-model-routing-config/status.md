@@ -1,6 +1,6 @@
 # Pack Status — change-20260728-000028-pipeline-model-routing-config
 
-- **pack-status**: verified
+- **pack-status**: merged
 - **request-id**: REQ-MODEL-ROUTE
 - **depends-on**: —
 - **Artifacts done**: 5/5
@@ -21,4 +21,4 @@
 
 ## Next action
 
-- Merge into main blueprint after user confirms (Step 5.6).
+- Merged into main blueprint (2026-08-05).
