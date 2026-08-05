@@ -23,7 +23,7 @@
 
 ## Tech Stack
 
-**Backend**: TypeScript, NestJS 11, Express platform, Mongoose 8 (custom persistence layer — not `@nestjs/mongoose`), MongoDB, Redis/ioredis (cache + BullMQ), custom Mongo job queue (`setInterval` poller for v2), BullMQ (Pipeline v3), handlebars (proposal templates), puppeteer-core (PDF), class-validator/class-transformer, axios, ajv, bcrypt, @nestjs/jwt + jsonwebtoken (no Passport). Global prefix: `api`.
+**Backend**: TypeScript, NestJS 11, Express platform, Mongoose 8 (custom persistence layer — not `@nestjs/mongoose`), MongoDB, Redis/ioredis (cache + BullMQ), custom Mongo job queue (`setInterval` poller for v2), BullMQ (Pipeline v3), handlebars (proposal templates), puppeteer-core (PDF), pdf-lib (PDF merge), class-validator/class-transformer, axios, ajv, bcrypt, @nestjs/jwt + jsonwebtoken (no Passport). Global prefix: `api`.
 
 **Frontend**: Angular 18 standalone, PrimeNG 18 + @primeng/themes (Aura/RoyaPreset), primeicons, ngx-translate (en/ar, RTL), Chart.js + ng2-charts, xlsx; jspdf/html2canvas/pdfjs-dist present in package.json (❓ little/no `src/` usage yet).
 

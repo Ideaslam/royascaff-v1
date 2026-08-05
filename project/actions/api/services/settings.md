@@ -9,6 +9,8 @@
 - Deps: SettingsRepository, ConfigRepository, EncryptionService, S3Service; `lib/settings-branding.ts` + branding-colors helpers
 - Side effects: file (R2 logo upload/delete under `workspaces/{workspaceId}/`)
 - Rules: logo JPEG/PNG/WebP/SVG max 2MB; `logoUrl` not settable via patch whitelist; `colorPalette`/`colorRoles` always allowed via `EXTRA_PATCH_KEYS`
+- Company schema fields (Company group order): `companyName` (brand), `companyFormalName`, `companyCr`, `companyRepresentative`, `companyCity`, then `email` / `phone` / `address` — present in `FALLBACK_SETTINGS_SCHEMA` + seeded `config/settingsSchema`; all four legal keys are on `PatchSettingsDto` / `SETTINGS_PATCH_KEYS`
+- `patchSettings(workspaceId, patch)` validates `select`-type schema fields dynamically via `validateSelectFieldValues(patch, schema)` (`lib/settings-schema.ts`) right after loading the schema, before persisting — checks the patched value against that field's **currently loaded** `options` (DB `config/settingsSchema` when seeded, else `FALLBACK_SETTINGS_SCHEMA`), 400s with the live allowed-values list otherwise. `PatchSettingsDto` no longer hardcodes `@IsIn([...])` for `defaultFont`/`currency` (keeps `@IsString()` only) — adding/removing a `select` option in the schema/seed (e.g. a new font) needs no DTO change.
 
 ### SVC-SETTINGS-02 · SettingsService [infrastructure, internal, Settings]
 - Status: done

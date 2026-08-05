@@ -374,7 +374,7 @@ Purpose: admin-managed, global catalog of HTML contract templates (not workspace
 
 **Rules:** setting `isDefault: true` clears it on all others; deleting the default template is blocked while other templates exist; the last remaining template cannot be deleted. Seeded with one template (`roya-default`, migrated verbatim from the legacy static `contract_template.html`) via `npm run seed:contract-templates`.
 
-**Placeholder token catalog** (authoritative — editor's clickable token picker + `renderContractHtml`): `workspace_name` / `workspace_logo` / `workspace_email` / `workspace_phone` / `workspace_address` (from `settings`), `client_name` / `client_address` / `client_cr` / `client_representative` / `client_contact_name` / `client_contact_phone`, `contract_number` / `contract_date` / `contract_duration` / `contract_notes` / `technical_appendix_number` / `ad_commission_percent`, `services` / `financial_table` (computed SOW/financial HTML), `client_signature_label`. Any other `{{token}}` is a free override key via the existing `overrides: Record<string,string>` mechanism.
+**Placeholder token catalog** (authoritative — editor's clickable token picker + `renderContractHtml`): `workspace_name` / `workspace_logo` / `workspace_email` / `workspace_phone` / `workspace_address` / `workspace_formal_name` / `workspace_cr` / `workspace_representative` / `workspace_city` (from `settings` — brand name vs legal party block; see §11), `client_name` / `client_address` / `client_cr` / `client_representative` / `client_contact_name` / `client_contact_phone`, `contract_number` (short 8-char deterministic display code derived from the internal id, e.g. `QK7XZV3M` — not the raw id) / `contract_date` / `contract_duration` / `contract_notes` / `technical_appendix_number` / `ad_commission_percent`, `services` / `financial_table` (computed SOW/financial HTML) / `contract_total` (grand-total figure, same as `financial_table`'s totals), `client_signature_label`, and a **Design / Branding** group — `document_font_link` / `document_font` (from `settings.defaultFont`) and `brand_primary` / `brand_secondary` / `brand_accent` / `brand_surface` / `brand_text` (from `settings.colorRoles`, Roya-default fallback). Any other `{{token}}` is a free override key via the existing `overrides: Record<string,string>` mechanism.
 
 Files: `mongodb-contract-templates.repository.ts`, `dtos/data/contract-templates.dto.ts`, `contract-templates.data.service.ts`, seed: `scripts/seed-contract-templates.js` + `scripts/contract-templates/roya-default.html`
 
@@ -389,11 +389,16 @@ Purpose: per-workspace company + integration settings (Claude key encrypted)
 | `workspaceId` | String | | → `workspaces` |
 | `apiKeyEncrypted` | String | AES-256-GCM | — |
 | `apiKeyMask` | String | UI mask | — |
-| `companyName` / `email` / `phone` / `address` | String | | — |
+| `companyName` | String | brand / trade name → `{{workspace_name}}` | — |
+| `companyFormalName` | String | optional; legal CR company name → `{{workspace_formal_name}}` (fallback → `companyName`) | — |
+| `companyCr` | String | optional; commercial registration number → `{{workspace_cr}}` | — |
+| `companyRepresentative` | String | optional; legal signatory → `{{workspace_representative}}` | — |
+| `companyCity` | String | optional; city in formal party clause → `{{workspace_city}}` | — |
+| `email` / `phone` / `address` | String | contact; `address` = full postal/street line | — |
 | `logoUrl` | String | S3/R2 public URL; optional; set via logo upload/delete only (not PATCH) | — |
 | `tax` / `currency` / `validity` | Mixed | financial | — |
 | `model` | String | default Claude model | — |
-| `defaultColor` / `defaultFont` | String | theme; `defaultColor` = alias of `colorRoles.primary` | — |
+| `defaultColor` / `defaultFont` | String | theme; `defaultColor` = alias of `colorRoles.primary`; `defaultFont` one of `Cairo` \| `Tajawal` \| `Amiri` (schema-driven — allowed values validated dynamically against `config/settingsSchema`'s `select` options, not hardcoded in the DTO) | — |
 | `colorPalette` | `string[]` \| null | 1–5 hex `#rrggbb` when set | theme |
 | `colorRoles` | Object \| null | `primary` / `secondary` / `accent` / `surface` / `text`; derived from palette (same rules as DNA) | theme |
 | `pipelineV3Enabled` | Boolean | default **`true`** (soft cutover); explicit `false` = legacy creative escape hatch | gates v3 create + soft-blocks new creative jobs |

@@ -11,7 +11,7 @@
 ### Contract Template Edit `PG-CONTRACT-TEMPLATES-02`
 - Route: `/contract-templates/new`, `/contract-templates/:id/edit`
 - Status: done
-- Components: `contract-template-edit.component.ts` — fields (Key, locked after create; Name AR/EN; Description; `isDefault` toggle; Status select) + a large HTML `<textarea>` bound to `content`, with a clickable, categorized token palette (Workspace / Client / Contract / Services & Financial / Signature, per `project/plan/data-model.md` §10a token catalog) that inserts `{{token}}` at the textarea's current caret position (`selectionStart`/`selectionEnd`, refocus) — plain textarea only, no rich-text editor, no live preview, no AI
+- Components: `contract-template-edit.component.ts` — fields (Key, locked after create; Name AR/EN; Description; `isDefault` toggle; Status select) + a large HTML `<textarea>` bound to `content`, with a clickable, categorized token palette (Workspace [incl. `workspace_formal_name` / `workspace_cr` / `workspace_representative` / `workspace_city`] / Client / Contract / Content [incl. `contract_total`] / Design & Branding [font + brand color tokens] / Signature, per `project/plan/data-model.md` §10a token catalog) that inserts `{{token}}` at the textarea's current caret position (`selectionStart`/`selectionEnd`, refocus) — plain textarea only, no rich-text editor, no live preview, no AI
 - Service: AppDataService → EP-CONTRACT-TEMPLATES-03/04/05
 - Guard: layout
 
