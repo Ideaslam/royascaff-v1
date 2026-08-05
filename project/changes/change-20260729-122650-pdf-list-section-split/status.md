@@ -1,6 +1,6 @@
 # Pack Status — change-20260729-122650-pdf-list-section-split
 
-- **pack-status**: verified
+- **pack-status**: merged
 - **request-id**: REQ-PROP-V3
 - **depends-on**: —
 - **Artifacts done**: 5/5
@@ -21,4 +21,4 @@
 
 ## Next action
 
-- Merge gate (Step 5.6) — refined to `financial_part` / `financial_full` (no `showTotals`)
+- Merged into main blueprint (2026-08-05).

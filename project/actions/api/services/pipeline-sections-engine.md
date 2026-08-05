@@ -3,16 +3,6 @@
 > Under `src/pipeline-v3/section/`, `assemble/`, `export/`, `reconciler/`.
 > Reuse: TemplateRenderService, PdfRenderService, S3Service, callClaudeJsonTraced, ModelResolver, PipelineTraceService, per-template catalog registry (`getSectionDef(key, templateKey)`), PipelineQueueService.
 
-## Delta
-
-- **Create** SVC-PIPE-S3-01..08 below
-- **Modify** `PipelineQueueService` — dispatch section/assemble/export; fan-in; extend `isStepAlreadyDone`
-- **Modify** `MapOrchestrator` — on map success enqueue section fan-out (when flag on / proposal v3)
-- **Modify** Projects create-from-project — require `pipelineV3Enabled`
-- **Replace** section prompt placeholders with production packs
-
----
-
 ### SVC-PIPE-S3-01 · SectionOrchestrator [domain, internal, PipelineV3]
 - Status: done
 - Methods:
@@ -75,6 +65,14 @@
 - Status: done
 - Methods:
   - `runAssemble(job)` — load ready (+ optionally skip failed) sections; inject financials/dates/client; load workspace Settings + resolve branding; map DNA `branding.colorRoles` (or derive from `branding.colors[]`) → `themeOverrides` **unless** template `theme.lockPalette` (then omit DNA + `proposal.themeOverrides` so catalog tokens win); `TemplateRenderService.renderProposalHtml` with root branding + theme; overflow guard (Puppeteer measure `.page`, shrink steps); PDF via PdfRenderService; stash buffers/keys temp or pass to export job payload via Mongo staging fields; set `steps.assembly` done; enqueue export
+  - `partitionRows<T>(rows: T[], n: number): T[][]` — pure helper; `n = max(1, financialFamilyInstanceCount)`; splits into `n` contiguous chunks as evenly as possible (earlier chunks ≥ later)
+  - **Financial family inject algorithm:**
+    1. `const full = buildFinancial(proposal, project)` (unchanged builder)
+    2. Collect ready sections with `isFinancialSectionKey(key)` sorted by proposal order
+    3. `chunks = partitionRows(full.rows, financialSections.length)`
+    4. For each financial-family section index `i`: merge `rows: chunks[i]` + `currency` into content; if `financialSectionShowsTotals(key)` (`financial` | `financial_full`): also inject `subtotal` / `tax` / `grandTotal`; if `financial_part`: omit totals fields
+    - Root `RenderProposalInput.financial` may remain full for layout/meta; **per-section content** drives table slice
+    - No `showTotals` flag — HBS partials differ structurally by key (`financial_part` partial omits totals block)
   - `buildFinancial(proposal, project, language)` — assign financial section rows + money totals:
     - each row includes `revenueType`; ratio → `unitPrice`/`lineTotal` = `formatRatioPercent(price)` (e.g. `10%`); non-ratio → numeric `price * qty`
     - money totals via shared `computeServicesFinancial` (excludes `RevenueType.Ratio`; tax = subtotal × taxRate)
@@ -156,3 +154,5 @@
   - **Length HARD**: stick to `lengthBudgets.aim` (~90% of max); never exceed `max`; count characters (AR+EN)
   - Depth must fit inside maxLength — denser evidence, not longer prose
   - User payload: `dnaSlice` then `lengthBudgets` + rules last (recency)
+  - **Partition grounding (list-split keys):** if `mapEntry` title/brief indicates a part `(i/N)` or describes a slice of a list, write **only that slice** — do not repeat items belonging to other parts; stay within `contentSchema` array `maxItems` for this instance; optional `partHint: { index, of }` parsed from title `/\((\d+)\s*\/\s*(\d+)\)/` — nice-to-have, not required if brief is clear
+  - **Financial-family keys** (`financial` / `financial_part` / `financial_full`): AI fills narrative/labels only — never invent row prices or totals; code injects money via `AssembleService`
