@@ -8,9 +8,8 @@ _Last updated: 2026-08-05_
 | pack-status | Count |
 |-------------|------:|
 | drafted | 0 |
-| in-progress | 0 |
 | verified | 0 |
-| merged | 52 |
+| merged | 54 |
 | cancelled | 0 |
 | blocked | 0 |
 
@@ -24,6 +23,8 @@ _Last updated: 2026-08-05_
 
 | ID | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |----|------|------|---------|-------------|-------|--------|--------|
+| 20260805-184301 | 2026-08-05 | new-feature | REQ-CATALOG (2/2) | merged | Resources → DNA picker + proposal section integration (structured field hints, aiContext, dynamic photo S3 upload) | `change-20260805-184301-resources-dna-proposal-integration/` | 2026-08-05 |
+| 20260805-184300 | 2026-08-05 | new-module | REQ-CATALOG (1/2) | merged | Resource Types + Resources catalog (API + Web CRUD, dynamic fields, two-column forms, seeded defaults) | `change-20260805-184300-resource-types-resources-catalog/` | 2026-08-05 |
 | 20260805-181832 | 2026-08-05 | modify-feature | REQ-SETTINGS-FORMAL | merged | Workspace legal party settings (formal name, CR #, representative, city) + contract tokens | `change-20260805-181832-workspace-formal-cr-name/` | 2026-08-05 |
 | 20260805-171001 | 2026-08-05 | modify-feature | REQ-CONTRACT-TEMPLATE | merged | Contract Amiri font (workspace setting) + solid-color true-bleed cover page + name/page watermark + restyled article layout (numbered badges, callouts, at-a-glance strip) | `change-20260805-171001-contract-template-cover-watermark-font/` | 2026-08-05 |
 | 20260730-134031 | 2026-07-30 | modify-feature | REQ-PROP-V3 | merged | Generic catalog-driven section repeat (any key, not just timeline/action_plan/services); enabled `social_audit` | `change-20260730-134031-generic-section-repeat/` | 2026-08-05 |

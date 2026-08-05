@@ -1,13 +1,13 @@
 # Project Status
 
-_Last updated: 2026-08-05 — after merge of workspace legal/CR party settings (formal name, CR #, representative, city) + contract tokens_
+_Last updated: 2026-08-05 — after merge of Resources DNA/proposal integration (field hints, aiContext, dynamic photo S3 upload, template sections)_
 
 ## Snapshot
 
 | App | Services | Endpoints | Pages/Views | Overall |
 |-----|----------|-----------|-------------|---------|
-| api | 90/92 | 143/144 | — | partial |
-| web | — | — | 36/36 | partial |
+| api | 94/94 | 158/158 | — | partial |
+| web | — | — | 40/40 | partial |
 
 > Web overall `partial` only for remaining product gaps (AI stubs / vision). **REQ-R 3/3**, **REQ-PROP-V3**, **REQ-PROP-UNIFY**, **REQ-AI-OBS** merged.
 
@@ -24,7 +24,7 @@ _Last updated: 2026-08-05 — after merge of workspace legal/CR party settings (
 | Projects | 4/4 | 23/23 | 5/5 | done |
 | Creative / AI Jobs | 6/6 | 5/5 | 0/0 | done |
 | Pipeline v3 Foundations | 9/9 | 2/2 | — | done |
-| Pipeline Analyze + Map | 6/7 | — | — | partial |
+| Pipeline Analyze + Map | 7/7 | — | — | done |
 | Pipeline Sections + Engine | 11/11 | — | — | done |
 | Pipeline Regen + Translate | 6/6 | — | — | done |
 | Pipeline Traces | 4/4 | 4/4 | 3/3 | done |
@@ -42,6 +42,7 @@ _Last updated: 2026-08-05 — after merge of workspace legal/CR party settings (
 | Admin | 1/1 | 9/9 | — | done |
 | Integrations | 5/5 | — | — | done |
 | Infrastructure | 3/3 | — | — | done |
+| Resources | 4/4 | 14/14 | 4/4 | done |
 | PDF Export | (assemble/export path) | — | — | done |
 | Dashboard | — | — | 1/1 | done |
 | Maintenance | — | — | 1/1 | done |
@@ -50,7 +51,7 @@ _Last updated: 2026-08-05 — after merge of workspace legal/CR party settings (
 ## In Progress (`partial`)
 
 - api · AI · SVC-AI-04 / EP-AI-02 — OpenAI stub throws "not configured"
-- api · Pipeline Analyze + Map · SVC-PIPE-AM-07 — vision 1b partial (traced skip)
+- api · Pipeline Analyze + Map — vision 1b partial (traced skip)
 
 ## Next Up (roadmap, ordered)
 
