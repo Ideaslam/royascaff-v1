@@ -9,8 +9,8 @@ _Last updated: 2026-08-05_
 |-------------|------:|
 | drafted | 0 |
 | in-progress | 0 |
-| verified | 6 |
-| merged | 41 |
+| verified | 5 |
+| merged | 43 |
 | cancelled | 0 |
 | blocked | 0 |
 
@@ -18,7 +18,6 @@ _Last updated: 2026-08-05_
 
 | ID | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |----|------|------|---------|------------|-------------|----------------|-------|--------|
-| 20260805-130421 | 2026-08-05 | modify-feature | REQ-PROP-V2-TRACE | — | verified | 2/2 | Creative v2 full AI/phase traces (both batches + fail closes) | `change-20260805-130421-creative-v2-full-traces/` |
 | 20260730-134031 | 2026-07-30 | modify-feature | REQ-PROP-V3 | — | verified | 2/2 | Generic catalog-driven section repeat (any key, not just timeline/action_plan/services); enabled `social_audit` | `change-20260730-134031-generic-section-repeat/` |
 | 20260729-122650 | 2026-07-29 | modify-feature | REQ-PROP-V3 | — | verified | 5/5 | PDF list section split (map N + financial_part/full) | `change-20260729-122650-pdf-list-section-split/` |
 | 20260728-000034 | 2026-07-28 | polish | — | — | verified | 1/1 | Proposal View action toolbar redesign | `change-20260728-000034-polish-proposal-view-actions/` |
@@ -29,6 +28,8 @@ _Last updated: 2026-08-05_
 
 | ID | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |----|------|------|---------|-------------|-------|--------|--------|
+| 20260805-130421 | 2026-08-05 | modify-feature | REQ-PROP-V2-TRACE | merged | Creative v2 full AI/phase traces (both batches + fail closes) | `change-20260805-130421-creative-v2-full-traces/` | 2026-08-05 |
+| 20260805-140002 | 2026-08-05 | polish | — | merged | AI Requests trace detail dialog redesign (meta + JSON space) | `change-20260805-140002-polish-ai-trace-detail-dialog/` | 2026-08-05 |
 | 20260805-134354 | 2026-08-05 | polish | — | merged | Sidebar nav reorder + rename (IA polish) | `change-20260805-134354-polish-sidebar-nav-ia/` | 2026-08-05 |
 | 20260805-130757 | 2026-08-05 | modify-feature | REQ-AI-OBS | merged | Proposals→AI Requests; remove AI Jobs UI+admin APIs; enrich projects overview + sort by createdAt desc | `change-20260805-130757-ai-job-to-traces-enrich-ai-requests/` | 2026-08-05 |
 | 20260805-132532 | 2026-08-05 | polish | — | merged | Roles matrix visual style (Yes/No cells; permissions×roles) | `change-20260805-132532-polish-roles-role-first/` | 2026-08-05 |

@@ -18,9 +18,14 @@
 ### Trace Detail Dialog `PG-AIREQ-02`
 - Route: dialog on list (not separate route)
 - Status: done
-- Components: `p-dialog`; JSON panels; meta includes project name + id, model, tokens, cost, duration, error
+- Components:
+  - Wide `p-dialog` (`min(1100px, 96vw)`) with scrollable content (~82vh)
+  - Meta in two cards — **Overview** (project name/id, proposalId, step, action, runId) and **Metrics** (status tag, model, tokens, cost, duration); long IDs wrap on wide rows
+  - Error strip when present; JSON blocks (input / output / validation / full record) with Copy + tall scroll panels; `app-json-tree` for nested readability
+  - i18n: `aiRequests.detailIdentity` / `detailMetrics`
 - Service: EP-TRACES-02
 - Guard: same
+- Notes: visual polish only (change-20260805-140002); same fields/bindings as before
 
 ### Projects overview + workspace totals `PG-AIREQ-03`
 - Route: default view of `/ai-requests`

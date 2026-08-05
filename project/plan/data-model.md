@@ -279,7 +279,13 @@ Purpose: sales proposals with financials, bilingual HTML (inline or S3 URLs), ge
 }
 ```
 
-Pending v2 batch poller: `pipelineVersion: "2"` AND non-terminal `generation.status` AND (`generation.batchId` OR `creativePipeline.sectionBatchId` / `htmlBatchId`). AI observability → `pipelineTraces` (`step: creative_v2`, labels e.g. `creative_v2.sections_batch`, `creative_v2.html_batch`, validations/repair).
+Pending v2 batch poller: `pipelineVersion: "2"` AND non-terminal `generation.status` AND (`generation.batchId` OR `creativePipeline.sectionBatchId` / `htmlBatchId`).
+
+**AI observability (`pipelineTraces`, `step: "creative_v2"`):**
+- AI calls (model set): `creative_v2.sections_batch`, `creative_v2.html_batch`, optional `creative_v2.html_repair` — terminal status must be `success`/`failed` once generation is terminal (never leave open/`retrying` after fail).
+- Actions/phases: `created`, `sections_batch_submitted`, `sections_ready`, `page_input_ready`, `html_batch_submitted`, `html_generated`, `html_repair_submitted`, `html_repaired`, `uploaded`, `completed`, `failed` (prefix `creative_v2.`).
+- Validations: `creative_v2.section_validation`, `creative_v2.page_input_validation`, `creative_v2.html_validation`.
+- Trace ids on `creativePipeline`: `sectionsBatchTraceId`, `htmlBatchTraceId`, `repairBatchTraceId` (+ `*BatchStartedAt`). Poller/orchestrator fail paths call `failCreativeV2OpenAiTraces` → close open AI rows + emit `creative_v2.failed`.
 
 ### `generation` (Pipeline v3 — through export)
 
@@ -545,7 +551,7 @@ Files: `mongodb-templates.repository.ts`, per-template catalogs under `src/pipel
 ---
 
 ## 17. pipelineTraces
-Purpose: every Pipeline v3 AI call/action with full parsed JSON I/O, tokens, cost.
+Purpose: Pipeline v3 AI call/action rows + Creative Pipeline v2 observability (`step: creative_v2`) with I/O, tokens, cost where applicable.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
@@ -554,7 +560,7 @@ Purpose: every Pipeline v3 AI call/action with full parsed JSON I/O, tokens, cos
 | `projectId` / `proposalId` | String | optional | → projects / proposals |
 | `runId` | String | required | — |
 | `seq` | Number | auto-increment within runId | — |
-| `step` | Enum | analyze\|map\|sections\|assemble\|export | — |
+| `step` | Enum | analyze\|map\|sections\|assemble\|export\|creative_v2 | — |
 | `action` | Enum | ai_call\|validation\|repair\|…\|error | — |
 | `label` | String | e.g. `1a.core_dna` | — |
 | `ai` | Object\|null | model, input, output, usage, cost | — |
@@ -583,7 +589,7 @@ Files: `mongodb-pipeline-traces.repository.ts`, `pipeline-trace.service.ts`
 | Project status | active, archived |
 | Template status | active, draft, deprecated |
 | Pipeline trace status | success, failed, retrying |
-| Pipeline step | analyze, map, sections, assemble, export |
+| Pipeline step | analyze, map, sections, assemble, export, creative_v2 |
 
 ## Repository / collection map
 

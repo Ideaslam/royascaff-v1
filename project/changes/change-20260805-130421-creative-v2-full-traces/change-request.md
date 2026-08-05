@@ -10,7 +10,7 @@
 - **part**: 1/1
 - **depends-on**: —
 - **blocks**: —
-- **pack-status**: verified
+- **pack-status**: merged
 
 ## Scope
 - Module(s): Creative Pipeline v2, Pipeline Traces / AI Requests
