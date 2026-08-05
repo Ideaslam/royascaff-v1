@@ -13,4 +13,5 @@
   - Logo upload/remove is immediate (not via Save settings)
   - Save sends `colorPalette`; BE derives `colorRoles` + syncs `defaultColor`
   - `AppSettings.colorPalette?` / `colorRoles?` / `logoUrl?`; hydrate palette from palette → roles → `defaultColor`
-  - i18n en/ar: `settings.colorPalette`, `settings.colorPaletteHint`
+  - Company tab (schema-driven) includes legal party fields: `companyFormalName` / `companyCr` / `companyRepresentative` / `companyCity` (FE fallback schema + seeded API schema; `AppSettings` + state defaults)
+  - i18n en/ar: `settings.colorPalette`, `settings.colorPaletteHint`, `settings.companyFormalName`, `settings.companyCr`, `settings.companyRepresentative`, `settings.companyCity`

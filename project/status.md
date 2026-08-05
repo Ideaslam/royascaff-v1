@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-05 — after merge of five verified packs (model routing, status polish, proposal actions polish, PDF list-split, generic section repeat)_
+_Last updated: 2026-08-05 — after merge of workspace legal/CR party settings (formal name, CR #, representative, city) + contract tokens_
 
 ## Snapshot
 

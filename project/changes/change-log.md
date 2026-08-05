@@ -7,10 +7,10 @@ _Last updated: 2026-08-05_
 
 | pack-status | Count |
 |-------------|------:|
-| drafted | 1 |
+| drafted | 0 |
 | in-progress | 0 |
 | verified | 0 |
-| merged | 50 |
+| merged | 52 |
 | cancelled | 0 |
 | blocked | 0 |
 
@@ -18,12 +18,14 @@ _Last updated: 2026-08-05_
 
 | ID | Date | Type | Request | Depends on | Pack status | Artifacts done | Scope | Folder |
 |----|------|------|---------|------------|-------------|----------------|-------|--------|
-| 20260805-171001 | 2026-08-05 | modify-feature | REQ-CONTRACT-TEMPLATE | — | drafted | 0/5 | Contract Amiri font (workspace setting) + branded cover page + name/page watermark + restyled article layout | `change-20260805-171001-contract-template-cover-watermark-font/` |
+| — | — | — | — | — | — | — | — | — |
 
 ## Completed
 
 | ID | Date | Type | Request | Pack status | Scope | Folder | Merged |
 |----|------|------|---------|-------------|-------|--------|--------|
+| 20260805-181832 | 2026-08-05 | modify-feature | REQ-SETTINGS-FORMAL | merged | Workspace legal party settings (formal name, CR #, representative, city) + contract tokens | `change-20260805-181832-workspace-formal-cr-name/` | 2026-08-05 |
+| 20260805-171001 | 2026-08-05 | modify-feature | REQ-CONTRACT-TEMPLATE | merged | Contract Amiri font (workspace setting) + solid-color true-bleed cover page + name/page watermark + restyled article layout (numbered badges, callouts, at-a-glance strip) | `change-20260805-171001-contract-template-cover-watermark-font/` | 2026-08-05 |
 | 20260730-134031 | 2026-07-30 | modify-feature | REQ-PROP-V3 | merged | Generic catalog-driven section repeat (any key, not just timeline/action_plan/services); enabled `social_audit` | `change-20260730-134031-generic-section-repeat/` | 2026-08-05 |
 | 20260729-122650 | 2026-07-29 | modify-feature | REQ-PROP-V3 | merged | PDF list section split (map N + financial_part/full) | `change-20260729-122650-pdf-list-section-split/` | 2026-08-05 |
 | 20260728-000034 | 2026-07-28 | polish | — | merged | Proposal View action toolbar redesign | `change-20260728-000034-polish-proposal-view-actions/` | 2026-08-05 |
