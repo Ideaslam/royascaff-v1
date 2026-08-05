@@ -214,7 +214,18 @@
 6. **AI Requests page** [frontend-only] — projects overview with KPI cards + **project createdAt** (default sort desc) + client / proposal count / last AI activity / open-project link; requests view with filters + deep-link from `?projectId&proposalId`; detail dialog
 7. **Nav entry** [frontend-only] — `/ai-requests` when `pipeline-traces.read`; **no** sidebar link to `/ai-jobs`
 
-## 15. PDF Export
+## 15. Resources
+- Scope: BE `modules/data/resource-types` + `modules/data/resources` + FE `/resource-types` (settings) + `/resources` (catalog)
+- Audience: all workspace members (view), `settings.manage` for type admin, ownership on resource PATCH/DELETE
+- Entities: `resource_types`, `resources`
+- Depends on: Integrations (S3 for photos)
+
+### Features
+1. **Resource Types Admin** [both] — workspace-scoped configurable type definitions with dynamic field schemas (dataType, aiHint, sortOrder); CRUD + seed defaults on first access; settings-area management; two-column edit form with per-field accordion
+2. **Resources Catalog** [both] — typed catalog items with core fields (name, photo, summary, tags) + dynamic `data: {}` from type's field definitions; CRUD + lite picker; list with SelectModule filter dropdowns (type, name, key); two-column edit form with per-field accordion for dynamic fields
+3. **Resource Photo Upload** [both] — base64 upload to S3 via existing S3Service pattern; stored as public URL on `photo` field
+
+## 16. PDF Export
 - Scope: BE `PdfRenderService` + Docker Chromium/Arabic fonts; consumes Handlebars HTML
 - Audience: internal (assemble/export later) + fixture-render
 - Entities: —

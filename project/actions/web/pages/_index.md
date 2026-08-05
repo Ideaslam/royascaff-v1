@@ -21,6 +21,8 @@
 | Users | `users.md` | `/users` | done | 1/1 | team members |
 | Profile | `profile.md` | `/profile` | done | 1/1 | self profile |
 | Roles | `roles.md` | `/roles-permissions` | done | 1/1 | roles & permissions UI |
+| Resource Types | `resource-types.md` | `/resource-types` | done | 2/2 | settings list + two-column edit/new form with per-field accordion |
+| Resources | `resources.md` | `/resources` | done | 2/2 | catalog list (SelectModule filters) + two-column edit/new form with per-field accordion |
 | Settings | `settings.md` | `/settings` | done | 1/1 | workspace settings + company logo |
 | Layout | `layout.md` | shell | done | 1/1 | sidebar workspace logo |
 | Public | `public.md` | `/client/proposals/:id` | done | 1/1 | public proposal view |

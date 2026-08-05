@@ -22,4 +22,6 @@
 | Pipeline Traces | `pipeline-traces.md` | `/api/data/pipeline-traces` · EP-TRACES-01..04 | done | 4/4 | list+stats/callType; detail; cost-summary byProject enriched + createdAt sort |
 | Projects | `projects.md` | `/api/data/projects` · EP-PROJECTS-01..22 + EP-CREATIVE-V2-01 | done | 23/23 | CRUD + DNA versions + create proposal pin + unified creative-proposals |
 | Templates | `templates.md` | `/api/data/templates` · EP-TPL-01..02 | done | 2/2 | list active + fixture render (`templateKey`) |
+| Resource Types | `resource-types.md` | `/api/data/resource-types` · EP-RT-01..06 | done | 6/6 | CRUD + GET /:id + WorkspaceAuthGuard |
+| Resources | `resources.md` | `/api/data/resources` · EP-RES-01..08 | done | 8/8 | CRUD + lite + photo upload/delete + OwnershipGuard |
 | Admin | `admin.md` | `/api/admin` + `/api/data/admin` · EP-ADMIN-01,04..11 | done | 9/9 | admin ops + reset (ai-jobs diagnostics removed) |

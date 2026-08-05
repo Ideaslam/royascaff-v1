@@ -30,6 +30,8 @@
 | Projects | `projects.md` | SVC-PROJECTS-01..04 | done | 4/4 | CRUD + DNA versions + snapshot pin + RFP/images (version+legacy) |
 | Templates | `templates.md` | SVC-TPL-01..11 | done | 11/11 | per-template catalogs + registry; visual locals; pdf-list-split helpers; website owns lengths; roya HAIA + lockPalette |
 
+| Resource Types | `resource-types.md` | SVC-RT-01 | done | 1/1 | CRUD + seed defaults + unique key |
+| Resources | `resources.md` | SVC-RES-01 | done | 1/1 | CRUD + lite + photo S3 |
 | Admin | `admin.md` | SVC-ADMIN-02 | done | 1/1 | data reset (AI jobs admin service removed) |
 | Integrations | `integrations.md` | SVC-INT-01..05 | done | 5/5 | S3, Mailjet, WhatsApp, Redis, encryption |
 | Infrastructure | `infrastructure.md` | SVC-INFRA-01..03 | done | 3/3 | maintenance, ownership, creative config |
