@@ -10,9 +10,10 @@
   - Lazy `p-table`; columns include project name, label, step, model, tokens, cost, duration, status, date
   - Filters: proposalId, projectId, **callType** (All / AI / Non-AI), step, status, from/to
   - Selected-project header chip shows project **name** + id
+  - Deep-link: on init read `?projectId` / `?proposalId` → requests view with filters applied
 - Service: `PipelineTracesService.list` → EP-TRACES-01; project names via `ProjectsService`
 - Guard: `pipeline-traces.read`
-- Notes: filters refresh page 1 + stats together
+- Notes: filters refresh page 1 + stats together; traces list default sort unchanged
 
 ### Trace Detail Dialog `PG-AIREQ-02`
 - Route: dialog on list (not separate route)
@@ -26,11 +27,13 @@
 - Status: done
 - Components:
   - Workspace KPI cards from EP-TRACES-04 `totals`
-  - Projects table: name, id, calls, tokens in/out/all, total cost → drill into requests
+  - Projects table: name+id, **project createdAt**, client, proposal count, last AI activity, pipeline version, calls, tokens, total cost
+  - Actions: drill into requests + open `/projects/:id`
+  - Default order: `projectCreatedAt` desc (from API)
   - No cost-by-day / cost-by-model charts (removed)
-- Service: EP-TRACES-04 `byProject` (+ token fields); `ProjectsService` for names
+- Service: EP-TRACES-04 enriched `byProject`
 - Guard: same
 
 ## Nav
 
-- Sidebar under Tools (near AI Jobs): `layout.sidebar.aiRequests`
+- Sidebar: `layout.sidebar.aiRequests` when `pipeline-traces.read` (no AI Jobs nav)

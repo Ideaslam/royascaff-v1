@@ -8,6 +8,7 @@
 - Rules:
   - status enum pending|sent|endorsed|won|lost
   - list `SUMMARY_PROJECTION` includes `pipelineVersion`, `projectId`, `language` (+ URL maps / money / status)
+  - list `toSummary` **must** return `pipelineVersion`, `projectId`, `language` (not strip them)
   - `patchProposalDocument(technical)` also merges `renderedByLang[lang].htmlUrl` when `pipelineVersion === "3"` or `renderedByLang` present (preserve `pdfUrl`)
 
 ### SVC-PROPOSALS-02 · ProposalsService [domain, internal, Proposals]

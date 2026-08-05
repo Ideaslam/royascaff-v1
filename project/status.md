@@ -1,15 +1,15 @@
 # Project Status
 
-_Last updated: 2026-08-02 — after change-20260802-173135 financial ratio RevenueType merge_
+_Last updated: 2026-08-05 — after change-20260805-130757 AI Job→AI Requests merge_
 
 ## Snapshot
 
 | App | Services | Endpoints | Pages/Views | Overall |
 |-----|----------|-----------|-------------|---------|
-| api | 87/89 | 138/139 | — | partial |
-| web | — | — | 36/36 | partial |
+| api | 86/88 | 136/137 | — | partial |
+| web | — | — | 34/34 | partial |
 
-> Web overall `partial` only for remaining product gaps (AI stubs / vision). **REQ-R 3/3**, **REQ-PROP-V3**, **REQ-PROP-UNIFY** merged.
+> Web overall `partial` only for remaining product gaps (AI stubs / vision). **REQ-R 3/3**, **REQ-PROP-V3**, **REQ-PROP-UNIFY**, **REQ-AI-OBS** merged.
 
 ## By Module
 
@@ -22,12 +22,12 @@ _Last updated: 2026-08-02 — after change-20260802-173135 financial ratio Reven
 | Service Categories | 1/1 | 6/6 | 1/1 | done |
 | Proposals | 6/6 | 20/20 | 6/6 | done |
 | Projects | 4/4 | 23/23 | 5/5 | done |
-| Creative / AI Jobs | 7/7 | 5/5 | 2/2 | done |
+| Creative / AI Jobs | 6/6 | 5/5 | 0/0 | done |
 | Pipeline v3 Foundations | 8/8 | 2/2 | — | done |
 | Pipeline Analyze + Map | 6/7 | — | — | partial |
 | Pipeline Sections + Engine | 11/11 | — | — | done |
 | Pipeline Regen + Translate | 6/6 | — | — | done |
-| Pipeline Traces | 2/2 | 4/4 | 3/3 | done |
+| Pipeline Traces | 4/4 | 4/4 | 3/3 | done |
 | Cutover Backfill | 1/1 | — | — | done |
 | Templates | 10/10 | 2/2 | — | done |
 | AI | 3/4 | 3/4 | 1/1 | partial |
@@ -38,7 +38,7 @@ _Last updated: 2026-08-02 — after change-20260802-173135 financial ratio Reven
 | Layout | — | — | 1/1 | done |
 | Config | — | 1/1 | — | done |
 | Public | 1/1 | 2/2 | 1/1 | done |
-| Admin | 2/2 | 11/11 | — | done |
+| Admin | 1/1 | 9/9 | — | done |
 | Integrations | 5/5 | — | — | done |
 | Infrastructure | 3/3 | — | — | done |
 | PDF Export | (assemble/export path) | — | — | done |

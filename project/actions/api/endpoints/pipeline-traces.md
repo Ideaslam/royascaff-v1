@@ -8,7 +8,7 @@
 | EP-TRACES-01 | GET | /api/data/pipeline-traces | permission:`pipeline-traces.read` | `?proposalId,projectId,step,callType,action,status,from,to,page,pageSize\|limit` | `200` `{ items, total, page, pageSize, stats }` | `PipelineTraceService.getWorkspaceTraces` | done | `callType`: `ai` \| `non-ai`; Mongo `workspaceId`; pageSize max 100 |
 | EP-TRACES-02 | GET | /api/data/pipeline-traces/:id | permission:`pipeline-traces.read` | `param: id` | `200` detail + full input/output | `PipelineTraceService.getById` | done | strip stack in prod |
 | EP-TRACES-03 | GET | /api/data/pipeline-traces/proposals/:proposalId/summary | permission:`pipeline-traces.read` | param | totals (+ `totalTokens`) | `getProposalSummary` | done | Mongo `$group` aggregate |
-| EP-TRACES-04 | GET | /api/data/pipeline-traces/cost-summary | permission:`pipeline-traces.read` | `?from,to` | `{ from, to, totals, byDay, byModel, byProject }` | `getCostSummary` | done | Mongo `$facet`; byProject includes token fields |
+| EP-TRACES-04 | GET | /api/data/pipeline-traces/cost-summary | permission:`pipeline-traces.read` | `?from,to` | `{ from, to, totals, byDay, byModel, byProject }` | `getCostSummary` | done | `byProject` enriched + sorted by `projectCreatedAt` desc |
 
 ## List stats (`EP-TRACES-01.stats` / summary totals)
 
@@ -36,6 +36,12 @@
   "byModel": [{ "model": "claude-…", "totalCost": 10, "calls": 30 }],
   "byProject": [{
     "projectId": "…",
+    "projectName": "…",
+    "projectCreatedAt": "ISO",
+    "clientName": "…",
+    "lastActivityAt": "ISO",
+    "proposalCount": 0,
+    "pipelineVersion": "2",
     "calls": 15,
     "inputTokens": 0,
     "outputTokens": 0,

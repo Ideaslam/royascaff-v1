@@ -20,7 +20,7 @@
 | AI Jobs | `ai-jobs.md` | SVC-AIJOBS-01..03 | done | 3/3 | jobs, creative pipeline, legacy poller |
 | Creative v2 Unify | `creative-v2.md` | SVC-CREATIVE-V2-01..04 | done | 4/4 | unified create + proposal batch + dual poller + backfill |
 | Pipeline v3 Foundations | `pipeline-v3-foundations.md` | SVC-PIPEV3-01..07 | done | 8/8 | BullMQ, repos, traces, schemas, prompts, PDF |
-| Pipeline Traces | `pipeline-traces.md` | SVC-TRACES-00..03 | done | 4/4 | list+stats; Mongo aggregates (proposal/cost/filter) |
+| Pipeline Traces | `pipeline-traces.md` | SVC-TRACES-00..03 | done | 4/4 | list+stats; cost-summary byProject enrich + createdAt sort |
 | Pipeline Analyze + Map | `pipeline-analyze-map.md` | SVC-PIPE-AM-01..07 | partial | 6/7 | Steps 1–2; full 8 research options; vision 1b partial |
 | Pipeline Sections + Engine | `pipeline-sections-engine.md` | SVC-PIPE-S3-01..09, FIN-DOC, REV-TYPE-01 | done | 11/11 | Assemble/export ratio `%` + `computeServicesFinancial`; RevenueType enum |
 | Pipeline Regen + Translate | `pipeline-regen-translate.md` | SVC-PIPE-RT-01..06 | done | 6/6 | regen, translate, sibling, formal seed |
@@ -28,6 +28,6 @@
 | Projects | `projects.md` | SVC-PROJECTS-01..04 | done | 4/4 | CRUD + DNA versions + snapshot pin + RFP/images (version+legacy) |
 | Templates | `templates.md` | SVC-TPL-01..10 | done | 10/10 | per-template catalogs + registry; visual locals banner/gallery; website owns lengths; roya HAIA + lockPalette |
 
-| Admin | `admin.md` | SVC-ADMIN-01..02 | done | 2/2 | admin AI jobs + data reset |
+| Admin | `admin.md` | SVC-ADMIN-02 | done | 1/1 | data reset (AI jobs admin service removed) |
 | Integrations | `integrations.md` | SVC-INT-01..05 | done | 5/5 | S3, Mailjet, WhatsApp, Redis, encryption |
 | Infrastructure | `infrastructure.md` | SVC-INFRA-01..03 | done | 3/3 | maintenance, ownership, creative config |

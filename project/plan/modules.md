@@ -77,7 +77,7 @@
 1. **Creative Pipeline v2 (unified)** [both] — section→final HTML; create via project+DNA+proposal (`pipelineVersion: "2"`, `jobId: null`); state on `proposal.generation`; traces on `pipelineTraces`; works with `pipelineV3Enabled` true
 2. **Legacy Stream / aiJobs creative** [both] — `POST /ai-jobs` creative stays blocked when v3 on; dual poller still drains in-flight creative `aiJobs`
 3. **AI Playground** [both] — Claude chat/test endpoints
-4. **Job Monitoring** [both] — list/details progress (`/ai-jobs` kept for history/chat)
+4. **Job Monitoring** [backend-only] — chat / residual job APIs via `/api/ai-jobs*` (create/get/stream + poller). No dedicated FE `/ai-jobs` list/details; creative observability is **AI Requests** (`pipelineTraces`)
 5. **Multi-provider AI** [backend-only] — OpenAI/Gemini stubs partial
 6. **Pipeline v3 foundations** [backend-only] — BullMQ queues (`pipeline.analyze|map|section|assemble|export`), AJV contracts (`dna.v2`, `map.v1`, slots), prompt packs, model-by-request-type resolver
 7. **Analyze worker (Step 1)** [backend-only] — 1a + 1d for all 8 research options (market/competitor/audience/trends/benchmarks/case-studies/social-analysis/action-plan); AJV `dna.v2` fail-closed; traces; vision 1b partial
@@ -90,7 +90,7 @@
 14. **Workspace v3 feature flag** [both] — `settings.pipelineV3Enabled` default **true**; gates create-from-project + regen/translate/rerender + FE Projects create; soft-blocks new creative **aiJobs** (unified v2 create remains available)
 15. **Translate section jobs** [backend-only] — fast model (`translate`); same template-scoped validate/clamp + lengthBudgets; glossary rules; fan-in → assemble/export
 16. **Regen orchestrator** [backend-only] — ProposalRegenerateService wires map/section/assemble/export queues
-17. **Primary paths (FE)** [frontend-only] — Projects = v3 templates; `/creative` = v2 final HTML (unified API); `/ai-jobs` for history/chat
+17. **Primary paths (FE)** [frontend-only] — Projects = v3 templates; `/creative` = v2 final HTML (unified API); proposal list **Open** → `/ai-requests?projectId&proposalId`
 18. **Legacy proposal backfill** [backend-only] — ops scripts: wrap missing `projectId` + DNA; set `pipelineVersion: "2"` for non-v3 shell (`backfill:v2-proposal-shell`)
 19. **Durable resume** [both] — `PipelineResumeService` status machine (Mongo = checkpoint); reconciler + `POST …/resume`; FE Continue only when stuck (idle ≥60s, no BullMQ jobs for proposal); incomplete sections only, never wipe `ready`
 20. **Dual batch poller** [backend-only] — Claude batch poll for legacy `aiJobs` + proposal-backed v2 (`generation.creativePipeline`)
@@ -139,7 +139,7 @@
 
 ### Features
 1. **Seed Config** [backend-only] — permissions/roles/config docs
-2. **Admin AI Job Diagnostics** [both] — list via /admin/ai-jobs
+2. **Admin AI Job Diagnostics** — **removed**. Observability for creative/pipeline runs is AI Requests (`pipeline-traces.read`). Do not expose `GET /api/admin/ai-jobs` or `/:id`
 3. **Workspace Data Reset** [backend-only] — destructive wipe
 4. **S3 / Batch Debug** [backend-only] — ops probes
 
@@ -208,9 +208,9 @@
 2. **Cost util** [backend-only] — `computeCost(model, usage)`
 3. **Trace list/detail API** [backend-only] — workspace-scoped Mongo filters; list embeds filter `stats`; `callType` ai/non-ai
 4. **Proposal trace summary** [backend-only] — Mongo aggregate totals (+ `totalTokens`)
-5. **Workspace cost summary** [backend-only] — `$facet` by day / model / project (project rows include token totals)
-6. **AI Requests page** [frontend-only] — projects overview with KPI cards + token/cost columns + project names; requests view with callType/step filters + filter stats; detail dialog
-7. **Nav entry** [frontend-only] — `/ai-requests` when `pipeline-traces.read`
+5. **Workspace cost summary** [backend-only] — `$facet` by day / model / project; `byProject` enriched with `projectCreatedAt`, client, last activity, proposal count, optional pipeline version; sorted by `projectCreatedAt` desc
+6. **AI Requests page** [frontend-only] — projects overview with KPI cards + **project createdAt** (default sort desc) + client / proposal count / last AI activity / open-project link; requests view with filters + deep-link from `?projectId&proposalId`; detail dialog
+7. **Nav entry** [frontend-only] — `/ai-requests` when `pipeline-traces.read`; **no** sidebar link to `/ai-jobs`
 
 ## 15. PDF Export
 - Scope: BE `PdfRenderService` + Docker Chromium/Arabic fonts; consumes Handlebars HTML

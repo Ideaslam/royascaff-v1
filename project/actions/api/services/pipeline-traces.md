@@ -19,9 +19,13 @@
 ### SVC-TRACES-02 · Cost summary [domain, PipelineTraces]
 - Status: done
 - Methods: `getCostSummary(workspaceId, { from, to })` → `{ from, to, totals, byDay, byModel, byProject }` via Mongo `$facet`
-- Deps: repo `aggregateCostSummary`
+- Deps: repo `aggregateCostSummary`; projects repository (batch get by ids); optional proposals lookup for `pipelineVersion`
 - Side effects: none
-- Rules: default `from` = 30 days ago; `byProject` includes calls + token totals + cost
+- Rules:
+  - default `from` = 30 days ago
+  - `byProject` includes calls + token totals + cost
+  - Enrich each byProject row (known project ids): `projectName`, `projectCreatedAt`, `clientName`, `lastActivityAt`, `proposalCount`, optional `pipelineVersion`
+  - Sort `byProject` by `projectCreatedAt` **descending** (null/unknown last)
 
 ### SVC-TRACES-03 · Filter stats [domain, PipelineTraces]
 - Status: done

@@ -1,10 +1,8 @@
 # Services — Safqa API · Admin
 
-### SVC-ADMIN-01 · AiJobsAdminService [domain, internal, Admin]
-- Status: done
-- Methods: list/get AI jobs for admin diagnostics
-- Deps: AiJobsRepository, PermissionChecker
-- Side effects: none
+### SVC-ADMIN-01 · AiJobsAdminService
+- Status: cancelled
+- Notes: **removed** — admin AI job diagnostics retired; observability via Pipeline Traces / AI Requests. Core `AiJobsService` (`/api/ai-jobs*`) remains for chat.
 
 ### SVC-ADMIN-02 · AdminResetService [domain, internal, Admin]
 - Status: done

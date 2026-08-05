@@ -7,7 +7,8 @@
 - Service: AppDataService → EP-PROPOSALS-01/02/08
 - Guard: MainLayout `authGuard`
 - Notes:
-  - Paginated list; rows include `pipelineVersion`, `projectId`, `language`
+  - Paginated list; rows include `pipelineVersion`, `projectId`, `language` (list `toSummary` must expose these)
+  - **AI Requests** column Open → `/ai-requests?projectId&proposalId` (enabled when `projectId` or proposal id present); not `/ai-jobs`
   - Pipeline v3 project proposals are `type: creative` with dual URL maps; list opens tech/fin per language via `getTechnicalUrl` / `getFinancialUrl` (technical may fall back to `renderedByLang`)
   - When financial URL missing → navigate `view?tab=financial`
   - Pending v2 (`pipelineVersion === "2"`, `generationStatus === "pending"`): poll proposal `generation` (not `jobId`); legacy `jobId` rows keep `subscribeToJob` until drained
