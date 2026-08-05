@@ -53,10 +53,13 @@
 ### Proposal View v3 actions `PG-PROP-V3-02`
 - Route: `/proposals/:id/view` (v3 branch)
 - Status: done
-- Components: Technical/Financial select; lang tabs (from `renderedByLang`), Download PDF (technical), Open HTML, Retry, Translate, New template, Regenerate, **Continue** (`canResume`/`stuck`)
+- Components: grouped toolbar (flex wrap) with two clusters:
+  1. **Document** (`.actions-group--doc`) — Technical|Financial `p-selectButton` (segmented, selected = brand primary); Language `p-selectButton` when multi-lang; Download PDF (technical, secondary + `pi-file-pdf`); Open HTML (secondary + `pi-external-link`)
+  2. **Pipeline** (`.actions-group--pipeline`) — Continue when `showContinue` (primary + `pi-play`); Retry failed sections (warn + `pi-replay`); Translate (secondary outlined + `pi-language`); New template (secondary + `pi-clone`); Regenerate (danger text + `pi-refresh`)
+  Between clusters: thin vertical rule (`.actions-sep`); gap 8px inside / 16px between groups
 - Service: EP-PROP-PIPE-03..06,08; EP-PROJECTS-10
 - Guard: projects.edit / projects.create as noted
-- Notes: Continue when stuck (non-terminal + idle ≥60s + no BullMQ jobs) **or** recoverable terminal assemble/export fail; Retry with no failed sections re-runs assemble; auto-resume via reconciler preferred; translate adds a language without wiping source; refresh proposal URL maps when ready for financial tab
+- Notes: Continue when stuck (non-terminal + idle ≥60s + no BullMQ jobs) **or** recoverable terminal assemble/export fail; Retry with no failed sections re-runs assemble; auto-resume via reconciler preferred; translate adds a language without wiping source; refresh proposal URL maps when ready for financial tab. Handlers/permissions/visibility/polling/iframe unchanged.
 
 ### Proposal Continue `PG-PROP-RESUME-01`
 - Route: `/proposals/:id/view` (v3, stuck or recoverable failed)

@@ -10,7 +10,7 @@
 - **part**: —
 - **depends-on**: —
 - **blocks**: —
-- **pack-status**: verified
+- **pack-status**: merged
 
 ## Scope
 - Module(s): Proposal View (v3 terminal actions toolbar)

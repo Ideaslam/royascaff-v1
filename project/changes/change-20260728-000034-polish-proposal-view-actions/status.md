@@ -1,6 +1,6 @@
 # Pack Status — change-20260728-000034-polish-proposal-view-actions
 
-- **pack-status**: verified
+- **pack-status**: merged
 - **request-id**: —
 - **depends-on**: —
 - **Artifacts done**: 1/1
@@ -17,4 +17,4 @@
 
 ## Next action
 
-- P.5: ask user to merge polish notes into main page specs.
+- Merged into main blueprint (2026-08-05).
