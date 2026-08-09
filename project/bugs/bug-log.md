@@ -3,6 +3,7 @@
 
 | ID | Date | Severity | Area | Summary | Status | File / Change pack |
 |----|------|----------|------|---------|--------|--------------------|
+| 20260809-122327 | 2026-08-09 | medium | Pipeline v3 maxTokens | Hardcoded stage budgets; need .env + 2x + default 16000 | DONE | `bug-20260809-122327-pipeline-v3-max-tokens-env.md` |
 | 20260804-164619 | 2026-08-04 | high | Pipeline v2 section batch | objectives_kpis JSON parse fails (trailing commas) | PENDING | `bug-20260804-164619-objectives-kpis-json-parse.md` |
 | 20260730-131000 | 2026-07-30 | medium | Assemble financial / services | Catalog service description missing on financial slide | DONE | `bug-20260730-131000-financial-service-description-missing.md` |
 | 20260730-130700 | 2026-07-30 | high | Proposal editor / view artifacts | Archive save updates HTML but PDF (and cached HTML) stay on last assemble | DONE | `bug-20260730-130700-editor-save-html-pdf-desync.md` |
