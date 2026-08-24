@@ -74,6 +74,7 @@ Backend port: **3301** (all envs). Route prefixes: `/api/v1` (public/SDK), `/api
 | Merchant API (portal) | `http://localhost:3301/api/merchant` |
 | Admin API | `http://localhost:3301/api/admin/v1` |
 | Customer portal | `http://localhost:4301` |
+| App base (`APP_BASE_URL`) | Customer portal origin — `http://localhost:4301` (reset, invite, OAuth return). Must not be the API (`:3301`) |
 | Admin panel | `http://localhost:4401` |
 | Checkout | `http://localhost:5600` |
 | Media CDN | `https://media-payup.iilm.io` |
@@ -109,7 +110,7 @@ CORS `ALLOWED_ORIGINS`: `localhost:4200/4301/4401/5500`, `payup-panel.iilm.io`, 
 | Service | URL |
 |---------|-----|
 | API (`API_PUBLIC_URL`) | `https://api.payupconnect.com` |
-| App base (`BASE_URL`, `APP_BASE_URL`) | `https://dash.payupconnect.com` |
+| App base (`BASE_URL`, `APP_BASE_URL`) | Customer portal origin for reset/invite/OAuth links — currently `https://dash.payupconnect.com`; must host `/auth/reset-password` |
 | Customer portal (CORS) | `https://control.payupconnect.com` |
 | Admin panel (CORS) | `https://admin.payupconnect.com` |
 | Checkout (`CHECKOUT_FRONTEND_URL`) | `https://checkout.payupconnect.com` |

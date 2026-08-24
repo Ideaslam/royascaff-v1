@@ -91,8 +91,17 @@ Auth rules: see `plan/roles-and-authorization.md`.
 - Type: Integration
 - Module: Auth, Verification, Notifications
 - Must: OTP and password reset via Mailjet; welcome emails via n8n webhook
+- Must: Password-reset email is a 15-minute link to `{APP_BASE_URL}/auth/reset-password?token=`; `APP_BASE_URL` is the customer portal origin (not the API)
 - Provider: Mailjet (`external-services/mailjet/`), n8n
 - Must not: Send email from frontend
+
+## RULE-021 · Password Reset Step-Up
+
+- Type: Security
+- Module: Auth (Module 1)
+- Must: Store reset token as SHA-256 hash with 15-minute expiry; forgot always returns the same success; if TOTP 2FA and/or a passkey is enabled, require one successful method before the password changes
+- Must: Verify TOTP/backup via `TotpService` and passkey via `PasskeyService` inside `PasswordResetService`; consume a used backup code
+- Must not: Issue a session JWT on reset; call `POST /2fa/verify` or `POST /passkey/login/verify` from the reset flow; reveal whether an email exists; accept an expired or reused token
 
 ## RULE-013 · Multi-App Context (Frontend)
 

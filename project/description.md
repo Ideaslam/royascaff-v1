@@ -35,7 +35,7 @@ PayUp lets businesses accept payments through multiple gateways (Stripe, PayPal,
 - **Customer Portal**: Apps, products, customers, tokens, gateways, rules, onboarding, notifications, team management
 - **Admin Panel**: Platform operations — merchants, gateway onboarding review, audit logs, currencies, libraries, cross-merchant payments, notification health, gateway catalog
 - **Notification System**: Event-driven webhooks, email, push-ready architecture with delivery log
-- **Security**: JWT, 2FA, passkeys, encrypted credentials, rate limiting, audit log
+- **Security**: JWT, 2FA, passkeys, password reset (email link + 2FA/passkey step-up), encrypted credentials, rate limiting, audit log
 
 ## 4. Key Entities
 

@@ -30,18 +30,18 @@ Prefix: `/api/merchant/v1/auth` · Auth default: **authenticated** (Bearer JWT) 
 |----|--------|-------|------|---------|-------|
 | EP-AU13 | POST | /passkey/register/options | authenticated | `PasskeyService` | — |
 | EP-AU14 | POST | /passkey/register/verify | authenticated | `PasskeyService` | — |
-| EP-AU15 | POST | /passkey/login/options | public; rate limit | `PasskeyService` | — |
-| EP-AU16 | POST | /passkey/login/verify | public; rate limit | `PasskeyService` | issues JWT |
+| EP-AU15 | POST | /passkey/login/options | public; rate limit | `PasskeyService` | login (`email` / `challengeToken`) or reset (`resetToken`); reset challenges are `password_reset` purpose and cannot be used on EP-AU16 |
+| EP-AU16 | POST | /passkey/login/verify | public; rate limit | `PasskeyService` | issues JWT — login only; reset must not call this |
 | EP-AU17 | GET | /passkey | authenticated | `PasskeyService.getUserPasskeys` | — |
 | EP-AU18 | DELETE | /passkey/:credentialId | authenticated | `PasskeyService.deletePasskey` | — |
 
 ## Password (`/password`)
 
-| ID | Method | Route | Auth | Service | Notes |
-|----|--------|-------|------|---------|-------|
-| EP-AU19 | POST | /password/forgot | public; rate limit | `PasswordResetService` | — |
-| EP-AU20 | POST | /password/reset | public; rate limit | `PasswordResetService` | — |
-| EP-AU21 | POST | /password/validate-token | public; rate limit | `PasswordResetService` | — |
+| ID | Method | Route | Auth | Input | Return | Service | Notes |
+|----|--------|-------|------|-------|--------|---------|-------|
+| EP-AU19 | POST | /password/forgot | public; rate limit | email | always generic success | `PasswordResetService.requestReset` | Mailjet 15m link; no enumeration; audit `auth.password.forgot.requested` |
+| EP-AU20 | POST | /password/reset | public; rate limit | token, password, confirmPassword; optional `twoFactor: { code, type }` or `passkey: { challengeKey, response }` | 200 success or 400 | `PasswordResetService.resetPassword` | step-up required if TOTP or passkey enabled; no JWT; single-use token; audit success/failure |
+| EP-AU21 | POST | /password/validate-token | public; rate limit | token | `{ valid, requiresStepUp, availableMethods }` | `PasswordResetService.validateResetToken` | invalid/expired → `valid: false` only |
 
 ## OAuth (`/oauth`)
 

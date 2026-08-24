@@ -87,10 +87,13 @@ All authenticated pages require `MerchantContextService.selectedMerchant$` (merc
 
 ## Module: Auth (no guard)
 
-- Login `/auth/login` → EP-AU02, EP-AU10, EP-AU15/16; post-login loads merchants (EP-MT03)
+- Login `/auth/login` → EP-AU02, EP-AU10, EP-AU15/16; **Forgot password** → `/auth/forgot-password`; footer self-serve “Create an account” → `/auth/register`; post-login loads merchants (EP-MT03)
+- Forgot password `/auth/forgot-password` → EP-AU19; email field; always generic success (EN/AR); back to login
+- Reset password `/auth/reset-password?token=` → EP-AU21 then EP-AU20; invalid/expired shared message + request new link; if `requiresStepUp`, one of TOTP / backup / passkey (EP-AU15 for options only — never EP-AU10 or EP-AU16); then new password + confirm; success → `/auth/login`
 - Register `/auth/register` → EP-AU01; redirects to `/onboarding`
 - Register with invite `/auth/register?invite=TOKEN` → EP-MT23 (validate) → EP-AU01 → EP-MT24 (accept)
 - Access `/auth/access`, Error `/auth/error` — static
+- UI: `auth-split` + promo panel; reuse login TOTP/passkey controls; loading / error toast / expired-link / success states
 
 ## Module: Merchant & Team
 

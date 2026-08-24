@@ -16,7 +16,7 @@ PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for ap
 2. **TOTP Two-Factor Authentication** [both] — setup, enable, verify, backup codes
 3. **WebAuthn Passkeys** [both] — register and login without password
 4. **Google OAuth** [both] — social login (env-configured)
-5. **Password Reset** [both] — forgot/reset via email
+5. **Password Reset** [both] — email link (15-minute token); require 2FA or passkey before save if either is enabled
 6. **Account Settings** [both] — security, notifications, display, privacy groups
 7. **Invite Registration** [both] — register via invite token, auto-join merchant
 
