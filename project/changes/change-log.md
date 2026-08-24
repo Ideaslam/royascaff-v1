@@ -6,3 +6,4 @@
 | 002 | 2026-06-30 | modify-feature | admin-panel | Gateway catalog — logo, countries, multi-select form | Implemented | [change-002-gateway-catalog-logo-countries](./change-002-gateway-catalog-logo-countries/) |
 | 003 | 2026-06-30 | modify-feature | admin-panel | Gateway catalog `enabled` — hide disabled from portal & payments | Implemented | [change-003-gateway-catalog-status](./change-003-gateway-catalog-status/) |
 | 004 | 2026-06-30 | new-module | all-apps | Merchant workspace — multi-user orgs, roles, invites, AdminUser, ownership migration (userId→merchantId) | Implemented | [change-004-merchant-workspace-module](./change-004-merchant-workspace-module/) |
+| 005 | 2026-08-24 | bug-fix | backend | Leftover `userId` queries/writes on merchant-owned documents | Implemented | [change-005-bug-fix-userid-to-merchantid](./change-005-bug-fix-userid-to-merchantid/) |
