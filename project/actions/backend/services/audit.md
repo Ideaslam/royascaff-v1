@@ -1,11 +1,12 @@
 ## Module: Audit
 
 ### SVC-AUDIT · AuditLogService [internal, application, Audit]
-Global fire-and-forget audit logger used by nearly every write service.
+Global immutable audit logger. Ordinary product telemetry may be best-effort; financial and subscription lifecycle events are durable.
 
 **Methods:**
 - `log(dto: CreateAuditLogDto): Promise<void>` — writes audit entry; errors caught and ignored
+- `buildLifecycleEvent(dto): AuditEvent` — creates actor/source/correlation/before/after/invoice/period event persisted in the caller's transaction/outbox
 
 **Deps:** AuditLogRepository
-**Side effects:** single DB write per call (error-swallowed)
-**Rules:** Audit writes are best-effort and must never propagate errors to callers · Globally available (no per-module import needed)
+**Side effects:** ordinary audit write or caller-owned transactional/outbox write
+**Rules:** ordinary non-financial audit may not block the primary action · financial/lifecycle state must not commit without its immutable audit/outbox event · no update/delete API · globally available

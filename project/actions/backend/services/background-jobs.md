@@ -1,12 +1,7 @@
 ## Module: Background Jobs
 
 ### SVC-JOBS · BackgroundJobsService [internal, application, Background Jobs]
-Global helper to create job records and read job status; registers the app's BullMQ queues.
+Creates observable job records, authorizes status reads, and registers `csv-analysis`, `dashboard-generation`, `pdf-export`, `cache-recalculation`, `data-sync`, `schema-discovery`, `subscription-lifecycle`, and `subscription-reconciliation` queues.
 
-**Methods:**
-- `getJobStatus(jobId, userId, userRole)` — returns job; 404 if missing, 403 unless owner or admin
-- `createJob(ownerId, type: JobType, entityType?, entityId?)` — creates job tracking record
+Subscription scheduling uses frequent bounded scans for exact period ends, downgrades, renewal due dates, and grace expiries; reconciliation re-enqueues paid invoices with missing application and stale attempts needing verification. Deterministic job IDs plus database compare-and-set/transactions make overlap safe. Schedules are data/calendar-driven, never application-boot-relative.
 
-**Deps:** BackgroundJobRepository · BullMQ queues (csv-analysis, dashboard-generation, pdf-export, cache-recalculation, data-sync, schema-discovery *(change-058)*)
-**Side effects:** job record writes
-**Rules:** Non-admins may only read their own jobs · pdf-export and cache-recalculation queues registered but have no consumer worker · Globally available · `schema-discovery` status is tracked on Dataset fields (not required on `backgroundjobs`) *(change-058)*

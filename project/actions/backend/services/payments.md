@@ -1,29 +1,15 @@
 ## Module: Payments
 
+### SVC-PAY-INV · BillingInvoiceService [internal, domain, Payments]
+Creates/reuses immutable invoices by workspace idempotency key and expected lifecycle version; snapshots charge, currency, plan, limits, target period, and proration. Lists safe customer/admin projections. Verified/manual settlement compare-and-sets the actionable invoice to paid and persists lifecycle outbox/audit atomically. Explicit `void`, `refund`, `recordChargeback`, `reconcile`, expiry, and supersession methods require reasons where admin-triggered. No arbitrary update/delete.
+
+---
+
 ### SVC-PAY · PaymentsService [internal, domain, Payments]
-Admin manual payment ledger — record and manage payment entries (not a gateway checkout flow).
-
-**Methods:**
-- `list(filters): Promise<paginated>` — filterable by user/status/date range, paginated
-- `getById(id)` — fetch one payment, 404 if missing
-- `create(data, actorId?, ip?)` — records manual payment, audits PAYMENT_CREATE
-- `update(id, data, actorId?, ip?)` — updates ledger fields, audits PAYMENT_UPDATE
-- `delete(id, actorId?, ip?)` — deletes payment, audits PAYMENT_DELETE
-
-**Deps:** PaymentRepository · AuditLogService
-**Side effects:** audit writes
-**Rules:** Manual admin-driven ledger; defaults currency USD and status PENDING · No gateway validation or webhook processing · Decoupled from gateway; gateway-driven logs written by PaymentCheckoutService into same Payment collection
+Append-only payment-attempt ledger: safe list/get, append provider/manual attempt, and guarded verified/failed/cancelled/expired transitions. Retries append attempts. Invoice owns charge/action truth; raw provider payloads/tokens never appear in DTOs.
 
 ---
 
 ### SVC-PAY-CHKOUT · PaymentCheckoutService [internal, domain, Payments]
-Orchestrates the PayUp hosted-checkout flow: payment log lifecycle + event-driven subscription activation.
+`startAttempt` revalidates invoice ownership, status, lifecycle version, and expiry; appends/reuses an idempotent attempt and creates PayUp hosted checkout. `confirm` verifies server-side, settles invoice atomically, and ensures lifecycle event delivery. `cancel` changes only the attempt. `reconcileAttempt` retries verification. Amount/action/workspace derive from invoice; callbacks trust no browser outcome; checkout cancellation never suspends a user or changes entitlement.
 
-**Methods:**
-- `initiateSubscriptionCheckout({ userId, planId, planName, amountUsd, customerEmail }, ip?)` — creates pending payment log, creates PayUp session, updates log, returns { redirectUrl }
-- `confirm(paymentId)` — verifies session, sets log paid + paidAt + reference, enqueues subscription-activation; returns portal redirect URL; idempotent on already-paid
-- `cancel(paymentId)` — sets log failed; checks consecutive unpaid → may call UsersService.autoSuspendForUnpaidInvoices; returns portal redirect URL
-
-**Deps:** PaymentRepository · AuditLogService · PAYMENT_PROVIDER (PayUpProvider) · subscription-activation queue (BullMQ)
-**Side effects:** PayUp API calls · audit writes (PAYMENT_CREATE, PAYMENT_UPDATE) · queue enqueue
-**Rules:** Activation never performed inline — only via enqueued event · Confirm is idempotent (already-paid log returned without re-enqueueing) · Amounts come from plan (server-side), never client

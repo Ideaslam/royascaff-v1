@@ -16,14 +16,14 @@ Fields below are entity-specific only. `_id`, `createdAt`, `updatedAt` are omitt
 - AI never reads data rows; `columnmetadata` is the sole AI input (column names, types, descriptions, samples)
 - Widget query definitions and aggregation rules snapshotted inside `chartwidgets` at generation time so later customization doesn't invalidate history
 - Widget `position`, `queryDefinition`, `displayConfig` are embedded subdocuments (read/written atomically on every dashboard load)
-- Audit logs are immutable — no update/delete endpoints; writes are fire-and-forget (never block the primary operation)
-- Subscription limits enforced at the service layer by reading active subscription before any dashboard or upload action
+- Audit logs are immutable — no update/delete endpoints; non-financial telemetry may be best-effort, while subscription/financial events are persisted transactionally through the lifecycle outbox
+- Subscription limits enforced at the service layer against the workspace's current immutable entitlement period before any limited action
 - `chartdatacache` is the persistence layer; Redis is the hot cache — both must be invalidated together on refresh
-- `usersubscriptions` usage counters updated atomically via MongoDB `$inc` to prevent race conditions
+- `subscriptionperiods` quota reservations use a conditional atomic update tied to the expected current period; usage never resets by recreating a subscription
 
 ## Phase Plan
 **Phase 1 (MVP):** users · ws\_\*\_projects · ws\_\*\_dashboards · ws\_\*\_csvfiles · ws\_\*\_columnmetadata · ws\_\*\_chartwidgets · ws\_\*\_dashboarddatasources · ws\_\*\_chartdatacache · backgroundjobs · notifications · auditlogs · systemsettings · widgetdefinitions · ailogs · aimodels · csvdata\_{fileId}
-**Phase 2 (Engagement):** sharelinks · subscriptionplans · usersubscriptions · payments
+**Phase 2 (Engagement):** sharelinks · subscriptionplans · usersubscriptions · subscriptionperiods · billinginvoices · payments
 
 ---
 
@@ -256,7 +256,7 @@ Tracks all async background jobs: CSV analysis, dashboard generation, PDF export
 | maxRetries | Number | required, default: 3; max attempts before final failure | — |
 
 `status`: `queued` → waiting in BullMQ · `processing` → worker active · `completed` → success · `failed` → exhausted retries or fatal error
-**BullMQ queues** (not all tracked as backgroundjobs records): `csv-analysis` · `dashboard-generation` · `pdf-export` · `cache-recalculation` · `subscription-activation` (durable event that activates subscription after confirmed PayUp payment)
+**BullMQ queues** (not all tracked as backgroundjobs records): `csv-analysis` · `dashboard-generation` · `pdf-export` · `cache-recalculation` · `subscription-lifecycle` (durable invoice/period transitions) · `subscription-reconciliation` (repairs unapplied paid invoices and due transitions)
 **Default maxRetries:** csv\_analysis = 3 · dashboard\_generation = 3 · pdf\_export = 2
 
 **Indexes:** `{ entityType: 1, entityId: 1 }` compound · `{ ownerId: 1 }` · `{ status: 1 }` · `{ type: 1 }` · `{ ownerId: 1, status: 1, type: 1 }` compound
@@ -291,8 +291,13 @@ Immutable record of user actions and system events for GDPR compliance and secur
 |-------|------|-------------|-----|
 | userId | ObjectId | nullable; null for system events or GDPR-deleted users (redact user ref, keep event) | → User |
 | action | String | required; see action enum below | — |
-| entityType | String | required; enum: `user`, `project`, `dashboard`, `csvfile`, `sharelink`, `subscription`, `settings` | — |
+| entityType | String | required; enum includes `user`, `project`, `dashboard`, `csvfile`, `sharelink`, `subscription`, `subscription_period`, `billing_invoice`, `payment`, `settings` | — |
 | entityId | ObjectId | nullable; ID of the affected entity | — |
+| workspaceId | ObjectId | nullable; required for workspace lifecycle/financial events | → Workspace |
+| actorSource | String | nullable; enum: `customer`, `admin`, `system`, `provider` | — |
+| correlationId | String | nullable; required for lifecycle/financial events | — |
+| invoiceId | ObjectId | nullable | → BillingInvoice |
+| periodId | ObjectId | nullable | → SubscriptionPeriod |
 | oldValues | Mixed | nullable; snapshot before change | — |
 | newValues | Mixed | nullable; snapshot after change | — |
 | ipAddress | String | nullable; request IP address | — |
@@ -300,11 +305,11 @@ Immutable record of user actions and system events for GDPR compliance and secur
 | details | String | nullable; additional context string | — |
 | timestamp | Date | required; event timestamp (not Mongoose createdAt — explicit for immutability) | — |
 
-`action` enum: `user.register` · `user.login` · `user.logout` · `user.login_failed` · `user.update` · `user.delete` · `user.deactivate` · `user.activate` · `project.create` · `project.update` · `project.delete` · `dashboard.create` · `dashboard.update` · `dashboard.delete` · `dashboard.duplicate` · `dashboard.refresh` · `csvfile.upload` · `csvfile.delete` · `sharelink.create` · `sharelink.revoke` · `export.pdf` · `export.excel` · `export.csv` · `subscription.assign` · `subscription.upgrade` · `subscription.cancel` · `settings.update`
+`action` enum includes ordinary product actions plus: `subscription.assign` · `subscription.upgrade_requested` · `subscription.upgraded` · `subscription.downgrade_scheduled` · `subscription.downgrade_cancelled` · `subscription.downgraded` · `subscription.auto_renew_changed` · `subscription.renewed` · `subscription.grace_started` · `subscription.moved_to_free` · `subscription.admin_override` · `invoice.created` · `invoice.settled` · `invoice.voided` · `invoice.refunded` · `invoice.chargeback` · `payment.attempt_created` · `payment.verified` · `payment.failed`
 **Validation:** no update or delete endpoints — admin read-only only. On GDPR user deletion: set `userId` to null, do not delete the log record.
 
-**Indexes:** `{ userId: 1 }` · `{ action: 1 }` · `{ entityType: 1 }` · `{ entityType: 1, entityId: 1 }` compound · `{ timestamp: -1 }` (most recent first) · `{ userId: 1, timestamp: -1 }` compound (user activity history)
-**Relations:** optionally references User (via userId; null when user deleted)
+**Indexes:** `{ userId: 1 }` · `{ action: 1 }` · `{ entityType: 1 }` · `{ entityType: 1, entityId: 1 }` · `{ timestamp: -1 }` · `{ userId: 1, timestamp: -1 }` · `{ workspaceId: 1, timestamp: -1 }` · `{ correlationId: 1 }` sparse
+**Relations:** optionally references User/Workspace/BillingInvoice/SubscriptionPeriod
 
 ---
 
@@ -317,73 +322,140 @@ Admin-managed subscription plan catalog. Not a fixed enum — plans are document
 | nameAr | String | optional, default: `''`; Arabic plan name | — |
 | description | String | nullable, default: `''` | — |
 | descriptionAr | String | optional, default: `''`; Arabic description | — |
-| priceMonthlyUsd | Number | required; min 0 | — |
+| planType | String | required; enum: `free`, `paid`; immutable after first use | — |
+| tierRank | Number | required; integer min 0; authoritative upgrade/downgrade ordering | — |
+| priceAmount | Decimal128 | required; min 0; zero only for free | — |
+| currency | String | required; ISO-4217 uppercase, default `USD` | — |
+| billingIntervalUnit | String | required; enum: `day`, `month`, `year`; free must be `day` | — |
+| billingIntervalCount | Number | required; positive integer; free must be exactly `30` | — |
 | maxDashboards | Number | required; min 0 | — |
 | maxDataUploadsPerMonth | Number | required; min 0 | — |
 | maxDataUpdatesPerMonth | Number | required; min 0 | — |
+| maxSyncedRowsPerMonth | Number | required, default 0; 0 = unlimited | — |
+| maxSyncsPerDay | Number | required, default 0; 0 = unlimited | — |
 | isActive | Boolean | required, default: true; inactive plans hidden from assignment | — |
 | freeUsers | Number | required, default: 5; users included free in plan | — |
 | pricePerExtraUserMonthlyUsd | Number | required, default: 10; USD/month per extra user beyond limit | — |
 
 **Indexes:** `{ name: 1 }` unique · `{ isActive: 1 }`
-**Relations:** referenced-by many UserSubscriptions (via planId) · referenced-by many Payments (via planId)
+**Rules:** exactly one active free plan · plan type/interval/tier identity cannot change after a period or invoice references the plan · deactivation archives the plan for new choices without changing historical snapshots
+**Relations:** referenced-by UserSubscriptions; snapshotted by SubscriptionPeriods and BillingInvoices
 
 ---
 
 ## 14. usersubscriptions
-One subscription record per workspace. Tracks current period and monthly usage counters for limit enforcement.
+One durable lifecycle record per workspace. It points to the current immutable period and is never deleted/recreated to change plans.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | workspaceId | ObjectId | required, unique; one subscription per workspace | → Workspace |
-| planId | ObjectId | required | → SubscriptionPlan |
-| status | String | required; enum: `active`, `inactive`, `expired`, `cancelled`; default: `active` | — |
-| startDate | Date | required; subscription start date | — |
-| endDate | Date | nullable; null for subscriptions without an end date | — |
-| uploadsUsedThisMonth | Number | required, default: 0; running upload count for current period | — |
-| updatesUsedThisMonth | Number | required, default: 0; running data-update count for current period | — |
-| currentPeriodStart | Date | nullable; start of current billing/usage period | — |
-| currentPeriodEnd | Date | nullable; end of current billing/usage period; used to reset counters | — |
+| currentPlanId | ObjectId | required | → SubscriptionPlan |
+| currentPeriodId | ObjectId | required, unique | → SubscriptionPeriod |
+| status | String | required; enum: `active`, `past_due`, `inactive`, `expired`; default `active` | — |
+| autoRenew | Boolean | required; false for free, true by default for paid | — |
+| graceEndsAt | Date | nullable; unpaid paid renewal only | — |
+| scheduledPlanId | ObjectId | nullable; target downgrade | → SubscriptionPlan |
+| scheduledChangeAt | Date | nullable; effective at current period end | — |
+| scheduledChangeId | String | nullable; unique command/correlation ID | — |
+| lifecycleVersion | Number | required, integer, default 1; compare-and-set guard | — |
+| lastTransitionAt | Date | required | — |
 | notes | String | nullable, default: `''`; free-text admin notes | — |
 
-`status`: `active` → valid, limits enforced · `inactive` → admin-deactivated, resource lock (no create/upload/update) · `expired` → past end date without renewal, same resource lock · `cancelled` → manually cancelled
+`status`: `active` → valid entitlement · `past_due` → paid renewal unpaid but access retained through grace · `inactive` → explicit admin lock · `expired` → exceptional no-entitlement state pending repair; normal non-payment moves to free
 
-**Indexes:** `{ userId: 1 }` unique (one subscription per user) · `{ planId: 1 }` · `{ status: 1 }` · `{ currentPeriodEnd: 1 }` (period rollover / counter reset)
-**Relations:** belongs-to Workspace (via workspaceId) · references SubscriptionPlan (via planId) · referenced-by many Payments (via subscriptionId)
+**Indexes:** `{ workspaceId: 1 }` unique · `{ currentPeriodId: 1 }` unique · `{ status: 1, graceEndsAt: 1 }` · `{ scheduledChangeAt: 1 }` sparse
+**Relations:** belongs-to Workspace · references current/scheduled SubscriptionPlan · points to current SubscriptionPeriod · referenced-by BillingInvoices
+
+---
+
+## 14A. subscriptionperiods
+Immutable entitlement windows and their usage. New periods are appended; historical rows are never reset, edited, or deleted.
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| workspaceId | ObjectId | required | → Workspace |
+| subscriptionId | ObjectId | required | → UserSubscription |
+| planId | ObjectId | required | → SubscriptionPlan |
+| sequence | Number | required; positive integer per subscription | — |
+| planSnapshot | Object | required; type, rank, bilingual name, interval, limits, included users | — |
+| startsAt | Date | required, inclusive | — |
+| endsAt | Date | required, exclusive; free is exactly startsAt + 30 days | — |
+| source | String | required; enum: `workspace_created`, `renewal`, `free_rollover`, `free_to_paid`, `downgrade`, `nonpayment_fallback`, `admin_override`, `migration` | — |
+| sourceInvoiceId | ObjectId | nullable | → BillingInvoice |
+| dashboardsUsed | Number | required, default 0 | — |
+| uploadsUsed | Number | required, default 0 | — |
+| updatesUsed | Number | required, default 0 | — |
+| syncedRowsUsed | Number | required, default 0 | — |
+| syncsToday | Number | required, default 0 | — |
+| syncsTodayResetAt | Date | required | — |
+| closedAt | Date | nullable; early close for free-to-paid/admin override | — |
+
+**Indexes:** `{ subscriptionId: 1, sequence: 1 }` unique · `{ workspaceId: 1, startsAt: -1 }` · `{ endsAt: 1 }` · `{ sourceInvoiceId: 1 }` unique sparse
+**Rules:** counters change only through conditional atomic reservations · identity/bounds/snapshot are immutable · UserSubscription references the sole current period
+
+---
+
+## 14B. billinginvoices
+Authoritative immutable charges. Status changes are guarded transitions, never arbitrary edits.
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| workspaceId | ObjectId | required | → Workspace |
+| subscriptionId | ObjectId | required | → UserSubscription |
+| initiatedByUserId | ObjectId | nullable for system renewal | → User |
+| action | String | required; enum: `free_to_paid`, `upgrade`, `renewal`, `extra_user`, `admin_adjustment` | — |
+| status | String | required; enum: `open`, `paid`, `void`, `expired`, `refunded`, `chargeback`, `superseded` | — |
+| fromPlanId | ObjectId | nullable | → SubscriptionPlan |
+| toPlanId | ObjectId | required | → SubscriptionPlan |
+| planSnapshot | Object | required; charge/plan/limit snapshot | — |
+| amount | Decimal128 | required; min 0 | — |
+| currency | String | required; ISO-4217 uppercase | — |
+| proration | Object | required; basis, remaining/total seconds, rounding policy or full-charge marker | — |
+| targetPeriodStart | Date | required | — |
+| targetPeriodEnd | Date | required | — |
+| expectedLifecycleVersion | Number | required | — |
+| idempotencyKey | String | required | — |
+| dueAt | Date | required | — |
+| expiresAt | Date | required | — |
+| graceEndsAt | Date | nullable; renewal only | — |
+| supersededByInvoiceId | ObjectId | nullable | → BillingInvoice |
+| paidAt | Date | nullable | — |
+| appliedAt | Date | nullable; lifecycle effect applied exactly once | — |
+| latestPaymentAttemptId | ObjectId | nullable | → Payment |
+| metadata | Object | nullable; allowlisted non-secret context | — |
+
+**Indexes:** `{ workspaceId: 1, idempotencyKey: 1 }` unique · `{ status: 1, dueAt: 1 }` · `{ status: 1, graceEndsAt: 1 }` · `{ subscriptionId: 1, createdAt: -1 }`
+**Rules:** no general update/delete endpoint · one actionable invoice per subscription/action/lifecycle version · compare-and-set status transitions · retry settlement application until `appliedAt`
 
 ---
 
 ## 15. payments
-Payment log: admin manual ledger AND gateway payment log (PayUp hosted-checkout flow, change-003).
+Append-only manual/PayUp attempts referencing one immutable BillingInvoice.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
-| userId | ObjectId | required | → User |
-| workspaceId | ObjectId | nullable, default: null; workspace billing context (nullable for legacy records) | → Workspace |
-| subscriptionId | ObjectId | nullable, default: null | → UserSubscription |
-| planId | ObjectId | nullable, default: null | → SubscriptionPlan |
-| amountUsd | Number | required; min 0 | — |
-| currency | String | required, default: `USD` | — |
-| status | String | required; enum: `paid`, `pending`, `refunded`, `failed`; default: `pending` | — |
-| method | String | nullable, default: `''`; payment method label | — |
-| reference | String | nullable, default: `''`; external reference/receipt (PayUp session id when settled) | — |
-| paidAt | Date | nullable, default: null; settlement timestamp | — |
-| notes | String | nullable, default: `''`; free-text admin notes | — |
-| gateway | String | nullable, default: `manual`; `manual` (admin ledger) or `payup` *(change-003)* | — |
-| providerSessionId | String | nullable, default: `''`; PayUp checkout session id *(change-003)* | — |
-| providerSessionToken | String | nullable, default: `''`; PayUp session token for status verification *(change-003)* | — |
-| confirmUrl | String | nullable, default: `''`; public return URL sent to PayUp on success *(change-003)* | — |
-| cancelUrl | String | nullable, default: `''`; public return URL sent to PayUp on cancel *(change-003)* | — |
-| redirectUrl | String | nullable, default: `''`; hosted-checkout URL returned by PayUp *(change-003)* | — |
-| action | String | nullable; enum: `subscribe`, `upgrade`, `downgrade`, `admin_assign`, `add_user` | — |
-| previousPlanId | ObjectId | nullable, default: null | → SubscriptionPlan |
-| settledByAdminId | ObjectId | nullable, default: null; admin who manually settled | → User |
-| invitationId | ObjectId | nullable, default: null; for extra-user invoices | → WorkspaceInvitation |
+| invoiceId | ObjectId | required | → BillingInvoice |
+| workspaceId | ObjectId | required | → Workspace |
+| initiatedByUserId | ObjectId | nullable for system/manual attempts | → User |
+| provider | String | required; enum: `payup`, `manual` | — |
+| status | String | required; enum: `created`, `pending`, `verified_paid`, `failed`, `cancelled`, `expired` | — |
+| amount | Decimal128 | required; copied from invoice | — |
+| currency | String | required; copied from invoice | — |
+| publicReference | String | required, unique; opaque callback correlation | — |
+| providerSessionId | String | nullable, unique sparse | — |
+| providerSessionTokenEncrypted | String | nullable; encrypted at rest, never returned | — |
+| providerReference | String | nullable | — |
+| providerStatus | String | nullable | — |
+| verifiedAt | Date | nullable | — |
+| failedAt | Date | nullable | — |
+| failureCode | String | nullable; allowlisted code | — |
+| settledByAdminId | ObjectId | nullable; requires reason | → User |
+| adminReason | String | nullable | — |
+| rawPayloadHash | String | nullable; integrity/debug hash, not raw payload | — |
 
-`status`: `paid` → received · `pending` → awaiting settlement · `refunded` → refunded · `failed` → failed
-
-**Indexes:** `{ userId: 1, createdAt: -1 }` compound (payment history, newest first) · `{ status: 1, createdAt: -1 }` compound (admin ledger filtering) · `{ providerSessionToken: 1 }` sparse (gateway return lookup) *(change-003)* · `{ workspaceId: 1 }` (workspace invoice lookup)
-**Relations:** belongs-to User (via userId) · optionally references Workspace, UserSubscription, SubscriptionPlan, WorkspaceInvitation
+**Indexes:** `{ publicReference: 1 }` unique · `{ provider: 1, providerSessionId: 1 }` unique sparse · `{ invoiceId: 1, createdAt: -1 }` · `{ workspaceId: 1, createdAt: -1 }` · `{ status: 1, createdAt: -1 }`
+**Rules:** no update/delete endpoint · retries append attempts · only verified/manual settlement may atomically settle a matching open invoice
+**Relations:** belongs-to BillingInvoice and Workspace · optionally references initiating/settling User
 
 ---
 
@@ -613,7 +685,7 @@ Collection: `datasource_type_meta` (global — not workspace-scoped)
 6. `chartwidgets.queryDefinition` must be validated against the AI-returned schema before persisting
 7. `sharelinks.tokenHash` must be stored as SHA-256 hash — never store or return raw token after creation
 8. `auditlogs` records must never have an update or delete endpoint
-9. `usersubscriptions` usage counters must be reset at each `currentPeriodEnd` rollover and checked against `subscriptionplans` limits before uploads/updates
+9. `subscriptionperiods` usage counters reset only by appending the next entitlement period; every limit-consuming action atomically reserves against `usersubscriptions.currentPeriodId`
 10. `backgroundjobs.status` must always be updated to `failed` with `errorMessage` on failure — no silent failures
 11. `chartdatacache` entries must be invalidated (deleted or set `stale`) before a refresh response is returned
 12. `csvdata_{fileId}` collections must be dropped entirely when the parent `csvfile` record is deleted
@@ -644,13 +716,19 @@ SortOrder = [asc, desc]
 CacheStatus = [valid, stale]
 SharePermission = [view, edit]
 ShareLinkStatus = [active, revoked, expired]
-BackgroundJobType = [csv_analysis, dashboard_generation, pdf_export, cache_recalculation, subscription_period_rollover]
+BackgroundJobType = [csv_analysis, dashboard_generation, pdf_export, cache_recalculation, subscription_lifecycle, subscription_reconciliation]
 BackgroundJobStatus = [queued, processing, completed, failed]
 BackgroundJobEntityType = [csvfile, dashboard]
 NotificationType = [dashboard_ready, generation_error, csv_analysis_complete, export_ready, dashboard_shared]
-AuditAction = [user.register, user.login, user.logout, user.login_failed, user.update, user.delete, user.deactivate, user.activate, user.auto_suspend, project.create, project.update, project.delete, dashboard.create, dashboard.update, dashboard.delete, dashboard.duplicate, dashboard.refresh, csvfile.upload, csvfile.delete, sharelink.create, sharelink.revoke, export.pdf, export.excel, export.csv, subscription.assign, subscription.upgrade, subscription.cancel, subscription.activate, subscription.deactivate, settings.update, dataset.schema_selection]
-SubscriptionStatus = [active, inactive, expired, cancelled]
-PaymentStatus = [paid, pending, refunded, failed]
+AuditAction = [user.register, user.login, user.logout, user.login_failed, user.update, user.delete, user.deactivate, user.activate, project.create, project.update, project.delete, dashboard.create, dashboard.update, dashboard.delete, dashboard.duplicate, dashboard.refresh, csvfile.upload, csvfile.delete, sharelink.create, sharelink.revoke, export.pdf, export.excel, export.csv, subscription.assign, subscription.upgrade_requested, subscription.upgraded, subscription.downgrade_scheduled, subscription.downgrade_cancelled, subscription.downgraded, subscription.auto_renew_changed, subscription.renewed, subscription.grace_started, subscription.moved_to_free, subscription.admin_override, invoice.created, invoice.settled, invoice.voided, invoice.refunded, invoice.chargeback, payment.attempt_created, payment.verified, payment.failed, settings.update, dataset.schema_selection]
+SubscriptionPlanType = [free, paid]
+BillingIntervalUnit = [day, month, year]
+SubscriptionStatus = [active, past_due, inactive, expired]
+SubscriptionPeriodSource = [workspace_created, renewal, free_rollover, free_to_paid, downgrade, nonpayment_fallback, admin_override, migration]
+BillingInvoiceAction = [free_to_paid, upgrade, renewal, extra_user, admin_adjustment]
+BillingInvoiceStatus = [open, paid, void, expired, refunded, chargeback, superseded]
+PaymentProvider = [payup, manual]
+PaymentStatus = [created, pending, verified_paid, failed, cancelled, expired]
 AiLogStatus = [pending, success, failed]
 // Subscription plans are NOT a fixed enum — they are documents in the subscriptionplans collection.
 ```

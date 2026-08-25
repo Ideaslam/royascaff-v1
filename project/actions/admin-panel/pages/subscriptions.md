@@ -1,8 +1,9 @@
-## Module: Subscriptions & Plans
+## Module: Subscriptions
 
 ### Subscriptions Page
 - Route: `/app/subscriptions`
-- Components: SubscriptionsPage (Tab 1: user subscriptions table with assign/change/cancel/activate/deactivate + create/change dialogs with "Mark as paid" checkbox; Tab 2: plans table with CRUD including free plans, create/edit dialog with Free Users Limit + Price Per Extra User fields)
-- Service: ClientsService.list() → `GET /api/v1/users`; SubscriptionsAdminService.listSubscriptions() → `GET /api/v1/subscriptions`; SubscriptionsAdminService.create() → `POST /api/v1/subscriptions`; SubscriptionsAdminService.update() → `PUT /api/v1/subscriptions/:id`; SubscriptionsAdminService.change() → `POST /api/v1/subscriptions/change`; SubscriptionsAdminService.cancel() → `PATCH /api/v1/subscriptions/:userId/cancel`; SubscriptionsAdminService.activate() → `POST /api/v1/subscriptions/:id/activate`; SubscriptionsAdminService.deactivate() → `POST /api/v1/subscriptions/:id/deactivate`; SubscriptionsAdminService.listAllPlans() → `GET /api/v1/subscriptions/plans/all`; SubscriptionsAdminService.createPlan() → `POST /api/v1/subscriptions/plans`; SubscriptionsAdminService.updatePlan() → `PUT /api/v1/subscriptions/plans/:id`; SubscriptionsAdminService.deletePlan() → `DELETE /api/v1/subscriptions/plans/:id`
-- Guard: authGuard + adminGuard
-- Notes: Create/change dialogs include "Mark as paid" checkbox (default off → pending invoice). Plans table includes Free Users Limit and Price Per Extra User columns. Status filter includes `inactive`.
+- Components: workspace subscription table; status/plan/grace/scheduled-change filters; current-period and usage detail drawer; lifecycle history; lifecycle-aware change dialog; activate/deactivate controls; reconciliation action.
+- Service: `listSubscriptions` → `GET /subscriptions`; `getSubscription` → `GET /subscriptions/:id`; recovery-only `create` → `POST /subscriptions`; notes-only `update` → `PUT /subscriptions/:id`; `change` → `POST /subscriptions/:id/change`; `activate`/`deactivate` → dedicated endpoints.
+- Guard: authGuard + adminGuard.
+- Notes: every lifecycle mutation requires reason and idempotency key. Admin chooses immediate/scheduled only where lifecycle rules allow; manual paid settlement references an invoice rather than a “Mark as paid” boolean. No customer-style cancel/re-subscribe and no direct date/counter edits.
+

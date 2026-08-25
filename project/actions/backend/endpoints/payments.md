@@ -1,17 +1,20 @@
 ## Module: Payments
 
-`@Controller('payments')` · class-level `@Roles(ADMIN)` (except PayUp return endpoints which are `@Public()`)
+`@Controller('payments')` · platform-admin by default; PayUp return endpoints are public and accept opaque references only.
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-PAY-01 | GET | /api/v1/payments | JWT+admin | `ListPaymentsQueryDto` query: userId?, status?, from?, to?, page?, limit? | 200 `Paginated<PaymentDto>` | SVC-PAY.list() | |
-| EP-PAY-02 | GET | /api/v1/payments/:id | JWT+admin | `:id` param | 200 `PaymentDto` | SVC-PAY.getById() | |
-| EP-PAY-03 | POST | /api/v1/payments | JWT+admin | `CreatePaymentDto` { userId, subscriptionId?, planId?, amountUsd, currency?, status?, method?, reference?, paidAt?, notes? } | 201 `PaymentDto` | SVC-PAY.create() | |
-| EP-PAY-04 | PATCH | /api/v1/payments/:id | JWT+admin | `:id` · `UpdatePaymentDto` | 200 `PaymentDto` | SVC-PAY.update() | |
-| EP-PAY-05 | DELETE | /api/v1/payments/:id | JWT+admin | `:id` param | 204 | SVC-PAY.delete() | |
-| EP-PAY-06 | GET | /api/v1/payments/payup/confirm | public | query: ref (paymentId), outcome? | 302 redirect | SVC-CHECKOUT.confirm() | (change-003) |
-| EP-PAY-07 | GET | /api/v1/payments/payup/cancel | public | query: ref (paymentId), outcome? | 302 redirect | SVC-CHECKOUT.cancel() | (change-003) |
+| EP-PAY-01 | GET | /api/v1/payments | JWT+admin | attempt filters + pagination | 200 paginated `AdminPaymentAttemptDto` | SVC-PAY.listAttempts() | No provider tokens/raw payloads |
+| EP-PAY-02 | GET | /api/v1/payments/:id | JWT+admin | `:id` | 200 `AdminPaymentAttemptDto` | SVC-PAY.getAttempt() | |
+| EP-PAY-03 | POST | /api/v1/payments/manual-settlement | JWT+admin | `{ invoiceId, reference, reason, idempotencyKey }` | 201 `AdminPaymentAttemptDto` | SVC-PAY.settleManually() | Append attempt + settle |
+| EP-PAY-04 | GET | /api/v1/payments/invoices | JWT+admin | filters + pagination | 200 paginated `AdminInvoiceDto` | SVC-PAY-INV.list() | Immutable ledger |
+| EP-PAY-05 | GET | /api/v1/payments/invoices/:id | JWT+admin | `:id` | 200 `AdminInvoiceDetailDto` | SVC-PAY-INV.get() | Safe attempt history |
+| EP-PAY-06 | POST | /api/v1/payments/invoices/:id/reconcile | JWT+admin | `{ reason, idempotencyKey }` | 202 result | SVC-PAY-INV.reconcile() | Retry verification/application |
+| EP-PAY-07 | POST | /api/v1/payments/invoices/:id/void | JWT+admin | `{ reason, idempotencyKey }` | 200 `AdminInvoiceDto` | SVC-PAY-INV.void() | Open invoices only |
+| EP-PAY-08 | POST | /api/v1/payments/invoices/:id/refund | JWT+admin | `{ amount?, reason, idempotencyKey }` | 202 `AdminInvoiceDto` | SVC-PAY-INV.refund() | Audited transition |
+| EP-PAY-09 | POST | /api/v1/payments/invoices/:id/chargeback | JWT+admin | `{ providerReference, reason, idempotencyKey }` | 200 `AdminInvoiceDto` | SVC-PAY-INV.recordChargeback() | No silent period rewrite |
+| EP-PAY-10 | GET | /api/v1/payments/payup/confirm | public | `ref` | 302 redirect | SVC-PAY-CHKOUT.confirm() | Server verifies and ensures lifecycle event |
+| EP-PAY-11 | GET | /api/v1/payments/payup/cancel | public | `ref` | 302 redirect | SVC-PAY-CHKOUT.cancel() | Attempt only; entitlement unchanged |
 
-**Notes:**
-- [EP-PAY-06] **(change-003):** Public browser-redirect target after successful PayUp checkout. Verifies PayUp session, sets payment log to paid, enqueues subscription-activation event (idempotent). Redirects to customer portal subscriptions page with `payment=success|failed` flag. An already-paid log redirects without re-activating. Audits `PAYMENT_UPDATE`; activation audit happens in processor.
-- [EP-PAY-07] **(change-003):** Public browser-redirect target after cancelled/failed PayUp checkout. Sets payment log to failed. Redirects to customer portal subscriptions page with `payment=cancelled` flag. Does not activate any subscription.
+**Contract rules:** no general PATCH/DELETE. Corrections use explicit append-only transitions with admin reason. Public callbacks ignore browser outcome/amount/plan/workspace fields. Repeated verified callbacks safely repair missing lifecycle delivery.
+

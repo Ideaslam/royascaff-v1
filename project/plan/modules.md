@@ -134,22 +134,23 @@ blueprint + phase plan: `project/changes/change-060-isolate-data-reporting-engin
 - Audience: authenticated users (CP)
 
 ### Features
-1. **View Available Plans** [both] — list active plans with price and limits (max dashboards, monthly upload/update limits).
-2. **View My Subscription and Usage** [both] — current subscription (plan, status, dates) + current usage vs plan limits.
-3. **Subscribe to a Plan** [frontend] — self-service subscribe via PayUp hosted-checkout (change-003); returns `redirectUrl`; subscription activates only after payment confirmed via `subscription-activation` event; active subscribers use upgrade/downgrade instead (change-005); inactive users blocked from self-service billing.
-4. **Upgrade / Downgrade Plan** [both] — *(change-005)* upgrade to higher-priced plan → pending invoice + PayUp; downgrade to lower paid → invoice + PayUp; downgrade to free → immediate activation (no invoice); pending invoice list + pay/resume checkout.
-5. **Admin Paid Flag on Assign/Create/Change** [admin-panel + backend] — *(change-005)* admin marks subscription changes as already paid (immediate activation) or unpaid (customer pays via PayUp).
-6. **Cancel My Subscription** [frontend] — self-service cancel; sets status `cancelled` + `endDate` = now; implemented change-001.
-7. **Subscription Usage Limits** [backend] — *(change-004)* `SubscriptionLimitRegistry` with handlers per limit key (`maxDashboards`, `maxDataUploadsPerMonth`, `maxDataUpdatesPerMonth`); `check`/`assertAllowed` before writes; atomic counter increment via `SubscriptionRepository.incrementUsage`; monthly counter reset on period rollover; returns 403 when exceeded; applies only when `status = active`.
-8. **Subscription Resource Lock** [backend] — *(change-004)* expired/inactive/cancelled subscriptions block mutating actions (create dashboards, upload files, update/refresh data); reads, view subscription, subscribe/upgrade allowed.
-9. **Free Plan Subscribe** [both] — *(change-004)* free plan (`priceMonthlyUsd = 0`) skips PayUp checkout, activates via same durable `subscription-activation` BullMQ event as paid plans; no payment log for free plans.
+1. **Plan Catalog and Billing Intervals** [both] — list active free/paid plans with bilingual metadata, tier rank, limits, charge price/currency, and configurable paid billing interval. The free plan always uses an exact rolling 30-day entitlement period.
+2. **Workspace Subscription and Period Usage** [both] — one durable subscription per workspace points to one immutable current `SubscriptionPeriod`; the response includes current plan, status, period boundaries, auto-renew state, scheduled change, grace deadline, limits, and usage.
+3. **Continuous Free Entitlement** [backend] — every workspace receives the free plan once and remains on continuous 30-day periods. Repeated requests, callback retries, workspace switches, or historical cancellation state never recreate the subscription or reset counters inside the active period.
+4. **Immediate Upgrade After Payment** [both] — preview and create a server-priced prorated invoice for the unused portion of the current paid period. After verified settlement, apply the higher tier immediately while preserving the current period end and usage counters. Free-to-paid starts one new paid period and resets usage once.
+5. **Scheduled Downgrade** [both] — schedule a lower tier (including free) for current-period end without taking payment at scheduling time. Show target plan and effective timestamp; the owner may cancel. A paid target receives its next-cycle invoice before the boundary and activates after settlement; unpaid boundary handling follows grace-to-free. The current plan, access, and limits remain until transition.
+6. **Auto-Renew and Grace Period** [both] — paid cancellation means disable auto-renew, never delete/recreate the subscription. Access continues to period end. If a renewal invoice remains unpaid, the paid plan stays active through `SUBSCRIPTION_PAYMENT_GRACE_DAYS` (default 7); after grace, the workspace transitions to free. Re-enabling auto-renew cancels a pending non-payment fallback when still valid.
+7. **Immutable Billing Ledger** [admin-panel + backend] — `BillingInvoice` is the authoritative immutable charge; `Payment` records each manual or PayUp attempt. Financial state changes are append-only, server-verified, idempotent, auditable, and safe under duplicate/delayed callbacks, concurrency, expired invoices, and superseded invoices.
+8. **Atomic Subscription Limits** [backend] — enforce each registered limit against the current `SubscriptionPeriod` with a single conditional atomic reservation/increment. Exact-period resets happen only when a new period is created. Mutating actions fail closed if entitlement cannot be resolved.
+9. **Non-Destructive Resource Lock** [backend] — expired/admin-inactive entitlement blocks limited writes while reads remain available. A downgrade never deletes data: resources over the lower limit remain accessible, but new limited actions are blocked until usage falls below the active limit.
+10. **Owner Self-Service and Admin Override** [both] — only a workspace owner may preview/pay upgrades, schedule/cancel downgrades, or change auto-renew. Platform admins may perform lifecycle-aware overrides with mandatory reason; every transition records actor, source, before/after state, and correlation key.
 
 ## 11. Workspace
 - Scope: BE (`src/modules/workspace/`) + FE (`pages/workspace/` in CP + workspace switcher in AppShell)
 - Audience: authenticated users (CP) + admin (AP)
 
 ### Features
-1. **Create Workspace** [both] — triggered by `AuthService.register()` (signup) and `POST /workspaces` (create new workspace); auto-generates slug `{word}-{word}-{4digits}`; auto-assigns the first active free plan (`priceMonthlyUsd = 0`, `isActive = true`) via `SubscriptionsService.assignDefaultFreePlan` *(change-056)*.
+1. **Create Workspace** [both] — triggered by `AuthService.register()` (signup) and `POST /workspaces` (create new workspace); auto-generates slug `{word}-{word}-{4digits}`; idempotently creates the workspace's single subscription and first exact 30-day free `SubscriptionPeriod` via `SubscriptionsService.assignDefaultFreePlan` *(change-056)*.
 2. **Workspace Slug Management** [both] — slug availability check, update slug/name; JWT carries `{ currentWorkspaceId, workspaceSlug, workspaceRole }`.
 3. **Workspace Members + Roles** [both] — member list, add, remove, role change via `WorkspaceMembership`; members page at `/app/settings/members`.
 4. **Workspace Invitation Flow** [both] — invite by email, accept via token, resend; uses Email integration for invitation emails.
@@ -217,18 +218,19 @@ All admin modules are in the **Admin Panel** (`roya-ai-dynamo-frontend-admin`), 
 - Audience: admin (AP)
 
 ### Features
-1. **Manage Subscription Plans** [both] — plan CRUD (name, description, monthly price USD, max dashboards, monthly upload/update limits, active flag); admin list includes inactive plans.
-2. **Manage User Subscriptions** [both] — list/view/create/update subscriptions (paginated, status filter); assign plan, change plan, cancel user subscription (`:userId/cancel`).
-3. **Activate / Deactivate User Subscription** [both] — *(change-004)* activate sets `status = active` + valid period dates; deactivate sets `status = inactive` + resource lock applies; distinct from cancel.
-4. **Account Suspension** [backend] — *(change-004)* admin suspend/reactivate (extended: revoke refresh tokens, clearer errors); auto-suspend after 2 consecutive unpaid payments without intervening `paid` payment; suspended users: login rejected with `ACCOUNT_SUSPENDED`.
+1. **Manage Subscription Plans** [both] — separate `/app/plans` catalog for bilingual name/description, free/paid type, tier rank, charge/currency, configurable paid interval, limits, included users, and archive state. Free is fixed to zero price and 30 days; used plan identity fields are immutable.
+2. **Manage Workspace Subscriptions** [both] — list/detail by workspace with current period/usage, auto-renew, grace, scheduled change, and lifecycle history. Recovery creation is idempotent; notes are editable, financial/lifecycle fields are not directly editable.
+3. **Lifecycle-Aware Admin Overrides** [both] — immediate/scheduled change only where rules allow; activate/deactivate resource lock; manual settlement references an invoice. Every action requires reason/idempotency key and immutable audit context.
+4. **Account Suspension Separation** [backend] — platform-admin suspend/reactivate remains a security/account action. Billing delinquency never suspends a User; workspace paid access follows renewal grace then free fallback.
 
 ## 16. Admin — Payments
 - Scope: BE (`src/modules/payments/`) + FE (`pages/admin/payments/` in AP)
 - Audience: admin (AP)
 
 ### Features
-1. **Payment Ledger Management** [both] — list/filter/view/create/edit/delete payment entries; fields: user ref, subscription/plan ref (optional), amount/currency, status, method, reference, gateway (`manual`/`payup`), provider session ref *(change-003)*, paid-at, notes.
-2. **PayUp Gateway Checkout** [both] — *(change-003)* customer self-subscribe opens PayUp hosted-checkout session; pending payment log on init; public confirm/cancel return endpoints finalize log; confirmed payment emits durable `subscription-activation` BullMQ event; API base URL auto-selected by env (sandbox/prod); PayUp HTTP isolated in `src/integrations/payment/` (`PayUpProvider`), keys are env-only.
+1. **Immutable Invoice Ledger** [both] — filter/view authoritative invoices with action, snapshots, amount/currency, proration, due/grace/expiry, lifecycle version, settlement/application, supersession, refund, and chargeback state. No generic edit/delete.
+2. **Append-Only Payment Attempts** [both] — each PayUp/manual retry is a separate attempt. Admin can settle, void, refund, record chargeback, and reconcile only through explicit reason-required commands.
+3. **PayUp Hosted Checkout** [both] — checkout starts for an existing actionable invoice; return is verified server-side and atomically settles invoice plus durable lifecycle outbox. Cancelled attempts leave entitlement unchanged; duplicate/delayed returns are idempotent and recover paid-but-unapplied work.
 
 ## 17. Admin — Audit Logs
 - Scope: BE (`src/modules/audit/` — `@Global`) + FE (`pages/admin/audit/` in AP)
@@ -336,7 +338,7 @@ Infrastructure modules are called by business module services; they do not expos
 - Audience: system
 
 ### Features
-1. **Payment Provider Interface** [backend] — provider-agnostic interface (`PAYMENT_PROVIDER` env var); PayUp provider implemented for subscription checkout *(change-003)*: auth → create session, confirm/cancel return endpoints, durable `subscription-activation` event; API base URL auto-selected by environment (sandbox/prod), overridable by env var.
+1. **Payment Provider Interface** [backend] — provider-agnostic interface (`PAYMENT_PROVIDER` env var); PayUp provider creates hosted sessions and performs authoritative server-side status lookup for invoice-bound attempts. Provider calls remain isolated; keys are env-only; lifecycle changes occur only after verified invoice settlement and durable event persistence.
 ## S9. OLAP Engine (Analytics Store)
 - Scope: BE only — `src/integrations/olap/` (engine providers) + `src/modules/analytics-store/`
 - Audience: system (internal — consumed by pipelines, dashboards, connectors)

@@ -4,18 +4,18 @@
 Manages CSV file uploads (direct and presigned), AI-analysis kickoff, column metadata, and file lifecycle. *(Legacy CSV path — kept for backward compat)*
 
 **Methods:**
-- `uploadFile(file: Express.Multer.File, userId: string, ip?)` — validates size, uploads buffer to R2, marks ANALYZING, creates job + enqueues csv-analysis, audits CSVFILE_UPLOAD_COMPLETE
-- `initiateUpload(dto: InitiateUploadDto, userId, ip?)` — creates file record and returns R2 presigned URL, audits CSVFILE_UPLOAD
-- `completeUpload(fileId, dto: CompleteUploadDto, userId, ip?)` — finalizes presigned upload, marks ANALYZING, creates job + enqueues analysis
+- `uploadFile(file: Express.Multer.File, userId: string, ip?)` — atomically reserves the upload limit for current workspace period, validates/uploads/enqueues, compensates reservation on failure, audits completion
+- `initiateUpload(dto: InitiateUploadDto, userId, ip?)` — creates an operation-bound upload reservation and returns presigned URL; abandoned reservations expire/compensate idempotently
+- `completeUpload(fileId, dto: CompleteUploadDto, userId, ip?)` — commits the existing reservation, finalizes upload, and enqueues analysis; compensates on failure
 - `listFiles(userId, userRole, filters): Promise<PaginatedResponseDto>` — paginated; non-admins scoped to ownerId
 - `getFile(fileId, userId, userRole)` — returns file plus column metadata
 - `updateColumns(fileId, dto: UpdateColumnsDto, userId, userRole)` — saves user column descriptions; marks CONFIRMED once none remain unconfirmed
 - `deleteFile(fileId, userId, userRole, ip?)` — deletes column metadata, drops dynamic csvdata_{fileId} collection, deletes R2 object and record, audits CSVFILE_DELETE
 - `retryAnalysis(fileId, userId, userRole)` — clears prior metadata/rows and re-enqueues csv-analysis (only from retryable states)
 
-**Deps:** CsvFileRepository · ColumnMetadataRepository · BackgroundJobRepository (via BackgroundJobsService) · BackgroundJobsService · AuditLogService · CSV_ANALYSIS_QUEUE (BullMQ) · STORAGE_PROVIDER · Mongo Connection (@InjectConnection)
+**Deps:** CsvFileRepository · ColumnMetadataRepository · SubscriptionLimitService · BackgroundJobRepository (via BackgroundJobsService) · BackgroundJobsService · AuditLogService · CSV_ANALYSIS_QUEUE · STORAGE_PROVIDER · Mongo Connection
 **Side effects:** R2 upload/delete/presign · queue enqueue · dynamic collection drop/clear · audit writes
-**Rules:** Max file size 50 MB · Status flow: UPLOADING → ANALYZING → ANALYZED → CONFIRMED (or ERROR); dashboards require CONFIRMED files · Owner-or-admin enforced on read/update/delete/retry · Delete removes storage object, metadata, and dynamic row collection
+**Rules:** Current entitlement and atomic quota reservation precede upload writes · max file size 50 MB · status flow enforced · over-limit existing files remain readable/deletable · delete removes storage object, metadata, and dynamic collection
 
 ---
 
@@ -99,12 +99,12 @@ BullMQ worker that runs setup-time schema discovery + column-identify (+ mapping
 BullMQ worker that executes a full or incremental dataset sync via the PipelineEngine.
 
 **Methods:**
-- `process(job: Job<{ datasetId, syncRunId, workspaceSlug, pipelineRunId?, mode }>): Promise<void>` — resolves Dataset → DataSource → Connection, runs `PipelineEngine.run('ingest', { dataset, connection, scope, … })`, marks SyncRun completed/failed, calls `FilterValuesService.computeAndStore` after success
+- `process(job: Job<{ datasetId, syncRunId, workspaceSlug, pipelineRunId?, mode }>): Promise<void>` — consumes the operation's atomic daily-sync reservation, resolves Dataset → DataSource → Connection, runs ingest, atomically adds actual synced rows to the current period (or fails/clamps before exceeding), marks run, refreshes filters; compensates reserved usage on failure
 - `updateProgress(syncRunId, workspaceSlug, { progress, phase, rowsIn?, rowsLoaded? })` — *(change-045)* throttled writer for live progress
 
-**Deps:** DatasetRepository · DataSourceRepository · ConnectionRepository · SyncRunRepository · FilterValueMetaRepository · FilterValuesService · PipelineEngine · WorkspaceRepository
+**Deps:** DatasetRepository · DataSourceRepository · ConnectionRepository · SyncRunRepository · SubscriptionLimitService · FilterValueMetaRepository · FilterValuesService · PipelineEngine · WorkspaceRepository
 **Side effects:** OLAP inserts · FilterValueMeta refresh · SyncRun status/progress updates
-**Rules:** On pipeline error: SyncRun.status = `failed` + errorMessage · Filter refresh only after successful sync · Never re-runs a running SyncRun · *(change-045)* `progress`/`phase` advisory/throttled
+**Rules:** Sync trigger reserves current-period/daily quota before enqueue and fails closed on entitlement errors · actual rows are accounted atomically · failed runs compensate reservations · filter refresh only after success · never re-run a running SyncRun
 
 ---
 

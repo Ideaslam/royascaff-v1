@@ -648,10 +648,10 @@ List any third-party integrations required:
 
 - Purpose: Process SaaS subscription payments
 - Usage:
-  - Handle subscription sign-ups
-  - Process recurring payments
-  - Manage billing and invoices
-  - Handle payment webhooks
+  - Create hosted-checkout sessions for immutable, server-priced billing invoices
+  - Verify payment returns/webhooks before settling a payment attempt
+  - Process paid upgrades and renewal invoices idempotently
+  - Reconcile duplicate, delayed, expired, and superseded payment callbacks
 - Implementation: Use interface/adapter pattern to allow easy switching between payment providers (Stripe, PayPal, etc.)
 - Configuration: Provider specified via environment variable
 
@@ -859,7 +859,12 @@ List any important business rules, validation constraints, or workflows the syst
     - Maximum number of dashboards per subscription tier
     - Maximum number of CSV uploads per subscription tier
     - Maximum number of data refresh operations per subscription tier
-    - System must prevent actions that exceed subscription limits
+    - Free entitlement is continuous per workspace in exact rolling 30-day periods; plan recreation or repeated requests never reset the active period
+    - Paid billing intervals are plan-configurable; a settled renewal creates the next period and resets limits once
+    - Paid upgrades apply immediately only after a prorated invoice is verified as paid; paid-to-paid upgrades keep the current period end and usage
+    - Downgrades are scheduled for period end, visible and cancellable, and never delete existing over-limit resources
+    - Disabling auto-renew preserves access through period end; an unpaid renewal preserves paid access for `SUBSCRIPTION_PAYMENT_GRACE_DAYS` (default 7) before transition to free
+    - Limit reservations/increments must be atomic against the current immutable period; system must prevent actions that exceed subscription limits
 12. **CSV file size validation** - Files exceeding 50 MB must be rejected with a clear error message
 13. **Background jobs must have timeout limits** - AI analysis and dashboard generation jobs must timeout after a reasonable period (e.g., 5 minutes) to prevent resource exhaustion
 14. **Failed background jobs can be retried** - Users should be able to retry failed AI analysis or dashboard generation jobs

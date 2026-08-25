@@ -4,7 +4,7 @@
 Workspace lifecycle — create, read, update (name/slug), delete, switch active workspace.
 
 **Methods:**
-- `createWorkspace(userId, name): WorkspaceDto` — creates Workspace doc, WorkspaceMembership (workspace-owner), WorkspaceBranding (empty), OnboardingProgress (step 1 false), auto-assigns active free plan subscription; audit log; enforces max 10 owned workspaces per user. Called from signup (`AuthService.register`) and `POST /workspaces`.
+- `createWorkspace(userId, name): WorkspaceDto` — transactionally creates Workspace, owner membership, branding, onboarding, and idempotently provisions the workspace's sole subscription plus first exact 30-day free period; audit log; max 10 owned workspaces. Called from signup and `POST /workspaces`.
 - `getWorkspace(workspaceId): WorkspaceDto` — fetch workspace
 - `updateWorkspace(workspaceId, dto, userId): WorkspaceDto` — updates name/slug, audit log
 - `checkSlugAvailability(slug): { available: boolean }` — DB lookup
@@ -14,7 +14,7 @@ Workspace lifecycle — create, read, update (name/slug), delete, switch active 
 - `adminListWorkspaces(paginationDto): PaginatedResponse<WorkspaceDto>` — admin-only, no workspace scoping
 - `adminUpdateStatus(workspaceId, status): WorkspaceDto` — admin suspend/unsuspend, audit log
 
-**Deps:** WorkspaceRepository · WorkspaceMembershipRepository · WorkspaceBrandingRepository · OnboardingProgressRepository · WorkspaceInvitationRepository · UserRepository · JwtService · AuditLogService · Mongo Connection (@InjectConnection)
+**Deps:** WorkspaceRepository · WorkspaceMembershipRepository · WorkspaceBrandingRepository · OnboardingProgressRepository · WorkspaceInvitationRepository · UserRepository · SubscriptionsService · JwtService · AuditLogService · Mongo Connection (@InjectConnection)
 **Side effects:** JWT re-issue · dynamic collection drops · audit writes
 **Rules:** Max 10 owned workspaces per user · Slug must be unique and available · Delete is destructive (drops all ws_{slug}_* collections)
 
@@ -38,15 +38,15 @@ Manage workspace membership list and roles.
 Create, resend, revoke, and accept workspace invitations. Sends invitation emails via MailProvider.
 
 **Methods:**
-- `invite(workspaceId, email, role, inviterId): { direct: boolean, paymentId?: string, invitation?: InvitationDto }` — checks free user limits; if within limit creates invitation + sends email; if limit reached creates invitation with status pending-payment and creates pending PayUp invoice (pricePerExtraUserMonthlyUsd)
+- `invite(workspaceId, email, role, inviterId): { direct: boolean, invoiceId?: string, invitation?: InvitationDto }` — checks current period's included-user snapshot; within limit creates invitation; otherwise creates/reuses an immutable `extra_user` BillingInvoice and returns a safe invoice reference
 - `resendInvite(invitationId, requesterId): void` — re-sends email
 - `revokeInvite(invitationId, requesterId): void` — sets status=revoked
 - `acceptInvitation(token): { workspaceId }` — validates token/expiry, creates WorkspaceMembership, sets status=accepted
 - `listInvitations(workspaceId): InvitationDto[]` — list workspace invitations
 
-**Deps:** WorkspaceInvitationRepository · WorkspaceMembershipRepository · MAIL_PROVIDER · PAYMENT_PROVIDER · ConfigService
+**Deps:** WorkspaceInvitationRepository · WorkspaceMembershipRepository · MAIL_PROVIDER · BillingInvoiceService · ConfigService
 **Side effects:** email send · payment invoice creation · membership creation
-**Rules:** Free user limit enforced; exceeding triggers paid invoice flow · Token validated for expiry before acceptance
+**Rules:** Included-user limit comes from current period snapshot · invoice ownership/actionability rechecked before acceptance · starting an extra-user invoice never supersedes unrelated renewal/upgrade invoices · token expiry enforced
 
 ---
 

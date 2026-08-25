@@ -5,8 +5,9 @@
 | Auth | auth.md | Admin Login, Admin Forgot Password, Admin Reset Password | `/auth/login`, `/auth/forgot-password`, `/auth/reset-password` |
 | Overview | overview.md | Overview | `/app/overview` |
 | Client Management | clients.md | Clients | `/app/clients` |
-| Subscriptions & Plans | subscriptions.md | Subscriptions (tabs: user subscriptions + plans) | `/app/subscriptions` |
-| Payments | payments.md | Payments | `/app/payments` |
+| Subscriptions | subscriptions.md | Workspace subscriptions and lifecycle | `/app/subscriptions` |
+| Subscription Plans | plans.md | Plan catalog | `/app/plans` |
+| Billing & Payments | payments.md | Invoices and payment attempts | `/app/payments` |
 | Audit Logs | audit.md | Audit Log | `/app/audit` |
 | AI Logs | ai-logs.md | AI Logs | `/app/ai-logs` |
 | System Settings | settings.md | Admin Profile | `/app/settings/profile` |
