@@ -17,13 +17,13 @@ Fields below are entity-specific only. `_id`, `createdAt`, `updatedAt` are omitt
 - Widget query definitions and aggregation rules snapshotted inside `chartwidgets` at generation time so later customization doesn't invalidate history
 - Widget `position`, `queryDefinition`, `displayConfig` are embedded subdocuments (read/written atomically on every dashboard load)
 - Audit logs are immutable — no update/delete endpoints; non-financial telemetry may be best-effort, while subscription/financial events are persisted transactionally through the lifecycle outbox
-- Subscription limits enforced at the service layer against the workspace's current immutable entitlement period before any limited action
+- Subscription limits enforced at the service layer against the workspace's current immutable `SubscriptionUsagePeriod` Package snapshot before any limited action
 - `chartdatacache` is the persistence layer; Redis is the hot cache — both must be invalidated together on refresh
-- `subscriptionperiods` quota reservations use a conditional atomic update tied to the expected current period; usage never resets by recreating a subscription
+- `subscriptionusageperiods` quota reservations use a conditional atomic update tied to the expected current usage period; access/billing renewal or subscription recreation never resets quota
 
 ## Phase Plan
 **Phase 1 (MVP):** users · ws\_\*\_projects · ws\_\*\_dashboards · ws\_\*\_csvfiles · ws\_\*\_columnmetadata · ws\_\*\_chartwidgets · ws\_\*\_dashboarddatasources · ws\_\*\_chartdatacache · backgroundjobs · notifications · auditlogs · systemsettings · widgetdefinitions · ailogs · aimodels · csvdata\_{fileId}
-**Phase 2 (Engagement):** sharelinks · subscriptionplans · usersubscriptions · subscriptionperiods · billinginvoices · payments
+**Phase 2 (Engagement):** sharelinks · subscriptionpackages · subscriptionplans · usersubscriptions · subscriptionperiods · subscriptionusageperiods · billinginvoices · payments
 
 ---
 
@@ -50,7 +50,7 @@ Fields below are entity-specific only. `_id`, `createdAt`, `updatedAt` are omitt
 | defaultWorkspaceId | ObjectId | nullable; auto-routing on login | → Workspace |
 
 **Indexes:** `{ email: 1 }` unique · `{ role: 1 }` · `{ isActive: 1 }` · `{ oauthProvider: 1, oauthProviderId: 1 }` compound
-**Relations:** has-many Projects, CsvFiles, Dashboards, Notifications, Payments · has-one UserSubscription (referencing a SubscriptionPlan)
+**Relations:** has-many Projects, CsvFiles, Dashboards, Notifications, Payments · owns Workspaces whose durable UserSubscriptions reference versioned Plans/Packages
 
 ---
 
@@ -269,17 +269,22 @@ Tracks all async background jobs: CSV analysis, dashboard generation, PDF export
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | userId | ObjectId | required; notification recipient | → User |
-| type | String | required; enum: `dashboard_ready`, `generation_error`, `csv_analysis_complete`, `export_ready`, `dashboard_shared` | — |
+| type | String | required; enum includes `dashboard_ready`, `generation_error`, `csv_analysis_complete`, `export_ready`, `dashboard_shared`, `sync_failed`, `sync_schema_drift`, `plan_retirement` | — |
 | title | String | required; short notification title (English) | — |
 | titleAr | String | optional, default: `''`; Arabic title | — |
 | message | String | required; full notification message body (English) | — |
 | messageAr | String | optional, default: `''`; Arabic message body | — |
-| relatedEntityType | String | nullable; enum: `dashboard`, `csvfile`, `project` | — |
+| relatedEntityType | String | nullable; enum: `dashboard`, `csvfile`, `project`, `subscription_plan` | — |
 | relatedEntityId | ObjectId | nullable; ID of related entity for navigation | — |
 | isRead | Boolean | required, default: false | — |
-| emailSent | Boolean | required, default: false; whether corresponding email was sent | — |
+| dedupeKey | String | nullable; unique sparse; required for durable system notifications such as one owner/retirement schedule | — |
+| emailStatus | String | required, default: `not_requested`; enum: `not_requested`, `pending`, `sent`, `failed` | — |
+| emailAttempts | Number | required, default: 0 | — |
+| emailNextAttemptAt | Date | nullable; retry scan target | — |
+| emailSentAt | Date | nullable | — |
+| emailLastErrorCode | String | nullable; allowlisted, no provider payload/secrets | — |
 
-**Indexes:** `{ userId: 1, isRead: 1 }` compound (unread count) · `{ userId: 1, createdAt: -1 }` compound (newest first) · `{ type: 1 }`
+**Indexes:** `{ userId: 1, isRead: 1 }` compound (unread count) · `{ userId: 1, createdAt: -1 }` compound (newest first) · `{ type: 1 }` · `{ dedupeKey: 1 }` unique sparse · `{ emailStatus: 1, emailNextAttemptAt: 1 }`
 **Relations:** belongs-to User (via userId)
 
 ---
@@ -291,66 +296,105 @@ Immutable record of user actions and system events for GDPR compliance and secur
 |-------|------|-------------|-----|
 | userId | ObjectId | nullable; null for system events or GDPR-deleted users (redact user ref, keep event) | → User |
 | action | String | required; see action enum below | — |
-| entityType | String | required; enum includes `user`, `project`, `dashboard`, `csvfile`, `sharelink`, `subscription`, `subscription_period`, `billing_invoice`, `payment`, `settings` | — |
+| entityType | String | required; enum includes `user`, `project`, `dashboard`, `csvfile`, `sharelink`, `subscription_package`, `subscription_plan`, `subscription`, `subscription_period`, `subscription_usage_period`, `billing_invoice`, `payment`, `notification`, `settings` | — |
 | entityId | ObjectId | nullable; ID of the affected entity | — |
 | workspaceId | ObjectId | nullable; required for workspace lifecycle/financial events | → Workspace |
 | actorSource | String | nullable; enum: `customer`, `admin`, `system`, `provider` | — |
 | correlationId | String | nullable; required for lifecycle/financial events | — |
 | invoiceId | ObjectId | nullable | → BillingInvoice |
 | periodId | ObjectId | nullable | → SubscriptionPeriod |
+| usagePeriodId | ObjectId | nullable | → SubscriptionUsagePeriod |
 | oldValues | Mixed | nullable; snapshot before change | — |
 | newValues | Mixed | nullable; snapshot after change | — |
 | ipAddress | String | nullable; request IP address | — |
 | userAgent | String | nullable; browser/client user agent string | — |
-| details | String | nullable; additional context string | — |
+| details | Object | nullable; allowlisted additional context | — |
 | timestamp | Date | required; event timestamp (not Mongoose createdAt — explicit for immutability) | — |
 
-`action` enum includes ordinary product actions plus: `subscription.assign` · `subscription.upgrade_requested` · `subscription.upgraded` · `subscription.downgrade_scheduled` · `subscription.downgrade_cancelled` · `subscription.downgraded` · `subscription.auto_renew_changed` · `subscription.renewed` · `subscription.grace_started` · `subscription.moved_to_free` · `subscription.admin_override` · `invoice.created` · `invoice.settled` · `invoice.voided` · `invoice.refunded` · `invoice.chargeback` · `payment.attempt_created` · `payment.verified` · `payment.failed`
+`action` enum includes ordinary product actions plus: `subscription_package.created|updated|cloned|archived` · `subscription_plan.created|updated|cloned|published|unpublished|retirement_scheduled|retirement_rescheduled|retirement_cancelled|retired` · `subscription.assign` · `subscription.upgrade_requested` · `subscription.upgraded` · `subscription.replacement_scheduled` · `subscription.downgrade_scheduled` · `subscription.downgrade_cancelled` · `subscription.downgraded` · `subscription.auto_renew_changed` · `subscription.renewed` · `subscription.grace_started` · `subscription.moved_to_free` · `subscription.usage_period_advanced` · `subscription.admin_override` · `invoice.created` · `invoice.settled` · `invoice.voided` · `invoice.refunded` · `invoice.chargeback` · `payment.attempt_created` · `payment.verified` · `payment.failed` · `notification.delivery_failed|sent`
 **Validation:** no update or delete endpoints — admin read-only only. On GDPR user deletion: set `userId` to null, do not delete the log record.
 
 **Indexes:** `{ userId: 1 }` · `{ action: 1 }` · `{ entityType: 1 }` · `{ entityType: 1, entityId: 1 }` · `{ timestamp: -1 }` · `{ userId: 1, timestamp: -1 }` · `{ workspaceId: 1, timestamp: -1 }` · `{ correlationId: 1 }` sparse
-**Relations:** optionally references User/Workspace/BillingInvoice/SubscriptionPeriod
+**Relations:** optionally references User/Workspace/BillingInvoice/SubscriptionPeriod/SubscriptionUsagePeriod
 
 ---
 
-## 13. subscriptionplans
-Admin-managed subscription plan catalog. Not a fixed enum — plans are documents in this collection.
+## 13. subscriptionpackages
+Immutable, admin-owned entitlement versions. A Package is reusable by multiple commercial Plans and is never recreated for each quota window.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
-| name | String | required, unique (e.g. `Free`, `Pro`) | — |
+| familyKey | String | required; stable normalized family identity | — |
+| version | Number | required; positive integer, monotonic within family | — |
+| replacesPackageId | ObjectId | nullable; prior version | → SubscriptionPackage |
+| name | String | required (e.g. `Pro`) | — |
 | nameAr | String | optional, default: `''`; Arabic plan name | — |
 | description | String | nullable, default: `''` | — |
 | descriptionAr | String | optional, default: `''`; Arabic description | — |
-| planType | String | required; enum: `free`, `paid`; immutable after first use | — |
 | tierRank | Number | required; integer min 0; authoritative upgrade/downgrade ordering | — |
+| features | Object | required, default `{}`; allowlisted feature flags/capabilities | — |
+| maxDashboards | Number | required; min 0 | — |
+| maxDataUploads | Number | required; min 0; per Package quota window | — |
+| maxDataUpdates | Number | required; min 0; per Package quota window | — |
+| maxSyncedRows | Number | required, default 0; per Package quota window; 0 = unlimited | — |
+| maxSyncsPerDay | Number | required, default 0; 0 = unlimited | — |
+| includedUsers | Number | required, default: 5; users included by entitlement | — |
+| quotaResetIntervalUnit | String | required; enum: `day`, `month`, `year` | — |
+| quotaResetIntervalCount | Number | required; positive integer | — |
+| isArchived | Boolean | required, default: false | — |
+| immutableAt | Date | nullable; set on first Plan publication or historical reference | — |
+| createdByUserId | ObjectId | required | → User |
+
+**Indexes:** `{ familyKey: 1, version: 1 }` unique · `{ tierRank: 1, isArchived: 1 }` · `{ replacesPackageId: 1 }` sparse
+**Rules:** draft/unreferenced identity may change · published/referenced identity and lineage are immutable · clone allocates one next family version atomically · referenced rows archive, never delete
+**Relations:** self-version lineage · referenced-by SubscriptionPlans, SubscriptionPeriods, SubscriptionUsagePeriods, and BillingInvoices
+
+---
+
+## 13A. subscriptionplans
+Immutable commercial offers linked to one Package. Plans do not own authoritative limits.
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| packageId | ObjectId | required | → SubscriptionPackage |
+| familyKey | String | required; stable normalized commercial family | — |
+| version | Number | required; positive integer, monotonic within family | — |
+| replacesPlanId | ObjectId | nullable; prior commercial version | → SubscriptionPlan |
+| planType | String | required; enum: `free`, `paid`; immutable after publish/reference | — |
 | priceAmount | Decimal128 | required; min 0; zero only for free | — |
 | currency | String | required; ISO-4217 uppercase, default `USD` | — |
-| billingIntervalUnit | String | required; enum: `day`, `month`, `year`; free must be `day` | — |
-| billingIntervalCount | Number | required; positive integer; free must be exactly `30` | — |
-| maxDashboards | Number | required; min 0 | — |
-| maxDataUploadsPerMonth | Number | required; min 0 | — |
-| maxDataUpdatesPerMonth | Number | required; min 0 | — |
-| maxSyncedRowsPerMonth | Number | required, default 0; 0 = unlimited | — |
-| maxSyncsPerDay | Number | required, default 0; 0 = unlimited | — |
-| isActive | Boolean | required, default: true; inactive plans hidden from assignment | — |
-| freeUsers | Number | required, default: 5; users included free in plan | — |
-| pricePerExtraUserMonthlyUsd | Number | required, default: 10; USD/month per extra user beyond limit | — |
+| billingIntervalUnit | String | required; enum: `day`, `month`, `year` | — |
+| billingIntervalCount | Number | required; positive integer | — |
+| extraUserPriceAmount | Decimal128 | required, default 0; commercial charge beyond Package included users | — |
+| extraUserBillingIntervalUnit | String | required; enum: `day`, `month`, `year` | — |
+| extraUserBillingIntervalCount | Number | required; positive integer | — |
+| isPublished | Boolean | required, default: false; selectable by new/customer changes only when also active | — |
+| isActive | Boolean | required, default: true; false blocks future period starts but never revokes a started period | — |
+| isDefaultFree | Boolean | required, default: false; only valid for free | — |
+| publishedAt | Date | nullable | — |
+| retireAt | Date | nullable; must be at least 30 days from scheduling | — |
+| retirementScheduleId | String | nullable; command/dedupe correlation | — |
+| retiredAt | Date | nullable | — |
+| immutableAt | Date | nullable; set on publish or first historical reference | — |
+| createdByUserId | ObjectId | required | → User |
 
-**Indexes:** `{ name: 1 }` unique · `{ isActive: 1 }`
-**Rules:** exactly one active free plan · plan type/interval/tier identity cannot change after a period or invoice references the plan · deactivation archives the plan for new choices without changing historical snapshots
-**Relations:** referenced-by UserSubscriptions; snapshotted by SubscriptionPeriods and BillingInvoices
+Legacy `name*`, `tierRank`, `max*`, `freeUsers`, `priceMonthlyUsd`, and `pricePerExtraUserMonthlyUsd` fields may remain temporarily for migration/read compatibility but are not authoritative for new writes.
+
+**Indexes:** `{ familyKey: 1, version: 1 }` unique · `{ packageId: 1, isActive: 1, isPublished: 1 }` · `{ retireAt: 1, isActive: 1 }` sparse · `{ isDefaultFree: 1 }` unique partial where `isDefaultFree=true && isActive=true && isPublished=true` · `{ replacesPlanId: 1 }` sparse
+**Rules:** drafts may change while unreferenced · published/referenced commercial identity is immutable · unpublishing preserves grandfathered renewal · retirement immediately unpublishes and later blocks new periods · exactly one active published default Free Plan
+**Relations:** belongs-to Package · self-version lineage · referenced-by UserSubscriptions; snapshotted by SubscriptionPeriods and BillingInvoices
 
 ---
 
 ## 14. usersubscriptions
-One durable lifecycle record per workspace. It points to the current immutable period and is never deleted/recreated to change plans.
+One durable lifecycle record per workspace. It points independently to the current immutable access and usage periods and is never deleted/recreated to change Plans.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | workspaceId | ObjectId | required, unique; one subscription per workspace | → Workspace |
 | currentPlanId | ObjectId | required | → SubscriptionPlan |
 | currentPeriodId | ObjectId | required, unique | → SubscriptionPeriod |
+| currentUsagePeriodId | ObjectId | required, unique | → SubscriptionUsagePeriod |
 | status | String | required; enum: `active`, `past_due`, `inactive`, `expired`; default `active` | — |
 | autoRenew | Boolean | required; false for free, true by default for paid | — |
 | graceEndsAt | Date | nullable; unpaid paid renewal only | — |
@@ -363,24 +407,48 @@ One durable lifecycle record per workspace. It points to the current immutable p
 
 `status`: `active` → valid entitlement · `past_due` → paid renewal unpaid but access retained through grace · `inactive` → explicit admin lock · `expired` → exceptional no-entitlement state pending repair; normal non-payment moves to free
 
-**Indexes:** `{ workspaceId: 1 }` unique · `{ currentPeriodId: 1 }` unique · `{ status: 1, graceEndsAt: 1 }` · `{ scheduledChangeAt: 1 }` sparse
-**Relations:** belongs-to Workspace · references current/scheduled SubscriptionPlan · points to current SubscriptionPeriod · referenced-by BillingInvoices
+**Indexes:** `{ workspaceId: 1 }` unique · `{ currentPeriodId: 1 }` unique · `{ currentUsagePeriodId: 1 }` unique · `{ status: 1, graceEndsAt: 1 }` · `{ scheduledChangeAt: 1 }` sparse
+**Relations:** belongs-to Workspace · references current/scheduled SubscriptionPlan · points independently to current access and usage periods · referenced-by BillingInvoices
 
 ---
 
 ## 14A. subscriptionperiods
-Immutable entitlement windows and their usage. New periods are appended; historical rows are never reset, edited, or deleted.
+Immutable billing/access windows. New periods are appended; historical rows are never reset, edited, or deleted.
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | workspaceId | ObjectId | required | → Workspace |
 | subscriptionId | ObjectId | required | → UserSubscription |
 | planId | ObjectId | required | → SubscriptionPlan |
+| packageId | ObjectId | required | → SubscriptionPackage |
 | sequence | Number | required; positive integer per subscription | — |
-| planSnapshot | Object | required; type, rank, bilingual name, interval, limits, included users | — |
+| planSnapshot | Object | required; commercial Plan identity/version/price/billing interval | — |
+| packageSnapshot | Object | required; Package identity/version/entitlement/quota cadence | — |
 | startsAt | Date | required, inclusive | — |
 | endsAt | Date | required, exclusive; free is exactly startsAt + 30 days | — |
 | source | String | required; enum: `workspace_created`, `renewal`, `free_rollover`, `free_to_paid`, `downgrade`, `nonpayment_fallback`, `admin_override`, `migration` | — |
+| sourceInvoiceId | ObjectId | nullable | → BillingInvoice |
+| closedAt | Date | nullable; early close for free-to-paid/admin override | — |
+
+**Indexes:** `{ subscriptionId: 1, sequence: 1 }` unique · `{ workspaceId: 1, startsAt: -1 }` · `{ endsAt: 1 }` · `{ sourceInvoiceId: 1 }` unique sparse
+**Rules:** identity/bounds/snapshots are immutable · access renewal does not reset quota · UserSubscription references the sole current access period
+
+---
+
+## 14B. subscriptionusageperiods
+Immutable quota windows and atomic counters. A usage period may span or be shorter than one or more billing/access periods.
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| workspaceId | ObjectId | required | → Workspace |
+| subscriptionId | ObjectId | required | → UserSubscription |
+| packageId | ObjectId | required | → SubscriptionPackage |
+| sequence | Number | required; positive integer per subscription | — |
+| packageSnapshot | Object | required; lineage, tier, limits/features, included users, reset cadence | — |
+| startsAt | Date | required, inclusive | — |
+| endsAt | Date | required, exclusive; anchor-preserving Package interval | — |
+| source | String | required; enum: `workspace_created`, `quota_rollover`, `free_to_paid`, `package_change`, `retired_free_fallback`, `admin_override`, `migration` | — |
+| sourceAccessPeriodId | ObjectId | nullable | → SubscriptionPeriod |
 | sourceInvoiceId | ObjectId | nullable | → BillingInvoice |
 | dashboardsUsed | Number | required, default 0 | — |
 | uploadsUsed | Number | required, default 0 | — |
@@ -388,14 +456,14 @@ Immutable entitlement windows and their usage. New periods are appended; histori
 | syncedRowsUsed | Number | required, default 0 | — |
 | syncsToday | Number | required, default 0 | — |
 | syncsTodayResetAt | Date | required | — |
-| closedAt | Date | nullable; early close for free-to-paid/admin override | — |
+| closedAt | Date | nullable; early close only for approved free-to-paid/admin repair | — |
 
-**Indexes:** `{ subscriptionId: 1, sequence: 1 }` unique · `{ workspaceId: 1, startsAt: -1 }` · `{ endsAt: 1 }` · `{ sourceInvoiceId: 1 }` unique sparse
-**Rules:** counters change only through conditional atomic reservations · identity/bounds/snapshot are immutable · UserSubscription references the sole current period
+**Indexes:** `{ subscriptionId: 1, sequence: 1 }` unique · `{ workspaceId: 1, startsAt: -1 }` · `{ endsAt: 1, closedAt: 1 }` · `{ sourceInvoiceId: 1 }` sparse
+**Rules:** all counter writes use conditional atomic reservation against expected current usage period · exactly one next period wins through lifecycle-version/current-ID compare-and-set · billing boundaries alone never reset counters
 
 ---
 
-## 14B. billinginvoices
+## 14C. billinginvoices
 Authoritative immutable charges. Status changes are guarded transitions, never arbitrary edits.
 
 | Field | Type | Constraints | Ref |
@@ -407,7 +475,10 @@ Authoritative immutable charges. Status changes are guarded transitions, never a
 | status | String | required; enum: `open`, `paid`, `void`, `expired`, `refunded`, `chargeback`, `superseded` | — |
 | fromPlanId | ObjectId | nullable | → SubscriptionPlan |
 | toPlanId | ObjectId | required | → SubscriptionPlan |
-| planSnapshot | Object | required; charge/plan/limit snapshot | — |
+| fromPackageId | ObjectId | nullable | → SubscriptionPackage |
+| toPackageId | ObjectId | required | → SubscriptionPackage |
+| planSnapshot | Object | required; exact commercial identity/version/price/billing interval | — |
+| packageSnapshot | Object | required; exact entitlement identity/version/limits/reset cadence | — |
 | amount | Decimal128 | required; min 0 | — |
 | currency | String | required; ISO-4217 uppercase | — |
 | proration | Object | required; basis, remaining/total seconds, rounding policy or full-charge marker | — |
@@ -425,7 +496,7 @@ Authoritative immutable charges. Status changes are guarded transitions, never a
 | metadata | Object | nullable; allowlisted non-secret context | — |
 
 **Indexes:** `{ workspaceId: 1, idempotencyKey: 1 }` unique · `{ status: 1, dueAt: 1 }` · `{ status: 1, graceEndsAt: 1 }` · `{ subscriptionId: 1, createdAt: -1 }`
-**Rules:** no general update/delete endpoint · one actionable invoice per subscription/action/lifecycle version · compare-and-set status transitions · retry settlement application until `appliedAt`
+**Rules:** no general update/delete endpoint · one actionable invoice per subscription/action/lifecycle version · compare-and-set status transitions · retry settlement application until `appliedAt` · Plan/Package snapshots never derive from mutable customer input
 
 ---
 
@@ -719,13 +790,16 @@ ShareLinkStatus = [active, revoked, expired]
 BackgroundJobType = [csv_analysis, dashboard_generation, pdf_export, cache_recalculation, subscription_lifecycle, subscription_reconciliation]
 BackgroundJobStatus = [queued, processing, completed, failed]
 BackgroundJobEntityType = [csvfile, dashboard]
-NotificationType = [dashboard_ready, generation_error, csv_analysis_complete, export_ready, dashboard_shared]
-AuditAction = [user.register, user.login, user.logout, user.login_failed, user.update, user.delete, user.deactivate, user.activate, project.create, project.update, project.delete, dashboard.create, dashboard.update, dashboard.delete, dashboard.duplicate, dashboard.refresh, csvfile.upload, csvfile.delete, sharelink.create, sharelink.revoke, export.pdf, export.excel, export.csv, subscription.assign, subscription.upgrade_requested, subscription.upgraded, subscription.downgrade_scheduled, subscription.downgrade_cancelled, subscription.downgraded, subscription.auto_renew_changed, subscription.renewed, subscription.grace_started, subscription.moved_to_free, subscription.admin_override, invoice.created, invoice.settled, invoice.voided, invoice.refunded, invoice.chargeback, payment.attempt_created, payment.verified, payment.failed, settings.update, dataset.schema_selection]
+NotificationType = [dashboard_ready, generation_error, csv_analysis_complete, export_ready, dashboard_shared, sync_failed, sync_schema_drift, plan_retirement]
+NotificationEmailStatus = [not_requested, pending, sent, failed]
+AuditAction = [user.register, user.login, user.logout, user.login_failed, user.update, user.delete, user.deactivate, user.activate, project.create, project.update, project.delete, dashboard.create, dashboard.update, dashboard.delete, dashboard.duplicate, dashboard.refresh, csvfile.upload, csvfile.delete, sharelink.create, sharelink.revoke, export.pdf, export.excel, export.csv, subscription_package.created, subscription_package.updated, subscription_package.cloned, subscription_package.archived, subscription_plan.created, subscription_plan.updated, subscription_plan.cloned, subscription_plan.published, subscription_plan.unpublished, subscription_plan.retirement_scheduled, subscription_plan.retirement_rescheduled, subscription_plan.retirement_cancelled, subscription_plan.retired, subscription.assign, subscription.upgrade_requested, subscription.upgraded, subscription.replacement_scheduled, subscription.downgrade_scheduled, subscription.downgrade_cancelled, subscription.downgraded, subscription.auto_renew_changed, subscription.renewed, subscription.grace_started, subscription.moved_to_free, subscription.usage_period_advanced, subscription.admin_override, invoice.created, invoice.settled, invoice.voided, invoice.refunded, invoice.chargeback, payment.attempt_created, payment.verified, payment.failed, notification.delivery_failed, notification.sent, settings.update, dataset.schema_selection]
 SubscriptionPlanType = [free, paid]
 BillingIntervalUnit = [day, month, year]
+QuotaResetIntervalUnit = [day, month, year]
 SubscriptionStatus = [active, past_due, inactive, expired]
 SubscriptionPeriodSource = [workspace_created, renewal, free_rollover, free_to_paid, downgrade, nonpayment_fallback, admin_override, migration]
-BillingInvoiceAction = [free_to_paid, upgrade, renewal, extra_user, admin_adjustment]
+SubscriptionUsagePeriodSource = [workspace_created, quota_rollover, free_to_paid, package_change, retired_free_fallback, admin_override, migration]
+BillingInvoiceAction = [free_to_paid, upgrade, replacement, renewal, extra_user, admin_adjustment]
 BillingInvoiceStatus = [open, paid, void, expired, refunded, chargeback, superseded]
 PaymentProvider = [payup, manual]
 PaymentStatus = [created, pending, verified_paid, failed, cancelled, expired]

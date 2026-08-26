@@ -856,15 +856,15 @@ List any important business rules, validation constraints, or workflows the syst
 9. **Manual data refresh required** - Adding new CSV data or updating existing data does NOT automatically refresh dashboards; users must manually click the refresh button
 10. **Data updates trigger cache invalidation** - When data is refreshed, all cached chart results for that dashboard must be recalculated
 11. **Subscription-based limits enforced**:
-    - Maximum number of dashboards per subscription tier
-    - Maximum number of CSV uploads per subscription tier
-    - Maximum number of data refresh operations per subscription tier
-    - Free entitlement is continuous per workspace in exact rolling 30-day periods; plan recreation or repeated requests never reset the active period
-    - Paid billing intervals are plan-configurable; a settled renewal creates the next period and resets limits once
-    - Paid upgrades apply immediately only after a prorated invoice is verified as paid; paid-to-paid upgrades keep the current period end and usage
-    - Downgrades are scheduled for period end, visible and cancellable, and never delete existing over-limit resources
+    - Immutable **Packages** define bilingual entitlement versions: tier, features, included users, limits, and a configurable quota-reset interval
+    - Immutable versioned **Plans** define pricing, currency, billing interval, publication, and retirement and reference one Package; price-only changes create a new Plan, while limit changes create a new Package version
+    - Billing/access periods and quota-reset periods are independent, so an annual Plan may reset its Package limits monthly or annually
+    - Free entitlement is continuous per workspace and uses an exact rolling `30 day` Package quota; Plan/Package recreation or repeated requests never reset the current usage period
+    - Paid upgrades apply immediately only after a prorated invoice is verified as paid; paid-to-paid upgrades keep the current billing period, quota-window end, and used quota
+    - Downgrades and same-tier Plan replacements are scheduled for billing-period end, visible and cancellable, and never delete existing over-limit resources
     - Disabling auto-renew preserves access through period end; an unpaid renewal preserves paid access for `SUBSCRIPTION_PAYMENT_GRACE_DAYS` (default 7) before transition to free
-    - Limit reservations/increments must be atomic against the current immutable period; system must prevent actions that exceed subscription limits
+    - Unpublished active Plans are grandfathered for existing subscribers; scheduled retirement gives at least 30 days' in-app/email notice, never revokes a current period, and falls back to the active published default Free Plan at expiry if no replacement is paid
+    - Limit reservations/increments must be atomic against the current immutable usage period; system must prevent actions that exceed the Package snapshot
 12. **CSV file size validation** - Files exceeding 50 MB must be rejected with a clear error message
 13. **Background jobs must have timeout limits** - AI analysis and dashboard generation jobs must timeout after a reasonable period (e.g., 5 minutes) to prevent resource exhaustion
 14. **Failed background jobs can be retried** - Users should be able to retry failed AI analysis or dashboard generation jobs

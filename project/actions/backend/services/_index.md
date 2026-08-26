@@ -11,7 +11,7 @@
 | Sharing | sharing.md | SVC-SHARE | 1 |
 | Export | export.md | SVC-EXPORT | 1 |
 | Notifications | notifications.md | SVC-NOTIF | 1 |
-| Subscriptions | subscriptions.md | SVC-SUB, SVC-SUB-LIFE, SVC-SUB-CALC, SVC-SUB-LIM, SVC-SUB-ROLL | 5 |
+| Subscriptions | subscriptions.md | SVC-SUB, SVC-SUB-CAT, SVC-SUB-LIFE, SVC-SUB-CALC, SVC-SUB-LIM, SVC-SUB-ROLL | 6 |
 | Payments | payments.md | SVC-PAY-INV, SVC-PAY, SVC-PAY-CHKOUT | 3 |
 | Audit | audit.md | SVC-AUDIT | 1 |
 | Settings | settings.md | SVC-SET | 1 |
@@ -25,4 +25,4 @@
 | Connectors | connectors.md | SVC-CONN-REG, SVC-CONN-CSV, SVC-CONN-INTERFACE (+ `listEntities()` *change-045*), SVC-CONN-GOOGLE, SVC-CONN-SHOPIFY(+OAUTH/DS), SVC-CONN-SALLA(+OAUTH/DS), SVC-CONN-ZID(+OAUTH/DS), SVC-CONN-SQLSERVER(+QB), SVC-CONN-MONGOATLAS(+SAMPLER) | 3 |
 | Pipelines | pipelines.md | SVC-PIPE-ENGINE, SVC-PIPE-STEP-REG, SVC-PIPE-TYPE-REG (→ `src/engine-core/`, pure mechanics *change-060/064*), SVC-DATA-PIPELINE *(change-064, data engine)*, SVC-DASH-PIPELINE-REG *(change-064, reporting)*, SVC-PIPE-STEPS-INGEST, SVC-PIPE-STEPS-DASH, SVC-PIPE-STEPS-TPL *(change-049; not in code — see modules.md drift note)*, SVC-PIPE-RUN-REPO | 9 |
 | Canonical Templates | templates.md | SVC-TPL, SVC-TPL-SEED | 2 |
-| **Total** | | | **60** |
+| **Total** | | | **61** |

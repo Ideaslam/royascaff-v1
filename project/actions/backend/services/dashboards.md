@@ -4,7 +4,7 @@
 Owns dashboard lifecycle, widget management, chart-data aggregation/caching, and generation/refresh orchestration.
 
 **Methods:**
-- `createDashboard(dto: CreateDashboardDto, userId, ip?)` — atomically reserves `MAX_DASHBOARDS` against the current workspace period; validates unique name/data readiness; creates records and job; releases reservation if creation fails; audits DASHBOARD_CREATE
+- `createDashboard(dto: CreateDashboardDto, userId, ip?)` — atomically reserves `MAX_DASHBOARDS` against the current usage period's Package snapshot; validates readiness; creates records/job; releases on failure; audits
 - `listDashboards(userId, userRole, filters): Promise<PaginatedResponseDto>` — paginated; non-admins scoped to ownerId
 - `getDashboard(id, userId, userRole)` — returns dashboard with widgets + datasources
 - `getDashboardStatus(id, userId, userRole)` — returns status, job status, and progress
@@ -23,7 +23,7 @@ Owns dashboard lifecycle, widget management, chart-data aggregation/caching, and
 
 **Deps:** DashboardRepository · ChartWidgetRepository · ChartDataCacheRepository · WidgetDefinitionRepository · DashboardDatasourceRepository · DatasetRepository · CsvFileRepository · SubscriptionLimitService · BackgroundJobRepository · BackgroundJobsService · FilterValuesService · AnalyticsStoreService · WorkspaceRepository · AuditLogService · **TemplateCatalogService** *(change-049)* · DASHBOARD_GENERATION_QUEUE · CACHE_RECALCULATION_QUEUE · Redis · ConfigService · Mongo Connection
 **Side effects:** queue enqueue · Redis read/write/delete · OLAP queries · Mongo aggregations · audit writes
-**Rules:** Limited creates/refreshes require current-period atomic reservation; entitlement failure denies write · over-limit existing dashboards remain readable/deletable · dashboard name unique within project · datasets ready · owner/admin authorization · filtered queries bypass caches
+**Rules:** Limited creates/refreshes require current-usage-period atomic reservation; entitlement failure denies write · over-limit existing dashboards remain readable/deletable · dashboard name unique within project · datasets ready · owner/admin authorization · filtered queries bypass caches
 
 ---
 

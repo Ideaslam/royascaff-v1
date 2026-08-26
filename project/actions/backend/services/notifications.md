@@ -4,15 +4,17 @@
 Creates in-app notifications (with optional email) and serves the user's notification inbox.
 
 **Methods:**
-- `notify(data): Promise<void>` — creates notification and, if userEmail given, sends email (best-effort) — currently not called by processors
+- `notify(data): Promise<void>` — ordinary in-app notification with optional best-effort email
+- `createPlanRetirementNotice(data)` — create/reuse one bilingual owner notice by retirement-schedule dedupe key and mark email pending
+- `deliverPendingRetirementEmails(now, limit)` — bounded retry with persisted status/attempt/backoff and allowlisted error code
 - `listNotifications(userId, filters): Promise<PaginatedResponseDto>` — paginated inbox
 - `markAsRead(id, userId)` — marks one notification read
 - `markAllAsRead(userId)` — marks all user's notifications read
 - `countUnread(userId)` — returns { unreadCount }
 
 **Deps:** NotificationRepository · MAIL_PROVIDER
-**Side effects:** notification writes · optional email (best-effort)
-**Rules:** Email only sent when userEmail provided; failures swallowed · Inbox queries scoped to requesting user · notify() wired into endpoints but not yet triggered by background processors
+**Side effects:** notification writes · ordinary best-effort email · durable retirement email
+**Rules:** inbox scoped to user · retirement email never runs synchronously in admin request · exactly one row/email per owner/schedule · failure retries/audits but never blocks Plan retirement · no provider payload/secrets persisted
 
 ---
 

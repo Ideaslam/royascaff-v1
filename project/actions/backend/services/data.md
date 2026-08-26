@@ -4,7 +4,7 @@
 Manages CSV file uploads (direct and presigned), AI-analysis kickoff, column metadata, and file lifecycle. *(Legacy CSV path — kept for backward compat)*
 
 **Methods:**
-- `uploadFile(file: Express.Multer.File, userId: string, ip?)` — atomically reserves the upload limit for current workspace period, validates/uploads/enqueues, compensates reservation on failure, audits completion
+- `uploadFile(file: Express.Multer.File, userId: string, ip?)` — atomically reserves the upload limit against the current workspace usage period's Package snapshot, validates/uploads/enqueues, compensates on failure, audits completion
 - `initiateUpload(dto: InitiateUploadDto, userId, ip?)` — creates an operation-bound upload reservation and returns presigned URL; abandoned reservations expire/compensate idempotently
 - `completeUpload(fileId, dto: CompleteUploadDto, userId, ip?)` — commits the existing reservation, finalizes upload, and enqueues analysis; compensates on failure
 - `listFiles(userId, userRole, filters): Promise<PaginatedResponseDto>` — paginated; non-admins scoped to ownerId
@@ -99,12 +99,12 @@ BullMQ worker that runs setup-time schema discovery + column-identify (+ mapping
 BullMQ worker that executes a full or incremental dataset sync via the PipelineEngine.
 
 **Methods:**
-- `process(job: Job<{ datasetId, syncRunId, workspaceSlug, pipelineRunId?, mode }>): Promise<void>` — consumes the operation's atomic daily-sync reservation, resolves Dataset → DataSource → Connection, runs ingest, atomically adds actual synced rows to the current period (or fails/clamps before exceeding), marks run, refreshes filters; compensates reserved usage on failure
+- `process(job: Job<{ datasetId, syncRunId, workspaceSlug, pipelineRunId?, mode }>): Promise<void>` — consumes the atomic daily-sync reservation, runs ingest, and atomically adds actual rows to the current usage period (or fails/clamps before exceeding); compensates on failure
 - `updateProgress(syncRunId, workspaceSlug, { progress, phase, rowsIn?, rowsLoaded? })` — *(change-045)* throttled writer for live progress
 
 **Deps:** DatasetRepository · DataSourceRepository · ConnectionRepository · SyncRunRepository · SubscriptionLimitService · FilterValueMetaRepository · FilterValuesService · PipelineEngine · WorkspaceRepository
 **Side effects:** OLAP inserts · FilterValueMeta refresh · SyncRun status/progress updates
-**Rules:** Sync trigger reserves current-period/daily quota before enqueue and fails closed on entitlement errors · actual rows are accounted atomically · failed runs compensate reservations · filter refresh only after success · never re-run a running SyncRun
+**Rules:** Sync trigger reserves current-usage-period/daily quota before enqueue and fails closed on entitlement errors · actual rows are accounted atomically · failed runs compensate reservations · filter refresh only after success · never re-run a running SyncRun
 
 ---
 

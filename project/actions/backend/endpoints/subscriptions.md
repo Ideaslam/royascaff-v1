@@ -4,12 +4,12 @@
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-SUB-01 | GET | /api/v1/subscriptions/plans | JWT | none | 200 `PlanDto[]` | SVC-SUB.listPlans() | Active catalog, safe snapshots |
-| EP-SUB-02 | GET | /api/v1/subscriptions/plans/all | JWT+admin | none | 200 `AdminPlanDto[]` | SVC-SUB.listAllPlans() | Includes archived |
-| EP-SUB-03 | POST | /api/v1/subscriptions/plans | JWT+admin | `CreatePlanDto` | 201 `AdminPlanDto` | SVC-SUB.createPlan() | Validates free/paid interval invariants |
-| EP-SUB-04 | PUT | /api/v1/subscriptions/plans/:id | JWT+admin | `UpdatePlanDto` | 200 `AdminPlanDto` | SVC-SUB.updatePlan() | Identity fields locked after first use |
-| EP-SUB-05 | DELETE | /api/v1/subscriptions/plans/:id | JWT+admin | `:id` | 204 | SVC-SUB.archivePlan() | Archive only; never delete history |
-| EP-SUB-06 | GET | /api/v1/subscriptions/me | JWT+workspace | none | 200 `MySubscriptionResponseDto` | SVC-SUB.getMySubscription() | Safe lifecycle envelope |
+| EP-SUB-01 | GET | /api/v1/subscriptions/plans | JWT | none | 200 `PublishedPlanDto[]` with Package | SVC-SUB.listPublishedPlans() | Active+published only; safe exact versions |
+| EP-SUB-02 | GET | /api/v1/subscriptions/plans/all | JWT+admin | filters | 200 `AdminPlanDto[]` | SVC-SUB-CAT.listPlans() | Includes unpublished/inactive/retiring and Package |
+| EP-SUB-03 | POST | /api/v1/subscriptions/plans | JWT+admin | `CreatePlanDraftDto` + reason/idempotency | 201 `AdminPlanDto` | SVC-SUB-CAT.createPlan() | Creates unpublished draft linked to Package |
+| EP-SUB-04 | PUT | /api/v1/subscriptions/plans/:id | JWT+admin | `UpdatePlanDraftDto` + reason/idempotency | 200 `AdminPlanDto` | SVC-SUB-CAT.updatePlanDraft() | Commercial fields only; rejects published/referenced identity |
+| EP-SUB-05 | DELETE | /api/v1/subscriptions/plans/:id | JWT+admin | reason/idempotency | 204 | SVC-SUB-CAT.archiveOrDeletePlan() | Delete unreferenced draft; archive inactive referenced history; active referenced uses retirement |
+| EP-SUB-06 | GET | /api/v1/subscriptions/me | JWT+workspace | none | 200 `MySubscriptionResponseDto` | SVC-SUB.getMySubscription() | Plan+Package versions, access+usage periods, retirement, limits/usage |
 | EP-SUB-07 | GET | /api/v1/subscriptions | JWT+admin | filters + pagination | 200 paginated `AdminSubscriptionDto` | SVC-SUB.listSubscriptions() | |
 | EP-SUB-08 | GET | /api/v1/subscriptions/:id | JWT+admin | `:id` | 200 `AdminSubscriptionDetailDto` | SVC-SUB.getSubscription() | No secrets |
 | EP-SUB-09 | POST | /api/v1/subscriptions | JWT+admin | `{ workspaceId, planId, reason }` | 201 `AdminSubscriptionDto` | SVC-SUB.createSubscription() | Migration/recovery only; idempotent |
@@ -17,13 +17,24 @@
 | EP-SUB-11 | POST | /api/v1/subscriptions/:id/change | JWT+admin | `{ planId, effective, settlement?, reason, idempotencyKey }` | 201 `PlanChangeResultDto` | SVC-SUB-LIFE.adminChange() | Lifecycle-aware override |
 | EP-SUB-12 | POST | /api/v1/subscriptions/:id/activate | JWT+admin | `{ reason, idempotencyKey }` | 200 `AdminSubscriptionDto` | SVC-SUB-LIFE.adminActivate() | Explicit unlock |
 | EP-SUB-13 | POST | /api/v1/subscriptions/:id/deactivate | JWT+admin | `{ reason, idempotencyKey }` | 200 `AdminSubscriptionDto` | SVC-SUB-LIFE.adminDeactivate() | Resource lock only |
-| EP-SUB-14 | POST | /api/v1/subscriptions/change/preview | JWT+workspace-owner | `{ planId }` | 200 `PlanChangePreviewDto` | SVC-SUB-CALC.preview() | Server-calculated amount/timing |
+| EP-SUB-14 | POST | /api/v1/subscriptions/change/preview | JWT+workspace-owner | `{ planId }` | 200 `PlanChangePreviewDto` | SVC-SUB-CALC.preview() | Package-tier `upgrade|downgrade|replacement`; target must be active+published |
 | EP-SUB-15 | POST | /api/v1/subscriptions/upgrade | JWT+workspace-owner | `{ planId, idempotencyKey }` | 201 `InvoiceCheckoutDto` | SVC-SUB-LIFE.requestUpgrade() | Activate only after verified payment |
-| EP-SUB-16 | POST | /api/v1/subscriptions/downgrade | JWT+workspace-owner | `{ planId, idempotencyKey }` | 201 `ScheduledChangeDto` | SVC-SUB-LIFE.scheduleDowngrade() | Period-end, no invoice |
-| EP-SUB-17 | DELETE | /api/v1/subscriptions/downgrade | JWT+workspace-owner | idempotency key header | 200 `MySubscriptionResponseDto` | SVC-SUB-LIFE.cancelDowngrade() | |
+| EP-SUB-16 | POST | /api/v1/subscriptions/downgrade | JWT+workspace-owner | `{ planId, idempotencyKey }` | 201 `ScheduledChangeDto` | SVC-SUB-LIFE.scheduleDowngradeOrReplacement() | Lower tier or same-tier Plan version at access-period end |
+| EP-SUB-17 | DELETE | /api/v1/subscriptions/downgrade | JWT+workspace-owner | idempotency key header | 200 `MySubscriptionResponseDto` | SVC-SUB-LIFE.cancelScheduledChange() | Cancels downgrade or replacement |
 | EP-SUB-18 | PATCH | /api/v1/subscriptions/auto-renew | JWT+workspace-owner | `{ enabled, idempotencyKey }` | 200 `MySubscriptionResponseDto` | SVC-SUB-LIFE.setAutoRenew() | Disabling preserves current access |
 | EP-SUB-19 | GET | /api/v1/subscriptions/me/invoices | JWT+workspace-owner | filters + pagination | 200 paginated `CustomerInvoiceDto` | SVC-PAY-INV.listForWorkspace() | Allowlisted data only |
 | EP-SUB-20 | POST | /api/v1/subscriptions/invoices/:invoiceId/pay | JWT+workspace-owner | idempotency key header | 201 `InvoiceCheckoutDto` | SVC-PAY-CHKOUT.startAttempt() | Revalidates ownership/actionability |
+| EP-SUB-21 | GET | /api/v1/subscriptions/packages | JWT+admin | filters + pagination | 200 paginated `AdminPackageDto` | SVC-SUB-CAT.listPackages() | Draft, immutable, archived, lineage, linked-Plan counts |
+| EP-SUB-22 | GET | /api/v1/subscriptions/packages/:id | JWT+admin | `:id` | 200 `AdminPackageDetailDto` | SVC-SUB-CAT.getPackage() | Includes lineage and linked Plans |
+| EP-SUB-23 | POST | /api/v1/subscriptions/packages | JWT+admin | `CreatePackageDto` + reason/idempotency | 201 `AdminPackageDto` | SVC-SUB-CAT.createPackage() | Positive quota interval; generalized limits |
+| EP-SUB-24 | PUT | /api/v1/subscriptions/packages/:id | JWT+admin | `UpdatePackageDraftDto` + reason/idempotency | 200 `AdminPackageDto` | SVC-SUB-CAT.updatePackageDraft() | Rejects immutable/reference state |
+| EP-SUB-25 | POST | /api/v1/subscriptions/packages/:id/clone | JWT+admin | `{ reason, idempotencyKey }` | 201 `AdminPackageDto` | SVC-SUB-CAT.clonePackage() | Atomic next family version |
+| EP-SUB-26 | DELETE | /api/v1/subscriptions/packages/:id | JWT+admin | reason/idempotency | 204 | SVC-SUB-CAT.archiveOrDeletePackage() | Delete unreferenced draft, otherwise archive |
+| EP-SUB-27 | POST | /api/v1/subscriptions/plans/:id/clone | JWT+admin | `{ packageId?, reason, idempotencyKey }` | 201 `AdminPlanDto` | SVC-SUB-CAT.clonePlan() | Atomic next commercial version; optional new Package version |
+| EP-SUB-28 | POST | /api/v1/subscriptions/plans/:id/publish | JWT+admin | `{ makeDefaultFree?, reason, idempotencyKey }` | 200 `AdminPlanDto` | SVC-SUB-CAT.publishPlan() | Free/default invariant checked atomically |
+| EP-SUB-29 | POST | /api/v1/subscriptions/plans/:id/unpublish | JWT+admin | `{ reason, idempotencyKey }` | 200 `AdminPlanDto` | SVC-SUB-CAT.unpublishPlan() | Grandfathered renewals remain allowed; cannot break default Free |
+| EP-SUB-30 | POST | /api/v1/subscriptions/plans/:id/retirement | JWT+admin | `{ retireAt, reason, idempotencyKey }` | 200 `AdminPlanDto` | SVC-SUB-CAT.scheduleRetirement() | ≥30 days; immediately unpublishes; queues owner notice |
+| EP-SUB-31 | PUT | /api/v1/subscriptions/plans/:id/retirement | JWT+admin | `{ retireAt, reason, idempotencyKey }` | 200 `AdminPlanDto` | SVC-SUB-CAT.rescheduleRetirement() | Before effect only; new dedupe schedule/version |
+| EP-SUB-32 | DELETE | /api/v1/subscriptions/plans/:id/retirement | JWT+admin | idempotency key + reason | 200 `AdminPlanDto` | SVC-SUB-CAT.cancelRetirement() | Before effect; does not auto-republish |
 
-**Contract rules:** Workspace identity comes from verified JWT context. Customer mutations require workspace-owner. `GET /me` includes plan, period, usage, limits, auto-renew, grace, scheduled change, and actionable invoices. There is no customer free-subscribe or immediate-cancel endpoint. Customer billing mutations are workspace-rate-limited and idempotent.
-
+**Contract rules:** Workspace identity comes from verified JWT context. Customer mutations require workspace-owner; catalog admin mutations require platform admin, reason, and idempotency/correlation. `GET /me` includes exact Plan/Package, access/usage periods, limits/usage, auto-renew, grace, scheduled change, and retirement. Customer catalog exposes active published offers only. No free-resubscribe or immediate-cancel endpoint.

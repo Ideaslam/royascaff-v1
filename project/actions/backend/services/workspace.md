@@ -4,7 +4,7 @@
 Workspace lifecycle — create, read, update (name/slug), delete, switch active workspace.
 
 **Methods:**
-- `createWorkspace(userId, name): WorkspaceDto` — transactionally creates Workspace, owner membership, branding, onboarding, and idempotently provisions the workspace's sole subscription plus first exact 30-day free period; audit log; max 10 owned workspaces. Called from signup and `POST /workspaces`.
+- `createWorkspace(userId, name): WorkspaceDto` — transactionally creates Workspace, owner membership, branding, onboarding, and idempotently provisions the sole subscription plus first default-Free access and exact `30 day` usage periods; audit log; max 10 owned workspaces.
 - `getWorkspace(workspaceId): WorkspaceDto` — fetch workspace
 - `updateWorkspace(workspaceId, dto, userId): WorkspaceDto` — updates name/slug, audit log
 - `checkSlugAvailability(slug): { available: boolean }` — DB lookup
@@ -38,7 +38,7 @@ Manage workspace membership list and roles.
 Create, resend, revoke, and accept workspace invitations. Sends invitation emails via MailProvider.
 
 **Methods:**
-- `invite(workspaceId, email, role, inviterId): { direct: boolean, invoiceId?: string, invitation?: InvitationDto }` — checks current period's included-user snapshot; within limit creates invitation; otherwise creates/reuses an immutable `extra_user` BillingInvoice and returns a safe invoice reference
+- `invite(workspaceId, email, role, inviterId): { direct: boolean, invoiceId?: string, invitation?: InvitationDto }` — checks current usage period's Package included-users snapshot; within limit creates invitation; otherwise prices from the current Plan's extra-user commercial snapshot and creates/reuses an immutable dual-snapshot invoice
 - `resendInvite(invitationId, requesterId): void` — re-sends email
 - `revokeInvite(invitationId, requesterId): void` — sets status=revoked
 - `acceptInvitation(token): { workspaceId }` — validates token/expiry, creates WorkspaceMembership, sets status=accepted
@@ -46,7 +46,7 @@ Create, resend, revoke, and accept workspace invitations. Sends invitation email
 
 **Deps:** WorkspaceInvitationRepository · WorkspaceMembershipRepository · MAIL_PROVIDER · BillingInvoiceService · ConfigService
 **Side effects:** email send · payment invoice creation · membership creation
-**Rules:** Included-user limit comes from current period snapshot · invoice ownership/actionability rechecked before acceptance · starting an extra-user invoice never supersedes unrelated renewal/upgrade invoices · token expiry enforced
+**Rules:** Included-user entitlement comes from current Package snapshot · extra-user charge/currency/interval come from current Plan snapshot · invoice ownership/actionability rechecked · extra-user invoice never supersedes unrelated lifecycle invoices · token expiry enforced
 
 ---
 

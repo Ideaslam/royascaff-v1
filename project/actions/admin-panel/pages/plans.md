@@ -2,8 +2,7 @@
 
 ### Plans Page
 - Route: `/app/plans`
-- Components: bilingual/RTL plan catalog table and create/edit dialog for free/paid type, tier rank, price/currency, paid interval, limits, included users, extra-user price, and active/archive state.
-- Service: `listAllPlans` → `GET /subscriptions/plans/all`; `createPlan` → `POST /subscriptions/plans`; `updatePlan` → `PUT /subscriptions/plans/:id`; `archivePlan` → `DELETE /subscriptions/plans/:id`.
+- Components: bilingual/RTL commercial-offer table/cards; Package/version picker; price/currency, billing and extra-user pricing intervals; Plan family/version/replaces link; published/active/default-Free/retiring badges; immutable read-only state; clone, publish, unpublish, archive-draft, and schedule/reschedule/cancel-retirement dialogs with reason.
+- Service: existing Plan list/create/draft-update/archive endpoints plus `POST /plans/:id/clone|publish|unpublish`, `POST|PUT|DELETE /plans/:id/retirement`.
 - Guard: authGuard + adminGuard.
-- Notes: free is fixed to 30 days and zero price; paid interval is configurable. Used plan identity fields are read-only. Archive removes a plan from new choices without deleting historical snapshots. UI prevents multiple active free plans and explains validation errors in EN/AR.
-
+- Notes: Plan never edits Package limits. Referenced/published commercial identity is read-only; price changes use Clone Plan. `isPublished` controls new selection, `isActive` controls future period starts, and current access is snapshot-based. Retirement requires ≥30 days and immediately unpublishes. UI protects the single active published default Free invariant and localizes stable errors.

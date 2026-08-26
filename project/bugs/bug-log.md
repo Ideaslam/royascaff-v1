@@ -70,9 +70,11 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 | 040 | 2026-07-19 | high | backend/sql-server, pipelines/streaming | SQL Server sync stops at 2000 rows | DONE | [bug-040-sql-server-sync-stops-at-2000.md](./bug-040-sql-server-sync-stops-at-2000.md) |
 | 041 | 2026-07-19 | medium | backend/pipelines, connectors, frontend/data | Sync progress not based on row counts | DONE | [bug-041-sync-progress-row-based.md](./bug-041-sync-progress-row-based.md) |
 
+| 042 | 2026-08-26 | high | backend/cors, customer-portal/subscriptions | Pay now blocked — CORS omits `idempotency-key` | PENDING | [bug-042-invoice-pay-cors-idempotency-key.md](./bug-042-invoice-pay-cors-idempotency-key.md) |
+
 ## Next Bug Number
 
-**Next**: 042
+**Next**: 043
 
 | 038 | 2026-07-15 | medium | backend/integrations/connectors, data pipeline | Dotted column names (Google Ads, Mongo) misaligned with storage schema | DONE | [bug-038-flatten-dotted-column-names.md](./bug-038-flatten-dotted-column-names.md) |
 

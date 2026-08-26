@@ -6,6 +6,7 @@
 | Overview | overview.md | Overview | `/app/overview` |
 | Client Management | clients.md | Clients | `/app/clients` |
 | Subscriptions | subscriptions.md | Workspace subscriptions and lifecycle | `/app/subscriptions` |
+| Subscription Packages | packages.md | Immutable entitlement Package catalog | `/app/packages` |
 | Subscription Plans | plans.md | Plan catalog | `/app/plans` |
 | Billing & Payments | payments.md | Invoices and payment attempts | `/app/payments` |
 | Audit Logs | audit.md | Audit Log | `/app/audit` |
