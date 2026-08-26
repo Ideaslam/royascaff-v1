@@ -7,3 +7,4 @@
 | 003 | 2026-08-24 | high | backend/payments | Sandbox tokens queried live gateways when NODE_ENV=production | DONE | [bug-003-sandbox-gateway-production.md](./bug-003-sandbox-gateway-production.md) |
 | 004 | 2026-08-24 | high | backend/checkout | OTP verify shared a 5/IP high-sensitive bucket and blocked shoppers | DONE | [bug-004-checkout-otp-rate-limit.md](./bug-004-checkout-otp-rate-limit.md) |
 | 005 | 2026-08-24 | high | backend/checkout | B2B session inline product missing createdBy (stamped from App) | DONE | [bug-005-b2b-session-product-createdby.md](./bug-005-b2b-session-product-createdby.md) |
+| 006 | 2026-08-26 | critical | portal/lists | App switch + PrimeNG onLazyLoad both called load (infinite list requests) | DONE | [bug-006-payments-app-filter-infinite-loop.md](./bug-006-payments-app-filter-infinite-loop.md) |

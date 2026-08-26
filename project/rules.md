@@ -108,7 +108,8 @@ Auth rules: see `plan/roles-and-authorization.md`.
 - Type: Business Logic
 - Module: Apps (Module 2)
 - Must: Portal pages scope data to `AppContextService.selectedAppId` within the active merchant context
-- Must not: Assume single-app without switcher selection; access apps outside current merchant
+- Must: Lazy `p-table` pages let `onLazyLoad` own the fetch. `selectedApp$` only stores the app and resets the table (`requestTableLoad`). Payments (non-lazy) loads only from `watchSelectedApp`, not also from `onAppSelected`
+- Must not: Assume single-app without switcher selection; access apps outside current merchant; call the same list API from both `selectedApp$` and PrimeNG `onLazyLoad`
 
 ## RULE-014 · SDK Scope Permissions
 
