@@ -29,6 +29,7 @@
 
 ### SVC-N08 · ContextBuilderRegistry + builders [domain, internal, Notifications]
 - PaymentContextBuilder, CustomerContextBuilder — normalize event payloads
+- `whitelistPaymentFields` keeps existing payment keys; additive `currencyConversion` and product `paidPrice`/`paidCurrency` (not required)
 
 ### SVC-N09 · initializeNotifications [domain, internal, Notifications]
 - Bootstraps registries, channels, workers on app start

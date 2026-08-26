@@ -11,3 +11,4 @@
 | 007 | 2026-08-24 | modify-feature | customer-portal | Password reset: 15m email link + 2FA/passkey step-up | Implemented | [change-007-portal-password-reset](./change-007-portal-password-reset/) |
 | 008 | 2026-08-26 | modify-endpoint | api-docs | Align Public + Merchant OpenAPI request/response with live Zod/controllers; review all endpoints | Implemented | [change-008-api-docs-request-response](./change-008-api-docs-request-response/) |
 | 009 | 2026-08-26 | modify-page | customer-portal | Detail views (token, product, customer, payment) + sidebar: My Apps after Dashboard, Tokens nested | Implemented | [change-009-portal-detail-views-nav](./change-009-portal-detail-views-nav/) |
+| 010 | 2026-08-26 | modify-feature | backend | Session original vs paid amounts + exchange rate (additive fields); OpenAPI docs | Implemented | [change-010-session-paid-currency](./change-010-session-paid-currency/) |

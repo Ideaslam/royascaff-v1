@@ -7,7 +7,7 @@
 | EP-TR01 | GET | /stats | authenticated | `PaymentRepository` aggregate | **direct repo** — no service layer |
 | EP-TR02 | GET | / | authenticated | `PaymentRepository.findPaginated` | — |
 | EP-TR03 | GET | /list | authenticated | `PaymentRepository` | search/filter |
-| EP-TR04 | GET | /:sessionId | authenticated | `PaymentRepository`, `ProductRepository` | session detail |
+| EP-TR04 | GET | /:sessionId | authenticated | `PaymentRepository`, `ProductRepository` | session detail — existing keys unchanged; additive `currencyConversion` + product `paidPrice`/`paidCurrency`. Lists (EP-TR02/03) unchanged |
 
 ## Module: Gateways — `/api/merchant/v1/gateways`
 

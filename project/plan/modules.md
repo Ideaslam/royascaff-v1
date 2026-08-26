@@ -84,7 +84,7 @@ PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for ap
 - Depends on: Products, Gateways, Tokens, Customers
 
 ### Features
-1. **Payment Session Creation** [both] — web (SDK) and backend paths
+1. **Payment Session Creation** [both] — web (SDK) and backend paths; persist first-class original vs charged amounts + exchange rate (`currencyConversion`); product snapshots keep merchant `price`/`currency` and add `paidPrice`/`paidCurrency`
 2. **Checkout Page** [frontend] — multi-step: products, currency, customer OTP, address, shipping, tax, payment
 3. **Payment Processing** [both] — card, Apple Pay, PayPal via gateway adapters
 4. **Payment Callback** [backend-only] — gateway redirect handler

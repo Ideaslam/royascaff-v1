@@ -243,13 +243,14 @@ Purpose: Payment sessions AND payment records (single collection).
 | `merchantId`, `appId` | ObjectId | required | → Merchant, App |
 | `createdBy` | ObjectId | optional | → User |
 | `sessionId`, `sessionToken` | String | required, unique | — |
-| `amount`, `currency`, `description` | Number/String | required | — |
+| `amount`, `currency`, `description` | Number/String | required | `amount`/`currency` = charged (gateway) values |
 | `customerEmail`, `customerPhone`, `customerName` | String | optional | — |
 | `verifiedIdentifier`, `verifiedChannel` | String | optional | channel: email, phone |
 | `customerLocked` | Boolean | default: false | — |
 | `customerId` | ObjectId | optional | → Customer |
-| `products[]` | Array | embedded | storeCode, title, price, quantity, productId |
-| `metadata` | Mixed | optional | — |
+| `products[]` | Array | embedded | storeCode, title, price, currency, quantity, productId, sessionPrice, imageUrl, paidPrice, paidCurrency. `price`/`currency` = merchant/catalog; `paidPrice`/`paidCurrency` = charged (optional on legacy) |
+| `currencyConversion` | Object | optional | originalAmount, originalCurrency, convertedAmount, convertedCurrency, exchangeRate. Always set on new sessions (`exchangeRate: 1` when same currency). Null/omitted on legacy. |
+| `metadata` | Mixed | optional | may also copy `currencyConversion` for older readers |
 | `gateway` | String | required | gateway name |
 | `orderedGateways` | String[] | optional | — |
 | `status` | Enum | default: init | init, pending, requires_action, completed, failed, cancelled, expired, refunded |

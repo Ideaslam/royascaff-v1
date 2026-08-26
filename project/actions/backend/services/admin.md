@@ -93,7 +93,7 @@ All services live under `src/services/admin/`. Controllers under `src/routes/com
 ### SVC-AD09 · AdminPaymentService [domain, internal, Admin Panel]
 - Methods:
   - `listPayments(filters, pagination): PaginatedResponse<AdminPaymentListDTO>` — cross-merchant; filters: status, gateway, merchantId, appId, search (sessionId/email), date range
-  - `getPaymentBySessionId(sessionId): AdminPaymentDetailDTO` — read-only; includes merchant/app context; masks sensitive metadata
+  - `getPaymentBySessionId(sessionId): AdminPaymentDetailDTO` — read-only; includes merchant/app context; masks sensitive metadata; additive `currencyConversion` + product `paidPrice`/`paidCurrency`
 - Deps: `PaymentRepository`, `UserRepository`, `AppRepository`, `ProductRepository`
 - Side effects: read-only
 - Rules: no refund/process from admin V1

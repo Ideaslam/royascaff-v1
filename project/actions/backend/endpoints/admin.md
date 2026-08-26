@@ -96,7 +96,7 @@ Public GET `/merchant/v1/core/currencies` unchanged for checkout/portal.
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
 | EP-AD24 | GET | / | admin | page, limit, search, status, gateway, merchantId, appId, from, to | 200 paginated | `AdminPaymentService.listPayments` | Read-only |
-| EP-AD25 | GET | /:sessionId | admin | — | 200 detail | `AdminPaymentService.getPaymentBySessionId` | Cross-merchant |
+| EP-AD25 | GET | /:sessionId | admin | — | 200 detail | `AdminPaymentService.getPaymentBySessionId` | Cross-merchant. Existing keys unchanged; additive `currencyConversion` + product `paidPrice`/`paidCurrency`. List (EP-AD24) unchanged |
 
 ---
 

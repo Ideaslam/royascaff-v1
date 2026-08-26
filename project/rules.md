@@ -49,6 +49,17 @@ Auth rules: see `plan/roles-and-authorization.md`.
 - Must: Use single `Payment` collection for sessions and completed payments; unique `sessionId` and `sessionToken`
 - Must not: Create separate session collection
 
+## RULE-022 · Session Money Fields Are Additive
+
+- Type: Business Logic, Integration
+- Module: Payments (Module 6)
+- Must: `Payment.amount` / `Payment.currency` (and checkout `totalAmount` / `currency`) are the **charged** gateway values used to process payment
+- Must: Product snapshot `price` / `currency` remain the merchant/catalog values the integrator sent
+- Must: Persist first-class `currencyConversion` (`originalAmount`, `originalCurrency`, `convertedAmount`, `convertedCurrency`, `exchangeRate`) on new sessions; `exchangeRate` is `1` when currencies match
+- Must: Persist product `paidPrice` / `paidCurrency` (charged unit price) on new sessions
+- Must: Expose those new keys on session create, checkout session GET, merchant session detail, admin payment detail, and webhook payment payloads **without** renaming, removing, or changing the meaning of existing response fields
+- Must not: Reshape existing integrator responses; mark the new fields required; backfill historical documents; change the charge path to use merchant currency when the gateway default differs
+
 ## RULE-007 · Gateway Selection
 
 - Type: Business Logic
