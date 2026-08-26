@@ -3,6 +3,12 @@
 All app-scoped pages require `AppContextService.selectedApp$` (app switcher in header).
 All authenticated pages require `MerchantContextService.selectedMerchant$` (merchant switcher in sidebar).
 
+### Sidebar — Main Menu order
+- Component: `AppMenu` (`app.menu.ts`)
+- Order: **Dashboard** (`/`) → **My Apps** (`/apps`) → nested **Tokens** (`/tokens`) → **Products** → **Customers**
+- My Apps navigates to `/apps` and expands to show Tokens. On `/tokens`, Tokens is the active item and My Apps stays expanded.
+- Payments and Notifications sections are unchanged.
+
 ## Module: Dashboard
 
 ### Dashboard Page
@@ -30,12 +36,15 @@ All authenticated pages require `MerchantContextService.selectedMerchant$` (merc
 - Service: `ProductsService`, `CurrenciesService`
 - Endpoints: EP-PR02–07, EP-CO01
 - UI: loading, loadError, validation toasts
+- View: detail hero (title, status, price, store code) + summary cards (media, inventory, shipping, publishing, SEO, metadata). List/create/edit keep global page styles.
 
 ## Module: Tokens — `/tokens`
 
 - Service: `TokensService`, `LibrariesService`
 - Endpoints: EP-TK01–10, EP-CO09–12, EP-CO13
 - UI: loading, domain verify states, empty states
+- Nav: nested under My Apps in the sidebar
+- View (side panel): hero (name, environment, status), featured copyable token value, Libraries / Scopes / Allowed Domains cards. Domain add, verify, generate-file, remove; Close / Edit Token. List + create/edit keep global page styles.
 
 ## Module: Customers
 
@@ -43,12 +52,14 @@ All authenticated pages require `MerchantContextService.selectedMerchant$` (merc
 - Service: `CustomersService`
 - Endpoints: EP-CU01–07
 - UI: loading, loadError, payments empty state
+- View: detail hero (name, contact, member-since / payment count) + address / notes / tags cards + payment history table. Edit and lazy payment history. List/create/edit keep global page styles.
 
 ## Module: Payments — `/payments`
 
 - Service: `PaymentsService`
 - Endpoints: EP-TR01–04, EP-CO01, filter EP-AP05, EP-GW03, EP-PR04, EP-TK04
 - UI: loading, refund toasts
+- Detail (side panel): amount + status hero, then session / customer / products / metadata cards. Close / Refund (completed only). List + filters keep global page styles.
 
 ## Module: Gateways — `/gateways`
 

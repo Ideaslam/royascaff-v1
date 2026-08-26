@@ -6,7 +6,9 @@ Prefix: `/api/merchant/v1/auth` · Auth default: **authenticated** (Bearer JWT) 
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-AU01 | POST | /register | public; rate limit | email, password, name | 201 | `AuthService.register` | — |
+| EP-AU01 | POST | /register | public; rate limit | email, password, name | 201 `{ verificationToken, email, message }` | `AuthService.register` | Sends registration OTP; does not issue JWT until email is verified |
+| EP-AU29 | POST | /verify-email | public; rate limit | `{ verificationToken, code }` | 200 `{ user, token }` | `AuthService.verifyEmail` | Marks `emailVerified`; issues JWT |
+| EP-AU30 | POST | /resend-verification | public; rate limit | `{ verificationToken }` | 200 `{ verificationToken, message }` | `AuthService.resendVerificationOTP` | Rotates challenge token; resends OTP |
 | EP-AU02 | POST | /login | public; rate limit | email, password | 200 JWT or 2FA challenge | `AuthService.login` | — |
 | EP-AU03 | GET | /profile/summary | authenticated | — | 200 | `AuthService.getProfileSummary` | — |
 | EP-AU04 | GET | /profile | authenticated | — | 200 | `AuthService.getProfile` | — |
