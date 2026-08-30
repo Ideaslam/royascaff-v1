@@ -360,14 +360,22 @@ Key fields (Verification): `identifier`, `method` (email_otp, mobile_otp, social
 
 ## 15. Currency
 
-Purpose: Reference currency data with USD exchange rates.
+Purpose: Reference currency data — live USD exchange rates, ISO 4217 minor-unit exponents, and rate provenance. Rates are refreshed hourly by the `fx-rates` background job and served through `ICurrencyService` (Redis, 30 min TTL).
 
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | `code` | String | required, unique, uppercase | — |
 | `name`, `symbol` | String | optional | — |
-| `exchangeRateToUSD` | Number | required, default: 1.0 | — |
+| `rateFromUsd` | Number | required, default: 1.0 | — |
+| `minorUnitExponent` | Number | required, `0 \| 2 \| 3`, default: 2 | — |
+| `rateUpdatedAt` | Date | optional | — |
+| `rateProviderUpdatedAt` | Date | optional | — |
+| `rateSource` | Enum | `fastforex \| manual \| seed` | — |
 | `isActive` | Boolean | default: true | — |
+
+**`rateFromUsd`** is units of this currency per **1 USD**, stored exactly as the rate provider returns it (`SAR: 3.7545` means 1 USD = 3.7545 SAR). `USD` is always `1`. This is the inverse of the pre-change-011 `exchangeRateToUSD`; conversion is `amount / from.rateFromUsd * to.rateFromUsd`, and the rate is never rounded.
+
+**`minorUnitExponent`** is the ISO 4217 decimal count — `2` for USD/EUR/GBP/SAR/AED/QAR, **`3` for KWD/BHD/OMR/JOD/TND/IQD/LYD**, `0` for JPY/KRW. Providers do not supply it; it is seeded from `constants/iso-currency-exponents.ts` and is admin-editable. All currencies the provider returns are stored; only supported ones are `isActive`.
 
 ---
 

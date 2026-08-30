@@ -71,11 +71,13 @@ Rate limit: `MERCHANT_SENSITIVE` on auth login/2FA; `MERCHANT_GENERAL` on other 
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-AD16 | GET | / | admin | — | 200 array | `AdminCurrencyService.listCurrencies` | Includes inactive |
-| EP-AD17 | POST | / | admin | code, name, symbol, exchangeRateToUSD, isActive? | 201 | `AdminCurrencyService.createCurrency` | Migrated from EP-CO03 |
-| EP-AD18 | PUT | /:code | admin | partial currency fields | 200 | `AdminCurrencyService.updateCurrency` | Migrated from EP-CO04 |
+| EP-AD16 | GET | / | admin | — | 200 array | `AdminCurrencyService.listCurrencies` | Includes inactive. Returns `rateFromUsd`, `minorUnitExponent`, `rateUpdatedAt`, `rateSource` |
+| EP-AD17 | POST | / | admin | code, name, symbol, rateFromUsd, minorUnitExponent, isActive? | 201 | `AdminCurrencyService.createCurrency` | Migrated from EP-CO03. A supplied rate sets `rateSource: 'manual'` |
+| EP-AD18 | PUT | /:code | admin | partial currency fields | 200 | `AdminCurrencyService.updateCurrency` | Migrated from EP-CO04. Editing `minorUnitExponent` is high-risk — it changes how every amount in that currency is interpreted |
+| EP-AD35 | POST | /sync | admin | — | 200 sync result | `ExchangeRateSyncService.syncNow('manual')` | Manual FX refresh; records the acting admin in the audit entry |
+| EP-AD36 | GET | /sync/status | admin | — | 200 status | `ExchangeRateSyncService.getSyncStatus` | Provider, last success, last failure, staleness, active currency count |
 
-Public GET `/merchant/v1/core/currencies` unchanged for checkout/portal.
+Public GET `/merchant/v1/core/currencies` unchanged in shape for checkout/portal, but its fields follow the renames above.
 
 ---
 

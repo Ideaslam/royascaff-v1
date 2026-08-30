@@ -64,8 +64,20 @@
 ## Module: Currency
 
 ### SVC-CR01 · CurrencyService [domain, internal, Currency]
-- Methods: `getAllCurrencies`, `getCurrencyByCode`, `convertCurrency`, `validateCurrency`, cache invalidation
+- Implements: **`ICurrencyService`** — every consumer depends on the interface, never the class
+- Methods: `getAllCurrencies`, `getCurrencyByCode`, `getCurrencyExponent`, `getRateFromUsd`, `getExchangeRate`, `convertCurrency`, `getDefaultCurrency`, `getAcceptedCurrencies`, `validateCurrency`, cache invalidation
 - Deps: `CurrencyRepository`, `GatewayRepository`, `CacheService`
+- Notes: Conversion is `amount / from.rateFromUsd * to.rateFromUsd` — `rateFromUsd` is units per 1 USD. The rate is **never rounded** (a rate is not money). Redis TTL comes from `FX_CACHE_TTL_SECONDS` (30 min). Logs a staleness warning when the newest `rateUpdatedAt` exceeds `FX_MAX_STALENESS_HOURS`; conversions still succeed on stale rates so an FX outage never blocks checkout.
+
+### SVC-CR02 · FastForexRateProvider [integration, external, Currency]
+- Implements: **`IExchangeRateProvider`** — `fetchRates(base) → ExchangeRateSnapshot`
+- Deps: axios, `FASTFOREX_*` config
+- Notes: Lives in `external-services/fastforex/`. The only place fastFOREX URLs and response field names appear. Resolved through a factory reading `FX_PROVIDER`, which fails fast on an unknown value. Rates are stored exactly as returned — no scaling, rounding, or inversion.
+
+### SVC-CR03 · ExchangeRateSyncService [domain, internal, Currency]
+- Implements: **`IExchangeRateSyncService`** — `syncNow(reason)`, `getSyncStatus()`
+- Deps: `IExchangeRateProvider`, `CurrencyRepository`, `CacheService`, `AuditService`
+- Notes: Validates the whole snapshot before any write (no partial writes), bulk-upserts every currency, stamps `rateUpdatedAt` / `rateProviderUpdatedAt` / `rateSource`, invalidates currency cache keys so new rates are live immediately, and writes one `currency.rates.synced` audit entry. Provider failures log a structured error and leave stored rates untouched. Driven by the `fx-rates` BullMQ worker (repeatable, `FX_SYNC_INTERVAL_MS`, gated by `FX_SYNC_ENABLED`) and by the admin manual-trigger endpoint.
 
 ## Module: Audit
 

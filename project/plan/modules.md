@@ -131,14 +131,15 @@ PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for ap
 
 - Scope: BE `currency-*`, `media-*`, `library-*`, `domain-*`, `audit-*` + FE partial
 - Entities: `Currency`, `Media`, `Library`, `AuditLog`, `EncryptionKey`, `EncryptionConfig`
-- Depends on: Storage, Encryption
+- Depends on: Storage, Encryption, Redis + BullMQ (rate cache and `fx-rates` job), fastFOREX (via `IExchangeRateProvider`)
 
 ### Features
-1. **Currency Management** [both] — list, convert, validate; admin CRUD
-2. **Media Upload** [both] — S3/R2 upload for app assets and documents
-3. **SDK Libraries (admin)** [backend-only] — platform library CRUD (admin)
-4. **Audit Logging** [both] — admin query all; merchant query own
-5. **Field Encryption** [backend-only] — gateway credentials, webhook secrets, TOTP secrets
+1. **Currency Management** [both] — list, convert, validate; admin CRUD. Reached exclusively through `ICurrencyService`; stores `rateFromUsd` (units per 1 USD) plus the ISO 4217 `minorUnitExponent`
+2. **Exchange Rate Sync** [backend-only] — hourly BullMQ `fx-rates` job pulls live rates through the swappable `IExchangeRateProvider` (fastFOREX), bulk-upserts `Currency`, invalidates the Redis cache, and writes a `currency.rates.synced` audit entry. Payment sessions never call the provider; an outage falls back to the last stored rates with a staleness warning
+3. **Media Upload** [both] — S3/R2 upload for app assets and documents
+4. **SDK Libraries (admin)** [backend-only] — platform library CRUD (admin)
+5. **Audit Logging** [both] — admin query all; merchant query own
+6. **Field Encryption** [backend-only] — gateway credentials, webhook secrets, TOTP secrets
 
 ---
 
@@ -218,7 +219,7 @@ PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for ap
 1. **Platform Dashboard** [both] — cross-platform KPIs: merchants, apps, payments volume, pending gateway requests, recent activity
 2. **Gateway Onboarding (Admin)** [both] — Kanban board, status transitions, corrections, forward to gateway
 3. **Audit Logs** [both] — platform-wide audit query with filters (actor, action, date range)
-4. **Platform Config — Currencies** [both] — admin CRUD on `Currency` reference data
+4. **Platform Config — Currencies** [both] — admin CRUD on `Currency` reference data (rate, minor-unit exponent, active flag); manual FX sync trigger and sync status
 5. **Platform Config — SDK Libraries** [both] — admin CRUD on `Library` capability packages
 6. **Merchants Management** [both] — list/search merchants (Merchant entity), detail view with team members, suspend/activate (`Merchant.status`)
 7. **Payments Overview** [both] — cross-merchant read-only payment session search and detail (support use)

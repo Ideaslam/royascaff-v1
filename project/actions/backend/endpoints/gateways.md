@@ -77,12 +77,12 @@
 
 | ID | Method | Route | Auth | Service | Notes |
 |----|--------|-------|------|---------|-------|
-| EP-CO01 | GET | / | public | `CurrencyService.getAllCurrencies` | — |
-| EP-CO02 | GET | /:code | public | `CurrencyService.getCurrencyByCode` | — |
-| EP-CO03 | POST | / | authenticated + **admin** | `CurrencyRepository.create` | — |
-| EP-CO04 | PUT | /:code | admin | `CurrencyRepository` | — |
-| EP-CO05 | POST | /convert | public | `CurrencyService.convertCurrency` | — |
-| EP-CO06–08 | GET/POST | /gateways/:gatewayId/* | public | `CurrencyService` | currency validation |
+| EP-CO01 | GET | / | public | `ICurrencyService.getAllCurrencies` | Returns `rateFromUsd`, `minorUnitExponent`, `rateUpdatedAt` |
+| EP-CO02 | GET | /:code | public | `ICurrencyService.getCurrencyByCode` | Same field set |
+| EP-CO03 | POST | / | authenticated + **admin** | `CurrencyRepository.create` | Body takes `rateFromUsd`, `minorUnitExponent` |
+| EP-CO04 | PUT | /:code | admin | `CurrencyRepository` | Same renames |
+| EP-CO05 | POST | /convert | public | `ICurrencyService.convertCurrency` | Response `exchangeRate` is now unrounded |
+| EP-CO06–08 | GET/POST | /gateways/:gatewayId/* | public | `ICurrencyService` | currency validation |
 
 ### Domain Verification — `/core/domain-verification`
 

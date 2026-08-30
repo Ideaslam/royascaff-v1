@@ -49,6 +49,20 @@ Auth rules: see `plan/roles-and-authorization.md`.
 - Must: Use single `Payment` collection for sessions and completed payments; unique `sessionId` and `sessionToken`
 - Must not: Create separate session collection
 
+## RULE-023 · Exchange Rates Are Stored, Never Fetched Inline
+
+- Type: Integration, Business Logic
+- Module: Core Platform (Module 9), Payments (Module 6)
+- Must: Read every currency and rate through **`ICurrencyService`** — never construct `CurrencyService` directly and never read the `Currency` model from a service or controller
+- Must: Contact an FX provider **only** from the `fx-rates` BullMQ worker or the admin manual-sync endpoint, both through **`IExchangeRateProvider`**; the concrete provider is selected by `FX_PROVIDER` and resolved by a factory that fails fast on an unknown value
+- Must: Store `rateFromUsd` exactly as the provider returns it (units per 1 USD, `USD = 1`); convert with `amount / from.rateFromUsd * to.rateFromUsd`
+- Must: Keep `minorUnitExponent` on every currency, seeded from ISO 4217 (`3` for KWD/BHD/OMR/JOD/TND/IQD/LYD, `0` for JPY/KRW, `2` otherwise)
+- Must: Serve reads from Redis with `FX_CACHE_TTL_SECONDS`, and invalidate currency cache keys immediately after a successful sync
+- Must: On provider failure, leave stored rates untouched, log a structured error, and keep serving the last known rates; log a warning per conversion once rates exceed `FX_MAX_STALENESS_HOURS`
+- Must: Write one `currency.rates.synced` audit entry per successful sync, and a `currency.exponent.updated` entry with before/after values whenever an admin edits `minorUnitExponent`
+- Must: Keep exactly two exponent artifacts — `Currency.minorUnitExponent` in MongoDB (authoritative) and `constants/iso-currency-exponents.ts` (seed bootstrap and unknown-currency fallback). A third copy is what produced bug-008
+- Must not: Call an FX provider from any request path, including payment session creation; round the exchange rate; scale or invert a rate before storing it; reference fastFOREX URLs or response field names outside `external-services/fastforex/`; write a partial snapshot
+
 ## RULE-022 · Session Money Fields Are Additive
 
 - Type: Business Logic, Integration
