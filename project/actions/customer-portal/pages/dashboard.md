@@ -3,6 +3,19 @@
 All app-scoped pages require `AppContextService.selectedApp$` (app switcher in header).
 All authenticated pages require `MerchantContextService.selectedMerchant$` (merchant switcher in sidebar).
 
+## Money handling (applies to every page below)
+
+- **Module**: `core/money/` — `money.model.ts` (`Money` = `{ minor, currency, exponent, display }`), `money.util.ts` (`formatMoney`, `toMinor`, `toMajor`, `subtractMoney`), `money.pipe.ts` (standalone `MoneyPipe`), `money.spec.ts`.
+- **Display**: every amount renders through `MoneyPipe` — `{{ payment.amount | money }}`. Returns `Money.display` by default; accepts a locale for `Intl.NumberFormat`, used on Arabic/RTL pages. No `CurrencyPipe` and no ad-hoc `Intl.NumberFormat` on money.
+- **Input**: merchant-facing price fields stay in **major units** (a merchant types `49.99`). `toMinor` / `toMajor` convert at the **service layer only** — never in a component or template — and are the only power-of-ten operations in the app. `toMinor` throws rather than truncating when a value carries more fraction digits than the exponent allows.
+- **Exponent**: `p-inputNumber` fraction digits are driven by the selected currency's `minorUnitExponent` from `CurrenciesService`, never hardcoded. KWD accepts three decimals; JPY accepts none.
+- **Requests** send bare integers under `*Minor` keys; **responses** return `Money` objects. Counts stay plain integers.
+- **No derivation**: line totals come from the server-allocated `products[].total`, never from `price × quantity`.
+
+### Core service — `CurrenciesService`
+
+`Currency` carries `code`, `name`, `symbol`, `rateFromUsd` (units per 1 USD), `minorUnitExponent`, `rateUpdatedAt`, `rateSource`. `getCurrency(code)` is the exponent lookup every price input depends on.
+
 ### Sidebar — Main Menu order
 - Component: `AppMenu` (`app.menu.ts`)
 - Order: **Dashboard** (`/`) → **My Apps** (`/apps`) → nested **Tokens** (`/tokens`) → **Products** → **Customers**
@@ -17,6 +30,7 @@ All authenticated pages require `MerchantContextService.selectedMerchant$` (merc
 - Service: `DashboardService` → EP-DB01 (GET /reports/dashboard)
 - Guard: `authGuard`
 - UI: loading skeleton; empty table; error falls back silently
+- Money: `statistics.orders.revenue` and `latestSessions[].amount` render via `MoneyPipe`; no hardcoded currency. `chartData.dailyPayments[].amount`, `summary.totalAmount`, `summary.averageDaily` are typed `Money` but not yet rendered — `ChartModule` is imported and no `<p-chart>` exists
 
 ## Module: Apps
 
@@ -28,7 +42,8 @@ All authenticated pages require `MerchantContextService.selectedMerchant$` (merc
 ### App View — `/apps/view/:id`
 - Service: `AppsService`, `AppSettingsService`
 - Endpoints: EP-AP06, EP-AP09/11
-- UI: loading, loadError, saving
+- UI: loading, loadError, saving (Arabic-only UI)
+- Money: payment min/max accept major units with fraction digits from `settings.payment.defaultCurrency`'s exponent; saved as `minimumAmountMinor` / `maximumAmountMinor` integers
 
 ## Module: Products
 
@@ -37,6 +52,9 @@ All authenticated pages require `MerchantContextService.selectedMerchant$` (merc
 - Endpoints: EP-PR02–07, EP-CO01
 - UI: loading, loadError, validation toasts
 - View: detail hero (title, status, price, store code) + summary cards (media, inventory, shipping, publishing, SEO, metadata). List/create/edit keep global page styles.
+- Money: four `p-inputNumber` price fields (price, compare-at, unit, cost-per-item) accept major units with fraction digits from the selected currency's exponent. `ProductsService` maps them to `priceMinor`, `compareAtPriceMinor`, `unitPriceMinor`, `costPerItemMinor`, `variants[].priceMinor` and strips the UI-only `valuesString`. Responses are `Money`, rendered via `MoneyPipe`.
+- `currency` is **required** — no `showClear`, `*` on the label, save blocked without it; changing it re-validates entered prices against the new exponent. `ensureProductCurrency()` backfills on load.
+- Edit load populates all four price fields.
 
 ## Module: Tokens — `/tokens`
 
@@ -53,6 +71,7 @@ All authenticated pages require `MerchantContextService.selectedMerchant$` (merc
 - Endpoints: EP-CU01–07
 - UI: loading, loadError, payments empty state
 - View: detail hero (name, contact, member-since / payment count) + address / notes / tags cards + payment history table. Edit and lazy payment history. List/create/edit keep global page styles.
+- Money: payment history `amount` is `Money`, rendered via `MoneyPipe`
 
 ## Module: Payments — `/payments`
 
@@ -60,6 +79,8 @@ All authenticated pages require `MerchantContextService.selectedMerchant$` (merc
 - Endpoints: EP-TR01–04, EP-CO01, filter EP-AP05, EP-GW03, EP-PR04, EP-TK04
 - UI: loading, refund toasts
 - Detail (side panel): amount + status hero, then session / customer / products / metadata cards. Close / Refund (completed only). List + filters keep global page styles.
+- Money: `amount`, `totalRevenue`, and every session product price are `Money` via `MoneyPipe`; `totalRevenue` no longer hardcodes USD. Product line subtotals render the server-allocated `product.total` — no `price × quantity`.
+- Refund: full amount only; sends `amountMinor` from `payment.amount.minor`; PrimeNG `ConfirmDialog` showing `payment.amount.display` replaces the native `confirm()`
 
 ## Module: Gateways — `/gateways`
 
@@ -70,6 +91,9 @@ All authenticated pages require `MerchantContextService.selectedMerchant$` (merc
 
 - Service: `GatewayRulesService`
 - Endpoints: EP-GW09–17, EP-GW01
+- Condition `field` options: `amountMinor`, `currency`, `customerEmail`, `customerDomain`, `productSku`, `productPriceMinor`, `productQuantity`, `custom`
+- Money condition values use an integer `p-inputNumber` labelled as minor units — a rule threshold carries no currency, so no exponent can be derived. Defaults `10000` / `0`
+- Rule test posts `context.amountMinor` as an integer; the input has no hardcoded currency
 
 ## Module: Gateway Requests
 
