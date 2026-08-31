@@ -146,7 +146,7 @@ Purpose: Merchant application — multi-app tenancy, branding, checkout/payment 
 | `isActive` | Boolean | default: true | — |
 | `brandName`, `brandLogo` | String | optional | — |
 | `showProducts` … `showPayment` | Boolean | checkout UI toggles | — |
-| `settings` | Object | embedded | branding, checkout, payment, notifications, security, integration |
+| `settings` | Object | embedded | branding, checkout, payment (`minimumAmountMinor`, `maximumAmountMinor` integers), notifications, security, integration |
 
 Relations: one App → many Product, Payment, Gateway, Token, Customer, ApiKey, etc.
 
@@ -205,7 +205,9 @@ Purpose: Product catalog per app.
 | `storeCode` | String | required, unique | — |
 | `title` | String | required | — |
 | `sku`, `description`, `category` | String | optional | — |
-| `price`, `currency` | Number/String | optional | — |
+| `priceMinor`, `currency`, `currencyExponent` | Number/String | `currency` required; amounts are integer minor units; `currencyExponent` snapshotted | — |
+| `compareAtPriceMinor`, `unitPriceMinor`, `costPerItemMinor` | Number | optional integers | — |
+| `variants[].priceMinor` | Number | optional integer | — |
 | `media` | String[] | optional | — |
 | `status` | Enum | default: active | `active`, `draft`, `archived` |
 | `inventory`, `shipping`, `variants`, `seo` | Object | optional | nested commerce fields |
@@ -243,14 +245,15 @@ Purpose: Payment sessions AND payment records (single collection).
 | `merchantId`, `appId` | ObjectId | required | → Merchant, App |
 | `createdBy` | ObjectId | optional | → User |
 | `sessionId`, `sessionToken` | String | required, unique | — |
-| `amount`, `currency`, `description` | Number/String | required | `amount`/`currency` = charged (gateway) values |
+| `amountMinor`, `currency`, `currencyExponent`, `description` | Number/String | required | integer minor units; `currencyExponent` snapshotted; charged (gateway) values |
+| `taxAmountMinor` | Number | optional | integer tax, first-class (not metadata) |
 | `customerEmail`, `customerPhone`, `customerName` | String | optional | — |
 | `verifiedIdentifier`, `verifiedChannel` | String | optional | channel: email, phone |
 | `customerLocked` | Boolean | default: false | — |
 | `customerId` | ObjectId | optional | → Customer |
-| `products[]` | Array | embedded | storeCode, title, price, currency, quantity, productId, sessionPrice, imageUrl, paidPrice, paidCurrency. `price`/`currency` = merchant/catalog; `paidPrice`/`paidCurrency` = charged (optional on legacy) |
-| `currencyConversion` | Object | optional | originalAmount, originalCurrency, convertedAmount, convertedCurrency, exchangeRate. Always set on new sessions (`exchangeRate: 1` when same currency). Null/omitted on legacy. |
-| `metadata` | Mixed | optional | may also copy `currencyConversion` for older readers |
+| `products[]` | Array | embedded | storeCode, title, `priceMinor`, currency, quantity, productId, `sessionPriceMinor`, imageUrl, `paidPriceMinor`, paidCurrency. Catalog prices stay in original currency; `paidPriceMinor` is the charged unit in gateway currency |
+| `currencyConversion` | Object | optional | `originalAmountMinor`, originalCurrency, `convertedAmountMinor`, convertedCurrency, exchangeRate (float — a rate is not money). Always set on new sessions (`exchangeRate: 1` when same currency) |
+| `metadata` | Mixed | optional | may duplicate `currencyConversion` |
 | `gateway` | String | required | gateway name |
 | `orderedGateways` | String[] | optional | — |
 | `status` | Enum | default: init | init, pending, requires_action, completed, failed, cancelled, expired, refunded |
@@ -309,7 +312,7 @@ Purpose: Routing rules to select preferred gateway by conditions.
 | `createdBy` | ObjectId | required | → User |
 | `name`, `description` | String | required/optional | — |
 | `ruleType` | Enum | required | amount, domain, currency, product, custom |
-| `conditions[]` | Array | embedded | field, operator, value, value2 |
+| `conditions[]` | Array | embedded | field (`amountMinor`, `productPriceMinor`, currency, …), operator, value, value2 |
 | `preferredGateway` | Enum | required | test, paypal, stripe, moyasar, myfatoorah |
 | `score`, `priority` | Number | required | score 0–100 |
 | `isActive` | Boolean | default: true | — |

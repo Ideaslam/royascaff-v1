@@ -17,9 +17,9 @@
 
 | ID | Method | Route | Service | Notes |
 |----|--------|-------|---------|-------|
-| EP-AP09 | GET | / | `AppSettingsService.getSettings` | — |
-| EP-AP10 | PUT | / | `AppSettingsService.updateSettings` | full update |
-| EP-AP11 | PUT | /:group | `AppSettingsService.updateGroup` | branding, checkout, payment, notifications, security, integration |
+| EP-AP09 | GET | / | `AppSettingsService.getSettings` | `payment.minimumAmountMinor` / `maximumAmountMinor` |
+| EP-AP10 | PUT | / | `AppSettingsService.updateSettings` | full update; payment limits are integer `*Minor` |
+| EP-AP11 | PUT | /:group | `AppSettingsService.updateGroup` | branding, checkout, payment (`*Minor`), notifications, security, integration |
 | EP-AP12 | POST | /reset | `AppSettingsService.resetToDefaults` | — |
 | EP-AP13 | POST | /reset/:group | `AppSettingsService.resetToDefaults` | — |
 
@@ -34,12 +34,12 @@
 
 | ID | Method | Route | Service | Notes |
 |----|--------|-------|---------|-------|
-| EP-PR01 | POST | / | `ProductService.createProduct` | — |
-| EP-PR02 | GET | /app/:appId | `ProductService.listProducts` | — |
-| EP-PR03 | GET | /app/:appId/list | `ProductService.listProductsPaginated` | — |
+| EP-PR01 | POST | / | `ProductService.createProduct` | body `*Minor` prices + required `currency`; response prices are `Money`; audits `product.created` |
+| EP-PR02 | GET | /app/:appId | `ProductService.listProducts` | prices are `Money` |
+| EP-PR03 | GET | /app/:appId/list | `ProductService.listProductsPaginated` | prices are `Money` |
 | EP-PR04 | GET | /app/:appId/lite | `ProductService.listProductsLite` | — |
-| EP-PR05 | GET | /:productId | `ProductService.getProduct` | — |
-| EP-PR06 | PUT | /:productId | `ProductService.updateProduct` | — |
+| EP-PR05 | GET | /:productId | `ProductService.getProduct` | prices are `Money` |
+| EP-PR06 | PUT | /:productId | `ProductService.updateProduct` | body `*Minor`; audits `product.updated` with before/after `Money` |
 | EP-PR07 | DELETE | /:productId | `ProductService.deleteProduct` | — |
 
 ## Module: Tokens — `/api/merchant/v1/tokens`
@@ -67,10 +67,10 @@
 | EP-CU04 | POST | / | `CustomerService.createCustomer` | — |
 | EP-CU05 | PUT | /:customerId | `CustomerService.updateCustomer` | — |
 | EP-CU06 | DELETE | /:customerId | `CustomerService.deleteCustomer` | — |
-| EP-CU07 | GET | /:customerId/payments | `CustomerService.getCustomerPaymentHistory` | paginated |
+| EP-CU07 | GET | /:customerId/payments | `CustomerService.getCustomerPaymentHistory` | paginated; `amount` is a `Money` object |
 
 ## Module: Merchant Payments — `/api/merchant/v1/payments`
 
 | ID | Method | Route | Auth | Service | Notes |
 |----|--------|-------|------|---------|-------|
-| EP-PY01 | POST | /:paymentId/refund | authenticated | `PaymentService.refundPayment` | Portal refund action |
+| EP-PY01 | POST | /:paymentId/refund | authenticated | `PaymentService.refundPayment` | Body `amountMinor`. Response `amount` is `Money`. Audits `payment.refund.issued` |

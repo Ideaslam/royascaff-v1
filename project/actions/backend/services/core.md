@@ -4,7 +4,8 @@
 
 ### SVC-PR01 · ProductService [domain, internal, Products]
 - Methods: `createProduct`, `findOrCreateAdHocProduct`, `listProducts`, `listProductsPaginated`, `listProductsLite`, `getProduct`, `updateProduct`, `deleteProduct`
-- Deps: `ProductRepository`, `AppRepository`
+- Deps: `ProductRepository`, `AppRepository`, `ICurrencyService`, `AuditService`
+- Notes: prices are integer `*Minor`; `currency` required; `currencyExponent` snapshotted; `product.created` / `product.updated` audit with `Money` metadata
 
 ## Module: Tokens
 
@@ -17,6 +18,7 @@
 ### SVC-CU01 · CustomerService [domain, internal, Customers]
 - Methods: `findOrCreateCustomer`, `createCustomer`, `getCustomerById`, `updateCustomer`, `deleteCustomer`, `getCustomersByApp`, `listCustomersPaginated`, `getCustomerPaymentHistory`
 - Deps: `CustomerRepository`, `PaymentRepository`
+- Notes: payment history amounts are `Money` objects; aggregations use `amountMinor`
 
 ## Module: Profile
 
@@ -40,6 +42,7 @@
 
 ### SVC-DB01 · DashboardService [domain, internal, Dashboard]
 - Methods: `getDashboard`, `listTokens`
+- Notes: revenue / daily amounts / session amounts returned as `Money`; aggregations `$sum` `amountMinor`
 - Deps: `AppRepository`, `GatewayRepository`, `ProductRepository`, `TokenRepository`, `PaymentRepository`
 - Used by: merchant panel `/reports/dashboard` routes
 - Side effects: read-only aggregations for merchant dashboard stats and chart data
@@ -67,7 +70,7 @@
 - Implements: **`ICurrencyService`** — every consumer depends on the interface, never the class
 - Methods: `getAllCurrencies`, `getCurrencyByCode`, `getCurrencyExponent`, `getRateFromUsd`, `getExchangeRate`, `convertCurrency`, `getDefaultCurrency`, `getAcceptedCurrencies`, `validateCurrency`, cache invalidation
 - Deps: `CurrencyRepository`, `GatewayRepository`, `CacheService`
-- Notes: Conversion is `amount / from.rateFromUsd * to.rateFromUsd` — `rateFromUsd` is units per 1 USD. The rate is **never rounded** (a rate is not money). Redis TTL comes from `FX_CACHE_TTL_SECONDS` (30 min). Logs a staleness warning when the newest `rateUpdatedAt` exceeds `FX_MAX_STALENESS_HOURS`; conversions still succeed on stale rates so an FX outage never blocks checkout.
+- Notes: Conversion is integer-space via `money/convert.ts` (`amountMinor` in/out). `rateFromUsd` is units per 1 USD and is **never rounded**. Redis TTL comes from `FX_CACHE_TTL_SECONDS` (30 min). Logs a staleness warning when the newest `rateUpdatedAt` exceeds `FX_MAX_STALENESS_HOURS`; conversions still succeed on stale rates so an FX outage never blocks checkout. Inversion guard: `10000` USD → `37545` SAR at `rateFromUsd(SAR)=3.7545`.
 
 ### SVC-CR02 · FastForexRateProvider [integration, external, Currency]
 - Implements: **`IExchangeRateProvider`** — `fetchRates(base) → ExchangeRateSnapshot`
@@ -82,8 +85,9 @@
 ## Module: Audit
 
 ### SVC-AU01 · AuditService [domain, internal, Audit]
-- Methods: `log`, `auditFromRequest`, `query`, `getByActorId`, `getByAction`
+- Methods: `log`, `auditFromRequest`, `query`, `getByActorId`, `getByAction`; `assertAuditMoneyMetadata`
 - Deps: `AuditLogRepository`
+- Notes: Money in `metadata` must be a `Money` object. New events: `product.created`, `product.updated`, `payment.session.created`, `payment.refund.issued`
 
 ## Module: Email
 

@@ -4,13 +4,18 @@
 
 ### SVC-P01 · PaymentSessionService [domain, internal, Payments]
 - Methods: `createPaymentSession`, `getPaymentSession`, `generateSessionToken`
-- Deps: `PaymentRepository`, `ProductRepository`, `AppRepository`, `GatewayRepository`, `GatewayFactory`, `GatewaySelectionService`, `CurrencyService`, `CustomerService`, `PaymentService`
-- Side effects: creates Payment document as session; always persists `currencyConversion` (rate `1` when currencies match) and product `paidPrice`/`paidCurrency`; `amount`/`currency` remain the charged gateway values; may also copy conversion into `metadata` for older readers
+- Deps: `PaymentRepository`, `ProductRepository`, `AppRepository`, `GatewayRepository`, `GatewayFactory`, `GatewaySelectionService`, `ICurrencyService`, `CustomerService`, `PaymentService`, money module
+- Side effects: creates Payment document as session; integer `amountMinor` + snapshotted `currencyExponent`; convert-once then allocate `paidPriceMinor`; writes `payment.session.created` audit with a `Money` object; API responses wrap money as `Money`
+
+### SVC-M01 · Money module (`src/services/money/`) [domain, internal, Payments]
+- Files: `money.ts`, `convert.ts`, `allocate.ts`, `currency-exponents.ts`, `gateway-exponents.ts`, `api.ts`
+- Pure functions: `fromMinor`, `toDisplay`, `allocateUnitPrices`, `convertMinorUnits`, `toGatewayOutbound`, `toMoney`
+- Notes: the only shared rounding/allocation/FX-arithmetic site. Exactly two exponent artifacts — DB via `ICurrencyService` and `constants/iso-currency-exponents.ts`. No third table. Gateway adapters convert at their own boundary.
 
 ### SVC-P02 · PaymentService [domain, internal, Payments]
 - Methods: `tryProcessPayment`, `createPayment`, `getPayment`, `refundPayment`
 - Deps: `PaymentRepository`, `GatewayRepository`, `GatewaySelectionService`, `AppGatewayService`, `PaymentProcessorFactory`
-- Side effects: gateway API calls, status updates
+- Notes: `createPayment` / `refundPayment` take `amountMinor`; gateway interface is `amountMinor`
 
 ### SVC-P03 · PaymentStatusSyncService [domain, internal, Payments]
 - Methods: `sync(sessionToken)` — poll gateway status, persist, emit notification events
@@ -36,4 +41,4 @@
 - Deps: `PaymentRepository`, `ProductRepository`, `TokenRepository`
 - Used by: merchant panel `/transactions/sessions` routes
 - Side effects: read-only aggregations and DTO mapping for payment sessions
-- `getSessionDetails` adds `currencyConversion` and product `paidPrice`/`paidCurrency` (lists unchanged)
+- `getSessionDetails` returns `Money` for amount/product prices and `currencyConversion` as `{ original, converted, exchangeRate }`

@@ -44,20 +44,20 @@ Cross-module by nature — money is not a module, it is a type that leaks into a
 
 ## Plan Docs to Update
 
-- [ ] `plan/data-model.md` — Payment, Product, Currency, App settings, GatewayRule field tables
-- [ ] `plan/modules.md` — Payment Session Creation, Product Catalog, Audit Trail feature descriptions
-- [ ] `rules.md` — rewrite `RULE-022` from "additive session money fields" to the minor-unit canonical rule
-- [ ] `actions/backend/services/payments.md` — SVC-P01, SVC-P02, SVC-P07
-- [ ] `actions/backend/services/gateways.md` — adapter interface + per-provider conversion
-- [ ] `actions/backend/services/core.md` — product, currency, dashboard, customer, audit services
-- [ ] `actions/backend/services/admin.md` — admin payment + dashboard services
-- [ ] `actions/backend/services/notifications.md` — SVC-N08 payload builder
-- [ ] `actions/backend/services/apps.md` — settings service
-- [ ] `actions/backend/endpoints/public-checkout.md` — EP-PC01–PC03
-- [ ] `actions/backend/endpoints/public-payments.md` — process/callback amount handling
-- [ ] `actions/backend/endpoints/gateways.md` — transactions, core (currencies), dashboard, audit
-- [ ] `actions/backend/endpoints/apps.md` — products CRUD, app settings
-- [ ] `actions/backend/endpoints/admin.md` — EP-AD25 + currency admin
+- [x] `plan/data-model.md` — Payment, Product, Currency, App settings, GatewayRule field tables
+- [x] `plan/modules.md` — Payment Session Creation, Product Catalog, Audit Trail feature descriptions
+- [x] `rules.md` — rewrite `RULE-022` from "additive session money fields" to the minor-unit canonical rule
+- [x] `actions/backend/services/payments.md` — SVC-P01, SVC-P02, SVC-P07
+- [x] `actions/backend/services/gateways.md` — adapter interface + per-provider conversion
+- [x] `actions/backend/services/core.md` — product, currency, dashboard, customer, audit services
+- [x] `actions/backend/services/admin.md` — admin payment + dashboard services
+- [x] `actions/backend/services/notifications.md` — SVC-N08 payload builder
+- [x] `actions/backend/services/apps.md` — settings service
+- [x] `actions/backend/endpoints/public-checkout.md` — EP-PC01–PC03
+- [x] `actions/backend/endpoints/public-payments.md` — process/callback amount handling
+- [x] `actions/backend/endpoints/gateways.md` — transactions, core (currencies), dashboard, audit
+- [x] `actions/backend/endpoints/apps.md` — products CRUD, app settings
+- [x] `actions/backend/endpoints/admin.md` — EP-AD25 + currency admin
 
 Not updated: `plan/roles-and-authorization.md` (no auth change), `actions/{checkout,customer-portal,admin-panel}/` (changes 014–016).
 

@@ -4,10 +4,10 @@
 
 | ID | Method | Route | Auth | Service | Notes |
 |----|--------|-------|------|---------|-------|
-| EP-TR01 | GET | /stats | authenticated | `PaymentRepository` aggregate | **direct repo** — no service layer |
-| EP-TR02 | GET | / | authenticated | `PaymentRepository.findPaginated` | — |
-| EP-TR03 | GET | /list | authenticated | `PaymentRepository` | search/filter |
-| EP-TR04 | GET | /:sessionId | authenticated | `PaymentRepository`, `ProductRepository` | session detail — existing keys unchanged; additive `currencyConversion` + product `paidPrice`/`paidCurrency`. Lists (EP-TR02/03) unchanged |
+| EP-TR01 | GET | /stats | authenticated | `PaymentRepository` aggregate | **direct repo** — no service layer. `$sum` `amountMinor`; revenue as `Money` |
+| EP-TR02 | GET | / | authenticated | `PaymentRepository.findPaginated` | `amount` is a `Money` object |
+| EP-TR03 | GET | /list | authenticated | `PaymentRepository` | search/filter; `amount` is a `Money` object |
+| EP-TR04 | GET | /:sessionId | authenticated | `PaymentRepository`, `ProductRepository` | session detail — `amount` and product prices are `Money`; `currencyConversion` is `{ original, converted, exchangeRate }` |
 
 ## Module: Gateways — `/api/merchant/v1/gateways`
 
@@ -34,7 +34,7 @@
 | EP-GW14 | DELETE | /:id | `GatewayRuleService.deleteRule` | — |
 | EP-GW15 | PATCH | /:id/toggle | `GatewayRuleService.toggleRuleActive` | — |
 | EP-GW16 | POST | /seed | `GatewayRuleService.createSeedRules` | — |
-| EP-GW17 | POST | /test | `GatewayRuleService.getMatchingRules` | rule simulator |
+| EP-GW17 | POST | /test | `GatewayRuleService.getMatchingRules` | rule simulator; context uses `amountMinor` / `productPriceMinor` |
 
 ### Gateway Requests — `/gateways/requests`
 
@@ -81,7 +81,7 @@
 | EP-CO02 | GET | /:code | public | `ICurrencyService.getCurrencyByCode` | Same field set |
 | EP-CO03 | POST | / | authenticated + **admin** | `CurrencyRepository.create` | Body takes `rateFromUsd`, `minorUnitExponent` |
 | EP-CO04 | PUT | /:code | admin | `CurrencyRepository` | Same renames |
-| EP-CO05 | POST | /convert | public | `ICurrencyService.convertCurrency` | Response `exchangeRate` is now unrounded |
+| EP-CO05 | POST | /convert | public | `ICurrencyService.convertCurrency` | Body `amountMinor` (Zod). Response `{ original, converted, exchangeRate }` — amounts are `Money`; rate is unrounded |
 | EP-CO06–08 | GET/POST | /gateways/:gatewayId/* | public | `ICurrencyService` | currency validation |
 
 ### Domain Verification — `/core/domain-verification`
@@ -131,7 +131,7 @@
 
 | ID | Method | Route | Service | Notes |
 |----|--------|-------|---------|-------|
-| EP-DB01 | GET | / | repos direct | **direct repo** aggregates |
+| EP-DB01 | GET | / | repos direct | **direct repo** aggregates `$sum` `amountMinor`; revenue / daily amounts / session amounts are `Money` |
 | EP-DB02 | GET | /tokens | `TokenRepository` | — |
 
 ## Module: Health

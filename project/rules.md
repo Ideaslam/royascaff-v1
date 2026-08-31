@@ -63,16 +63,18 @@ Auth rules: see `plan/roles-and-authorization.md`.
 - Must: Keep exactly two exponent artifacts — `Currency.minorUnitExponent` in MongoDB (authoritative) and `constants/iso-currency-exponents.ts` (seed bootstrap and unknown-currency fallback). A third copy is what produced bug-008
 - Must not: Call an FX provider from any request path, including payment session creation; round the exchange rate; scale or invert a rate before storing it; reference fastFOREX URLs or response field names outside `external-services/fastforex/`; write a partial snapshot
 
-## RULE-022 · Session Money Fields Are Additive
+## RULE-022 · Integer Minor Units Are Canonical
 
 - Type: Business Logic, Integration
 - Module: Payments (Module 6)
-- Must: `Payment.amount` / `Payment.currency` (and checkout `totalAmount` / `currency`) are the **charged** gateway values used to process payment
-- Must: Product snapshot `price` / `currency` remain the merchant/catalog values the integrator sent
-- Must: Persist first-class `currencyConversion` (`originalAmount`, `originalCurrency`, `convertedAmount`, `convertedCurrency`, `exchangeRate`) on new sessions; `exchangeRate` is `1` when currencies match
-- Must: Persist product `paidPrice` / `paidCurrency` (charged unit price) on new sessions
-- Must: Expose those new keys on session create, checkout session GET, merchant session detail, admin payment detail, and webhook payment payloads **without** renaming, removing, or changing the meaning of existing response fields
-- Must not: Reshape existing integrator responses; mark the new fields required; backfill historical documents; change the charge path to use merchant currency when the gateway default differs
+- Must: Represent every money value as an integer minor-unit amount in MongoDB, services, DTOs, and request bodies (`amountMinor`, `priceMinor`, …)
+- Must: Return money in API responses as a `Money` object `{ minor, currency, exponent, display }`; `minor` is the source of truth
+- Must: Snapshot `currencyExponent` on Payment and Product documents
+- Must: Convert a session **total once**, then allocate line `paidPriceMinor` so `Σ paidPriceMinor × quantity === amountMinor`
+- Must: Resolve exponents through `ICurrencyService.getCurrencyExponent` (DB) with `constants/iso-currency-exponents.ts` as the only static fallback — never hardcode 100
+- Must: Convert to a provider's wire format **only** inside that gateway adapter (Stripe/Moyasar integer minor; PayPal/MyFatoorah decimal strings)
+- Must: Keep `currencyConversion.exchangeRate` as an unrounded float — a rate is not money (see RULE-023)
+- Must not: Store or arithmetic money as a major-unit decimal; apply `* 100` / `.toFixed` to money outside `src/services/money/` and gateway adapters; call an FX provider from the request path
 
 ## RULE-007 · Gateway Selection
 

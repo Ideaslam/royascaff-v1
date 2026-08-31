@@ -23,7 +23,7 @@ Rate limit: `MERCHANT_SENSITIVE` on auth login/2FA; `MERCHANT_GENERAL` on other 
 
 | ID | Method | Route | Auth | Return | Service | Notes |
 |----|--------|-------|------|--------|---------|-------|
-| EP-AD05 | GET | / | admin | 200 stats + recent items | `AdminDashboardService.getDashboard` | Platform KPIs |
+| EP-AD05 | GET | / | admin | 200 stats + recent items | `AdminDashboardService.getDashboard` | Platform KPIs. `statistics.payments.revenue` is `Money` |
 
 **Response shape (summary):**
 ```json
@@ -97,8 +97,8 @@ Public GET `/merchant/v1/core/currencies` unchanged in shape for checkout/portal
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-AD24 | GET | / | admin | page, limit, search, status, gateway, merchantId, appId, from, to | 200 paginated | `AdminPaymentService.listPayments` | Read-only |
-| EP-AD25 | GET | /:sessionId | admin | — | 200 detail | `AdminPaymentService.getPaymentBySessionId` | Cross-merchant. Existing keys unchanged; additive `currencyConversion` + product `paidPrice`/`paidCurrency`. List (EP-AD24) unchanged |
+| EP-AD24 | GET | / | admin | page, limit, search, status, gateway, merchantId, appId, from, to | 200 paginated | `AdminPaymentService.listPayments` | Read-only. `amount` is a `Money` object |
+| EP-AD25 | GET | /:sessionId | admin | — | 200 detail | `AdminPaymentService.getPaymentBySessionId` | Cross-merchant. Money fields are `Money`; `currencyConversion` is `{ original, converted, exchangeRate }` |
 
 ---
 

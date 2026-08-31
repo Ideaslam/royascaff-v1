@@ -44,7 +44,7 @@ PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for ap
 - Depends on: Apps
 
 ### Features
-1. **Product Catalog** [both] — CRUD with storeCode, pricing, inventory, variants
+1. **Product Catalog** [both] — CRUD with storeCode, integer `*Minor` prices, inventory, variants
 2. **Ad-Hoc Products** [backend-only] — inline product creation during session (SDK)
 
 ---
@@ -84,7 +84,7 @@ PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for ap
 - Depends on: Products, Gateways, Tokens, Customers
 
 ### Features
-1. **Payment Session Creation** [both] — web (SDK) and backend paths; persist first-class original vs charged amounts + exchange rate (`currencyConversion`); product snapshots keep merchant `price`/`currency` and add `paidPrice`/`paidCurrency`
+1. **Payment Session Creation** [both] — web (SDK) and backend paths; integer minor units everywhere; convert the session total once then allocate line `paidPriceMinor` so `Σ paidPriceMinor × quantity === amountMinor`; API responses wrap money as `{ minor, currency, exponent, display }`
 2. **Checkout Page** [frontend] — multi-step: products, currency, customer OTP, address, shipping, tax, payment
 3. **Payment Processing** [both] — card, Apple Pay, PayPal via gateway adapters
 4. **Payment Callback** [backend-only] — gateway redirect handler
@@ -138,7 +138,7 @@ PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for ap
 2. **Exchange Rate Sync** [backend-only] — hourly BullMQ `fx-rates` job pulls live rates through the swappable `IExchangeRateProvider` (fastFOREX), bulk-upserts `Currency`, invalidates the Redis cache, and writes a `currency.rates.synced` audit entry. Payment sessions never call the provider; an outage falls back to the last stored rates with a staleness warning
 3. **Media Upload** [both] — S3/R2 upload for app assets and documents
 4. **SDK Libraries (admin)** [backend-only] — platform library CRUD (admin)
-5. **Audit Logging** [both] — admin query all; merchant query own
+5. **Audit Logging** [both] — admin query all; merchant query own; money-mutating events (`product.created`, `product.updated`, `payment.session.created`, `payment.refund.issued`) store `Money` in metadata
 6. **Field Encryption** [backend-only] — gateway credentials, webhook secrets, TOTP secrets
 
 ---

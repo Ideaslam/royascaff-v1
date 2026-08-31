@@ -36,4 +36,5 @@
 
 ### SVC-G09 · BaseGateway + adapters [integration, external, Gateways]
 - StripeGateway, PaypalGateway, MoyasarGateway, MyFatoorahGateway, TestGateway
-- Methods: `processPayment`, `refundPayment`, `getPaymentStatus`, `healthCheck`; optional `handleWebhook`, `submitGatewayRequest`
+- Interface: `PaymentRequest.amountMinor` / `RefundRequest.amountMinor` / `PaymentStatusResponse.amountMinor`
+- Outbound: Stripe & Moyasar integer minor (Stripe three-decimal divisible by 10; Moyasar min 100); MyFatoorah/PayPal decimal strings via `toMajorDecimalString`
