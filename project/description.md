@@ -81,6 +81,7 @@ PayUp lets businesses accept payments through multiple gateways (Stripe, PayPal,
 - SDK: TypeScript Webpack UMD bundle
 - i18n: ngx-translate (portal), en/ar (landing page)
 - Production domain: `payupconnect.com` (API, dashboard, checkout, control portal)
+- Production Mongo bootstrap is **`npm run seed:prod`** (`PlatformSeedService`, insert-if-missing). Local `npm run seed` is overwrite/dev only and must not run against production (RULE-024)
 - [INFERRED] Frontend prod env files not yet aligned with `.env.prod`
 
 ## 8. Business Rules
@@ -90,6 +91,7 @@ PayUp lets businesses accept payments through multiple gateways (Stripe, PayPal,
 3. Gateway credentials encrypted at rest (RULE-008)
 4. Notification channels pluggable — adding channel never touches event emitters (RULE-003)
 5. Card tokenization happens at gateway from checkout frontend (RULE-002)
+6. Production platform seed is insert-if-missing, CLI-only, and never overwrites live FX rates or an existing admin password (RULE-024)
 
 ## 9. Out of Scope
 

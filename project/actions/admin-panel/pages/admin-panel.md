@@ -10,7 +10,9 @@ App key: `admin-panel` · Repo: `payup-frontend-admin` · Port: **4401**
 
 **Auth:** Authenticates against `AdminUser` collection (completely isolated from merchant users).
 
-**i18n:** ngx-translate en/ar (copy from customer-control).
+**i18n:** ngx-translate en/ar (copy from customer-control). Admin UI labels are hardcoded English today.
+
+**Money:** `core/money/` — `money.model.ts` (`Money` = `{ minor, currency, exponent, display }`), `money.util.ts` (`formatMoney` only), `money.pipe.ts` (standalone `MoneyPipe`). Every amount renders through the pipe; `formatMoney` derives fraction digits from `exponent`, never a hardcoded 2. **The admin panel is read-only for money** — it submits no amount anywhere, so the module deliberately has no `toMinor`. `rateFromUsd` is a float rate and `minorUnitExponent` an integer; neither is money.
 
 ---
 
@@ -46,6 +48,7 @@ App key: `admin-panel` · Repo: `payup-frontend-admin` · Port: **4401**
 - Guards: `authGuard`, `adminGuard`
 - UI states: loading skeleton; empty sections; error + retry
 - Endpoints: EP-AD05
+- Money: `statistics.payments.revenue` is `Money` and is shown on a Revenue stat card beside total/completed. No charts.
 
 ---
 
@@ -100,9 +103,14 @@ App key: `admin-panel` · Repo: `payup-frontend-admin` · Port: **4401**
 
 ### Currencies
 - Route: `/currencies`
-- Components: table + create/edit dialog
-- Service: `AdminCurrenciesService` → EP-AD16–18
-- UI: loading, empty, validation errors, save toasts
+- Components: table + create/edit dialog + sync action + sync status strip + exponent confirm dialog
+- Service: `AdminCurrenciesService` → EP-AD16–18, EP-AD35 (sync), EP-AD36 (sync status)
+- UI: loading, empty, validation errors, save toasts, per-action sync loading, staleness badge
+- Table columns: Code · Name · Symbol · **Rate (per 1 USD)** (`rateFromUsd`) · **Exponent** (`minorUnitExponent`) · **Source** (`rateSource` as `p-tag`: fastforex / manual / seed) · **Updated** (`rateUpdatedAt`, severity by age) · Active · Edit
+- Header: **Sync now** button (`p-button [loading]`) → EP-AD35, then reloads list + status. Sync status strip (EP-AD36) shows provider, last success, last failure, staleness, active currency count; loaded independently so a status failure never empties the table
+- Dialog: code (disabled on edit) · name · symbol · `rateFromUsd` (`p-inputNumber`, ≤6 fraction digits, > 0, help text "units of this currency per 1 USD; USD is 1") · `minorUnitExponent` (`p-select` 0/2/3, required) · active. Create defaults `{ isActive: true, rateFromUsd: 1, minorUnitExponent: 2 }`
+- Validation on name, symbol, rate, and exponent — the screen previously validated nothing
+- **Exponent guard**: changing `minorUnitExponent` on an existing currency opens a `ConfirmDialog` (warning icon, danger accept) naming the currency and both values before any request — the edit reinterprets every amount already stored in that currency. Backend writes `currency.exponent.updated` to the audit log
 
 ### SDK Libraries
 - Route: `/libraries`
@@ -120,12 +128,14 @@ App key: `admin-panel` · Repo: `payup-frontend-admin` · Port: **4401**
 - Service: `AdminPaymentsService` → EP-AD24
 - Guards: `authGuard`, `adminGuard`
 - UI: loading, empty, read-only badge
+- Money: `AdminPaymentSession.amount` is `Money`, rendered via `MoneyPipe` (no separate `currency` string)
 
 ### Payment Detail
 - Route: `/payments/:sessionId`
 - Components: session detail (reuse patterns from portal sessions detail — read-only)
 - Service: `AdminPaymentsService` → EP-AD25
 - UI: loading, 404; no refund button in V1
+- Money: `amount` is `Money` via `MoneyPipe`; `getPayment()` returns a typed `AdminPaymentDetails`, not `Observable<any>`
 
 ---
 
@@ -181,7 +191,7 @@ App key: `admin-panel` · Repo: `payup-frontend-admin` · Port: **4401**
 | `AdminMerchantsService` | `core/services/admin-merchants.service.ts` | EP-AD06–09 |
 | `AdminGatewayRequestsService` | `core/services/admin-gateway-requests.service.ts` | EP-AD10–14 |
 | `AdminAuditService` | `core/services/admin-audit.service.ts` | EP-AD15 |
-| `AdminCurrenciesService` | `core/services/admin-currencies.service.ts` | EP-AD16–18 |
+| `AdminCurrenciesService` | `core/services/admin-currencies.service.ts` | EP-AD16–18, EP-AD35, EP-AD36 |
 | `AdminLibrariesService` | `core/services/admin-libraries.service.ts` | EP-AD19–23 |
 | `AdminPaymentsService` | `core/services/admin-payments.service.ts` | EP-AD24–25 |
 | `AdminNotificationsService` | `core/services/admin-notifications.service.ts` | EP-AD26–28 |
@@ -197,6 +207,10 @@ App key: `admin-panel` · Repo: `payup-frontend-admin` · Port: **4401**
 - Remove admin board from sidebar menu
 - Optional: remove `adminGuard` from portal if no admin routes remain
 
+## Admin Repo Cleanup
+
+The admin repo carried an unrouted copy of merchant-portal code (products pages + service, merchant payments page with refund flow, customers view, reports, merchant `currencies.service.ts`, `customers.service.ts`). None of it was in `app.routes.ts` or `app.menu.ts`, and all of it held a pre-minor-units money model. **Removed** — the admin panel manages no products and issues no refunds.
+
 ---
 
 ## Pages Summary
@@ -211,7 +225,7 @@ App key: `admin-panel` · Repo: `payup-frontend-admin` · Port: **4401**
 | `/gateway-requests` | Kanban board | EP-AD10, EP-AD12–14 |
 | `/gateway-requests/:id` | Request detail | EP-AD11–14 |
 | `/audit-logs` | Audit logs | EP-AD15 |
-| `/currencies` | Currencies | EP-AD16–18 |
+| `/currencies` | Currencies + FX ops | EP-AD16–18, EP-AD35, EP-AD36 |
 | `/libraries` | Libraries | EP-AD19–23 |
 | `/payments` | Payments list | EP-AD24 |
 | `/payments/:sessionId` | Payment detail | EP-AD25 |
@@ -219,4 +233,4 @@ App key: `admin-panel` · Repo: `payup-frontend-admin` · Port: **4401**
 | `/notifications/webhooks` | Webhook health | EP-AD27 |
 | `/gateways/catalog` | Gateway catalog | EP-AD29–32 |
 
-**Total:** 15 routes · 10 frontend services · 32 backend endpoints
+**Total:** 15 routes · 10 frontend services · 34 backend endpoints

@@ -25,9 +25,9 @@ All services live under `src/services/admin/`. Controllers under `src/routes/com
 
 ### SVC-AD02 · AdminDashboardService [domain, internal, Admin Panel]
 - Methods: `getDashboard(): AdminDashboardDTO`
-- Returns: counts — merchants (total/active/suspended), apps, payments (total/completed/failed/revenue), pending gateway requests, failed deliveries (7d), recent gateway requests, recent audit entries
+- Returns: counts — merchants (total/active/suspended), apps, payments (total/completed/failed/revenue as `Money`), pending gateway requests, failed deliveries (7d), recent gateway requests, recent audit entries
 - Deps: `UserRepository`, `AppRepository`, `PaymentRepository`, `GatewayRequestRepository`, `DeliveryRepository`, `AuditLogRepository`
-- Side effects: read-only aggregations
+- Side effects: read-only aggregations (`$sum` `amountMinor`; mixed-currency revenue wrapped with `reportingMoney`)
 
 ---
 
@@ -72,9 +72,10 @@ All services live under `src/services/admin/`. Controllers under `src/routes/com
 ## Module: Admin Platform Config
 
 ### SVC-AD06 · AdminCurrencyService [domain, internal, Admin Panel]
-- Methods: `listCurrencies()`, `createCurrency(dto)`, `updateCurrency(code, dto)`
-- Deps: `CurrencyService`, `CurrencyRepository`
-- Side effects: cache invalidation via CurrencyService
+- Methods: `listCurrencies()`, `createCurrency(dto)`, `updateCurrency(code, dto)`, `triggerSync()`, `getSyncStatus()`
+- Deps: `ICurrencyService`, `IExchangeRateSyncService`, `CurrencyRepository`
+- Side effects: cache invalidation via `ICurrencyService`; `triggerSync` delegates to `IExchangeRateSyncService.syncNow('manual')` and audits the acting admin; `updateCurrency` writes `currency.exponent.updated` (before/after) when `minorUnitExponent` changes
+- Rules: writes accept `rateFromUsd` / `minorUnitExponent`; a manually set rate is stamped `rateSource: 'manual'` and is overwritten by the next scheduled sync
 
 ### SVC-AD07 · AdminLibraryService [domain, internal, Admin Panel]
 - Methods: `listLibraries()`, `getLibrary(id)`, `createLibrary(dto)`, `updateLibrary(id, dto)`, `deleteLibrary(id)`
@@ -93,7 +94,7 @@ All services live under `src/services/admin/`. Controllers under `src/routes/com
 ### SVC-AD09 · AdminPaymentService [domain, internal, Admin Panel]
 - Methods:
   - `listPayments(filters, pagination): PaginatedResponse<AdminPaymentListDTO>` — cross-merchant; filters: status, gateway, merchantId, appId, search (sessionId/email), date range
-  - `getPaymentBySessionId(sessionId): AdminPaymentDetailDTO` — read-only; includes merchant/app context; masks sensitive metadata; additive `currencyConversion` + product `paidPrice`/`paidCurrency`
+  - `getPaymentBySessionId(sessionId): AdminPaymentDetailDTO` — read-only; includes merchant/app context; masks sensitive metadata; money fields are `Money` objects
 - Deps: `PaymentRepository`, `UserRepository`, `AppRepository`, `ProductRepository`
 - Side effects: read-only
 - Rules: no refund/process from admin V1

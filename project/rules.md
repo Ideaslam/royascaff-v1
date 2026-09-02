@@ -49,16 +49,32 @@ Auth rules: see `plan/roles-and-authorization.md`.
 - Must: Use single `Payment` collection for sessions and completed payments; unique `sessionId` and `sessionToken`
 - Must not: Create separate session collection
 
-## RULE-022 · Session Money Fields Are Additive
+## RULE-023 · Exchange Rates Are Stored, Never Fetched Inline
+
+- Type: Integration, Business Logic
+- Module: Core Platform (Module 9), Payments (Module 6)
+- Must: Read every currency and rate through **`ICurrencyService`** — never construct `CurrencyService` directly and never read the `Currency` model from a service or controller
+- Must: Contact an FX provider **only** from the `fx-rates` BullMQ worker or the admin manual-sync endpoint, both through **`IExchangeRateProvider`**; the concrete provider is selected by `FX_PROVIDER` and resolved by a factory that fails fast on an unknown value
+- Must: Store `rateFromUsd` exactly as the provider returns it (units per 1 USD, `USD = 1`); convert with `amount / from.rateFromUsd * to.rateFromUsd`
+- Must: Keep `minorUnitExponent` on every currency, seeded from ISO 4217 (`3` for KWD/BHD/OMR/JOD/TND/IQD/LYD, `0` for JPY/KRW, `2` otherwise)
+- Must: Serve reads from Redis with `FX_CACHE_TTL_SECONDS`, and invalidate currency cache keys immediately after a successful sync
+- Must: On provider failure, leave stored rates untouched, log a structured error, and keep serving the last known rates; log a warning per conversion once rates exceed `FX_MAX_STALENESS_HOURS`
+- Must: Write one `currency.rates.synced` audit entry per successful sync, and a `currency.exponent.updated` entry with before/after values whenever an admin edits `minorUnitExponent`
+- Must: Keep exactly two exponent artifacts — `Currency.minorUnitExponent` in MongoDB (authoritative) and `constants/iso-currency-exponents.ts` (seed bootstrap and unknown-currency fallback). A third copy is what produced bug-008
+- Must not: Call an FX provider from any request path, including payment session creation; round the exchange rate; scale or invert a rate before storing it; reference fastFOREX URLs or response field names outside `external-services/fastforex/`; write a partial snapshot
+
+## RULE-022 · Integer Minor Units Are Canonical
 
 - Type: Business Logic, Integration
 - Module: Payments (Module 6)
-- Must: `Payment.amount` / `Payment.currency` (and checkout `totalAmount` / `currency`) are the **charged** gateway values used to process payment
-- Must: Product snapshot `price` / `currency` remain the merchant/catalog values the integrator sent
-- Must: Persist first-class `currencyConversion` (`originalAmount`, `originalCurrency`, `convertedAmount`, `convertedCurrency`, `exchangeRate`) on new sessions; `exchangeRate` is `1` when currencies match
-- Must: Persist product `paidPrice` / `paidCurrency` (charged unit price) on new sessions
-- Must: Expose those new keys on session create, checkout session GET, merchant session detail, admin payment detail, and webhook payment payloads **without** renaming, removing, or changing the meaning of existing response fields
-- Must not: Reshape existing integrator responses; mark the new fields required; backfill historical documents; change the charge path to use merchant currency when the gateway default differs
+- Must: Represent every money value as an integer minor-unit amount in MongoDB, services, DTOs, and request bodies (`amountMinor`, `priceMinor`, …)
+- Must: Return money in API responses as a `Money` object `{ minor, currency, exponent, display }`; `minor` is the source of truth
+- Must: Snapshot `currencyExponent` on Payment and Product documents
+- Must: Convert a session **total once**, then allocate line `paidPriceMinor` so `Σ paidPriceMinor × quantity === amountMinor`
+- Must: Resolve exponents through `ICurrencyService.getCurrencyExponent` (DB) with `constants/iso-currency-exponents.ts` as the only static fallback — never hardcode 100
+- Must: Convert to a provider's wire format **only** inside that gateway adapter (Stripe/Moyasar integer minor; PayPal/MyFatoorah decimal strings)
+- Must: Keep `currencyConversion.exchangeRate` as an unrounded float — a rate is not money (see RULE-023)
+- Must not: Store or arithmetic money as a major-unit decimal; apply `* 100` / `.toFixed` to money outside `src/services/money/` and gateway adapters; call an FX provider from the request path
 
 ## RULE-007 · Gateway Selection
 
@@ -175,3 +191,18 @@ Auth rules: see `plan/roles-and-authorization.md`.
 - Module: Merchant & Team (Module 14)
 - Must: Invites expire after 3 days; invite registration creates new User account and auto-joins merchant; only owner/admin can invite; email must not already be a member of the target merchant
 - Must not: Allow invite to existing member; allow invite with owner role (owner is creator only); bypass expiry check
+
+## RULE-024 · Production Seed Is Insert-If-Missing
+
+- Type: Security, Business Logic
+- Module: Infrastructure (Module 12), Core Platform (Module 9), Gateways (Module 7), Admin Panel (Module 15)
+- Must: Production bootstrap uses **`npm run seed:prod`** / `PlatformSeedService` only — CLI, never an HTTP endpoint, never `startServer()`
+- Must: Require `--confirm` for writes; support `--dry-run` (no writes) and `--only=` dataset allowlist (`currencies`, `available-gateways`, `libraries`, `admin-user`, `notifications`)
+- Must: Insert missing platform rows only; never `--clear` / delete in production mode
+- Must: Currencies — never overwrite `rateFromUsd`, `rateSource`, `rateUpdatedAt`, `rateProviderUpdatedAt`, or `isActive` on an existing row; writes go through `CurrencyRepository` (not `seedCurrencies()` or `bulkUpsertRates`); invalidate currency cache after inserts
+- Must: Available gateways — never overwrite `enabled`; never insert the Test gateway; never seed per-app gateway rules (`createSeedRules` stays merchant/admin manual)
+- Must: Libraries — may update scopes/modules on known seed identifiers; never delete libraries not in the catalog
+- Must: AdminUser — create only if email does not exist; never update password, name, or `isActive`; production requires `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD` (no hardcoded defaults)
+- Must: Refuse `encryption` and `gateway-rules` datasets; encryption config stays in env (`MASTER_ENCRYPTION_KEY`, `ENCRYPTION_STORAGE_TYPE`)
+- Must: Honor `DOTENV_CONFIG_PATH`; refuse if `MONGODB_URI` is missing or `SKIP_DB` is set; continue other datasets on failure and exit 1 if any failed; never log passwords or connection strings
+- Must not: Call local `npm run seed` / `seedAdminUser()` / `seedEncryption()` / `seedCurrencies()` against production; write the development master key or demo encryption keys; re-enable a catalog gateway ops turned off

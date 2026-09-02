@@ -23,7 +23,7 @@ Rate limit: `MERCHANT_SENSITIVE` on auth login/2FA; `MERCHANT_GENERAL` on other 
 
 | ID | Method | Route | Auth | Return | Service | Notes |
 |----|--------|-------|------|--------|---------|-------|
-| EP-AD05 | GET | / | admin | 200 stats + recent items | `AdminDashboardService.getDashboard` | Platform KPIs |
+| EP-AD05 | GET | / | admin | 200 stats + recent items | `AdminDashboardService.getDashboard` | Platform KPIs. `statistics.payments.revenue` is `Money` |
 
 **Response shape (summary):**
 ```json
@@ -71,11 +71,13 @@ Rate limit: `MERCHANT_SENSITIVE` on auth login/2FA; `MERCHANT_GENERAL` on other 
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-AD16 | GET | / | admin | — | 200 array | `AdminCurrencyService.listCurrencies` | Includes inactive |
-| EP-AD17 | POST | / | admin | code, name, symbol, exchangeRateToUSD, isActive? | 201 | `AdminCurrencyService.createCurrency` | Migrated from EP-CO03 |
-| EP-AD18 | PUT | /:code | admin | partial currency fields | 200 | `AdminCurrencyService.updateCurrency` | Migrated from EP-CO04 |
+| EP-AD16 | GET | / | admin | — | 200 array | `AdminCurrencyService.listCurrencies` | Includes inactive. Returns `rateFromUsd`, `minorUnitExponent`, `rateUpdatedAt`, `rateSource` |
+| EP-AD17 | POST | / | admin | code, name, symbol, rateFromUsd, minorUnitExponent, isActive? | 201 | `AdminCurrencyService.createCurrency` | Migrated from EP-CO03. A supplied rate sets `rateSource: 'manual'` |
+| EP-AD18 | PUT | /:code | admin | partial currency fields | 200 | `AdminCurrencyService.updateCurrency` | Migrated from EP-CO04. Editing `minorUnitExponent` is high-risk — it changes how every amount in that currency is interpreted |
+| EP-AD35 | POST | /sync | admin | — | 200 sync result | `ExchangeRateSyncService.syncNow('manual')` | Manual FX refresh; records the acting admin in the audit entry |
+| EP-AD36 | GET | /sync/status | admin | — | 200 status | `ExchangeRateSyncService.getSyncStatus` | Provider, last success, last failure, staleness, active currency count |
 
-Public GET `/merchant/v1/core/currencies` unchanged for checkout/portal.
+Public GET `/merchant/v1/core/currencies` unchanged in shape for checkout/portal, but its fields follow the renames above.
 
 ---
 
@@ -95,8 +97,8 @@ Public GET `/merchant/v1/core/currencies` unchanged for checkout/portal.
 
 | ID | Method | Route | Auth | Input | Return | Service | Notes |
 |----|--------|-------|------|-------|--------|---------|-------|
-| EP-AD24 | GET | / | admin | page, limit, search, status, gateway, merchantId, appId, from, to | 200 paginated | `AdminPaymentService.listPayments` | Read-only |
-| EP-AD25 | GET | /:sessionId | admin | — | 200 detail | `AdminPaymentService.getPaymentBySessionId` | Cross-merchant. Existing keys unchanged; additive `currencyConversion` + product `paidPrice`/`paidCurrency`. List (EP-AD24) unchanged |
+| EP-AD24 | GET | / | admin | page, limit, search, status, gateway, merchantId, appId, from, to | 200 paginated | `AdminPaymentService.listPayments` | Read-only. `amount` is a `Money` object |
+| EP-AD25 | GET | /:sessionId | admin | — | 200 detail | `AdminPaymentService.getPaymentBySessionId` | Cross-merchant. Money fields are `Money`; `currencyConversion` is `{ original, converted, exchangeRate }` |
 
 ---
 

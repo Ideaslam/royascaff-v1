@@ -11,6 +11,7 @@
 - Methods: `getSettings`, `updateSettings`, `updateGroup`, `resetToDefaults`
 - Deps: `AppRepository`
 - Side effects: none
+- Notes: `payment.minimumAmountMinor` / `maximumAmountMinor` are integer minor units (stored, not yet enforced at session create)
 
 ### SVC-AP03 · ApiKeyService [domain, internal, Apps]
 - Methods: `provisionForApp`, `provisionKeyPair`, `listKeys`, `rotate`, `findByPublicKey`, `findActiveBySecretHash`, `updateLastUsed`

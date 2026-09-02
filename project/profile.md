@@ -37,7 +37,7 @@ Architecture: **multi-repo folder layout** inside a single workspace root — no
 
 **Docs**: Docusaurus 2 + Redocusaurus (OpenAPI)
 
-**Async**: BullMQ queues (`notif-events`, `notif-deliveries`) — no cron jobs detected
+**Async**: BullMQ queues (`notif-events`, `notif-deliveries`, `fx-rates`). `fx-rates` is the only scheduled job — a repeatable hourly exchange-rate sync (`FX_SYNC_INTERVAL_MS`); the other two are event-driven.
 
 ## Brand Tokens
 
@@ -138,7 +138,29 @@ Production builds now target `payupconnect.com`:
 
 ### Backend env var reference (names only — values in `.env*` files, never in blueprint)
 
-`NODE_ENV`, `PORT`, `BASE_URL`, `APP_BASE_URL`, `CHECKOUT_FRONTEND_URL`, `API_PUBLIC_URL`, `SKIP_DB`, `MONGODB_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `ALLOWED_ORIGINS`, `RATE_LIMIT_*`, `REDIS_URL`, `QUEUE_*`, `WEBHOOK_AUTO_DISABLE_THRESHOLD`, `MASTER_ENCRYPTION_KEY`, `ENCRYPTION_STORAGE_TYPE`, `NOTIF_SECRET_ENC_KEY`, `AWS_S3_*`, `MAILJET_*`, `GOOGLE_CLIENT_*`, `WEBAUTHN_*`, `TWO_FACTOR_*`, `LOG_LEVEL`, `OTEL_*`, `LOKI_*`, `METRICS_TOKEN`.
+`NODE_ENV`, `PORT`, `BASE_URL`, `APP_BASE_URL`, `CHECKOUT_FRONTEND_URL`, `API_PUBLIC_URL`, `SKIP_DB`, `MONGODB_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `ALLOWED_ORIGINS`, `RATE_LIMIT_*`, `REDIS_URL`, `QUEUE_*`, `WEBHOOK_AUTO_DISABLE_THRESHOLD`, `MASTER_ENCRYPTION_KEY`, `ENCRYPTION_STORAGE_TYPE`, `NOTIF_SECRET_ENC_KEY`, `AWS_S3_*`, `MAILJET_*`, `FX_*`, `FASTFOREX_*`, `GOOGLE_CLIENT_*`, `WEBAUTHN_*`, `TWO_FACTOR_*`, `ADMIN_SEED_EMAIL`, `ADMIN_SEED_PASSWORD`, `ADMIN_SEED_NAME`, `LOG_LEVEL`, `OTEL_*`, `LOKI_*`, `METRICS_TOKEN`.
+
+#### Production seed (`ADMIN_SEED_*`)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `ADMIN_SEED_EMAIL` | — (required for `admin-user` dataset in `seed:prod`) | Email of the first platform AdminUser; create-if-missing only |
+| `ADMIN_SEED_PASSWORD` | — (required for `admin-user` dataset in `seed:prod`) | Password for that create; never used to update an existing admin |
+| `ADMIN_SEED_NAME` | `Platform Admin` | Display name on create only |
+
+#### Exchange rate sync (`FX_*`, `FASTFOREX_*`)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `FX_PROVIDER` | `fastforex` | Selects the `IExchangeRateProvider` implementation |
+| `FX_SYNC_ENABLED` | `true` | Master switch for the `fx-rates` job; `false` starts cleanly with no API key |
+| `FX_BASE_CURRENCY` | `USD` | Base currency requested from the provider |
+| `FX_SYNC_INTERVAL_MS` | `3600000` | How often rates are written to MongoDB (1 h) |
+| `FX_CACHE_TTL_SECONDS` | `1800` | Redis TTL for currency reads (30 min) |
+| `FX_MAX_STALENESS_HOURS` | `24` | Age beyond which a stale-rate warning is logged per conversion |
+| `FASTFOREX_API_KEY` | — | Required when the fastFOREX provider is active |
+| `FASTFOREX_BASE_URL` | `https://api.fastforex.io` | |
+| `FASTFOREX_TIMEOUT_MS` | `10000` | HTTP timeout |
 
 ## Integrations
 
@@ -149,6 +171,7 @@ Production builds now target `payupconnect.com`:
 | Moyasar | Payment gateway (MENA) | `services/gateway/gateways/moyasar-gateway.ts` |
 | MyFatoorah | Payment gateway (MENA) | `services/gateway/gateways/myfatoorah-gateway.ts` |
 | Test Gateway | Dev/test payments | `services/gateway/gateways/test-gateway.ts` |
+| fastFOREX | Live FX rates (`GET /fetch-all?from=USD`) | `external-services/fastforex/` — behind `IExchangeRateProvider`, swappable via `FX_PROVIDER`; polled hourly by the `fx-rates` queue, never called in a request path |
 | Mailjet | Transactional email (OTP, reset) | `external-services/mailjet/` — local: `info@roya.marketing` · prod: `noreply@payupconnect.com` |
 | n8n webhook | Welcome emails | `services/email/email-service.ts` → `n8n.e2community.org` |
 | AWS S3 / Cloudflare R2 | Media & document storage | `services/storage/s3-service.ts` — local CDN: `media-payup.iilm.io` · prod CDN: `media.payupconnect.com` |
@@ -171,6 +194,7 @@ Production builds now target `payupconnect.com`:
 - **Payment sessions**: stored as `Payment` documents (no separate session collection).
 - **Scope-based permissions**: SDK tokens carry scopes (`payment:create_session`, `product:link`, etc.) defined in `constants/scope-constants.ts`.
 - **Shared library**: `web-sdk` has no `project/actions/` folder — SDK surface documented under consuming apps (`client-example`, merchant sites).
+- **Production seed**: `npm run seed:prod` (`PlatformSeedService`) bootstraps missing catalog/admin/notification rows. Local `npm run seed` is overwrite/dev only (RULE-024).
 
 ## Completion Checklist
 

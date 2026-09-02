@@ -9,3 +9,4 @@
 | 005 | 2026-08-24 | high | backend/checkout | B2B session inline product missing createdBy (stamped from App) | DONE | [bug-005-b2b-session-product-createdby.md](./bug-005-b2b-session-product-createdby.md) |
 | 006 | 2026-08-26 | critical | portal/lists | App switch + PrimeNG onLazyLoad both called load (infinite list requests) | DONE | [bug-006-payments-app-filter-infinite-loop.md](./bug-006-payments-app-filter-infinite-loop.md) |
 | 007 | 2026-08-26 | high | portal/gateway-rules | List failed 400 — GatewayRulesService omitted X-Merchant-Id | DONE | [bug-007-gateway-rules-missing-merchant-header.md](./bug-007-gateway-rules-missing-merchant-header.md) |
+| 008 | 2026-08-30 | critical | backend/payments | KWD/BHD/OMR charged at 1/10th — Stripe & Moyasar hardcoded ×100 instead of per-currency exponent | DONE | [bug-008-three-decimal-currency-undercharge.md](./bug-008-three-decimal-currency-undercharge.md) |
