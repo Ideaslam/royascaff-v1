@@ -64,6 +64,15 @@
 ### SVC-CO04 · RateLimitService [integration, external, Core]
 - Deps: Redis, `rate-limiter-flexible`
 
+### SVC-CO05 · PlatformSeedService [domain, internal, Infrastructure]
+- Methods: `seed(options: { datasets, dryRun, confirm })` — production-safe selectable seed; returns per-dataset `{ created, skipped, failed }`
+- CLI: `src/scripts/seed-production.ts` · `npm run seed:prod`
+- Datasets: `currencies`, `available-gateways`, `libraries`, `admin-user`, `notifications` (default = all of these)
+- Deps: `CurrencyRepository`, `ICurrencyService` (cache invalidation only), `AvailableGatewayService`, `LibraryService` / `LibraryRepository`, `AdminUser` model, `seedNotificationData`
+- Catalogs: `constants/seed-catalogs.ts` (lists only; local seed scripts import the same lists)
+- Rules: RULE-024 — always production policy (no `--clear`, no encryption, no gateway-rules, no admin overwrite). `--confirm` required for writes. `--dry-run` writes nothing. Unknown / forbidden dataset names refuse the run. Not registered in `startServer()`.
+- Side effects: inserts missing platform rows; may update library scopes/modules and gateway catalog metadata except `enabled`; never updates existing AdminUser or live FX rate fields
+
 ## Module: Currency
 
 ### SVC-CR01 · CurrencyService [domain, internal, Currency]

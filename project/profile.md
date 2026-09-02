@@ -138,7 +138,15 @@ Production builds now target `payupconnect.com`:
 
 ### Backend env var reference (names only — values in `.env*` files, never in blueprint)
 
-`NODE_ENV`, `PORT`, `BASE_URL`, `APP_BASE_URL`, `CHECKOUT_FRONTEND_URL`, `API_PUBLIC_URL`, `SKIP_DB`, `MONGODB_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `ALLOWED_ORIGINS`, `RATE_LIMIT_*`, `REDIS_URL`, `QUEUE_*`, `WEBHOOK_AUTO_DISABLE_THRESHOLD`, `MASTER_ENCRYPTION_KEY`, `ENCRYPTION_STORAGE_TYPE`, `NOTIF_SECRET_ENC_KEY`, `AWS_S3_*`, `MAILJET_*`, `FX_*`, `FASTFOREX_*`, `GOOGLE_CLIENT_*`, `WEBAUTHN_*`, `TWO_FACTOR_*`, `LOG_LEVEL`, `OTEL_*`, `LOKI_*`, `METRICS_TOKEN`.
+`NODE_ENV`, `PORT`, `BASE_URL`, `APP_BASE_URL`, `CHECKOUT_FRONTEND_URL`, `API_PUBLIC_URL`, `SKIP_DB`, `MONGODB_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `ALLOWED_ORIGINS`, `RATE_LIMIT_*`, `REDIS_URL`, `QUEUE_*`, `WEBHOOK_AUTO_DISABLE_THRESHOLD`, `MASTER_ENCRYPTION_KEY`, `ENCRYPTION_STORAGE_TYPE`, `NOTIF_SECRET_ENC_KEY`, `AWS_S3_*`, `MAILJET_*`, `FX_*`, `FASTFOREX_*`, `GOOGLE_CLIENT_*`, `WEBAUTHN_*`, `TWO_FACTOR_*`, `ADMIN_SEED_EMAIL`, `ADMIN_SEED_PASSWORD`, `ADMIN_SEED_NAME`, `LOG_LEVEL`, `OTEL_*`, `LOKI_*`, `METRICS_TOKEN`.
+
+#### Production seed (`ADMIN_SEED_*`)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `ADMIN_SEED_EMAIL` | — (required for `admin-user` dataset in `seed:prod`) | Email of the first platform AdminUser; create-if-missing only |
+| `ADMIN_SEED_PASSWORD` | — (required for `admin-user` dataset in `seed:prod`) | Password for that create; never used to update an existing admin |
+| `ADMIN_SEED_NAME` | `Platform Admin` | Display name on create only |
 
 #### Exchange rate sync (`FX_*`, `FASTFOREX_*`)
 
@@ -186,6 +194,7 @@ Production builds now target `payupconnect.com`:
 - **Payment sessions**: stored as `Payment` documents (no separate session collection).
 - **Scope-based permissions**: SDK tokens carry scopes (`payment:create_session`, `product:link`, etc.) defined in `constants/scope-constants.ts`.
 - **Shared library**: `web-sdk` has no `project/actions/` folder — SDK surface documented under consuming apps (`client-example`, merchant sites).
+- **Production seed**: `npm run seed:prod` (`PlatformSeedService`) bootstraps missing catalog/admin/notification rows. Local `npm run seed` is overwrite/dev only (RULE-024).
 
 ## Completion Checklist
 

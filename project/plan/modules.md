@@ -168,13 +168,14 @@ PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for ap
 
 ## 12. Infrastructure (cross-cutting)
 
-- Scope: observability, queues, rate limiting
+- Scope: observability, queues, rate limiting, platform seed
 - Type: infrastructure
 
 ### Features
 1. **BullMQ Workers** [backend-only] — notif-events, notif-deliveries
 2. **Observability** [backend-only] — Pino, OpenTelemetry, Prometheus `/metrics`
 3. **Rate Limiting** [backend-only] — Redis-backed tiers per route class
+4. **Production Platform Seed** [backend-only] — CLI `npm run seed:prod` via `PlatformSeedService`; operator selects datasets (`currencies`, `available-gateways`, `libraries`, `admin-user`, `notifications`); insert-if-missing / never-overwrite-live-data (RULE-024). Never seeds gateway rules or encryption. Not run on app boot. Local `npm run seed` remains the overwrite/dev path.
 
 ---
 

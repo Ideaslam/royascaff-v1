@@ -191,3 +191,18 @@ Auth rules: see `plan/roles-and-authorization.md`.
 - Module: Merchant & Team (Module 14)
 - Must: Invites expire after 3 days; invite registration creates new User account and auto-joins merchant; only owner/admin can invite; email must not already be a member of the target merchant
 - Must not: Allow invite to existing member; allow invite with owner role (owner is creator only); bypass expiry check
+
+## RULE-024 · Production Seed Is Insert-If-Missing
+
+- Type: Security, Business Logic
+- Module: Infrastructure (Module 12), Core Platform (Module 9), Gateways (Module 7), Admin Panel (Module 15)
+- Must: Production bootstrap uses **`npm run seed:prod`** / `PlatformSeedService` only — CLI, never an HTTP endpoint, never `startServer()`
+- Must: Require `--confirm` for writes; support `--dry-run` (no writes) and `--only=` dataset allowlist (`currencies`, `available-gateways`, `libraries`, `admin-user`, `notifications`)
+- Must: Insert missing platform rows only; never `--clear` / delete in production mode
+- Must: Currencies — never overwrite `rateFromUsd`, `rateSource`, `rateUpdatedAt`, `rateProviderUpdatedAt`, or `isActive` on an existing row; writes go through `CurrencyRepository` (not `seedCurrencies()` or `bulkUpsertRates`); invalidate currency cache after inserts
+- Must: Available gateways — never overwrite `enabled`; never insert the Test gateway; never seed per-app gateway rules (`createSeedRules` stays merchant/admin manual)
+- Must: Libraries — may update scopes/modules on known seed identifiers; never delete libraries not in the catalog
+- Must: AdminUser — create only if email does not exist; never update password, name, or `isActive`; production requires `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD` (no hardcoded defaults)
+- Must: Refuse `encryption` and `gateway-rules` datasets; encryption config stays in env (`MASTER_ENCRYPTION_KEY`, `ENCRYPTION_STORAGE_TYPE`)
+- Must: Honor `DOTENV_CONFIG_PATH`; refuse if `MONGODB_URI` is missing or `SKIP_DB` is set; continue other datasets on failure and exit 1 if any failed; never log passwords or connection strings
+- Must not: Call local `npm run seed` / `seedAdminUser()` / `seedEncryption()` / `seedCurrencies()` against production; write the development master key or demo encryption keys; re-enable a catalog gateway ops turned off

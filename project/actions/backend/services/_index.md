@@ -11,6 +11,6 @@ App key: `backend` · Repo: `payup-api-typescript`
 | notifications | [notifications.md](./notifications.md) | 14 | Event bus, channels, webhook endpoints, merchant CRUD, inbox, workers |
 | merchant-team | [merchant-team.md](./merchant-team.md) | 5 | Merchant CRUD, membership, invites, admin user, context middleware |
 | admin | [admin.md](./admin.md) | 10 | Platform admin: auth, dashboard, merchants, onboarding, audit, config, payments health |
-| core | [core.md](./core.md) | 19 | Dashboard, products, tokens, customers, profile, verification, currency, FX rate sync, audit, email, storage, encryption, domain, media, libraries, rate limit |
+| core | [core.md](./core.md) | 20 | Dashboard, products, tokens, customers, profile, verification, currency, FX rate sync, audit, email, storage, encryption, domain, media, libraries, rate limit, production platform seed |
 
-**Total:** 8 module files · ~75 service classes
+**Total:** 8 module files · ~76 service classes
