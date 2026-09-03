@@ -129,10 +129,26 @@
 
 ## Module: Dashboard — `/api/merchant/v1/reports/dashboard`
 
+Auth for every endpoint below: `authMiddleware` + `merchantContext`. All merchant roles (owner, admin, member, developer) may read analytics — no role gate. Merchant isolation comes from `merchantId` always being the first term of every filter, so a foreign `appId` returns no data (RULE-017).
+
+**Shared query params** (EP-DB03…EP-DB10): `range` = `7d` | `30d` | `90d` (default `30d`) · `from` / `to` ISO dates (override `range`) · `appId` optional — omitted means all of the merchant's apps · `reportingCurrency` default `USD` · `refresh=true` bypasses the Redis cache.
+
+**Shared response envelope**: `{ meta: { range, from, to, appId, reportingCurrency, fxAsOf, fxStale }, data: … }`. Every money value is a `Money` object normalized into `reportingCurrency` via `ICurrencyService` (RULE-025). `fxStale` is true when FX data exceeds `FX_MAX_STALENESS_HOURS`.
+
+**Caching**: `CacheService.getOrSet` keyed `dash:<facet>:<merchantId>:<appId|all>:<from>:<to>:<extra>`, TTL 60s, bypassed by `refresh=true`.
+
 | ID | Method | Route | Service | Notes |
 |----|--------|-------|---------|-------|
-| EP-DB01 | GET | / | repos direct | **direct repo** aggregates `$sum` `amountMinor`; revenue / daily amounts / session amounts are `Money` |
+| EP-DB01 | GET | / | repos direct | **deprecated** — retained for back-compat. **direct repo** aggregates `$sum` `amountMinor`; revenue / daily amounts / session amounts are `Money`. Mixed-currency totals are **not** FX-normalized (superseded by EP-DB03) |
 | EP-DB02 | GET | /tokens | `TokenRepository` | — |
+| EP-DB03 | GET | /summary | `DashboardAnalyticsService.getSummary` | 4 KPIs — net revenue, successful count, success rate, average order value. Each returns `{ value, previous, deltaPct, sparkline[] }`; `previous` covers the immediately preceding period of equal length |
+| EP-DB04 | GET | /timeseries | `DashboardAnalyticsService.getTimeseries` | extra param `granularity` = `day` \| `week` (default `day`). Returns `buckets[] { bucket, revenue: Money, count }`, zero-filled across the range |
+| EP-DB05 | GET | /funnel | `DashboardAnalyticsService.getFunnel` | stages `init` → `pending` → `completed` with `count` + `dropOffPct` per stage; exposes checkout abandonment |
+| EP-DB06 | GET | /breakdown | `DashboardAnalyticsService.getBreakdown` | extra param `facet` = `status` \| `gateway` \| `currency` (required). `gateway` facet adds `successRate` and `avgAmount`; `currency` facet reports each currency's **native** total plus its normalized value |
+| EP-DB07 | GET | /failures | `DashboardAnalyticsService.getFailures` | groups `status: failed` by `errorCode` (falling back to `error`), ordered by count desc; extra param `limit` (default 10) |
+| EP-DB08 | GET | /top-products | `DashboardAnalyticsService.getTopProducts` | `$unwind` on `products[]` of completed payments, ranked by revenue with units sold; extra param `limit` (default 5) |
+| EP-DB09 | GET | /health | `DashboardAnalyticsService.getHealth` | integration checklist — active gateways, active tokens, verified domains, whether a first payment exists. Drives the setup empty state; not date-ranged |
+| EP-DB10 | GET | /sessions | `DashboardAnalyticsService.listRecentSessions` | paginated recent sessions. Params `page`, `limit`, `status`, `gateway`, `search` + shared `appId`. **Was called by the portal but never registered** — this closes a live 404 |
 
 ## Module: Health
 

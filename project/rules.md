@@ -76,6 +76,18 @@ Auth rules: see `plan/roles-and-authorization.md`.
 - Must: Keep `currencyConversion.exchangeRate` as an unrounded float — a rate is not money (see RULE-023)
 - Must not: Store or arithmetic money as a major-unit decimal; apply `* 100` / `.toFixed` to money outside `src/services/money/` and gateway adapters; call an FX provider from the request path
 
+## RULE-025 · Reporting Totals Are FX-Normalized
+
+- Type: Business Logic, Reporting
+- Module: Dashboard & Reports (Module 11), Payments (Module 6), Core Platform (Module 9)
+- Must: Convert every amount to a single declared `reportingCurrency` **before** summing it, using stored rates via `ICurrencyService` (RULE-023); a cross-currency total is only valid once normalized
+- Must: State the reporting currency in the response (`meta.reportingCurrency`) and on any UI that displays the total — a normalized figure is meaningless without its currency
+- Must: Expose FX freshness alongside normalized totals (`meta.fxAsOf`, `meta.fxStale`), setting `fxStale` once rates exceed `FX_MAX_STALENESS_HOURS`, so a consumer can tell an approximate total from a current one
+- Must: Report per-currency breakdowns in each currency's **native** amount as well as its normalized value, so the original figures stay auditable
+- Must: Keep aggregation pipelines date-bounded and backed by an index whose first term is `merchantId`
+- Must not: `$sum` `amountMinor` across mixed currencies and label the result with any single currency — this is the defect in EP-DB01, where `reportingMoney()` stamps an unconverted sum as `USD` and adds minor units of differing exponents together
+- Must not: Fetch a rate from a provider inside a reporting request path (RULE-023); read only stored/cached rates
+
 ## RULE-007 · Gateway Selection
 
 - Type: Business Logic

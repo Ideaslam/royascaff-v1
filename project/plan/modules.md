@@ -158,11 +158,12 @@ PayUp — embeddable multi-gateway payment SaaS. See `project/profile.md` for ap
 ## 11. Dashboard & Reports
 
 - Scope: BE `reports/dashboard` + FE `dashboard`, `reports` (placeholder)
-- Depends on: Payments, Apps, Gateways
+- Depends on: Payments, Apps, Gateways, Currency
 
 ### Features
-1. **Dashboard Stats** [both] — aggregate counts, recent sessions
-2. **Reports Page** [frontend] — **placeholder** — static dummy data, no API
+1. **Dashboard Analytics** [both] — KPIs with period-over-period deltas, revenue timeseries, payment funnel, status/gateway/currency breakdowns, failure reasons, top products, recent sessions, integration health. Range-filtered (`7d`/`30d`/`90d`/custom), app-scoped with an all-apps option, FX-normalized totals (RULE-025), Redis-cached (60s), served by 8 focused endpoints the page fetches in parallel
+2. **Dashboard Stats (legacy)** [both] — **deprecated** — original single-payload aggregate counts + recent sessions (EP-DB01). Retained for back-compat; not used by the portal
+3. **Reports Page** [frontend] — **placeholder** — static dummy data, unrouted (`/reports` redirects to `/`); the analytics endpoints it was waiting for now exist
 
 ---
 

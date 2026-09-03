@@ -265,7 +265,9 @@ Purpose: Payment sessions AND payment records (single collection).
 | `brandName`, `brandLogo` | String | optional | checkout branding |
 | `showProducts` … `showPayment` | Boolean | checkout UI toggles | — |
 
-Indexes: unique `sessionId`, unique `sessionToken`.
+Indexes: unique `sessionId`, unique `sessionToken`, plus three compound indexes serving the dashboard analytics aggregations (EP-DB03…EP-DB10) — `{merchantId, createdAt}`, `{merchantId, status, createdAt}`, `{merchantId, appId, createdAt}`. `merchantId` leads every one of them because it is the first term of every analytics filter (RULE-017).
+
+**`completedAt` is not a reliable time axis.** Gateway webhooks (`webhook-service.ts`) flip `status` to `completed` without stamping `completedAt`; only `payment-status-sync-service.ts` sets it. Analytics therefore bucket on `createdAt`, which `{ timestamps: true }` always populates — revenue is attributed to the session's creation date. Filtering money metrics on `completedAt` would silently drop every webhook-completed payment.
 
 ---
 

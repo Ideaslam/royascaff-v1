@@ -33,6 +33,7 @@ PayUp lets businesses accept payments through multiple gateways (Stripe, PayPal,
 - **Embeddable Web SDK**: One-line integration with domain-verified client tokens
 - **Hosted Checkout**: Multi-step checkout with branding, OTP, Apple Pay, cards
 - **Customer Portal**: Apps, products, customers, tokens, gateways, rules, onboarding, notifications, team management
+- **Dashboard Analytics**: Merchant dashboard with KPI trends vs the previous period, revenue timeseries, payment funnel and drop-off, gateway performance, failure reasons, and top products — range-filtered, app-scoped, FX-normalized
 - **Admin Panel**: Platform operations — merchants, gateway onboarding review, audit logs, currencies, libraries, cross-merchant payments, notification health, gateway catalog
 - **Notification System**: Event-driven webhooks, email, push-ready architecture with delivery log
 - **Security**: JWT, 2FA, passkeys, password reset (email link + 2FA/passkey step-up), encrypted credentials, rate limiting, audit log
@@ -92,6 +93,7 @@ PayUp lets businesses accept payments through multiple gateways (Stripe, PayPal,
 4. Notification channels pluggable — adding channel never touches event emitters (RULE-003)
 5. Card tokenization happens at gateway from checkout frontend (RULE-002)
 6. Production platform seed is insert-if-missing, CLI-only, and never overwrites live FX rates or an existing admin password (RULE-024)
+7. Reporting totals are FX-normalized to a declared reporting currency before summing, and never mix currencies in one figure (RULE-025)
 
 ## 9. Out of Scope
 

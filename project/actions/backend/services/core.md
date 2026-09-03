@@ -42,10 +42,17 @@
 
 ### SVC-DB01 · DashboardService [domain, internal, Dashboard]
 - Methods: `getDashboard`, `listTokens`
-- Notes: revenue / daily amounts / session amounts returned as `Money`; aggregations `$sum` `amountMinor`
+- Notes: **deprecated** — backs EP-DB01/EP-DB02 only, retained for back-compat. Revenue / daily amounts / session amounts returned as `Money`; aggregations `$sum` `amountMinor` **without FX normalization**, so mixed-currency totals are unsound (superseded by SVC-DB02). `getDashboard` also computes a 30-day `chartData` series that no page renders
 - Deps: `AppRepository`, `GatewayRepository`, `ProductRepository`, `TokenRepository`, `PaymentRepository`
 - Used by: merchant panel `/reports/dashboard` routes
 - Side effects: read-only aggregations for merchant dashboard stats and chart data
+
+### SVC-DB02 · DashboardAnalyticsService [domain, internal, Dashboard]
+- Methods: `getSummary`, `getTimeseries`, `getFunnel`, `getBreakdown`, `getFailures`, `getTopProducts`, `getHealth`, `listRecentSessions`
+- Notes: backs EP-DB03…EP-DB10. Every method takes a resolved range (`from`/`to`), optional `appId`, and a `reportingCurrency`; `merchantId` is always the first term of the filter (RULE-017). All money is FX-normalized through `ICurrencyService` into one reporting currency and returned as `Money`, with `fxAsOf` / `fxStale` in the response meta (RULE-025). Pipelines are **date-bounded** and rely on the `Payment` compound indexes. Multi-pipeline methods fan out with `Promise.all`
+- Deps: `PaymentRepository`, `AppRepository`, `ProductRepository`, `TokenRepository`, `GatewayRepository`, `ICurrencyService`, `CacheService`, `DomainVerificationService` (health checklist)
+- Used by: merchant panel `/reports/dashboard` routes (customer-portal dashboard)
+- Side effects: read-only aggregations; writes only Redis cache entries (60s TTL, `refresh=true` bypasses)
 
 ## Module: Core
 
@@ -62,7 +69,26 @@
 - Deps: `LibraryRepository`
 
 ### SVC-CO04 · RateLimitService [integration, external, Core]
-- Deps: Redis, `rate-limiter-flexible`
+- Methods: `consume(tier, key, context)`, `penalty(tier, key, points, reason)`, `reset`, `getStatus`
+- Deps: Redis (node-redis), `rate-limiter-flexible`, `config/rate-limit.config.ts`
+- Tiers: `MERCHANT_GENERAL` · `MERCHANT_SENSITIVE` · `CHECKOUT_STANDARD` · `CHECKOUT_HIGH_SENSITIVE`; points/duration/blockDuration overridable per tier via `RATE_LIMIT_<TIER>_*` env vars
+- **Store client contract (non-negotiable)**: `RateLimiterRedis` must be constructed with
+  `useRedisPackage: true`. The library otherwise infers its Redis dialect from
+  `storeClient.constructor.name === 'Commander'`, which held for node-redis v4 but not v5. A failed
+  inference silently routes it to the ioredis path and calls `rlflxIncr`, a custom command node-redis
+  cannot register — so every `consume()` throws and rate limiting is disabled API-wide (bug-011).
+- **Degradation policy**: fails **open** (allows the request) whenever the store is unusable —
+  availability is chosen over enforcement. `failOpen()` returns `consumedPoints: 0`, which is the
+  only way to distinguish it from a genuinely allowed request.
+- **Error classification**: a `TypeError` from the limiter means the store-client contract is broken
+  and will never self-heal → logged as *store misconfigured* with `actionRequired`, metric
+  `rate_limit_hits_total{result=store_misconfigured}`. Any other error is treated as an outage →
+  `result=store_error`. Keeping these apart is what makes a repeat of bug-011 diagnosable.
+- Metrics: `rate_limit_hits_total{tier,result}` (`allowed` · `blocked` · `store_error` ·
+  `store_misconfigured`) · `rate_limit_blocks_total{tier,path,key_type}`
+- Tests: `tests/rate-limit/` — `rate-limit-service.test.ts` (always runs; in-memory node-redis
+  stand-in deliberately lacking `defineCommand`) and `rate-limit-redis-interop.test.ts` (live Redis,
+  skipped when unreachable). See change-019.
 
 ### SVC-CO05 · PlatformSeedService [domain, internal, Infrastructure]
 - Methods: `seed(options: { datasets, dryRun, confirm })` — production-safe selectable seed; returns per-dataset `{ created, skipped, failed }`

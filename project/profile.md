@@ -147,6 +147,9 @@ Production builds now target `payupconnect.com`:
 | `ADMIN_SEED_EMAIL` | — (required for `admin-user` dataset in `seed:prod`) | Email of the first platform AdminUser; create-if-missing only |
 | `ADMIN_SEED_PASSWORD` | — (required for `admin-user` dataset in `seed:prod`) | Password for that create; never used to update an existing admin |
 | `ADMIN_SEED_NAME` | `Platform Admin` | Display name on create only |
+| `SEED_ON_START` | `1` | Docker entrypoint only: set to `0` to start the container without seeding. Kubernetes API pods never seed (a one-shot Job does) |
+
+A `seed:prod` run without `--only` seeds every dataset except `admin-user`, which joins the run only when `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD` are set.
 
 #### Exchange rate sync (`FX_*`, `FASTFOREX_*`)
 
@@ -195,6 +198,8 @@ Production builds now target `payupconnect.com`:
 - **Scope-based permissions**: SDK tokens carry scopes (`payment:create_session`, `product:link`, etc.) defined in `constants/scope-constants.ts`.
 - **Shared library**: `web-sdk` has no `project/actions/` folder — SDK surface documented under consuming apps (`client-example`, merchant sites).
 - **Production seed**: `npm run seed:prod` (`PlatformSeedService`) bootstraps missing catalog/admin/notification rows. Local `npm run seed` is overwrite/dev only (RULE-024).
+- **Tracing**: `src/instrumentation.ts` is preloaded (`node -r`) and starts the OTel SDK only on the main thread and only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
+- **Graceful shutdown**: one SIGTERM/SIGINT handler in `utils/graceful-shutdown.ts`; resources register during startup and close in reverse order (HTTP → queues → Redis → trace flush).
 
 ## Completion Checklist
 

@@ -26,11 +26,26 @@ All authenticated pages require `MerchantContextService.selectedMerchant$` (merc
 
 ### Dashboard Page
 - Route: `/`
-- Components: `DashboardComponent`, stats cards, recent sessions table
-- Service: `DashboardService` → EP-DB01 (GET /reports/dashboard)
 - Guard: `authGuard`
-- UI: loading skeleton; empty table; error falls back silently
-- Money: `statistics.orders.revenue` and `latestSessions[].amount` render via `MoneyPipe`; no hardcoded currency. `chartData.dailyPayments[].amount`, `summary.totalAmount`, `summary.averageDaily` are typed `Money` but not yet rendered — `ChartModule` is imported and no `<p-chart>` exists
+- Service: `DashboardService` → EP-DB03…EP-DB10 (one typed method per endpoint)
+- Scope: app-scoped via `AppContextService.selectedApp$` with an **"All apps"** option; omitting `appId` aggregates across every app of the merchant
+- Controls: range selector `7d` / `30d` / `90d` / custom (applies to the whole page) · `day` / `week` granularity toggle on the revenue chart · manual refresh (sends `refresh=true` to bypass the server cache)
+- **Loading model**: the 8 requests are issued **in parallel**, each widget owns its own loading/error/empty state and renders as soon as its own request resolves. One failing request degrades a single card — it shows an inline error with retry — and never blocks the rest of the page
+- Widgets (9):
+  1. **KPI row** → EP-DB03 — net revenue, successful payments, success rate, average order value; each with a delta pill vs the previous equal-length period and an inline SVG sparkline
+  2. **Revenue over time** → EP-DB04 — chart.js area chart, gradient fill, hover value tooltip, day/week granularity
+  3. **Payment funnel** → EP-DB05 — inline SVG, `init` → `pending` → `completed` with per-stage drop-off %
+  4. **Status breakdown** → EP-DB06 `facet=status` — chart.js donut
+  5. **Gateway performance** → EP-DB06 `facet=gateway` — chart.js bar (thick rounded caps) + volume / success rate / avg amount
+  6. **Top failure reasons** → EP-DB07 — ranked list by `errorCode`
+  7. **Top products** → EP-DB08 — list rows, leading thumbnail, right-aligned revenue
+  8. **Recent sessions** → EP-DB10 — table (retained from the previous design)
+  9. **Integration health** → EP-DB09 — setup checklist; rendered as the dark feature card while setup is incomplete
+- **Empty state**: a merchant with no payments gets a guided setup flow (create app → configure gateway → generate token → first payment) driven by EP-DB09, instead of zeroed charts
+- Money: every amount renders via `MoneyPipe`; no hardcoded currency. Values arrive already FX-normalized to `meta.reportingCurrency`, which is labelled on the page, and a stale-rate badge appears when `meta.fxStale` is true
+- i18n: all strings via `ngx-translate` (`en` / `ar`) — no hardcoded display strings
+- Design: bento grid on `--pu-*` tokens; indigo `--pu-primary` accent; chart series derived from `--pu-*` semantic colors (success/warning/danger/info/primary) so status colors keep their meaning. RTL-correct including chart axis and legend direction. Reference: `project/changes/change-018-portal-dashboard-redesign/reference-dashboard.png` (layout adopted, palette overridden)
+- Charts: chart.js 4.5.1 via PrimeNG `ChartModule` for area/donut/bar; inline SVG for sparklines and the funnel. No new charting dependency
 
 ## Module: Apps
 
