@@ -3,7 +3,7 @@
 ### SVC-SUB · SubscriptionsService [internal, domain, Subscriptions]
 Subscription read models, provisioning, and admin-safe metadata.
 
-**Methods:** `listPublishedPlans` returns active published commercial offers with populated safe Packages; `assignDefaultFreePlan(workspaceId)` idempotently creates the sole subscription plus initial access and exact `30 day` usage periods; `getMySubscription` returns Plan/Package versions, independent periods, retirement, limits, and usage; admin list/detail/recovery/update-notes.
+**Methods:** `listPlans` returns active published commercial offers with populated safe Packages (including the Plan `display*` labels); `assignDefaultFreePlan(workspaceId)` idempotently creates the sole subscription plus initial access and exact `30 day` usage periods; `getMySubscription` returns Plan/Package versions, independent periods, retirement, limits, and usage; admin list/detail/recovery/update-notes.
 
 **Rules:** one subscription per workspace · exactly one active published explicit default Free Plan · no delete/recreate plan-change path · safe compatibility DTOs.
 
@@ -12,10 +12,25 @@ Subscription read models, provisioning, and admin-safe metadata.
 ### SVC-SUB-CAT · SubscriptionCatalogService [internal, domain, Subscriptions]
 Sole writer for immutable Package and versioned Plan catalog state.
 
-**Methods:** Package `list/get/create/updateDraft/clone/archive`; Plan `list/get/create/updateDraft/clone/publish/unpublish/scheduleRetirement/rescheduleRetirement/cancelRetirement/processDueRetirements`; reference/immutability validation and default-Free switching.
+**Methods:** Package `list/get/create/updateDraft/clone/archive` plus `createPackageVersion` (guided: clones the Package **and** its linked Plans into one editable draft set); Plan `list/get/create/updateDraft/clone/publish/setDefaultFreePlan/unpublish/scheduleRetirement/rescheduleRetirement/cancelRetirement/processDueRetirements`; reference/immutability validation, uniqueness guards, and default-Free switching.
 
-**Deps:** Package/Plan repositories · SVC-NOTIF · SVC-AUDIT · lifecycle queue
-**Rules:** Package owns tier/limits/features/included users/quota cadence · Plan owns pricing/billing/extra-user price/publication/retirement · clone allocates next family version atomically · publish/reference freezes identity · retirement ≥30 days and unpublishes immediately · every mutation requires admin actor, reason, idempotency/correlation.
+**Deps:** Package/Plan repositories · SVC-SUB-LABEL · SVC-NOTIF · SVC-AUDIT · lifecycle queue
+**Rules:** the default-Free role is transferable after publication via `setDefaultFreePlan` (`publish` only ever *grants* it, and no-ops on an already-live Plan), which is what lets a new Free version take over before the outgoing one is hidden or retired · Package owns tier/limits/features/included users/quota cadence · Plan owns pricing/billing/extra-user price/publication/retirement **and its own client-facing `display*` labels** · the Package→Plan compatibility mirror syncs `name*`/`description*`/limits on every write and must never overwrite `display*` · Package `name` and `tierRank` are unique among non-archived Packages · the resolved client-facing Plan label is unique among active+published Plans (retired/archived labels are reusable) · paid price ≥ 0.01 and free price = 0 · clone allocates next family version atomically · publish/reference freezes identity · retirement ≥30 days and unpublishes immediately · every mutation requires admin actor, reason, idempotency/correlation.
+
+---
+
+### SVC-SUB-LABEL · plan-label util *(change-077)* [internal, pure, Subscriptions]
+Single source of the client-facing label resolution order, so no surface re-implements it: `displayName` → `plan.name` (Package mirror) → `package.name`, with the `*Ar` chain when the locale is Arabic and its value is non-empty; same chain for descriptions. Snapshot-aware — readers of pre-change snapshots fall back to `snapshot.name`. Consumed by SVC-SUB-CAT, SVC-SUB-LIFE (retirement notices), SVC-PAY-CHKOUT (gateway product name), SVC-ADMIN (filter labels), and the period snapshot builder.
+
+---
+
+### SVC-SUB-SEED · SubscriptionCatalogSeeder *(change-077)* [internal, bootstrap, Subscriptions]
+`OnModuleInit` seeder registered in `SubscriptionsModule.providers`, following the `WidgetDefinitionSeeder` pattern. Inserts the mandatory default Free Package + Plan **only** when no active published default-Free Plan exists, insert-if-missing by `familyKey`. Never updates, overwrites, archives or deletes an existing Package or Plan. Satisfies the default-Free invariants (`tierRank 0`, exact `30 day` reset, single active published `isDefaultFree`). Logs inserted/skipped counts; failures are logged without blocking boot. Safe under concurrent replicas via the `familyKey+version` and `isDefaultFree` unique indexes.
+
+---
+
+### SVC-MIGRATE · migration runner + ledger *(change-077)* [internal, infrastructure, Database]
+Standalone runner (`src/database/migrations/run.ts`) executed by the `k8s.deploy` `initContainer` on the API image, gated by `MIGRATIONS_ENABLED` (default `true`; when `false` it logs and exits `0` without connecting). Discovers ordered migration modules, applies only those absent from the `schema_migrations` ledger, and serialises concurrent replicas through an atomic advisory lock on the unique `name` index with stale-lock reclaim. Each migration runs exactly once ever; failures are not recorded, release the lock, and exit non-zero so the app container never starts against an unmigrated database. Distinct from seeders: migrations are one-time and ledgered, seeds are idempotent and per-boot. Scripts: `migrate:run`, `migrate:run:dry-run`, `migrate:run:prod`.
 
 ---
 

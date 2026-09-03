@@ -346,7 +346,7 @@ Immutable, admin-owned entitlement versions. A Package is reusable by multiple c
 | createdByUserId | ObjectId | required | → User |
 
 **Indexes:** `{ familyKey: 1, version: 1 }` unique · `{ tierRank: 1, isArchived: 1 }` · `{ replacesPackageId: 1 }` sparse
-**Rules:** draft/unreferenced identity may change · published/referenced identity and lineage are immutable · clone allocates one next family version atomically · referenced rows archive, never delete
+**Rules:** draft/unreferenced identity may change · published/referenced identity and lineage are immutable · clone allocates one next family version atomically · referenced rows archive, never delete · `name` is the internal entitlement label and must be unique among non-archived Packages (case-insensitive, trimmed) · `tierRank` must be unique among non-archived Packages so upgrade/downgrade direction is unambiguous
 **Relations:** self-version lineage · referenced-by SubscriptionPlans, SubscriptionPeriods, SubscriptionUsagePeriods, and BillingInvoices
 
 ---
@@ -360,6 +360,10 @@ Immutable commercial offers linked to one Package. Plans do not own authoritativ
 | familyKey | String | required; stable normalized commercial family | — |
 | version | Number | required; positive integer, monotonic within family | — |
 | replacesPlanId | ObjectId | nullable; prior commercial version | → SubscriptionPlan |
+| displayName | String | optional, default: `''`; admin-owned client-facing label; empty falls back to the Package name | — |
+| displayNameAr | String | optional, default: `''`; Arabic client-facing label | — |
+| displayDescription | String | optional, default: `''`; client-facing description | — |
+| displayDescriptionAr | String | optional, default: `''`; Arabic client-facing description | — |
 | planType | String | required; enum: `free`, `paid`; immutable after publish/reference | — |
 | priceAmount | Decimal128 | required; min 0; zero only for free | — |
 | currency | String | required; ISO-4217 uppercase, default `USD` | — |
@@ -378,10 +382,12 @@ Immutable commercial offers linked to one Package. Plans do not own authoritativ
 | immutableAt | Date | nullable; set on publish or first historical reference | — |
 | createdByUserId | ObjectId | required | → User |
 
-Legacy `name*`, `tierRank`, `max*`, `freeUsers`, `priceMonthlyUsd`, and `pricePerExtraUserMonthlyUsd` fields may remain temporarily for migration/read compatibility but are not authoritative for new writes.
+Legacy `name*`, `tierRank`, `max*`, `freeUsers`, `priceMonthlyUsd`, and `pricePerExtraUserMonthlyUsd` fields may remain temporarily for migration/read compatibility but are not authoritative for new writes. `name*` and `description*` are Package mirrors kept in sync on every catalog write; the `display*` fields above are the only admin-owned, client-facing labels and are never overwritten from the Package.
+
+**Label resolution (one rule, all surfaces):** `displayName` → `plan.name` (Package mirror) → `package.name`; in Arabic locale the `*Ar` chain is used when its value is non-empty. Empty `display*` therefore reproduces Package-derived labelling exactly.
 
 **Indexes:** `{ familyKey: 1, version: 1 }` unique · `{ packageId: 1, isActive: 1, isPublished: 1 }` · `{ retireAt: 1, isActive: 1 }` sparse · `{ isDefaultFree: 1 }` unique partial where `isDefaultFree=true && isActive=true && isPublished=true` · `{ replacesPlanId: 1 }` sparse
-**Rules:** drafts may change while unreferenced · published/referenced commercial identity is immutable · unpublishing preserves grandfathered renewal · retirement immediately unpublishes and later blocks new periods · exactly one active published default Free Plan
+**Rules:** drafts may change while unreferenced · published/referenced commercial identity is immutable · unpublishing preserves grandfathered renewal · retirement immediately unpublishes and later blocks new periods · exactly one active published default Free Plan · the resolved client-facing label must be unique among **active + published** Plans (case-insensitive, trimmed); archived, retired and superseded versions keep their historical labels and a retired label may be reused
 **Relations:** belongs-to Package · self-version lineage · referenced-by UserSubscriptions; snapshotted by SubscriptionPeriods and BillingInvoices
 
 ---
@@ -744,6 +750,28 @@ Collection: `datasource_type_meta` (global — not workspace-scoped)
 **Indexes:** `{ sourceType: 1 }` unique (natural PK for insert-if-missing) · `{ isActive: 1 }`
 **Seed:** insert-if-missing by `sourceType` (skip when row exists — never overwrites existing rows); scripts: `npm run seed:datasource-types` (local ts-node), `npm run seed:datasource-types:prod` (compiled `dist/…`); API `Dockerfile.build` runs the prod seed before `node dist/main`; seeds set `comingSoon: false`
 **Rules:** No create/delete API endpoints — the set of types is fixed to the `DataSourceType` enum · Admin can update all display fields + `isActive` + `comingSoon` via PATCH · `isActive = false` hides the type from the customer portal picker · `isActive = true` + `comingSoon = true` shows the type as non-selectable with a Coming soon badge · existing Connection / DataSource records for disabled or coming-soon types remain usable (guards apply to new create / OAuth start only)
+
+---
+
+## schema_migrations *(change-077)*
+Purpose: ledger of applied data migrations. Guarantees each migration runs **exactly once ever** per database, and makes repeat deploys a no-op. Written only by the migration runner — never by application code, never by an API endpoint.
+Collection: `schema_migrations` (global — infrastructure, not workspace-scoped)
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `name` | String | required, unique; migration module identity (e.g. `001-package-tier-rank-repair`) | — |
+| `appliedAt` | Date | nullable; set when the migration completes successfully; null while only locked | — |
+| `durationMs` | Number | nullable; wall-clock duration of the successful run | — |
+| `lockedAt` | Date | nullable; lock acquisition time; used for stale-lock reclaim | — |
+| `lockedBy` | String | nullable; runner instance identity (hostname/pid) for diagnostics | — |
+| `stats` | Object | nullable, default `{}`; migration-reported counters | — |
+
+**Indexes:** `{ name: 1 }` unique (doubles as the atomic advisory lock)
+**Locking:** the unique `name` index is the lock. A runner acquires a migration by an upsert that only succeeds when the row is absent, unlocked, or its `lockedAt` is older than the stale timeout. Under `replicas: 2` one runner applies and the other observes and exits `0`.
+**Failure:** a failing migration is **not** marked `appliedAt`; its lock is released so a later deploy retries. The runner exits non-zero so the app container never starts against an unmigrated database.
+**Delivery:** `k8s.deploy` `initContainer` on the API image, gated by `MIGRATIONS_ENABLED` (default `true`); scripts `npm run migrate:run` (local ts-node), `migrate:run:dry-run`, `migrate:run:prod` (compiled `dist/…`).
+**Rules:** no update/delete API · migration modules are append-only and never edited after being applied in production · seeds are separate (idempotent, in-process `OnModuleInit`) and are not recorded here.
 
 ---
 

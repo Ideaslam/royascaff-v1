@@ -123,6 +123,14 @@ Typography: heading weight 600; PrimeNG theme customized with the brand colors a
 - Frontend base URL: `environment.apiUrl` (every HTTP call must be prefixed with it).
 - Backend reads all secrets/providers from environment variables, validated at startup.
 - Environments: `development`, `staging`, `production`.
+- **Database access is backend-only** — there is no direct production database connection, so all data
+  changes ship inside the API image. Baseline rows arrive as idempotent `OnModuleInit` seeds; one-time
+  data transformations arrive as ledgered migrations run by a `k8s.deploy` `initContainer` (see
+  `RULE-GLOBAL-013` and the `schema_migrations` collection).
+- `MIGRATIONS_ENABLED` *(change-077)*: boolean, default `true`. Gates the migration `initContainer`.
+  Set to `false` in the `roya-dynamo-api-env` secret once a rollout's migrations are confirmed applied —
+  the container then logs and exits `0` without connecting, so migrations are switched off without
+  editing manifests or deleting code. Flip back to `true` when a deploy carries a new migration.
 
 ---
 

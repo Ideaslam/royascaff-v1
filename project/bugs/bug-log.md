@@ -70,7 +70,7 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 | 040 | 2026-07-19 | high | backend/sql-server, pipelines/streaming | SQL Server sync stops at 2000 rows | DONE | [bug-040-sql-server-sync-stops-at-2000.md](./bug-040-sql-server-sync-stops-at-2000.md) |
 | 041 | 2026-07-19 | medium | backend/pipelines, connectors, frontend/data | Sync progress not based on row counts | DONE | [bug-041-sync-progress-row-based.md](./bug-041-sync-progress-row-based.md) |
 
-| 042 | 2026-08-26 | high | backend/cors, customer-portal/subscriptions | Pay now blocked — CORS omits `idempotency-key` | PENDING | [bug-042-invoice-pay-cors-idempotency-key.md](./bug-042-invoice-pay-cors-idempotency-key.md) |
+| 042 | 2026-08-26 | high | backend/cors, customer-portal/subscriptions | Pay now blocked — CORS omits `idempotency-key` | DONE | [bug-042-invoice-pay-cors-idempotency-key.md](./bug-042-invoice-pay-cors-idempotency-key.md) |
 | 044 | 2026-09-02 | high | backend/payments | PayUp Public API request contract stale vs collection | PENDING | [bug-044-payup-api-request-contract.md](./bug-044-payup-api-request-contract.md) |
 | 045 | 2026-09-03 | high | backend/payments | Paid invoice never activates — BullMQ jobId contains colon | DONE | [bug-045-paid-invoice-lifecycle-jobid-colon.md](./bug-045-paid-invoice-lifecycle-jobid-colon.md) |
 

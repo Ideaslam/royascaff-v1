@@ -15,7 +15,7 @@
 | Sharing | sharing.md | EP-SHARE-01..04 | 4 |
 | Export | export.md | EP-EXPORT-01..03 | 3 |
 | Notifications | notifications.md | EP-NOTIF-01..04 | 4 |
-| Subscriptions | subscriptions.md | EP-SUB-01..32 | 32 |
+| Subscriptions | subscriptions.md | EP-SUB-01..34 | 34 |
 | Payments | payments.md | EP-PAY-01..11 | 11 |
 | Audit | audit.md | EP-AUDIT-01 | 1 |
 | Settings | settings.md | EP-SET-01..02 | 2 |
@@ -24,7 +24,7 @@
 | Workspace | workspace.md | EP-WS-01..21 | 21 |
 | Color Templates | color-templates.md | EP-CTPL-01..05 | 5 |
 | Analytics Store (Admin Benchmark) | analytics-store.md | EP-AS-01..02 | 2 |
-| **Total** | | | **182** |
+| **Total** | | | **183** |
 
 ---
 

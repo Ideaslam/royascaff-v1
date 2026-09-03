@@ -1,7 +1,9 @@
 # Bug #042 — Invoice Pay Now blocked by CORS on `idempotency-key`
 
 ## Status
-**PENDING** — Fix in progress, awaiting confirmation
+**DONE** — Confirmed by user 2026-09-03
+
+**Confirmed**: 2026-09-03
 
 ## Reported
 - **Date**: 2026-08-26
@@ -42,7 +44,7 @@ Added `Idempotency-Key` to Nest CORS `allowedHeaders` in `roya-ai-dynamo-api/src
 ## Verification
 - [x] Fix implemented in code
 - [x] No regressions introduced
-- [ ] User confirmed fix resolves the issue
+- [x] User confirmed fix resolves the issue
 
 ## Related Files
 - `roya-ai-dynamo-api/src/main.ts`

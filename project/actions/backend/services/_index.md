@@ -11,7 +11,7 @@
 | Sharing | sharing.md | SVC-SHARE | 1 |
 | Export | export.md | SVC-EXPORT | 1 |
 | Notifications | notifications.md | SVC-NOTIF | 1 |
-| Subscriptions | subscriptions.md | SVC-SUB, SVC-SUB-CAT, SVC-SUB-LIFE, SVC-SUB-CALC, SVC-SUB-LIM, SVC-SUB-ROLL | 6 |
+| Subscriptions | subscriptions.md | SVC-SUB, SVC-SUB-CAT, SVC-SUB-LABEL, SVC-SUB-SEED, SVC-MIGRATE, SVC-SUB-LIFE, SVC-SUB-CALC, SVC-SUB-LIM, SVC-SUB-ROLL | 9 |
 | Payments | payments.md | SVC-PAY-INV, SVC-PAY, SVC-PAY-CHKOUT | 3 |
 | Audit | audit.md | SVC-AUDIT | 1 |
 | Settings | settings.md | SVC-SET | 1 |
