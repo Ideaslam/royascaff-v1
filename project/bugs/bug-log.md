@@ -72,10 +72,11 @@ This file tracks all bugs reported and fixed in the project. Each bug gets its o
 
 | 042 | 2026-08-26 | high | backend/cors, customer-portal/subscriptions | Pay now blocked — CORS omits `idempotency-key` | PENDING | [bug-042-invoice-pay-cors-idempotency-key.md](./bug-042-invoice-pay-cors-idempotency-key.md) |
 | 044 | 2026-09-02 | high | backend/payments | PayUp Public API request contract stale vs collection | PENDING | [bug-044-payup-api-request-contract.md](./bug-044-payup-api-request-contract.md) |
+| 045 | 2026-09-03 | high | backend/payments | Paid invoice never activates — BullMQ jobId contains colon | DONE | [bug-045-paid-invoice-lifecycle-jobid-colon.md](./bug-045-paid-invoice-lifecycle-jobid-colon.md) |
 
 ## Next Bug Number
 
-**Next**: 045
+**Next**: 046
 
 | 038 | 2026-07-15 | medium | backend/integrations/connectors, data pipeline | Dotted column names (Google Ads, Mongo) misaligned with storage schema | DONE | [bug-038-flatten-dotted-column-names.md](./bug-038-flatten-dotted-column-names.md) |
 
