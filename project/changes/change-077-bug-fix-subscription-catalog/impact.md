@@ -81,7 +81,8 @@ must fall back to `snapshot.name`. No snapshot backfill is performed (they are i
 | `src/modules/subscriptions/seeders/subscription-catalog.seeder.ts` | `OnModuleInit` seeder — default Free package + plan, only when no active published default-free plan exists |
 | `src/database/migrations/migration-ledger.ts` | `schema_migrations` access + atomic advisory lock with stale-lock reclaim |
 | `src/database/migrations/migration.types.ts` | `Migration` + `MigrationContext` contract shared by runner and migration modules |
-| `src/database/migrations/migration-runner.ts` | testable orchestration: `migrationsEnabled(env)` gate + `applyMigrations(db, …)` apply-once/lock/dry-run, returning `{applied, skipped}` |
+| `src/config/migrations.config.ts` | single definition of the `MIGRATIONS_ENABLED` flag (`migrationsEnabled()` + the on/off value lists), shared by the Nest config, the Joi env schema, and the standalone runner so a value the runner accepts can never fail app boot |
+| `src/database/migrations/migration-runner.ts` | testable orchestration: `applyMigrations(db, …)` apply-once/lock/dry-run returning `{applied, skipped}`; re-exports the shared `migrationsEnabled` gate |
 | `src/database/migrations/run.ts` | thin entry point: dotenv, connection, delegate to the runner, non-zero exit on failure |
 | `src/database/migrations/001-package-tier-rank-repair.ts` | idempotent Free 0 / Basic 1 / Premium 2 re-rank |
 | `src/modules/subscriptions/seeders/subscription-catalog.seeder.spec.ts` | proves no-op against an existing default-free catalog (AC 11) |

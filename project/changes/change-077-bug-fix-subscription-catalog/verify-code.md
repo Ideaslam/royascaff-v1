@@ -69,7 +69,7 @@
 | 23 | PASS | `k8s.deploy` declares `initContainers: [migrate]` on `ghcr.io/roya-tech-team/roya-dynamo-api-prod:latest` with `envFrom: roya-dynamo-api-env`, running `node dist/database/migrations/run.js` before the app container. |
 | 24 | PASS | `Dockerfile.build` is untouched: `CMD ["sh","-c","node dist/database/seeds/datasource-type-meta.seed.js && node dist/main"]`. |
 | 25 | PASS | `migrate:run` and `migrate:run:dry-run` (ts-node) plus `migrate:run:prod` (`node dist/...`), matching the existing seed-script naming. |
-| 26 | PASS | `MIGRATIONS_ENABLED=false` logged that migrations are disabled, exited `0`, and opened no connection; unset/`true` runs normally. `false`/`off`/`0`/`no` are all accepted (case-insensitive) and covered by unit tests. |
+| 26 | PASS | `MIGRATIONS_ENABLED=false` logged that migrations are disabled, exited `0`, and opened no connection; unset/`true` runs normally. `false`/`off`/`0`/`no` all disable it (verified live for each) and are covered by unit tests. The flag has one definition in `src/config/migrations.config.ts`, shared by the Nest config, the Joi env schema, and the runner — a test asserts the schema and the runner agree on every documented value, so a value the runner accepts can never boot-crash the app container that reads the same secret. |
 | 27 | PASS | `deploy.md` covers prerequisites, rollout order, the initContainer, ledger + `tierRank` verification queries, the `MIGRATIONS_ENABLED` flip, and rollback. |
 
 ### Build and test evidence

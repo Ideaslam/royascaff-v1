@@ -92,11 +92,12 @@
 
 **Notes:**
 - [EP-DATA-01] Single-step upload: frontend sends file as multipart, backend streams to R2, creates `csvfiles` record, queues AI column analysis job.
+- [EP-DATA-01, 03, 20] Quota *(change-080)*: validation (not found, access, size, connection disabled, name taken) runs first and the upload/sync limit is reserved last; a failed upload/complete-upload/trigger releases its reservation, leaving usage counters unchanged. Locked workspaces get `SUBSCRIPTION_LOCKED` / `SUBSCRIPTION_ADMIN_LOCKED`; a missing usage period yields `SUBSCRIPTION_USAGE_PERIOD_MISSING`.
 - [EP-DATA-02] Legacy presigned-URL flow: creates a `csvfiles` record and returns a presigned upload URL plus upload session id for direct client-to-R2 upload.
 - [EP-DATA-06] Accepts array of column updates setting each column's `userDescription`. When all columns confirmed, file becomes eligible for dashboard generation.
 - [EP-DATA-09] Credentials are accepted in plain text over HTTPS, then immediately encrypted with AES-256-GCM before persisting. Never stored or returned in plaintext.
 - [EP-DATA-15] For CSV datasets, after creating the Dataset record the backend **enqueues** schema discovery + AI mapping proposal *(change-058)*. Client polls Dataset `schemaDiscoveryStatus` before schema-review.
-- [EP-DATA-20] Creates a `SyncRun` record immediately and returns `syncRunId`; actual sync runs asynchronously via BullMQ `DATA_SYNC_QUEUE`. The `mode` parameter defaults to `'full'` if omitted; incremental sync requires a PK column to be meaningful but is not server-enforced.
+- [EP-DATA-20] Creates a `SyncRun` record immediately and returns `syncRunId`; actual sync runs asynchronously via BullMQ `DATA_SYNC_QUEUE`. The `mode` parameter defaults to `'full'` if omitted; incremental sync requires a PK column to be meaningful but is not server-enforced. Manual triggers count toward `maxSyncsPerDay`; scheduled (automatic) syncs do not, but still consume synced rows and respect the lock *(change-080)*.
 - [EP-DATA-40] Patches `availableColumns` (userDescription; isPrimaryKey; isSelected/selectionOrder). Exclusive PK. Rejects `isSelected: true` on `blocked` columns. Does not prune live `schema` — use EP-DATA-48.
 - [EP-DATA-48] Atomic confirm of column selection: ≥1 selected; `blocked` never selected; deselecting PK requires another selected PK; deselecting a mandatory mapped column → 422; while `syncStatus = syncing` → 409; success writes pruned `schema`, updates `availableColumns` flags, audits; failure leaves schema unchanged.
 - [EP-DATA-49] Enqueues Add-column rediscovery (202); AI for new cols only runs in worker; user must confirm selection (EP-DATA-48) then manual sync for OLAP data *(change-058)*.

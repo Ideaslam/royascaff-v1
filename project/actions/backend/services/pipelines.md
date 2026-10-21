@@ -103,7 +103,7 @@ Reporting Engine owner of the dashboard pipeline **type definitions**. On `onMod
 - **TrimStep** (`trim`) — trims leading/trailing whitespace from string values
 - **TypeCastStep** (`type-cast`) — casts row values to the types declared in `dataset.schema`
 - **DedupeStep** (`dedupe`) — removes exact-duplicate rows within the batch; optionally dedupes by a `keyColumn` step config
-- **LoadStep** (`load`) — requires `ctx.dataset`; OLAP DDL from live `schema` (selected columns); on **FULL** sync: drops + recreates OLAP table first *(change-038)*; batch-inserts projected rows via `AnalyticsStoreService` (buffered + streaming); on **INCREMENTAL** sync: appends without truncation; sets phase `loading`/`finalizing` and updates `rowsLoaded`/progress *(change-045, change-055)*
+- **LoadStep** (`load`) — requires `ctx.dataset`; OLAP DDL from live `schema` (selected columns); on **FULL** sync: drops + recreates OLAP table first *(change-038)*; batch-inserts projected rows via `AnalyticsStoreService` (buffered + streaming); on **INCREMENTAL** sync: appends without truncation; sets phase `loading`/`finalizing` and updates `rowsLoaded`/progress *(change-045, change-055)*; reserves synced rows per chunk and releases a chunk's reservation when its insert fails; a limit-exceeded error is thrown as unrecoverable so the job is not retried — the streaming sync coordinator follows the same rule *(change-080)*
 
 ---
 

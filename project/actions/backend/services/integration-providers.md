@@ -37,7 +37,7 @@ Loads HTML email templates from `src/integrations/mail/templates/` and renders `
 **Methods:**
 - `render(templateName: string, vars: Record<string, string>): string` — reads `{templateName}.html`, interpolates variables
 
-**Templates:** `email-verification.en|ar`, `welcome.en|ar` — Roya brand styling (purple header, coral CTA)
+**Templates:** `email-verification.en|ar`, `welcome.en|ar`, `invoice-receipt.en|ar` *(change-079)* — Roya brand styling (purple header, coral CTA)
 
 **Deps:** filesystem (bundled via nest-cli assets)
 **Rules:** Templates must use inline CSS for email client compatibility · Never embed secrets or raw tokens beyond verify URL

@@ -12,6 +12,8 @@
 | Mechanism | What it does | When it runs | Repeat behaviour |
 |-----------|--------------|--------------|------------------|
 | Migration `001-package-tier-rank-repair` | Re-ranks existing Packages to Free `0` / Basic `1` / Premium `2` | `initContainer`, before the app container starts | Applied once ever; recorded in `schema_migrations`; later deploys skip it |
+| Migration `003-catalog-package-backfill` | Splits legacy Plans into Package + Plan, backfills period/invoice snapshots, then re-runs the rank repair | `initContainer`, after `001` | Applied once ever; no-op on an already-split database |
+| Migration `004-subscription-period-backfill` | Creates the access period every subscription needs, normalizes lifecycle fields, converts legacy payments to invoices | `initContainer`, after `003` | Applied once ever; no-op where a period already resolves |
 | `SubscriptionCatalogSeeder` | Inserts default Free Package + Plan **only if** no active published default-Free Plan exists | In-process `OnModuleInit`, every boot | No-op on this database (a default-Free Plan already exists) |
 | API code | Plan `display*` fields, uniqueness guards, `POST /packages/:id/new-version`, label resolver | On boot | — |
 | Admin panel + customer portal | Labelled actions, stage column, cross-validated pricing form, display-name-first labels | Static deploy | — |
@@ -37,8 +39,25 @@ curl -s -H "Authorization: Bearer $ADMIN_JWT" \
   | jq '[.data[] | {name, familyKey, version, tierRank, isArchived}] | sort_by(.tierRank)'
 ```
 
-Expected pre-state (as verified during investigation): 3 Packages, `legacy-*` family keys, all with
-`immutableAt` set, and **`tierRank: 1` on both Basic and Premium** — the collision this migration fixes.
+Expected pre-state, **as observed on the dev database** during investigation: 3 Packages, `legacy-*`
+family keys, all with `immutableAt` set, and **`tierRank: 1` on both Basic and Premium** — the collision
+`001` fixes.
+
+**Production does not match that shape.** Dev was brought to it by someone running two standalone
+scripts by hand — `npm run migrate:subscription-billing` (change-075) and
+`npm run migrate:subscription-catalog` (change-076). Production, which deploys through Kubernetes,
+never ran either. Both gaps surfaced one after the other during this rollout:
+
+| Missing script | Production symptom | Now shipped as |
+|----------------|--------------------|----------------|
+| `migrate:subscription-catalog` | Plans had no `packageId` / `familyKey` / `version`: admin showed no Package, portal had no Plan label, and `001` reported `families: 0, updated: 0` because it had no families to group | Migration `003` |
+| `migrate:subscription-billing` | Subscriptions had no `subscriptionperiods` row and no `currentPeriodId`, so every upgrade, downgrade, and admin plan change failed with `SUBSCRIPTION_PERIOD_MISSING` — *"Subscription period requires reconciliation"* | Migration `004` |
+
+`003` also re-runs the rank repair, because `001` is already recorded as applied and will never retry
+itself. `004` runs after `003` so the access periods it creates get the post-split shape directly.
+
+The lesson is recorded in `RULE-GLOBAL-013`: a data change that production needs must ship as a ledgered
+migration, never as a script someone remembers to run.
 
 `MIGRATIONS_ENABLED` must be **`true`** (or absent, which defaults to `true`) for this deploy.
 
@@ -59,18 +78,26 @@ Deploy in this order. Each step is safe to stop at.
 
 ### Applying the backend
 
+`Jenkinsfile.production` does this. The manifest declares both images as the `__IMAGE__` placeholder and
+the pipeline substitutes the built reference before applying, so the app container and the `initContainer`
+are guaranteed to be the same build:
+
 ```bash
-kubectl -n production apply -f roya-ai-dynamo-api/k8s.deploy
+sed "s|__IMAGE__|ghcr.io/roya-tech-team/roya-dynamo-api-prod:$BUILD_NUMBER|g" k8s.deploy \
+  | kubectl apply -f -
 kubectl -n production rollout status deploy/roya-dynamo-api --timeout=5m
 ```
 
-The manifest gains an `initContainer` on the **same image** as the app container, sharing
-`envFrom: roya-dynamo-api-env`:
+Substituting the manifest replaces the previous `kubectl set image` step. `set image` names a single
+container, so it could not keep the `initContainer` in step with the app container — see the pinned-tag
+failure in section 5.
+
+The `initContainer` shares `envFrom: roya-dynamo-api-env` with the app container:
 
 ```yaml
       initContainers:
         - name: migrate
-          image: ghcr.io/roya-tech-team/roya-dynamo-api-prod:latest
+          image: __IMAGE__
           imagePullPolicy: IfNotPresent
           command: ["node", "dist/database/migrations/run.js"]
           envFrom:
@@ -95,10 +122,30 @@ kubectl -n production logs <pod> -c migrate
 
 | Log outcome | Meaning | Action |
 |-------------|---------|--------|
+| `applied 003-catalog-package-backfill` + stats | This runner performed the split | Continue to verification |
 | `applied 001-package-tier-rank-repair` + stats | This runner did the work | Continue to verification |
 | `skipped 001-… (already applied)` | The sibling replica applied it, or a previous deploy did | Continue — this is the steady state |
 | `migrations disabled (MIGRATIONS_ENABLED=false)` | Gate is off; nothing connected | Expected **after** section 4, unexpected now |
 | non-zero exit + error | Migration failed; not recorded; lock released | App will not start. Go to section 5 |
+
+On the production rollout that carries this change, `003` and `004` are the entries that matter.
+`003` reports `packagesCreated`, `plansLinked`, `subscriptionsUpdated`, `accessPeriodsUpdated`,
+`usagePeriodsCreated`, `invoicesUpdated`, and a nested `tierRank` block; `plansLinked: 0` means the
+catalog was already split and only the rank repair ran. `004` reports `periodsCreated`,
+`subscriptionsUpdated`, `usagePeriodsLinked`, `paymentsCleaned`, and `invoicesCreated`;
+`periodsCreated` should equal the number of subscriptions that had no access period.
+
+`004` skips any subscription whose Plan still has no Package and logs it by id. That should never
+happen after `003`, so treat those lines as a signal to investigate rather than a clean run.
+
+To preview the split before deploying, run the same image with `--dry-run`; it reads only and writes
+nothing:
+
+```bash
+kubectl -n production run migrate-dryrun --rm -it --restart=Never \
+  --image=ghcr.io/roya-tech-team/roya-dynamo-api-prod:$TAG \
+  --overrides='{"spec":{"imagePullSecrets":[{"name":"ghcr-roya-production"}],"containers":[{"name":"migrate-dryrun","stdin":true,"tty":true,"image":"ghcr.io/roya-tech-team/roya-dynamo-api-prod:'"$TAG"'","command":["node","dist/database/migrations/run.js","--dry-run"],"envFrom":[{"secretRef":{"name":"roya-dynamo-api-env"}}]}]}}'
+```
 
 ---
 
@@ -107,6 +154,18 @@ kubectl -n production logs <pod> -c migrate
 All checks go through the API (no database access needed).
 
 ```bash
+# 3.0 Every Plan resolves a Package and every subscription resolves a period
+curl -s -H "Authorization: Bearer $ADMIN_JWT" \
+  "$API_BASE/api/v1/admin/subscriptions?limit=50" \
+  | jq '[.items[] | {workspace: .workspaceId.name, plan: .planId.name,
+                     package: .planId.packageId, period: .currentPeriodId._id}]'
+# expect: every row has a non-null plan, package and period
+
+# 3.0b A plan change is actually possible (the "requires reconciliation" symptom)
+curl -s -H "Authorization: Bearer $CLIENT_JWT" \
+  "$API_BASE/api/v1/subscriptions/preview?targetPlanId=$SOME_PLAN_ID" | jq '.direction'
+# expect: upgrade / downgrade / replacement — not a SUBSCRIPTION_PERIOD_MISSING conflict
+
 # 3.1 Tier ranks are now distinct and correctly ordered
 curl -s -H "Authorization: Bearer $ADMIN_JWT" \
   "$API_BASE/api/v1/subscriptions/packages?limit=100" \
@@ -176,6 +235,27 @@ flag is the off-switch. When a future release carries a new migration, flip `MIG
 ---
 
 ## 5. Failure handling and rollback
+
+### `rollout status` times out with no migration log (build #31)
+
+Symptom: the rollout stalls at `1 out of 2 new replicas have been updated...` and fails with
+`error: timed out waiting for the condition` after 300s, while `kubectl logs -c migrate` is empty.
+
+Cause: the manifest pinned the `initContainer` to a fixed `:latest` tag and the pipeline advanced only the
+app container with `kubectl set image deployment/... roya-dynamo-api=<tag>`. That tag was never pushed by
+this pipeline, so the `initContainer` could not pull, the pod never reached the app container, and the
+rollout never completed. This is why the dev deploy was unaffected — dev is a plain `docker run` on a VM
+and does not use `k8s.deploy` at all.
+
+Fix: both images now come from the substituted `__IMAGE__` placeholder (section 2). Confirm with:
+
+```bash
+kubectl -n production get deploy roya-dynamo-api \
+  -o jsonpath='{range .spec.template.spec.initContainers[*]}{.name}={.image}{"\n"}{end}{range .spec.template.spec.containers[*]}{.name}={.image}{"\n"}{end}'
+```
+
+Both lines must show the same tag. When a rollout does fail, the pipeline now prints pod status, the
+`migrate` logs, and recent pod events instead of only the timeout.
 
 ### The migration `initContainer` fails
 

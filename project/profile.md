@@ -142,7 +142,7 @@ system rules in `rules.md`). The frontend never calls these directly — all tra
 | Provider | Purpose | Notes |
 |----------|---------|-------|
 | Claude AI | Data analysis + dashboard generation | Provider-agnostic interface (swappable: OpenAI, Azure OpenAI); model via env var |
-| MailJet | Transactional email | Welcome, generation-complete, share, password reset |
+| MailJet | Transactional email | Welcome, verification, generation-complete, share, password reset, billing invoice-receipt / applied plan-change |
 | Cloudflare R2 | Object storage (CSV, exports, PDFs) | S3-compatible (swappable: AWS S3, Azure Blob, GCS) |
 | Redis | Cache + job queue + sessions + rate limiting | BullMQ queues |
 | Payment Gateway (PayUp) | SaaS subscription billing | Provider-agnostic `PaymentProvider`; PayUp hosted checkout creates attempts for immutable server-priced invoices. Public returns are verified server-side; verified settlement atomically persists a durable lifecycle event, and reconciliation repairs paid-but-unapplied invoices. Provider via `PAYMENT_PROVIDER`; keys/env-only base URL configuration remain backend-only. |

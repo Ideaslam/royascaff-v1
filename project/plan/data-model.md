@@ -269,12 +269,13 @@ Tracks all async background jobs: CSV analysis, dashboard generation, PDF export
 | Field | Type | Constraints | Ref |
 |-------|------|-------------|-----|
 | userId | ObjectId | required; notification recipient | → User |
+| workspaceId | ObjectId | required on new rows; tenant boundary — inbox filters this against JWT `currentWorkspaceId` *(change-078)* | → Workspace |
 | type | String | required; enum includes `dashboard_ready`, `generation_error`, `csv_analysis_complete`, `export_ready`, `dashboard_shared`, `sync_failed`, `sync_schema_drift`, `plan_retirement` | — |
 | title | String | required; short notification title (English) | — |
 | titleAr | String | optional, default: `''`; Arabic title | — |
-| message | String | required; full notification message body (English) | — |
+| message | String | required; customer-safe body (English) — never raw connector errors, HTTP statuses, or schema column lists *(change-078)* | — |
 | messageAr | String | optional, default: `''`; Arabic message body | — |
-| relatedEntityType | String | nullable; enum: `dashboard`, `csvfile`, `project`, `subscription_plan` | — |
+| relatedEntityType | String | nullable; enum: `dashboard`, `csvfile`, `project`, `dataset`, `subscription_plan` | — |
 | relatedEntityId | ObjectId | nullable; ID of related entity for navigation | — |
 | isRead | Boolean | required, default: false | — |
 | dedupeKey | String | nullable; unique sparse; required for durable system notifications such as one owner/retirement schedule | — |
@@ -282,10 +283,11 @@ Tracks all async background jobs: CSV analysis, dashboard generation, PDF export
 | emailAttempts | Number | required, default: 0 | — |
 | emailNextAttemptAt | Date | nullable; retry scan target | — |
 | emailSentAt | Date | nullable | — |
-| emailLastErrorCode | String | nullable; allowlisted, no provider payload/secrets | — |
+| emailLastErrorCode | String | nullable; allowlisted, no provider payload/secrets; **never returned** on customer inbox endpoints | — |
 
-**Indexes:** `{ userId: 1, isRead: 1 }` compound (unread count) · `{ userId: 1, createdAt: -1 }` compound (newest first) · `{ type: 1 }` · `{ dedupeKey: 1 }` unique sparse · `{ emailStatus: 1, emailNextAttemptAt: 1 }`
-**Relations:** belongs-to User (via userId)
+**Indexes:** `{ workspaceId: 1, userId: 1, isRead: 1 }` compound (unread count) · `{ workspaceId: 1, userId: 1, createdAt: -1 }` compound (newest first) · `{ type: 1 }` · `{ dedupeKey: 1 }` unique sparse · `{ emailStatus: 1, emailNextAttemptAt: 1 }`
+**Relations:** belongs-to User (via userId) · belongs-to Workspace (via workspaceId)
+**Tenant rule *(change-078)*:** rows without `workspaceId` (legacy, unattributed) are hidden from the customer inbox (fail closed). Customer list DTO allowlists `_id`, `type`, `title`, `titleAr`, `message`, `messageAr`, `isRead`, `relatedEntityType`, `relatedEntityId`, `actionUrl`, `createdAt` — never `metadata` or email-delivery fields.
 
 ---
 
@@ -333,11 +335,11 @@ Immutable, admin-owned entitlement versions. A Package is reusable by multiple c
 | descriptionAr | String | optional, default: `''`; Arabic description | — |
 | tierRank | Number | required; integer min 0; authoritative upgrade/downgrade ordering | — |
 | features | Object | required, default `{}`; allowlisted feature flags/capabilities | — |
-| maxDashboards | Number | required; min 0 | — |
-| maxDataUploads | Number | required; min 0; per Package quota window | — |
-| maxDataUpdates | Number | required; min 0; per Package quota window | — |
-| maxSyncedRows | Number | required, default 0; per Package quota window; 0 = unlimited | — |
-| maxSyncsPerDay | Number | required, default 0; 0 = unlimited | — |
+| maxDashboards | Number | required; min -1; cap on dashboards that currently exist (deleting frees a slot) | — |
+| maxDataUploads | Number | required; min -1; per Package quota window | — |
+| maxDataUpdates | Number | required; min -1; per Package quota window | — |
+| maxSyncedRows | Number | required, default -1; per Package quota window | — |
+| maxSyncsPerDay | Number | required, default -1; manual syncs only — scheduled syncs are not counted | — |
 | includedUsers | Number | required, default: 5; users included by entitlement | — |
 | quotaResetIntervalUnit | String | required; enum: `day`, `month`, `year` | — |
 | quotaResetIntervalCount | Number | required; positive integer | — |
@@ -346,7 +348,9 @@ Immutable, admin-owned entitlement versions. A Package is reusable by multiple c
 | createdByUserId | ObjectId | required | → User |
 
 **Indexes:** `{ familyKey: 1, version: 1 }` unique · `{ tierRank: 1, isArchived: 1 }` · `{ replacesPackageId: 1 }` sparse
-**Rules:** draft/unreferenced identity may change · published/referenced identity and lineage are immutable · clone allocates one next family version atomically · referenced rows archive, never delete · `name` is the internal entitlement label and must be unique among non-archived Packages (case-insensitive, trimmed) · `tierRank` must be unique among non-archived Packages so upgrade/downgrade direction is unambiguous
+**Limit sentinel** (every `max*` limit, also in Package snapshots): `-1` = unlimited · `0` = blocked · `>0` = cap. Migration `005-limit-unlimited-sentinel` converted legacy `0` (formerly unlimited) to `-1`. The usage envelope exposes `unlimited: true` per limit.
+
+**Rules:** draft/unreferenced identity may change · published/referenced identity and lineage are immutable · a Package holding the default Free Plan cannot be archived · clone allocates one next family version atomically · referenced rows archive, never delete · `name` is the internal entitlement label and must be unique among non-archived Packages (case-insensitive, trimmed) · `tierRank` must be unique among non-archived Packages so upgrade/downgrade direction is unambiguous
 **Relations:** self-version lineage · referenced-by SubscriptionPlans, SubscriptionPeriods, SubscriptionUsagePeriods, and BillingInvoices
 
 ---
@@ -410,8 +414,11 @@ One durable lifecycle record per workspace. It points independently to the curre
 | lifecycleVersion | Number | required, integer, default 1; compare-and-set guard | — |
 | lastTransitionAt | Date | required | — |
 | notes | String | nullable, default: `''`; free-text admin notes | — |
+| previousStatus | String | nullable; same enum as `status`; set on admin deactivate, restored and cleared on admin activate | — |
+| reviewRequired | Boolean | required, default false; set when an applied invoice is refunded or charged back | — |
+| reviewReason | String | nullable; e.g. `refund`, `chargeback` with invoice reference | — |
 
-`status`: `active` → valid entitlement · `past_due` → paid renewal unpaid but access retained through grace · `inactive` → explicit admin lock · `expired` → exceptional no-entitlement state pending repair; normal non-payment moves to free
+`status`: `active` → valid entitlement · `past_due` → paid renewal unpaid but access retained through grace · `inactive` → explicit admin lock (paying any invoice is rejected with `SUBSCRIPTION_ADMIN_LOCKED`; activate only from here, restoring `previousStatus`) · `expired` → exceptional no-entitlement state pending repair; normal non-payment moves to free
 
 **Indexes:** `{ workspaceId: 1 }` unique · `{ currentPeriodId: 1 }` unique · `{ currentUsagePeriodId: 1 }` unique · `{ status: 1, graceEndsAt: 1 }` · `{ scheduledChangeAt: 1 }` sparse
 **Relations:** belongs-to Workspace · references current/scheduled SubscriptionPlan · points independently to current access and usage periods · referenced-by BillingInvoices
@@ -432,7 +439,7 @@ Immutable billing/access windows. New periods are appended; historical rows are 
 | packageSnapshot | Object | required; Package identity/version/entitlement/quota cadence | — |
 | startsAt | Date | required, inclusive | — |
 | endsAt | Date | required, exclusive; free is exactly startsAt + 30 days | — |
-| source | String | required; enum: `workspace_created`, `renewal`, `free_rollover`, `free_to_paid`, `downgrade`, `nonpayment_fallback`, `admin_override`, `migration` | — |
+| source | String | required; enum: `workspace_created`, `renewal`, `free_rollover`, `free_to_paid`, `downgrade`, `nonpayment_fallback`, `plan_retired`, `admin_override`, `migration`; `plan_retired` = fallback to Free because the paid Plan retired with no live same-family successor | — |
 | sourceInvoiceId | ObjectId | nullable | → BillingInvoice |
 | closedAt | Date | nullable; early close for free-to-paid/admin override | — |
 
@@ -502,7 +509,7 @@ Authoritative immutable charges. Status changes are guarded transitions, never a
 | metadata | Object | nullable; allowlisted non-secret context | — |
 
 **Indexes:** `{ workspaceId: 1, idempotencyKey: 1 }` unique · `{ status: 1, dueAt: 1 }` · `{ status: 1, graceEndsAt: 1 }` · `{ subscriptionId: 1, createdAt: -1 }`
-**Rules:** no general update/delete endpoint · one actionable invoice per subscription/action/lifecycle version · compare-and-set status transitions · retry settlement application until `appliedAt` · Plan/Package snapshots never derive from mutable customer input
+**Rules:** no general update/delete endpoint · one actionable invoice per subscription/action/lifecycle version · compare-and-set status transitions · retry settlement application until `appliedAt` · `expired` → `paid` allowed only for an attempt created before `expiresAt` · a `void`/`refunded` renewal invoice is replaced next lifecycle tick by a new invoice under a suffixed `idempotencyKey` · refund/chargeback of an applied invoice keeps the current period, sets subscription `autoRenew=false` and `reviewRequired` · a renewal for a retired Plan targets the newest live same-family version at its price · revoking an invitation voids its open `extra_user` invoice · Plan/Package snapshots never derive from mutable customer input
 
 ---
 
@@ -525,13 +532,13 @@ Append-only manual/PayUp attempts referencing one immutable BillingInvoice.
 | providerStatus | String | nullable | — |
 | verifiedAt | Date | nullable | — |
 | failedAt | Date | nullable | — |
-| failureCode | String | nullable; allowlisted code | — |
+| failureCode | String | nullable; allowlisted code, including `refund_required` (captured on a SUPERSEDED/VOID invoice or started after expiry) and `duplicate_payment` (second capture for an already-PAID invoice) — both listed for admin review | — |
 | settledByAdminId | ObjectId | nullable; requires reason | → User |
 | adminReason | String | nullable | — |
 | rawPayloadHash | String | nullable; integrity/debug hash, not raw payload | — |
 
 **Indexes:** `{ publicReference: 1 }` unique · `{ provider: 1, providerSessionId: 1 }` unique sparse · `{ invoiceId: 1, createdAt: -1 }` · `{ workspaceId: 1, createdAt: -1 }` · `{ status: 1, createdAt: -1 }`
-**Rules:** no update/delete endpoint · retries append attempts · only verified/manual settlement may atomically settle a matching open invoice
+**Rules:** no update/delete endpoint · retries append attempts; `pay` reuses an invoice's open PENDING attempt · only verified/manual settlement may atomically settle a matching open invoice, or an EXPIRED one when the attempt was created before the invoice's `expiresAt` · PENDING attempts younger than 3 days are re-verified every 10 min by the `payment-attempt-reverify` job · re-using an Idempotency-Key whose attempt was cancelled/failed returns 409 `PAYMENT_IDEMPOTENCY_KEY_REUSED`
 **Relations:** belongs-to BillingInvoice and Workspace · optionally references initiating/settling User
 
 ---
@@ -825,7 +832,7 @@ SubscriptionPlanType = [free, paid]
 BillingIntervalUnit = [day, month, year]
 QuotaResetIntervalUnit = [day, month, year]
 SubscriptionStatus = [active, past_due, inactive, expired]
-SubscriptionPeriodSource = [workspace_created, renewal, free_rollover, free_to_paid, downgrade, nonpayment_fallback, admin_override, migration]
+SubscriptionPeriodSource = [workspace_created, renewal, free_rollover, free_to_paid, downgrade, nonpayment_fallback, plan_retired, admin_override, migration]
 SubscriptionUsagePeriodSource = [workspace_created, quota_rollover, free_to_paid, package_change, retired_free_fallback, admin_override, migration]
 BillingInvoiceAction = [free_to_paid, upgrade, replacement, renewal, extra_user, admin_adjustment]
 BillingInvoiceStatus = [open, paid, void, expired, refunded, chargeback, superseded]

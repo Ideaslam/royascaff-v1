@@ -2,11 +2,11 @@
 
 ### Packages Page
 - Route: `/app/packages`
-- Components: bilingual/RTL Package catalog table/cards; family/version lineage; **lifecycle stage column** (`Draft` · `Live` · `Archived`) plus a **Next step** hint; tier rank; feature flags; included users; generalized dashboard/upload/update/synced-row/daily-sync limits; quota reset count/unit; linked Plan list; create/edit-draft, new-version, and archive/delete dialogs with reason/idempotency.
+- Components: bilingual/RTL Package catalog table/cards; family/version lineage; **lifecycle stage column** (`Draft` · `Live` · `Archived`) plus a **Next step** hint; tier rank; feature flags; included users; generalized dashboard/upload/update/synced-row/daily-sync limits, each with an **Unlimited** toggle (stores `-1`; `0` blocks the feature; `>0` caps) *(change-080)*; quota reset count/unit; linked Plan list; create/edit-draft, new-version, and archive/delete dialogs with reason/idempotency.
 - Service: `GET /subscriptions/packages`, `GET /subscriptions/packages/:id`, `POST /subscriptions/packages`, `PUT /subscriptions/packages/:id`, `POST /subscriptions/packages/:id/clone`, `POST /subscriptions/packages/:id/new-version`, `DELETE /subscriptions/packages/:id`.
 - Guard: authGuard + adminGuard.
 - States: loading, empty, validation/conflict error, editable draft, immutable referenced version, new-version success, archived, linked-Plan detail.
-- Notes: a Package is not created per billing/reset period. Multiple Plans may reference it. Published/referenced identity is never edited; a limits/cadence change uses **Create new version**. Reset cadence is independent of Plan billing interval and supports positive `day|month|year` count.
+- Notes: a Package is not created per billing/reset period. Multiple Plans may reference it. Published/referenced identity is never edited; a limits/cadence change uses **Create new version**. Reset cadence is independent of Plan billing interval and supports positive `day|month|year` count. Archive is rejected for a Package holding the default Free Plan *(change-080)*.
 
 ### Action design *(change-077)*
 - Every row action is a **text-labelled button**, never icon-only. One primary action per row; the rest live in a single `p-menu` overflow so the intended next step is unambiguous.

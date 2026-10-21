@@ -258,14 +258,14 @@ Export dashboard data and reports in multiple formats.
 
 **Description:**
 
-Notify users about important system events.
+Notify users about important events in **their current workspace**. The customer inbox is tenant-scoped and never a system-wide ops feed.
 
 **Key capabilities:**
 
 - Dashboard generation completion notifications
-- Error notifications for failed jobs
+- Safe error notifications for failed jobs (no raw connector/HTTP/schema internals)
 - Share notifications when someone shares a dashboard
-- In-app notification center
+- In-app notification center (current workspace, owner or member)
 - Email notifications (optional)
 
 ### Feature 15: Audit Logs
@@ -515,16 +515,17 @@ Secure shareable links for dashboards with permission control.
 
 **Description:**
 
-System notifications for users about dashboard generation, sharing, and errors.
+Workspace-scoped notifications for users about dashboard generation, sharing, and errors. Customer-visible message bodies are safe templates (no connector diagnostics or schema column lists).
 
 **Key fields:**
 
 - Notification ID (unique identifier)
 - User reference
-- Type (dashboard_ready, generation_error, dashboard_shared, etc.)
+- Workspace reference (tenant boundary)
+- Type (dashboard_ready, generation_error, dashboard_shared, sync_failed, sync_schema_drift, etc.)
 - Title
-- Message
-- Related entity type (dashboard, project, etc.)
+- Message (customer-safe)
+- Related entity type (dashboard, project, dataset, etc.)
 - Related entity ID
 - Read status (unread, read)
 - Created date
@@ -623,6 +624,7 @@ List any third-party integrations required:
   - Notify users when dashboard generation is complete
   - Send dashboard share notifications
   - Send password reset emails
+  - Send invoice-receipt emails to the workspace owner when a paid invoice is applied, and invoice-style plan-change emails when a scheduled downgrade or replacement is applied
 - Implementation: SMTP or REST API integration
 
 **Integration 3: Cloudflare R2 (Object Storage)**

@@ -4,9 +4,9 @@
 Manages CSV file uploads (direct and presigned), AI-analysis kickoff, column metadata, and file lifecycle. *(Legacy CSV path — kept for backward compat)*
 
 **Methods:**
-- `uploadFile(file: Express.Multer.File, userId: string, ip?)` — atomically reserves the upload limit against the current workspace usage period's Package snapshot, validates/uploads/enqueues, compensates on failure, audits completion
+- `uploadFile(file: Express.Multer.File, userId: string, ip?)` — validates first (type, size, access), then atomically reserves the upload limit against the current workspace usage period's Package snapshot as the last step before upload/enqueue; releases the reservation on failure *(change-080)*; audits completion
 - `initiateUpload(dto: InitiateUploadDto, userId, ip?)` — creates an operation-bound upload reservation and returns presigned URL; abandoned reservations expire/compensate idempotently
-- `completeUpload(fileId, dto: CompleteUploadDto, userId, ip?)` — commits the existing reservation, finalizes upload, and enqueues analysis; compensates on failure
+- `completeUpload(fileId, dto: CompleteUploadDto, userId, ip?)` — validates the file (not found, access) before committing the reservation, finalizes upload, and enqueues analysis; releases on failure *(change-080)*
 - `listFiles(userId, userRole, filters): Promise<PaginatedResponseDto>` — paginated; non-admins scoped to ownerId
 - `getFile(fileId, userId, userRole)` — returns file plus column metadata
 - `updateColumns(fileId, dto: UpdateColumnsDto, userId, userRole)` — saves user column descriptions; marks CONFIRMED once none remain unconfirmed
@@ -15,7 +15,7 @@ Manages CSV file uploads (direct and presigned), AI-analysis kickoff, column met
 
 **Deps:** CsvFileRepository · ColumnMetadataRepository · SubscriptionLimitService · BackgroundJobRepository (via BackgroundJobsService) · BackgroundJobsService · AuditLogService · CSV_ANALYSIS_QUEUE · STORAGE_PROVIDER · Mongo Connection
 **Side effects:** R2 upload/delete/presign · queue enqueue · dynamic collection drop/clear · audit writes
-**Rules:** Current entitlement and atomic quota reservation precede upload writes · max file size 50 MB · status flow enforced · over-limit existing files remain readable/deletable · delete removes storage object, metadata, and dynamic collection
+**Rules:** Validation precedes reservation, and current entitlement and atomic quota reservation precede upload writes; any failure after reservation calls `SubscriptionLimitService.release` *(change-080)* · max file size 50 MB · status flow enforced · over-limit existing files remain readable/deletable · delete removes storage object, metadata, and dynamic collection
 
 ---
 
@@ -99,12 +99,13 @@ BullMQ worker that runs setup-time schema discovery + column-identify (+ mapping
 BullMQ worker that executes a full or incremental dataset sync via the PipelineEngine.
 
 **Methods:**
-- `process(job: Job<{ datasetId, syncRunId, workspaceSlug, pipelineRunId?, mode }>): Promise<void>` — consumes the atomic daily-sync reservation, runs ingest, and atomically adds actual rows to the current usage period (or fails/clamps before exceeding); compensates on failure
+- `triggerSync` *(change-080)* — validates dataset/connection (not found, access, connection disabled, already syncing) before reserving; **manual** triggers reserve `maxSyncsPerDay`, **scheduled** triggers skip the daily count but still check the lock and consume synced rows; releases on enqueue failure
+- `process(job: Job<{ datasetId, syncRunId, workspaceSlug, pipelineRunId?, mode }>): Promise<void>` — consumes the atomic daily-sync reservation (manual runs only), runs ingest, and atomically adds actual rows to the current usage period per chunk (or fails/clamps before exceeding); a chunk whose insert fails releases its row reservation; limit-exceeded errors are unrecoverable (not retried); a non-resumable retry releases the failed run's rows *(change-080)*
 - `updateProgress(syncRunId, workspaceSlug, { progress, phase, rowsIn?, rowsLoaded? })` — *(change-045)* throttled writer for live progress
 
-**Deps:** DatasetRepository · DataSourceRepository · ConnectionRepository · SyncRunRepository · SubscriptionLimitService · FilterValueMetaRepository · FilterValuesService · PipelineEngine · WorkspaceRepository
-**Side effects:** OLAP inserts · FilterValueMeta refresh · SyncRun status/progress updates
-**Rules:** Sync trigger reserves current-usage-period/daily quota before enqueue and fails closed on entitlement errors · actual rows are accounted atomically · failed runs compensate reservations · filter refresh only after success · never re-run a running SyncRun
+**Deps:** DatasetRepository · DataSourceRepository · ConnectionRepository · SyncRunRepository · SubscriptionLimitService · FilterValueMetaRepository · FilterValuesService · PipelineEngine · WorkspaceRepository · NotificationsService
+**Side effects:** OLAP inserts · FilterValueMeta refresh · SyncRun status/progress updates · workspace-scoped sync inbox notices on failure/breaking drift *(change-078)*
+**Rules:** Sync trigger validates first, then reserves current-usage-period/daily quota before enqueue and fails closed on entitlement errors (`SUBSCRIPTION_USAGE_PERIOD_MISSING` when no usage period) · scheduled syncs are not counted toward `maxSyncsPerDay` *(change-080)* · actual rows are accounted atomically · failed runs compensate reservations · filter refresh only after success · never re-run a running SyncRun · inbox notify uses workspace `ownerId` + `workspaceId` only (never slug-as-userId) and safe customer copy (dataset display name only; raw errors stay on `SyncRun`)
 
 ---
 
@@ -120,7 +121,7 @@ Compares the **stored** `Dataset.schema` (from last discovery) against a freshly
   - `retyped: { name, oldType, newType }[]` — columns present in both but different canonical type → breaking
   - `hasBreaking: boolean` — true if `removed.length > 0 || retyped.length > 0`
 
-**Called by:** `DataSyncProcessor` before the ingest pipeline step. If `hasBreaking`, processor sets `Dataset.hasSchemaDrift = true`; embeds report in `SyncRun.schemaDrift`; triggers `SYNC_SCHEMA_DRIFT` notification. Safe additions are appended to `Dataset.schema` automatically.
+**Called by:** `DataSyncProcessor` before the ingest pipeline step. If `hasBreaking`, processor sets `Dataset.hasSchemaDrift = true`; embeds the full report in `SyncRun.schemaDrift` (operator-facing, workspace-scoped); triggers a **safe** `SYNC_SCHEMA_DRIFT` inbox notice (dataset display name only — no column list) to the workspace owner with `workspaceId` set *(change-078)*. Safe additions are appended to `Dataset.schema` automatically.
 
 **New fields added to schemas:**
 - `SyncRun.schemaDrift: SchemaDriftReport | null` — embedded drift snapshot per run
@@ -132,7 +133,7 @@ Compares the **stored** `Dataset.schema` (from last discovery) against a freshly
 `@nestjs/schedule` cron service that enqueues periodic syncs for datasets with `syncPolicy = HOURLY | DAILY`.
 
 **Methods:**
-- `runHourlySyncs()` — `@Cron(CronExpression.EVERY_HOUR)` — queries all workspace datasets with `syncPolicy = hourly`; skips any where `syncStatus = syncing`; enqueues `DATA_SYNC_QUEUE` job for each via `SyncService.triggerSync()`
+- `runHourlySyncs()` — `@Cron(CronExpression.EVERY_HOUR)` — queries all workspace datasets with `syncPolicy = hourly`; skips any where `syncStatus = syncing`; enqueues `DATA_SYNC_QUEUE` job for each via `SyncService.triggerSync()` marked as scheduled, so it does not consume `maxSyncsPerDay` (synced rows and lock still apply) *(change-080)*
 - `runDailySyncs()` — `@Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)` — same logic for `syncPolicy = daily`
 
 **Deps:** DatasetRepository (multi-workspace fan-out query) · WorkspaceRepository (enumerate workspace slugs) · SyncService
