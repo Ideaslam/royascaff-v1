@@ -15,6 +15,7 @@
 | Workspaces & Color Templates | workspaces.md | Workspaces, Color Templates | `/app/workspaces`, `/app/color-templates` |
 | Analytics Store | analytics-store.md | OLAP Benchmark | `/app/olap-benchmark` |
 | Template Catalog *(change-049)* | template-catalog.md | Template Catalog (industries → fields → templates) | `/app/template-catalog` |
+| Migrations *(change-081)* | migrations.md | Migrations (read-only status, dry-run report, errors, rollback state) | `/app/migrations` |
 | Data Source Types *(change-048, change-072)* | data-source-types.md | Data Source Types (titles, logo, instructions, Active, Coming soon) | `/app/data-source-types` |
 
 ---

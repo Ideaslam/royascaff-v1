@@ -19,7 +19,7 @@
 | Payments | payments.md | EP-PAY-01..11 | 11 |
 | Audit | audit.md | EP-AUDIT-01 | 1 |
 | Settings | settings.md | EP-SET-01..02 | 2 |
-| Admin | admin.md | EP-ADMIN-01..04 | 4 |
+| Admin | admin.md | EP-ADMIN-01..04, EP-ADMIN-SH-1, EP-ADMIN-MIG-1 *(change-081)* | 6 |
 | AI Logs | ai-logs.md | EP-AILOG-01..03 | 3 |
 | Workspace | workspace.md | EP-WS-01..21 | 21 |
 | Color Templates | color-templates.md | EP-CTPL-01..05 | 5 |

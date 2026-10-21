@@ -761,7 +761,7 @@ Collection: `datasource_type_meta` (global — not workspace-scoped)
 ---
 
 ## schema_migrations *(change-077)*
-Purpose: ledger of applied data migrations. Guarantees each migration runs **exactly once ever** per database, and makes repeat deploys a no-op. Written only by the migration runner — never by application code, never by an API endpoint.
+Purpose: ledger of applied data migrations. Guarantees each migration runs **exactly once ever** per database, and makes repeat deploys a no-op. Written only by the migration runner — never by application code, never by an API endpoint (the admin endpoint is read-only *(change-081)*).
 Collection: `schema_migrations` (global — infrastructure, not workspace-scoped)
 
 | Field | Type | Constraints | Ref |
@@ -773,11 +773,36 @@ Collection: `schema_migrations` (global — infrastructure, not workspace-scoped
 | `lockedAt` | Date | nullable; lock acquisition time; used for stale-lock reclaim | — |
 | `lockedBy` | String | nullable; runner instance identity (hostname/pid) for diagnostics | — |
 | `stats` | Object | nullable, default `{}`; migration-reported counters | — |
+| `status` | String | `pending ǀ dry_run ǀ applied ǀ failed ǀ rolled_back` *(change-081)* | — |
+| `dryRunAt` | Date | nullable; last dry-run time *(change-081)* | — |
+| `dryRunReport` | Object | nullable; would-change counters from the last dry run *(change-081)* | — |
+| `lastError` | String | nullable; message of the last failed run *(change-081)* | — |
+| `failedAt` | Date | nullable *(change-081)* | — |
+| `rolledBackAt` | Date | nullable; set by a `MIGRATIONS_ROLLBACK` run *(change-081)* | — |
+| `rollbackStats` | Object | nullable; restored/skipped counters *(change-081)* | — |
 
 **Indexes:** `{ name: 1 }` unique (doubles as the atomic advisory lock)
 **Locking:** the unique `name` index is the lock. A runner acquires a migration by an upsert that only succeeds when the row is absent, unlocked, or its `lockedAt` is older than the stale timeout. Under `replicas: 2` one runner applies and the other observes and exits `0`.
-**Failure:** a failing migration is **not** marked `appliedAt`; its lock is released so a later deploy retries. The runner exits non-zero so the app container never starts against an unmigrated database.
-**Delivery:** `k8s.deploy` `initContainer` on the API image, gated by `MIGRATIONS_ENABLED` (default `true`); scripts `npm run migrate:run` (local ts-node), `migrate:run:dry-run`, `migrate:run:prod` (compiled `dist/…`).
+**Failure:** a failing migration is **not** marked `appliedAt`; it is marked `status: failed` with `lastError`, its lock is released so a later deploy retries, and the runner exits non-zero so the app never starts against an unmigrated database. A runner that finds another instance's fresh lock **waits** (up to 10 min) for it to be applied instead of skipping *(change-081)*.
+**Delivery:** at API boot before the Nest app is created *(change-081)* and in the `k8s.deploy` `initContainer`, both gated by `MIGRATIONS_ENABLED` (default `true`); `MIGRATIONS_DRY_RUN=true` stores reports without changing data; `MIGRATIONS_ROLLBACK=<name>` runs that migration's `down`. Scripts `npm run migrate:run` (local ts-node), `migrate:run:dry-run`, `migrate:run:prod` (compiled `dist/…`).
+
+## migration_backups *(change-081)*
+Purpose: pre-change values written by migrations that support rollback, so `down` can restore data without database access. Written only by the migration runner.
+Collection: `migration_backups` (global — infrastructure)
+
+| Field | Type | Constraints | Ref |
+|-------|------|-------------|-----|
+| `_id` | ObjectId | PK | — |
+| `migration` | String | required; migration `name` | schema_migrations.name |
+| `collection` | String | required; target collection | — |
+| `docId` | ObjectId | required; target document | — |
+| `path` | String | required; dotted field path | — |
+| `previous` | Mixed | value before the change (`null` when the field was missing) | — |
+| `applied` | Mixed | value written by the migration | — |
+| `createdAt` | Date | required | — |
+
+**Indexes:** `{ migration: 1, collection: 1, docId: 1, path: 1 }` unique (re-running a migration never duplicates backups)
+**Rollback:** `down` restores `previous` only where the field still equals `applied`, so edits made after the migration are never overwritten.
 **Rules:** no update/delete API · migration modules are append-only and never edited after being applied in production · seeds are separate (idempotent, in-process `OnModuleInit`) and are not recorded here.
 
 ---
