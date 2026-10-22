@@ -1,7 +1,7 @@
 # Bug #063 — NG0200 circular dependency: TranslateService ↔ authInterceptor
 
 ## Status
-**PENDING** — Fix in progress, awaiting confirmation
+**PENDING** — Fix applied 2026-10-21, awaiting user verification
 
 ## Reported
 - **Date**: 2026-10-21
@@ -38,7 +38,11 @@ Dependency chain:
 The admin frontend's interceptor does not inject `TranslateService`, so it is not affected.
 
 ## Fix Applied
-Resolved `TranslateService` lazily. `Injector` is injected at the top of the interceptor, and `injector.get(TranslateService)` is called only inside the subscription-error branch, when a toast actually has to be built. By then `TranslateService` is fully constructed, so the cycle is gone. Behavior is otherwise unchanged.
+`roya-ai-dynamo-frontend/src/app/core/interceptors/auth.interceptor.ts` (commit `36850c7`):
+- Replaced the eager `inject(TranslateService)` with `inject(Injector)`.
+- `TranslateService` is resolved lazily (`injector.get(TranslateService)`) only inside the error branch that shows the subscription toast, so the interceptor no longer needs `TranslateService` while `TranslateService` itself is loading `/i18n/en.json`.
+
+_(Section restored 2026-10-21 from commit `36850c7` after it was accidentally overwritten by the bug-064 record update.)_
 
 ## Verification
 - [x] Fix implemented in code (`tsc --noEmit -p tsconfig.app.json` clean)

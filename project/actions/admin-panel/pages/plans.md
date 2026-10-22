@@ -2,10 +2,17 @@
 
 ### Plans Page
 - Route: `/app/plans`
+- List *(change-082)*: lean table — Customer label, Package (link), Price/interval, Type, Stage (+Default Free), Subscribers, actions; **grouped by family** with a **Latest versions only** toggle; search, Stage / Package / Type filters, sortable columns (server-side; grouping off while sorted), server pagination via `GET /subscriptions/plans/catalog`, stats pills; scrolls horizontally; packages and plans load independently with inline error + retry; row click → detail page.
 - Components: bilingual/RTL commercial-offer table/cards; Package/version picker; **client-facing display name/description inputs (EN + AR)**; price/currency, billing and extra-user pricing intervals; Plan family/version/replaces link; **lifecycle stage column** (`Draft` · `Live` · `Hidden` · `Retiring` · `Retired`) plus a **Next step** hint; default-Free badge; immutable read-only state; clone, publish, unpublish, archive-draft, and schedule/reschedule/cancel-retirement dialogs with reason.
 - Service: existing Plan list/create/draft-update/archive endpoints plus `POST /plans/:id/clone|publish|unpublish`, `POST|PUT|DELETE /plans/:id/retirement`.
 - Guard: authGuard + adminGuard.
 - Notes: Plan never edits Package limits. Referenced/published commercial identity is read-only; price changes use Clone Plan. `isPublished` controls new selection, `isActive` controls future period starts, and current access is snapshot-based. Retirement requires ≥30 days and immediately unpublishes. UI protects the single active published default Free invariant and localizes stable errors.
+
+### Plan Detail Page *(change-082)*
+- Route: `/app/plans/:id` · Guard: authGuard + adminGuard · Service: `GET /subscriptions/plans/:id`.
+- Header: Back link, customer label, version, stage + Default Free tags, primary action + overflow menu (same lifecycle actions as the list; inapplicable hidden, disabled with reason tooltip).
+- Sections: **Overview** (display label/description EN/AR side by side, internal name, family key, type) · **Pricing** (price, currency, billing interval, extra-user price + interval) · **Package & entitlements** (link to Package; its 5 labelled limits, free/included users, quota reset; features ✓/✗) · **Versions** (previous/next links, replaces) · **Subscribers** (active, past due) · **Lifecycle** (created by/at, published, made immutable, retire at, retired, last updated).
+- States: loading skeleton, not found, error with retry.
 
 ### Client-facing labels *(change-077)*
 - A Plan owns four admin-editable label fields — `displayName`, `displayNameAr`, `displayDescription`, `displayDescriptionAr` — which are what the customer portal shows. They are **never** overwritten by the Package compatibility mirror.
